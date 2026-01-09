@@ -338,7 +338,7 @@ export default function Routes() {
           console.log('🌐 App ready status:', isAppReady);
           console.log('🌐 Navigation ready status:', isNavigationReady);
           console.log('🌐 Is authenticated:', isAuthenticated);
-          
+
           if (isAppReady && isNavigationReady && isAuthenticated) {
             // App is fully ready, process immediately
             handleDeepLink(initialUrl);
@@ -366,17 +366,17 @@ export default function Routes() {
     const handleDeepLink = (url: string) => {
       console.log('🔍 Processing deep link:', url);
       console.log('🔍 Current navigation state:', navigationRef.current?.getRootState());
-      
+
       // Parse the URL to see what we're trying to navigate to
       const urlParts = url.replace('truckmitr://', '').split('/');
       console.log('🔍 URL parts:', urlParts);
-      
+
       // Manual navigation for testing
       if (urlParts[0] === 'profile') {
         console.log('🎯 Attempting to navigate to profile tab');
         console.log('🎯 Navigation ref available:', !!navigationRef.current);
         console.log('🎯 Is authenticated:', isAuthenticated);
-        
+
         if (!navigationRef.current) {
           console.log('❌ Navigation ref not available');
           return;
@@ -386,11 +386,11 @@ export default function Routes() {
           console.log('❌ User not authenticated, cannot navigate to profile');
           return;
         }
-        
+
         // Wait a bit for navigation to be ready and try multiple times if needed
         const attemptNavigation = (attempt = 1) => {
           console.log(`🎯 Navigation attempt ${attempt}`);
-          
+
           try {
             navigationRef.current?.navigate('bottomTab', {
               screen: 'profile'
@@ -398,7 +398,7 @@ export default function Routes() {
             console.log('✅ Navigation command sent successfully');
           } catch (error) {
             console.log(`❌ Navigation attempt ${attempt} failed:`, error);
-            
+
             if (attempt < 3) {
               setTimeout(() => attemptNavigation(attempt + 1), 1000);
             }
@@ -427,20 +427,20 @@ export default function Routes() {
   useEffect(() => {
     if (pendingDeepLink.current && isAppReady && isNavigationReady && isAuthenticated) {
       console.log('🌐 Processing pending deep link:', pendingDeepLink.current);
-      
+
       const url = pendingDeepLink.current;
       pendingDeepLink.current = null; // Clear pending link
-      
+
       // Add extra delay for kill state to ensure everything is fully loaded
       setTimeout(() => {
         const urlParts = url.replace('truckmitr://', '').split('/');
-        
+
         if (urlParts[0] === 'profile') {
           console.log('🎯 Processing pending profile navigation');
-          
+
           const attemptNavigation = (attempt = 1) => {
             console.log(`🎯 Pending navigation attempt ${attempt}`);
-            
+
             try {
               navigationRef.current?.navigate('bottomTab', {
                 screen: 'profile'
@@ -448,13 +448,13 @@ export default function Routes() {
               console.log('✅ Pending navigation successful');
             } catch (error) {
               console.log(`❌ Pending navigation attempt ${attempt} failed:`, error);
-              
+
               if (attempt < 5) {
                 setTimeout(() => attemptNavigation(attempt + 1), 1000);
               }
             }
           };
-          
+
           attemptNavigation();
         }
       }, 2000); // Extra delay for kill state
@@ -494,7 +494,7 @@ export default function Routes() {
               screens: {
                 // Driver tabs
                 home: 'home',
-                training: 'training', 
+                training: 'training',
                 job: 'job',
                 healthHygiene: 'health-hygiene',
                 profile: 'profile',
@@ -582,8 +582,8 @@ export default function Routes() {
       <ZegoCallInvitationDialog />
       {!isAuthenticated ? (
         <Auth />
-        // ) : profileRequiredFieldsStatus === false ? (
-        //   <ProfileCompletionStack />
+        ) : profileRequiredFieldsStatus === false ? (
+          <ProfileCompletionStack />
       ) : (
         <>
           <Main />
