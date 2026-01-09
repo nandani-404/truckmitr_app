@@ -53,7 +53,7 @@ const DriverLoan = () => {
             <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                 <Ionicons name="checkmark" size={14} color="#16A34A" />
             </View>
-            <Text style={{ fontSize: responsiveFontSize(1.7), color: '#334155' }}>{text}</Text>
+            <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155' }}>{text}</Text>
         </View>
     );
 
@@ -61,7 +61,7 @@ const DriverLoan = () => {
     const BulletItem = ({ text }: { text: string }) => (
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveHeight(1) }}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2563EB', marginRight: 10, marginTop: 6 }} />
-            <Text style={{ fontSize: responsiveFontSize(1.7), color: '#334155', flex: 1 }}>{text}</Text>
+            <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', flex: 1 }}>{text}</Text>
         </View>
     );
 
@@ -110,22 +110,22 @@ const DriverLoan = () => {
                 <View style={{ backgroundColor: '#EAF3FF', borderRadius: 16, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), alignItems: 'center', ...shadow, shadowColor: 'rgba(0,0,0,0.08)' }}>
                     {/* Coming Soon Badge */}
                     <View style={{ backgroundColor: '#F97316', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, marginBottom: 12 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '700', color: colors.white }}>🔥 {t('comingSoon')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.7), fontWeight: '700', color: colors.white }}>🔥 {t('comingSoon')}</Text>
                     </View>
 
                     <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                         <Text style={{ fontSize: 28 }}>🚛</Text>
                     </View>
-                    <Text style={{ fontSize: responsiveFontSize(2.6), fontWeight: '700', color: '#001F3F', textAlign: 'center', marginBottom: 6 }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.8), fontWeight: '700', color: '#001F3F', textAlign: 'center', marginBottom: 6 }}>
                         {t('truckMitrDriverLoan')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), color: '#475569', textAlign: 'center', lineHeight: responsiveFontSize(2.4) }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#475569', textAlign: 'center', lineHeight: responsiveFontSize(2.6) }}>
                         {t('driverLoanHeroDesc')}
                     </Text>
 
                     {/* Sub-line */}
                     <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1', width: '100%', alignItems: 'center' }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B', textAlign: 'center', fontStyle: 'italic' }}>
+                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', textAlign: 'center', fontStyle: 'italic' }}>
                             {t('noAgentsNoConfusion')}
                         </Text>
                     </View>
@@ -133,12 +133,12 @@ const DriverLoan = () => {
 
                 {/* 💡 2️⃣ What is TruckMitr Driver Loan (Same as Why ID Check?) */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#001F3F', marginBottom: 8 }}>{t('whatIsDriverLoanTitle')}</Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', lineHeight: responsiveFontSize(2.4) }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F', marginBottom: 8 }}>{t('whatIsDriverLoanTitle')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#64748B', lineHeight: responsiveFontSize(2.6) }}>
                         {t('whatIsDriverLoanDesc')}
                     </Text>
                     <View style={{ backgroundColor: '#EAF3FF', padding: 10, borderRadius: 8, marginTop: 12 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.6), color: '#2563EB', fontWeight: '600', textAlign: 'center' }}>
+                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#2563EB', fontWeight: '600', textAlign: 'center' }}>
                             💪 {t('builtForDrivers')}
                         </Text>
                     </View>
@@ -146,12 +146,12 @@ const DriverLoan = () => {
 
                 {/* 🪪 3️⃣ Why PAN Is Required */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)', borderLeftWidth: 4, borderLeftColor: '#F59E0B' }}>
-                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#001F3F', marginBottom: 8 }}>{t('whyPanRequired')}</Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', lineHeight: responsiveFontSize(2.4), marginBottom: 12 }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F', marginBottom: 8 }}>{t('whyPanRequired')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#64748B', lineHeight: responsiveFontSize(2.6), marginBottom: 12 }}>
                         {t('panMandatoryDesc')}
                     </Text>
 
-                    <Text style={{ fontSize: responsiveFontSize(1.7), fontWeight: '600', color: '#334155', marginBottom: 10 }}>{t('panHelpsUsTo')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), fontWeight: '600', color: '#334155', marginBottom: 10 }}>{t('panHelpsUsTo')}</Text>
 
                     <BenefitItem text={t('verifyIdentity')} />
                     <BenefitItem text={t('checkLoanEligibility')} />
@@ -161,13 +161,13 @@ const DriverLoan = () => {
                     {/* Warning Note */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, backgroundColor: '#FEF3C7', padding: 10, borderRadius: 8 }}>
                         <Ionicons name="warning" size={18} color="#D97706" style={{ marginRight: 8 }} />
-                        <Text style={{ color: '#92400E', fontWeight: '600', fontSize: responsiveFontSize(1.6), flex: 1 }}>{t('loanApprovalNotPossible')}</Text>
+                        <Text style={{ color: '#92400E', fontWeight: '600', fontSize: responsiveFontSize(1.8), flex: 1 }}>{t('loanApprovalNotPossible')}</Text>
                     </View>
                 </View>
 
                 {/* 🚀 4️⃣ How Sharing PAN Helps You */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#001F3F', marginBottom: 16 }}>{t('howSharingPanHelps')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F', marginBottom: 16 }}>{t('howSharingPanHelps')}</Text>
                     <BenefitItem text={t('higherApprovalChances')} />
                     <BenefitItem text={t('fasterProcessing')} />
                     <BenefitItem text={t('betterLoanOffers')} />
@@ -176,21 +176,21 @@ const DriverLoan = () => {
                     {/* Supporting Line */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, backgroundColor: '#EAF3FF', padding: 10, borderRadius: 8 }}>
                         <Ionicons name="information-circle" size={18} color="#2563EB" style={{ marginRight: 8 }} />
-                        <Text style={{ color: '#1E40AF', fontSize: responsiveFontSize(1.5), flex: 1 }}>{t('panUsageNote')}</Text>
+                        <Text style={{ color: '#1E40AF', fontSize: responsiveFontSize(1.7), flex: 1 }}>{t('panUsageNote')}</Text>
                     </View>
                 </View>
 
                 {/* 📄 PAN Input Section */}
-                <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#001F3F', marginBottom: 10, textAlign: 'left' }}>{t('uploadYourPan')}</Text>
+                <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F', marginBottom: 10, textAlign: 'left' }}>{t('uploadYourPan')}</Text>
 
                 <View style={{ marginBottom: responsiveHeight(2) }}>
                     {/* PAN Number Input */}
                     <View style={{ marginBottom: 15 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.6), color: '#334155', fontWeight: '600', marginBottom: 6 }}>{t('panNumber')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#334155', fontWeight: '600', marginBottom: 6 }}>{t('panNumber')}</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, borderRadius: 10, borderWidth: 1, borderColor: '#CBD5E1', paddingHorizontal: 12 }}>
                             <Ionicons name="card-outline" size={20} color="#64748B" style={{ marginRight: 10 }} />
                             <TextInput
-                                style={{ flex: 1, paddingVertical: 12, fontSize: responsiveFontSize(1.8), color: '#0F172A', letterSpacing: 2 }}
+                                style={{ flex: 1, paddingVertical: 12, fontSize: responsiveFontSize(2.0), color: '#0F172A', letterSpacing: 2 }}
                                 placeholder={t('enterPanPlaceholder')}
                                 placeholderTextColor="#94A3B8"
                                 value={panNumber}
@@ -211,13 +211,13 @@ const DriverLoan = () => {
                         <Ionicons name="lock-closed" size={20} color="#16A34A" />
                     </View>
                     <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '700', color: '#166534', marginBottom: 8 }}>🔒 {t('yourDataIsSafe')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#166534', marginBottom: 8 }}>🔒 {t('yourDataIsSafe')}</Text>
                         <BulletItem text={t('panEncrypted')} />
                         <BulletItem text={t('usedForEligibility')} />
                         <BulletItem text={t('sharedWithPartners')} />
 
                         <View style={{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#BBF7D0' }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.5), color: '#15803D', fontStyle: 'italic' }}>
+                            <Text style={{ fontSize: responsiveFontSize(1.7), color: '#15803D', fontStyle: 'italic' }}>
                                 {t('privacyStandards')}
                             </Text>
                         </View>
@@ -226,8 +226,8 @@ const DriverLoan = () => {
 
                 {/* ⏳ 6️⃣ Be Ready (Preparation Card) */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)', borderLeftWidth: 4, borderLeftColor: '#8B5CF6' }}>
-                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#001F3F', marginBottom: 8 }}>⏳ {t('beReady')}</Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', marginBottom: 12 }}>{t('uploadPanNowTo')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F', marginBottom: 8 }}>⏳ {t('beReady')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#64748B', marginBottom: 12 }}>{t('uploadPanNowTo')}</Text>
                     <BenefitItem text={t('stayEligibleLoanOffers')} />
                     <BenefitItem text={t('earlyAccessLoans')} />
                     <BenefitItem text={t('avoidDelays')} />
@@ -236,8 +236,8 @@ const DriverLoan = () => {
                 {/* 📢 7️⃣ Brand Message (Footer Text) */}
                 <View style={{ backgroundColor: '#1E3A5F', borderRadius: 12, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), alignItems: 'center' }}>
                     <Text style={{ fontSize: 28, marginBottom: 8 }}>📢</Text>
-                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: colors.white, marginBottom: 4 }}>{t('truckMitrDriverLoan')}</Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.6), color: '#93C5FD', fontStyle: 'italic' }}>"{t('loanTagline')}"</Text>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: colors.white, marginBottom: 4 }}>{t('truckMitrDriverLoan')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(1.8), color: '#93C5FD', fontStyle: 'italic' }}>"{t('loanTagline')}"</Text>
                 </View>
 
             </ScrollView>
@@ -250,7 +250,7 @@ const DriverLoan = () => {
                     style={{ backgroundColor: isSubmitting ? '#94A3B8' : colors.royalBlue, paddingVertical: responsiveHeight(1.8), borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}
                 >
                     <Ionicons name="card" size={20} color={colors.white} style={{ marginRight: 8 }} />
-                    <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.0), fontWeight: 'bold' }}>
+                    <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.2), fontWeight: 'bold' }}>
                         {isSubmitting ? t('submitting') : t('uploadPanToGetAccess')}
                     </Text>
                 </TouchableOpacity>
@@ -270,18 +270,18 @@ const DriverLoan = () => {
                             <Ionicons name="checkmark-circle" size={40} color="#16A34A" />
                         </View>
 
-                        <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F', marginBottom: 8, textAlign: 'center' }}>
+                        <Text style={{ fontSize: responsiveFontSize(2.4), fontWeight: '700', color: '#001F3F', marginBottom: 8, textAlign: 'center' }}>
                             {t('panUploadedSuccessfully')} 🎉
                         </Text>
 
-                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', textAlign: 'center', lineHeight: responsiveFontSize(2.4), marginBottom: 16 }}>
+                        <Text style={{ fontSize: responsiveFontSize(1.9), color: '#64748B', textAlign: 'center', lineHeight: responsiveFontSize(2.6), marginBottom: 16 }}>
                             {t('youAreAllSet')}
                         </Text>
 
                         {/* Coming Soon Notice */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, marginBottom: 20, width: '100%', justifyContent: 'center' }}>
                             <Text style={{ fontSize: 18, marginRight: 8 }}>⏳</Text>
-                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#92400E' }}>
+                            <Text style={{ fontSize: responsiveFontSize(1.8), color: '#92400E' }}>
                                 {t('loanFeatureComingSoon')}
                             </Text>
                         </View>
@@ -293,7 +293,7 @@ const DriverLoan = () => {
                             }}
                             style={{ backgroundColor: colors.royalBlue, paddingVertical: 12, paddingHorizontal: 40, borderRadius: 10, width: '100%', alignItems: 'center' }}
                         >
-                            <Text style={{ color: colors.white, fontSize: responsiveFontSize(1.8), fontWeight: 'bold' }}>{t('gotIt')}</Text>
+                            <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.0), fontWeight: 'bold' }}>{t('gotIt')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

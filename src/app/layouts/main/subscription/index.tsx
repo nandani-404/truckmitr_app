@@ -835,7 +835,8 @@ const PlanCard = React.memo(({
   isPopular,
   consentChecked,
   onConsentToggle,
-  onOpenConsent
+  onOpenConsent,
+  isCurrentPlan
 }: {
   plan: PlanDataType;
   isExpanded: boolean;
@@ -846,6 +847,7 @@ const PlanCard = React.memo(({
   consentChecked: boolean;
   onConsentToggle: () => void;
   onOpenConsent: () => void;
+  isCurrentPlan?: boolean;
 }) => {
   const { t } = useTranslation();
   const rotation = useSharedValue(isExpanded ? 180 : 0);
@@ -866,7 +868,11 @@ const PlanCard = React.memo(({
       isExpanded && { borderColor: plan.color },
       isPopular && styles.cardPopular
     ]}>
-      {isPopular && (
+      {isCurrentPlan ? (
+        <View style={[styles.popularBadge, { backgroundColor: COLORS.success }]}>
+          <Text style={styles.popularBadgeText}>{t('currentPlan') || 'Current Plan'}</Text>
+        </View>
+      ) : isPopular && (
         <View style={styles.popularBadge}>
           <Text style={styles.popularBadgeText}>{t('subMostPopular')}</Text>
         </View>
@@ -909,18 +915,30 @@ const PlanCard = React.memo(({
             </View>
 
             {/* Quick Pay Button (always visible) */}
-            <TouchableOpacity
-              onPress={onSelect}
-              activeOpacity={consentChecked ? 0.8 : 1}
-              disabled={!consentChecked}
-              style={[
-                styles.quickPayButton,
-                { backgroundColor: plan.color, opacity: consentChecked ? 1 : 0.5 }
-              ]}
-            >
-              <Text style={styles.quickPayButtonText}>{t('payNowButton')}</Text>
-              <Ionicons name="arrow-forward" size={14} color={COLORS.white} />
-            </TouchableOpacity>
+            {isCurrentPlan ? (
+              <View
+                style={[
+                  styles.quickPayButton,
+                  { backgroundColor: COLORS.success, opacity: 1 }
+                ]}
+              >
+                <Text style={styles.quickPayButtonText}>{t('active') || 'Active'}</Text>
+                <Ionicons name="checkmark-circle" size={14} color={COLORS.white} />
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={onSelect}
+                activeOpacity={consentChecked ? 0.8 : 1}
+                disabled={!consentChecked}
+                style={[
+                  styles.quickPayButton,
+                  { backgroundColor: plan.color, opacity: consentChecked ? 1 : 0.5 }
+                ]}
+              >
+                <Text style={styles.quickPayButtonText}>{t('payNowButton')}</Text>
+                <Ionicons name="arrow-forward" size={14} color={COLORS.white} />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -981,22 +999,41 @@ const PlanCard = React.memo(({
           </View>
 
           {/* CTA */}
-          <TouchableOpacity
-            onPress={onSelect}
-            activeOpacity={consentChecked ? 0.9 : 1}
-            disabled={!consentChecked}
-            style={[styles.ctaButtonContainer, { shadowColor: plan.color, opacity: consentChecked ? 1 : 0.5 }]}
-          >
-            <LinearGradient
-              colors={plan.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.ctaButton}
+          {isCurrentPlan ? (
+            <View
+              style={[
+                styles.ctaButtonContainer,
+                { shadowColor: plan.color, opacity: 0.9 }
+              ]}
             >
-              <Text style={styles.ctaButtonText}>{plan.ctaText}</Text>
-              <Ionicons name="arrow-forward" size={18} color={COLORS.white} style={{ marginLeft: 8 }} />
-            </LinearGradient>
-          </TouchableOpacity>
+              <View
+                style={[
+                  styles.ctaButton,
+                  { backgroundColor: COLORS.success }
+                ]}
+              >
+                <Text style={styles.ctaButtonText}>{t('currentlyActive') || 'Currently Active'}</Text>
+                <Ionicons name="checkmark-circle" size={18} color={COLORS.white} style={{ marginLeft: 8 }} />
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={onSelect}
+              activeOpacity={consentChecked ? 0.9 : 1}
+              disabled={!consentChecked}
+              style={[styles.ctaButtonContainer, { shadowColor: plan.color, opacity: consentChecked ? 1 : 0.5 }]}
+            >
+              <LinearGradient
+                colors={plan.gradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.ctaButton}
+              >
+                <Text style={styles.ctaButtonText}>{plan.ctaText}</Text>
+                <Ionicons name="arrow-forward" size={18} color={COLORS.white} style={{ marginLeft: 8 }} />
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
         </Animated.View>
       )}
     </Animated.View>
@@ -1011,7 +1048,19 @@ export default function Subscription({ }: any) {
   const safeAreaInsets = useSafeAreaInsets();
   const { responsiveFontSize } = useResponsiveScale();
   const navigation = useNavigation<NavigatorProp>();
-  const { user, subscriptionModal, subscriptionModalOptions } = useSelector((state: any) => state?.user);
+  const { user, subscriptionModal, subscriptionModalOptions, subscriptionDetails } = useSelector((state: any) => state?.user);
+
+  const getCurrentPlanPrice = () => {
+    if (subscriptionDetails?.amount) {
+      return parseFloat(subscriptionDetails.amount);
+    }
+    // Fallback to payment_details.amount (in paise, needs /100)
+    if (subscriptionDetails?.payment_details?.amount) {
+      return subscriptionDetails.payment_details.amount / 100;
+    }
+    return 0;
+  };
+  const currentPrice = getCurrentPlanPrice();
 
   // Check if we should only show upgrade plans (₹199 and ₹499)
   const upgradeOnly = subscriptionModalOptions?.upgradeOnly || false;
@@ -1172,22 +1221,16 @@ export default function Subscription({ }: any) {
         console.log('Transformed plans:', transformedPlans);
         setDynamicPlans(transformedPlans);
 
-        // Set default expanded plan (middle one if available)
-        if (transformedPlans.length > 0) {
-          const middleIndex = Math.floor(transformedPlans.length / 2);
-          setExpandedId(transformedPlans[middleIndex]?.id || transformedPlans[0]?.id);
-        }
+        // Don't auto-expand any plan - let user tap to expand
       } else {
         // Fallback to hardcoded plans if API fails
         console.log('API response invalid, using fallback plans');
         setDynamicPlans(getPlanData(t));
-        setExpandedId(199);
       }
     } catch (error) {
       console.error('Error fetching subscription plans:', error);
       // Fallback to hardcoded plans
       setDynamicPlans(getPlanData(t));
-      setExpandedId(199);
     } finally {
       setPlansLoading(false);
     }
@@ -1226,6 +1269,7 @@ export default function Subscription({ }: any) {
         try {
           console.log(`Attempting to create subscription for plan ${serverPlanId}`);
           const payload = { plan_id: serverPlanId };
+          console.log('=== PAYMENT_SUBSCRIPTION_CREATE PAYLOAD ===', JSON.stringify(payload, null, 2));
           const response = await axiosInstance.post(END_POINTS.PAYMENT_SUBSCRIPTION_CREATE, payload);
 
           console.log('=== SUBSCRIPTION CREATE RESPONSE ===');
@@ -1359,6 +1403,16 @@ export default function Subscription({ }: any) {
     } as any;
 
     console.log(`Opening Razorpay checkout (${isSubscription ? 'Subscription' : 'One-time'}):`, id);
+    console.log('=== RAZORPAY CHECKOUT OPTIONS ===', JSON.stringify({
+      description: options.description,
+      currency: options.currency,
+      amount: options.amount,
+      name: options.name,
+      subscription_id: options.subscription_id,
+      order_id: options.order_id,
+      notes: options.notes,
+      prefill: options.prefill,
+    }, null, 2));
 
     await RazorpayCheckout.open(options)
       .then(async (data: any) => {
@@ -1471,7 +1525,44 @@ export default function Subscription({ }: any) {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {/* 1️⃣ Heading Section */}
+          {/* 1️⃣ Plan Cards Section - Now at the TOP */}
+          <View style={styles.cardsStack}>
+            {plansLoading ? (
+              <View style={styles.plansLoadingContainer}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={styles.plansLoadingText}>{t('loading') || 'Loading plans...'}</Text>
+              </View>
+            ) : dynamicPlans.length > 0 ? (
+              // Filter plans based on upgradeOnly option (exclude ₹99 plan when upgrading)
+              dynamicPlans
+                .filter((plan: PlanDataType) => {
+                  const minPrice = subscriptionModalOptions?.minPrice;
+                  if (minPrice) return plan.price >= minPrice;
+                  return !upgradeOnly || plan.price >= 199;
+                })
+                .map((plan: PlanDataType, index: number, filteredPlans: PlanDataType[]) => (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    isExpanded={expandedId === plan.id}
+                    onToggle={() => handleToggle(plan.id)}
+                    onSelect={() => handleSelectPlan(plan)}
+                    responsiveFontSize={responsiveFontSize}
+                    isPopular={filteredPlans.length > 1 && index === Math.floor(filteredPlans.length / 2)} // Middle plan is popular
+                    consentChecked={consentChecked}
+                    onConsentToggle={() => setConsentChecked(!consentChecked)}
+                    onOpenConsent={() => setConsentModalVisible(true)}
+                    isCurrentPlan={Math.abs(plan.price - currentPrice) < 1}
+                  />
+                ))
+            ) : (
+              <View style={styles.plansLoadingContainer}>
+                <Text style={styles.plansLoadingText}>{t('subNoPlansAvailable') || 'No plans available'}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* 2️⃣ Heading Section - Now BELOW the plans */}
           <View style={styles.header}>
             <Text style={[styles.headerTitle, { fontSize: responsiveFontSize(2.2) }]}>
               {t('subHeaderTagline')}
@@ -1506,48 +1597,8 @@ export default function Subscription({ }: any) {
             </Text>
           </View>
 
+          {/* 3️⃣ Feature Comparison Table */}
           <FeatureTable responsiveFontSize={responsiveFontSize} t={t} />
-
-          {/*  */}
-
-          {/* 2️⃣ Plan Cards Section */}
-          <View style={styles.cardsStack}>
-            {plansLoading ? (
-              <View style={styles.plansLoadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.plansLoadingText}>{t('loading') || 'Loading plans...'}</Text>
-              </View>
-            ) : dynamicPlans.length > 0 ? (
-              // Filter plans based on upgradeOnly option (exclude ₹99 plan when upgrading)
-              dynamicPlans
-                .filter((plan: PlanDataType) => {
-                  const minPrice = subscriptionModalOptions?.minPrice;
-                  if (minPrice) return plan.price >= minPrice;
-                  return !upgradeOnly || plan.price >= 199;
-                })
-                .map((plan: PlanDataType, index: number, filteredPlans: PlanDataType[]) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    isExpanded={expandedId === plan.id}
-                    onToggle={() => handleToggle(plan.id)}
-                    onSelect={() => handleSelectPlan(plan)}
-                    responsiveFontSize={responsiveFontSize}
-                    isPopular={filteredPlans.length > 1 && index === Math.floor(filteredPlans.length / 2)} // Middle plan is popular
-                    consentChecked={consentChecked}
-                    onConsentToggle={() => setConsentChecked(!consentChecked)}
-                    onOpenConsent={() => setConsentModalVisible(true)}
-                  />
-                ))
-            ) : (
-              <View style={styles.plansLoadingContainer}>
-                <Text style={styles.plansLoadingText}>{t('subNoPlansAvailable') || 'No plans available'}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* 3️⃣ Feature Comparison Box */}
-
 
           {/* Footer Note */}
           <View style={styles.footerNote}>

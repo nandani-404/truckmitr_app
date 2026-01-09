@@ -269,9 +269,9 @@ const RcCheckResult = () => {
         if (!value || value === '' || value === 'NA' || value === 'null') return null;
         return (
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14, alignItems: 'flex-start' }}>
-                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', flex: 1 }}>{label}</Text>
+                <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', flex: 1 }}>{label}</Text>
                 <Text style={{
-                    fontSize: responsiveFontSize(1.4),
+                    fontSize: responsiveFontSize(1.6),
                     color: isHighlight ? '#16A34A' : '#334155',
                     fontWeight: isHighlight ? '700' : '600',
                     flex: 1.2,
@@ -289,7 +289,7 @@ const RcCheckResult = () => {
                 <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EAF3FF', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                     <Ionicons name={icon as any} size={16} color="#2563EB" />
                 </View>
-                <Text style={{ fontSize: responsiveFontSize(1.6), fontWeight: '700', color: '#001F3F' }}>{title}</Text>
+                <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '700', color: '#001F3F' }}>{title}</Text>
             </View>
             {children}
         </View>
@@ -308,7 +308,7 @@ const RcCheckResult = () => {
                 <Text style={{
                     color: isActive ? '#166534' : '#DC2626',
                     fontWeight: 'bold',
-                    fontSize: responsiveFontSize(1.4)
+                    fontSize: responsiveFontSize(1.6)
                 }}>
                     {status?.toUpperCase() || 'N/A'}
                 </Text>
@@ -323,7 +323,7 @@ const RcCheckResult = () => {
                 <TouchableOpacity onPress={_goBack} style={{ padding: 5, marginRight: 10 }}>
                     <Ionicons name="chevron-back" size={24} color={colors.royalBlue} />
                 </TouchableOpacity>
-                <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: 'bold', color: colors.royalBlue }}>
+                <Text style={{ fontSize: responsiveFontSize(2.4), fontWeight: 'bold', color: colors.royalBlue }}>
                     {t('rcDetails') || 'RC Details'}
                 </Text>
             </View>
@@ -339,10 +339,10 @@ const RcCheckResult = () => {
                             color={result?.status === 'ACTIVE' ? "#16A34A" : "#DC2626"}
                         />
                     </View>
-                    <Text style={{ fontSize: responsiveFontSize(2.4), fontWeight: 'bold', color: result?.status === 'ACTIVE' ? '#16A34A' : '#DC2626', marginBottom: 4 }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.6), fontWeight: 'bold', color: result?.status === 'ACTIVE' ? '#16A34A' : '#DC2626', marginBottom: 4 }}>
                         {result?.status === 'ACTIVE' ? (t('verified') || 'Verified') : (t('inactive') || 'Inactive')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', textAlign: 'center' }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', textAlign: 'center' }}>
                         {isAlreadyVerified
                             ? (t('vehicleAlreadyVerified') || 'Vehicle already verified in our records')
                             : (t('vehicleDetailsVerified') || 'Vehicle details verified successfully')
@@ -362,7 +362,7 @@ const RcCheckResult = () => {
                     <DetailRow label={t('vehicleColor') || "Color"} value={result?.vehicleColor} />
                     <DetailRow label={t('fuelType') || "Fuel Type"} value={result?.fuelType} />
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('rcStatus') || 'RC Status'}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B' }}>{t('rcStatus') || 'RC Status'}</Text>
                         <StatusBadge status={result?.status || 'N/A'} />
                     </View>
                 </SectionCard>
@@ -399,7 +399,7 @@ const RcCheckResult = () => {
                     <DetailRow label={t('puccExpiryDate') || "PUCC Expiry Date"} value={result?.puccExpiryDate} />
                     {result?.fitnessExpired && (
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('fitnessExpired') || 'Fitness Expired'}</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B' }}>{t('fitnessExpired') || 'Fitness Expired'}</Text>
                             <View style={{
                                 backgroundColor: result.fitnessExpired === 'N' ? '#DCFCE7' : '#FEE2E2',
                                 paddingHorizontal: 10,
@@ -409,7 +409,7 @@ const RcCheckResult = () => {
                                 <Text style={{
                                     color: result.fitnessExpired === 'N' ? '#166534' : '#DC2626',
                                     fontWeight: '600',
-                                    fontSize: responsiveFontSize(1.2)
+                                    fontSize: responsiveFontSize(1.4)
                                 }}>
                                     {result.fitnessExpired === 'N' ? (t('no') || 'No') : (t('yes') || 'Yes')}
                                 </Text>
@@ -427,7 +427,7 @@ const RcCheckResult = () => {
                         <DetailRow label={t('remainingValidity') || "Remaining Validity"} value={result?.remainingValidity} />
                         {result?.insuranceExpired && (
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('insuranceExpired') || 'Insurance Expired'}</Text>
+                                <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B' }}>{t('insuranceExpired') || 'Insurance Expired'}</Text>
                                 <View style={{
                                     backgroundColor: result.insuranceExpired === 'N' ? '#DCFCE7' : '#FEE2E2',
                                     paddingHorizontal: 10,
@@ -437,7 +437,7 @@ const RcCheckResult = () => {
                                     <Text style={{
                                         color: result.insuranceExpired === 'N' ? '#166534' : '#DC2626',
                                         fontWeight: '600',
-                                        fontSize: responsiveFontSize(1.2)
+                                        fontSize: responsiveFontSize(1.4)
                                     }}>
                                         {result.insuranceExpired === 'N' ? (t('no') || 'No') : (t('yes') || 'Yes')}
                                     </Text>
@@ -463,7 +463,7 @@ const RcCheckResult = () => {
                 {(result?.financer || result?.vehicleFinanced) && (
                     <SectionCard title={t('financeDetails') || 'Finance Details'} icon="cash-outline">
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('vehicleFinanced') || 'Vehicle Financed'}</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B' }}>{t('vehicleFinanced') || 'Vehicle Financed'}</Text>
                             <View style={{
                                 backgroundColor: result?.vehicleFinanced ? '#FEF3C7' : '#DCFCE7',
                                 paddingHorizontal: 10,
@@ -473,7 +473,7 @@ const RcCheckResult = () => {
                                 <Text style={{
                                     color: result?.vehicleFinanced ? '#92400E' : '#166534',
                                     fontWeight: '600',
-                                    fontSize: responsiveFontSize(1.2)
+                                    fontSize: responsiveFontSize(1.4)
                                 }}>
                                     {result?.vehicleFinanced ? (t('yes') || 'Yes') : (t('no') || 'No')}
                                 </Text>
@@ -497,10 +497,10 @@ const RcCheckResult = () => {
                         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EAF3FF', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                             <MaterialCommunityIcons name="shield-check-outline" size={16} color="#2563EB" />
                         </View>
-                        <Text style={{ fontSize: responsiveFontSize(1.6), fontWeight: '700', color: '#001F3F' }}>{t('otherDetails') || 'Other Details'}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '700', color: '#001F3F' }}>{t('otherDetails') || 'Other Details'}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('blacklistStatus') || 'Blacklist Status'}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B' }}>{t('blacklistStatus') || 'Blacklist Status'}</Text>
                         <View style={{
                             backgroundColor: result?.blacklistStatus === 'NA' ? '#DCFCE7' : '#FEE2E2',
                             paddingHorizontal: 10,
@@ -510,7 +510,7 @@ const RcCheckResult = () => {
                             <Text style={{
                                 color: result?.blacklistStatus === 'NA' ? '#166534' : '#DC2626',
                                 fontWeight: '600',
-                                fontSize: responsiveFontSize(1.2)
+                                fontSize: responsiveFontSize(1.4)
                             }}>
                                 {result?.blacklistStatus === 'NA' ? (t('clear') || 'Clear') : result?.blacklistStatus}
                             </Text>
@@ -528,7 +528,7 @@ const RcCheckResult = () => {
                     onPress={_goBack}
                     style={{ backgroundColor: colors.royalBlue, paddingVertical: responsiveHeight(1.8), borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}
                 >
-                    <Text style={{ color: colors.white, fontSize: responsiveFontSize(1.8), fontWeight: 'bold' }}>
+                    <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.0), fontWeight: 'bold' }}>
                         {t('done') || 'Done'}
                     </Text>
                 </TouchableOpacity>
@@ -537,7 +537,7 @@ const RcCheckResult = () => {
                     onPress={_checkAnotherRc}
                     style={{ paddingVertical: responsiveHeight(1.5), borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
                 >
-                    <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: '600' }}>
+                    <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.8), fontWeight: '600' }}>
                         {t('checkAnotherVehicleRc') || 'Check Another Vehicle RC'}
                     </Text>
                 </TouchableOpacity>

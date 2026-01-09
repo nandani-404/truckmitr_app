@@ -604,7 +604,13 @@ export default function Profile() {
   };
 
   // Get the actual paid amount from subscription
+  // Get the actual paid amount from subscription
   const getPaidAmount = (): number => {
+    // If no subscription details valid-like object, return 0
+    if (!subscriptionDetails || Object.keys(subscriptionDetails).length === 0) {
+      return 0;
+    }
+
     // Amount is stored directly on subscription object as string (e.g., "99.00")
     if (subscriptionDetails?.amount) {
       return parseFloat(subscriptionDetails.amount);
@@ -614,7 +620,7 @@ export default function Profile() {
       return subscriptionDetails.payment_details.amount / 100;
     }
     // Default fallback
-    return isDriver ? 199 : 499;
+    return 0;
   };
 
   // Get original price based on the paid amount
@@ -686,6 +692,10 @@ export default function Profile() {
   const _navigatePrivacy = () => navigation.navigate(STACKS.PRIVACY)
   const _navigateSetting = () => navigation.navigate(STACKS.SETTINGS)
   const _navigateDLVerification = () => navigation.navigate(STACKS.DL_VERIFICATION)
+
+  const _handleUpgradePlan = () => {
+    dispatch(subscriptionModalAction(true));
+  }
 
   const deleteAccount = async () => {
     setIsDeleting(true);
@@ -1564,6 +1574,31 @@ export default function Profile() {
                 title={t('dlVerification')}
                 onPress={_navigateDLVerification}
               />
+              <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
+
+              {/* Upgrade Plan Logic */}
+              {(() => {
+                const amount = getPaidAmount();
+
+                // If amount is >= 499, hide the button completely
+                if (amount >= 499) return null;
+
+                // Determine title based on subscription status
+                const buttonTitle = amount > 0
+                  ? t('upgradePlan')
+                  : t('becomeTruckMitrMember');
+
+                const iconName = amount > 0 ? "trophy-variant-outline" : "crown-outline";
+                const iconColor = amount > 0 ? colors.royalBlue : "#FFD700"; // Gold for become member
+
+                return (
+                  <MenuItem
+                    icon={<MaterialCommunityIcons name={iconName} size={20} color={iconColor} />}
+                    title={buttonTitle}
+                    onPress={_handleUpgradePlan}
+                  />
+                );
+              })()}
             </>
           )}
         </CardContainer>

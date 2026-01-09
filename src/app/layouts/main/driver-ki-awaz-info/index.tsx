@@ -64,36 +64,36 @@ const DriverKiAwazInfo = () => {
 
                     {/* Coming Soon Badge */}
                     <View style={{ position: 'absolute', top: 0, right: 0, backgroundColor: '#FF6B00', paddingHorizontal: 12, paddingVertical: 6, borderBottomLeftRadius: 12 }}>
-                        <Text style={{ color: '#fff', fontSize: responsiveFontSize(1.2), fontWeight: '700' }}>{t('comingSoonBadge', 'COMING SOON')}</Text>
+                        <Text style={{ color: '#fff', fontSize: responsiveFontSize(1.7), fontWeight: '700' }}>{t('comingSoonBadge', 'COMING SOON')}</Text>
                     </View>
 
                     <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#0284C7', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                         <MaterialCommunityIcons name="bullhorn-outline" size={32} color={colors.white} />
                     </View>
-                    <Text style={{ fontSize: responsiveFontSize(2.4), fontWeight: '800', color: '#0C4A6E', marginBottom: 8, textAlign: 'left' }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.8), fontWeight: '800', color: '#0C4A6E', marginBottom: 8, textAlign: 'left' }}>
                         {t('driverKiAwazTitle', 'Driver Ki Awaz')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.6), fontWeight: '600', color: '#0369A1', marginBottom: 12, textAlign: 'left' }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '600', color: '#0369A1', marginBottom: 12, textAlign: 'left' }}>
                         {t('comingSoonOnTruckMitr', 'Coming Soon on TruckMitr')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.5), color: '#334155', lineHeight: responsiveFontSize(2.4), fontStyle: 'italic', textAlign: 'left' }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.0), color: '#334155', lineHeight: responsiveFontSize(3.0), fontStyle: 'italic', textAlign: 'left' }}>
                         {t('driverKiAwazQuote', '"Every driver has a story.\nEvery story deserves to be heard."')}
                     </Text>
                 </View>
 
                 {/* 🎤 2️⃣ What is Driver Ki Awaz */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 16, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                    <Text style={{ fontSize: responsiveFontSize(1.5), color: '#475569', lineHeight: responsiveFontSize(2.4), marginBottom: 12, textAlign: 'left' }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.0), color: '#475569', lineHeight: responsiveFontSize(3.0), marginBottom: 12, textAlign: 'left' }}>
                         {t('driverKiAwazDesc', 'Driver Ki Awaz is a platform where Indian truck drivers can')} <Text style={{ fontWeight: '700', color: '#0C4A6E' }}>{t('raiseTheirVoice', 'raise their voice')}</Text>{t('driverKiAwazDesc2', ', share real-life challenges, and stand united as one community.')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.6), fontWeight: '800', color: '#0284C7', textAlign: 'center', lineHeight: responsiveFontSize(2.4) }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '800', color: '#0284C7', textAlign: 'center', lineHeight: responsiveFontSize(3.0) }}>
                         {t('yourSpaceVoice', 'This is your space. Your voice. Your Awaz.')}
                     </Text>
                 </View>
 
                 {/* 🧱 3️⃣ What You’ll Be Able To Share */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 16, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), fontWeight: '700', color: '#334155', marginBottom: 16, textAlign: 'left' }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#334155', marginBottom: 16, textAlign: 'left' }}>
                         {t('whatYouShare', 'What You’ll Be Able To Share')}
                     </Text>
 
@@ -108,7 +108,7 @@ const DriverKiAwazInfo = () => {
                         ].map((item, index) => (
                             <View key={index} style={{ width: '48%', backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, marginBottom: 12, alignItems: 'center' }}>
                                 <Ionicons name={item.icon} size={24} color={item.color} style={{ marginBottom: 8 }} />
-                                <Text style={{ fontSize: responsiveFontSize(1.3), color: '#334155', textAlign: 'center', fontWeight: '600', lineHeight: responsiveFontSize(1.8) }}>{item.text}</Text>
+                                <Text style={{ fontSize: responsiveFontSize(1.8), color: '#334155', textAlign: 'center', fontWeight: '600', lineHeight: responsiveFontSize(2.4) }}>{item.text}</Text>
                             </View>
                         ))}
                     </View>
@@ -116,7 +116,7 @@ const DriverKiAwazInfo = () => {
 
                 {/* 💡 4️⃣ Why Driver Ki Awaz Matters */}
                 <View style={{ backgroundColor: '#FFF7ED', borderRadius: 16, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), borderLeftWidth: 4, borderLeftColor: '#F97316' }}>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), fontWeight: '700', color: '#9A3412', marginBottom: 12, textAlign: 'left' }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#9A3412', marginBottom: 12, textAlign: 'left' }}>
                         {t('whyItMatters', 'Why Driver Ki Awaz Matters')}
                     </Text>
                     {[
@@ -126,21 +126,21 @@ const DriverKiAwazInfo = () => {
                         t('highlightsProblems', "Helps highlight problems that matter")
                     ].map((item, index) => (
                         <View key={index} style={{ flexDirection: 'row', marginBottom: 8, alignItems: 'flex-start' }}>
-                            <Text style={{ color: '#F97316', marginRight: 8, fontSize: responsiveFontSize(1.4), marginTop: 2 }}>•</Text>
-                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#7C2D12', flex: 1, textAlign: 'left', lineHeight: responsiveFontSize(2.0) }}>{item}</Text>
+                            <Text style={{ color: '#F97316', marginRight: 8, fontSize: responsiveFontSize(1.9), marginTop: 2 }}>•</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.9), color: '#7C2D12', flex: 1, textAlign: 'left', lineHeight: responsiveFontSize(2.6) }}>{item}</Text>
                         </View>
                     ))}
-                    <Text style={{ fontSize: responsiveFontSize(1.5), fontWeight: '800', color: '#C2410C', marginTop: 8, textAlign: 'center', fontStyle: 'italic', lineHeight: responsiveFontSize(2.2) }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '800', color: '#C2410C', marginTop: 8, textAlign: 'center', fontStyle: 'italic', lineHeight: responsiveFontSize(2.8) }}>
                         {t('systemListens', '"When drivers speak together, the system listens."')}
                     </Text>
                 </View>
 
                 {/* 🚀 5️⃣ Get Ready */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 16, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), fontWeight: '700', color: '#334155', marginBottom: 12, textAlign: 'left' }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#334155', marginBottom: 12, textAlign: 'left' }}>
                         {t('getReady', 'Get Ready')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.4), color: '#475569', marginBottom: 12, textAlign: 'left', lineHeight: responsiveFontSize(2.0) }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#475569', marginBottom: 12, textAlign: 'left', lineHeight: responsiveFontSize(2.6) }}>
                         {t('soonAbleTo', 'Soon, you’ll be able to:')}
                     </Text>
 
@@ -152,7 +152,7 @@ const DriverKiAwazInfo = () => {
                     ].map((item, index) => (
                         <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                             <Ionicons name="checkmark-circle" size={18} color="#059669" style={{ marginRight: 8 }} />
-                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#334155', fontWeight: '600', flex: 1, textAlign: 'left', lineHeight: responsiveFontSize(2.0) }}>{item}</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', fontWeight: '600', flex: 1, textAlign: 'left', lineHeight: responsiveFontSize(2.6) }}>{item}</Text>
                         </View>
                     ))}
                 </View>
@@ -160,15 +160,15 @@ const DriverKiAwazInfo = () => {
                 {/* 📢 6️⃣ Footer */}
                 <View style={{ alignItems: 'center', paddingVertical: 20 }}>
                     <MaterialCommunityIcons name="broadcast" size={32} color={colors.royalBlue} style={{ marginBottom: 8 }} />
-                    <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '800', color: colors.royalBlue, marginBottom: 4, textAlign: 'center', lineHeight: responsiveFontSize(2.6) }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.4), fontWeight: '800', color: colors.royalBlue, marginBottom: 4, textAlign: 'center', lineHeight: responsiveFontSize(3.0) }}>
                         {t('driverKiAwazTitle', 'Driver Ki Awaz')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', fontWeight: 'bold', textAlign: 'center', lineHeight: responsiveFontSize(2.0) }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#64748B', fontWeight: 'bold', textAlign: 'center', lineHeight: responsiveFontSize(2.6) }}>
                         {t('driverKiBaat', 'Kyunki Driver Ki Baat Zaroori Hai')}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, backgroundColor: '#E0F2FE', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>
                         <Ionicons name="notifications-outline" size={16} color="#0284C7" style={{ marginRight: 6 }} />
-                        <Text style={{ fontSize: responsiveFontSize(1.3), color: '#0284C7', fontWeight: '700', textAlign: 'center' }}>{t('stayTuned', 'Stay tuned. Feature launching soon.')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0284C7', fontWeight: '700', textAlign: 'center' }}>{t('stayTuned', 'Stay tuned. Feature launching soon.')}</Text>
                     </View>
                 </View>
 

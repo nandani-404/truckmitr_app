@@ -143,15 +143,11 @@ const getLicenseEndorsementNames = (endorsementValue: any): string => {
 
 // Helper function to get state name from ID
 const getStateName = (stateValue: string | number | undefined): string => {
-  console.log('🔍 DEBUG - getStateName input:', stateValue);
   if (!stateValue) return ''
   const stateStr = String(stateValue).trim()
-  console.log('🔍 DEBUG - stateStr:', stateStr);
   if (STATE_ID_MAP[stateStr]) {
-    console.log('🔍 DEBUG - Found in map:', STATE_ID_MAP[stateStr]);
     return STATE_ID_MAP[stateStr]
   }
-  console.log('🔍 DEBUG - Not found in map, returning original:', stateStr);
   return stateStr
 }
 
@@ -203,20 +199,15 @@ const getVehicleTypeNames = (vehicleTypeValue: any): string => {
 
 // Helper function to get preferred location name from ID using API data
 const getPreferredLocationName = (locationValue: string | undefined, locationsData: any[]): string => {
-  console.log('🔍 DEBUG - getPreferredLocationName input:', locationValue);
-  console.log('🔍 DEBUG - Available locations:', locationsData.length);
-  
   if (!locationValue) return 'Not Provided'
   
   // Find location by ID in API data
   const location = locationsData.find(loc => String(loc.id) === String(locationValue))
   if (location) {
-    console.log('🔍 DEBUG - Found location:', location.name);
     return location.name
   }
   
   // Fallback to hardcoded mapping if API data not available
-  console.log('🔍 DEBUG - Fallback to hardcoded mapping');
   return getStateName(locationValue)
 }
 
@@ -408,8 +399,16 @@ export default function ProfileOverview() {
       const fetchUserData = async () => {
         setLoading(true)
         try {
+          console.log('=== PROFILE OVERVIEW REFRESH ===');
           const profile: any = await axiosInstance.get(END_POINTS?.GET_PROFILE)
           if (profile?.data?.status) {
+            console.log('=== PROFILE OVERVIEW DATA ===');
+            console.log('Operational_Segment:', profile?.data?.data?.Operational_Segment);
+            console.log('operational_segment:', profile?.data?.data?.operational_segment);
+            console.log('Industry_Segment:', profile?.data?.data?.Industry_Segment);
+            console.log('industry_segment:', profile?.data?.data?.industry_segment);
+            console.log('Full user data:', JSON.stringify(profile?.data?.data, null, 2));
+            
             dispatch(userAction(profile?.data))
           }
         } catch (error) {
@@ -444,12 +443,82 @@ export default function ProfileOverview() {
     return getDrivingExperienceLabel(experience)
   }
 
+  const formatOperationalSegment = (segment: any): string => {
+    console.log('=== FORMAT OPERATIONAL SEGMENT ===');
+    console.log('Input segment value:', segment);
+    console.log('Input segment type:', typeof segment);
+    
+    if (!segment) {
+      console.log('No segment value, returning "Not Provided"');
+      return 'Not Provided'
+    }
+    
+    // Handle comma-separated values
+    if (typeof segment === 'string') {
+      const segments = segment.split(',').map(s => s.trim()).filter(Boolean)
+      console.log('Parsed segments array:', segments);
+      
+      // Map internal values to display names
+      const segmentMap: Record<string, string> = {
+        'ecommerce': 'E-commerce',
+        'white_goods': 'White Goods',
+        'livestock': 'Livestock',
+        'perishable': 'Perishable',
+        'oversized': 'Oversized',
+        'fuel_tanker': 'Fuel Tanker',
+        'automobile_carrier': 'Automobile Carrier',
+        'construction': 'Construction',
+        'refrigerator': 'Refrigerator',
+        'others': 'Others'
+      }
+      
+      const displayNames = segments.map(seg => {
+        const mapped = segmentMap[seg] || seg;
+        console.log(`Mapping "${seg}" -> "${mapped}"`);
+        return mapped;
+      });
+      
+      const result = displayNames.join(', ');
+      console.log('Final formatted result:', result);
+      return result;
+    }
+    
+    console.log('Non-string segment, returning as string:', String(segment));
+    return String(segment)
+  }
+
+  const formatAverageKm = (avgKm: any): string => {
+    if (!avgKm) return 'Not Provided'
+    
+    // Map internal values to display names
+    const avgKmMap: Record<string, string> = {
+      'less_1000': '< 1000 km',
+      '1000_3000': '1000 - 3000 km',
+      '3000_5000': '3000 - 5000 km',
+      '5000_10000': '5000 - 10000 km',
+      '10000_plus': '10000+ km'
+    }
+    
+    return avgKmMap[avgKm] || avgKm
+  }
+
+  const formatYearsOfOperation = (years: any): string => {
+    if (!years) return 'Not Provided'
+    
+    // Map internal values to display names
+    const yearsMap: Record<string, string> = {
+      'less_than_1': 'Less than 1 year',
+      '1-2': '1-2 years',
+      '3-5': '3-5 years',
+      '6-10': '6-10 years',
+      '10+': '10+ years'
+    }
+    
+    return yearsMap[years] || `${years} years`
+  }
+
   const formatPreferredLocation = (location: any): string => {
-    console.log('🔍 DEBUG - Preferred Location:', location);
-    console.log('🔍 DEBUG - Type:', typeof location);
-    const result = getPreferredLocationName(location, locations);
-    console.log('🔍 DEBUG - Mapped Name:', result);
-    return result;
+    return getPreferredLocationName(location, locations);
   }
 
   const formatEndorsements = (endorsements: any): string => {
@@ -605,37 +674,61 @@ export default function ProfileOverview() {
           onEdit={navigateToEdit}
         />
 
-        {/* Date of Birth Section - Separate step */}
-        <FieldGroupCard
-          title={t('dateOfBirth') || 'Date of Birth'}
-          icon="calendar"
-          stepId="dob"
-          fields={[
-            {
-              label: t('dateOfBirth') || 'Date of Birth',
-              value: formatDate(user?.DOB),
-            },
-          ]}
-          onEdit={navigateToEdit}
-        />
+        {/* Driver-only sections */}
+        {isDriver && (
+          <>
+            {/* Date of Birth Section - Separate step */}
+            <FieldGroupCard
+              title={t('dateOfBirth') || 'Date of Birth'}
+              icon="calendar"
+              stepId="dob"
+              fields={[
+                {
+                  label: t('dateOfBirth') || 'Date of Birth',
+                  value: formatDate(user?.DOB),
+                },
+              ]}
+              onEdit={navigateToEdit}
+            />
 
-        {/* Gender & Marital Status Section - Same step in profile edit */}
-        <FieldGroupCard
-          title={t('genderMaritalStatus') || 'Gender & Marital Status'}
-          icon="person"
-          stepId="gender"
-          fields={[
-            {
-              label: t('gender') || 'Gender',
-              value: user?.Sex,
-            },
-            {
-              label: t('maritalStatus') || 'Marital Status',
-              value: user?.Marital_Status,
-            },
-          ]}
-          onEdit={navigateToEdit}
-        />
+            {/* Gender & Marital Status Section - Same step in profile edit */}
+            <FieldGroupCard
+              title={t('genderMaritalStatus') || 'Gender & Marital Status'}
+              icon="person"
+              stepId="gender"
+              fields={[
+                {
+                  label: t('gender') || 'Gender',
+                  value: user?.Sex,
+                },
+                {
+                  label: t('maritalStatus') || 'Marital Status',
+                  value: user?.Marital_Status,
+                },
+              ]}
+              onEdit={navigateToEdit}
+            />
+          </>
+        )}
+
+        {/* Transporter-only sections */}
+        {isTransporter && (
+          <>
+            {/* Transport Name Section */}
+            <FieldGroupCard
+              title={t('transportName') || 'Transport Name'}
+              icon="business"
+              stepId="transport_details"
+              fields={[
+                {
+                  label: t('transportName') || 'Transport Name',
+                  value: user?.Transport_Name,
+                },
+              ]}
+              onEdit={navigateToEdit}
+            />
+          </>
+        )}
         
         {/* Education Section - Separate step for drivers only */}
         {isDriver && (
@@ -848,37 +941,15 @@ export default function ProfileOverview() {
         {/* Transporter Specific Fields */}
         {isTransporter && (
           <>
-            {/* Business Information Section */}
+            {/* Years of Operation Section */}
             <FieldGroupCard
-              title={t('businessInformation') || 'Business Information'}
-              icon="business"
-              stepId="transport_details"
-              fields={[
-                {
-                  label: t('transportName') || 'Transport Name',
-                  value: user?.Transport_Name || user?.transport_name,
-                },
-                {
-                  label: t('yearOfEstablishment') || 'Year of Establishment',
-                  value: user?.Year_of_Establishment || user?.year_of_establishment || user?.establishment_year,
-                },
-                {
-                  label: t('referralCode') || 'Referral Code',
-                  value: user?.Referral_Code,
-                },
-              ]}
-              onEdit={navigateToEdit}
-            />
-
-            {/* Years of Experience Section */}
-            <FieldGroupCard
-              title={t('yearsOfExperience') || 'Years of Experience'}
+              title={t('yearsOfOperation') || 'Years of Operation'}
               icon="calendar"
               stepId="year_of_exp"
               fields={[
                 {
-                  label: t('yearsOfExperience') || 'Years of Experience',
-                  value: user?.Year_of_Exp || user?.year_of_exp,
+                  label: t('yearsOfOperation') || 'Years of Operation',
+                  value: formatYearsOfOperation(user?.Year_of_Establishment),
                 },
               ]}
               onEdit={navigateToEdit}
@@ -893,21 +964,21 @@ export default function ProfileOverview() {
               fields={[
                 {
                   label: t('fleetSize') || 'Fleet Size',
-                  value: user?.Fleet_Size || user?.fleet_size,
+                  value: user?.Fleet_Size || 'Not Provided',
                 },
               ]}
               onEdit={navigateToEdit}
             />
 
-            {/* Industry Segment Section */}
+            {/* Operational Segment Section */}
             <FieldGroupCard
-              title={t('industrySegment') || 'Industry Segment'}
+              title={t('operationalSegment') || 'Operational Segment'}
               icon="briefcase"
               stepId="industry_segment"
               fields={[
                 {
-                  label: t('industrySegment') || 'Industry Segment',
-                  value: user?.Industry_Segment || user?.industry_segment,
+                  label: t('operationalSegment') || 'Operational Segment',
+                  value: formatOperationalSegment(user?.Operational_Segment || user?.operational_segment || user?.Industry_Segment || user?.industry_segment),
                 },
               ]}
               onEdit={navigateToEdit}
@@ -921,21 +992,21 @@ export default function ProfileOverview() {
               fields={[
                 {
                   label: t('averageKmRun') || 'Average Km Run',
-                  value: user?.Average_Km || user?.average_km || user?.avg_km_run,
+                  value: formatAverageKm(user?.Average_KM || user?.Average_Km || user?.average_km || user?.avg_km_run || user?.average_run),
                 },
               ]}
               onEdit={navigateToEdit}
             />
 
-            {/* Legal Documents Section */}
+            {/* PAN & GST Documents Section - Combined as in ProfileEdit */}
             <FieldGroupCard
-              title={t('panDocuments') || 'PAN Documents'}
+              title={t('panGstDocuments') || 'PAN & GST Documents'}
               icon="card"
               stepId="pan_gst"
               fields={[
                 {
                   label: t('panNumber') || 'PAN Number',
-                  value: user?.PAN_Number || user?.pan,
+                  value: user?.PAN_Number,
                 },
                 {
                   label: t('panImage') || 'PAN Image',
@@ -943,18 +1014,9 @@ export default function ProfileOverview() {
                   isImage: true,
                   imageUri: getImageUri(user?.PAN_Image),
                 },
-              ]}
-              onEdit={navigateToEdit}
-            />
-            
-            <FieldGroupCard
-              title={t('gstDocuments') || 'GST Documents'}
-              icon="receipt"
-              stepId="pan_gst"
-              fields={[
                 {
                   label: t('gstNumber') || 'GST Number',
-                  value: user?.GST_Number || user?.gst,
+                  value: user?.GST_Number,
                 },
                 {
                   label: t('gstCertificate') || 'GST Certificate',

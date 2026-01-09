@@ -285,8 +285,8 @@ export default function ProfileEdit() {
 
             // Map API fields (PascalCase/snake_case) to UI fields (snake_case)
             checkAndSet('fleet_size', [user.Fleet_Size, user.fleet_size], fleetMapping);
-            checkAndSet('industry_segment', [user.Industry_Segment, user.industry_segment]);
-            checkAndSet('avg_km_run', [user.Average_Km, user.average_km, user.avg_km_run, user.average_run], avgKmMapping);
+            checkAndSet('industry_segment', [user.Operational_Segment, user.Industry_Segment, user.industry_segment, user.operational_segment]);
+            checkAndSet('avg_km_run', [user.Average_KM, user.Average_Km, user.average_km, user.avg_km_run, user.average_run], avgKmMapping);
             checkAndSet('transport_name', [user.Transport_Name, user.transport_name]);
 
             // Vehicle Type Normalization
@@ -815,7 +815,7 @@ export default function ProfileEdit() {
             formData.append('year_of_establishment', userEdit?.year_of_exp || userEdit?.year_of_establishment || userEdit?.establishment_year || '');
             formData.append('Referral_Code', userEdit?.Referral_Code || '');
 
-            // Profile photo
+
             if (userEdit?.profilePath?.path && userEdit?.profilePath?.mime) {
                 formData.append('images', {
                     uri: userEdit.profilePath.path,

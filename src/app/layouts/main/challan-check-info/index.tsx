@@ -224,10 +224,10 @@ const ChallanCheckInfo = () => {
     const StepItem = ({ number, text }: { number: number; text: string }) => (
         <View style={{ flexDirection: 'row', marginBottom: 16, alignItems: 'flex-start' }}>
             <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                <Text style={{ color: '#2563EB', fontWeight: 'bold', fontSize: responsiveFontSize(1.6) }}>{number}</Text>
+                <Text style={{ color: '#2563EB', fontWeight: 'bold', fontSize: responsiveFontSize(1.8) }}>{number}</Text>
             </View>
             <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: responsiveFontSize(1.6), color: '#334155', lineHeight: responsiveFontSize(2.4), textAlign: 'left' }}>{text}</Text>
+                <Text style={{ fontSize: responsiveFontSize(1.8), color: '#334155', lineHeight: responsiveFontSize(2.6), textAlign: 'left' }}>{text}</Text>
             </View>
         </View>
     );
@@ -262,11 +262,11 @@ const ChallanCheckInfo = () => {
                     <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                             <Ionicons name="car-outline" size={16} color="#2563EB" style={{ marginRight: 6 }} />
-                            <Text style={{ fontSize: responsiveFontSize(1.6), fontWeight: '700', color: '#001F3F' }}>
+                            <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '700', color: '#001F3F' }}>
                                 {item.number || '-'}
                             </Text>
                         </View>
-                        <Text style={{ fontSize: responsiveFontSize(1.25), color: '#64748B', marginTop: 2 }} numberOfLines={1}>
+                        <Text style={{ fontSize: responsiveFontSize(1.45), color: '#64748B', marginTop: 2 }} numberOfLines={1}>
                             {item.offense_details || t('noOffenceDetails', 'No offence details')}
                         </Text>
                     </View>
@@ -279,7 +279,7 @@ const ChallanCheckInfo = () => {
                             marginBottom: 4
                         }}>
                             <Text style={{
-                                fontSize: responsiveFontSize(1.2),
+                                fontSize: responsiveFontSize(1.4),
                                 color: statusColors.text,
                                 fontWeight: '600',
                                 textTransform: 'capitalize'
@@ -299,28 +299,28 @@ const ChallanCheckInfo = () => {
                 {isExpanded && (
                     <View style={{ padding: responsiveWidth(4), backgroundColor: '#FAFBFC' }}>
                         <View style={{ marginBottom: 12 }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.2), color: '#64748B', marginBottom: 2 }}>
+                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', marginBottom: 2 }}>
                                 {t('challanNumber', 'Challan Number')}
                             </Text>
-                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#334155', fontWeight: '600' }}>
+                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#334155', fontWeight: '600' }}>
                                 {item.challan_number || '-'}
                             </Text>
                         </View>
 
                         <View style={{ flexDirection: 'row', marginBottom: 12 }}>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.2), color: '#64748B', marginBottom: 2 }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', marginBottom: 2 }}>
                                     {t('challanPlace', 'Place')}
                                 </Text>
-                                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#334155', fontWeight: '500' }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.6), color: '#334155', fontWeight: '500' }}>
                                     {item.challan_place || '-'}
                                 </Text>
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.2), color: '#64748B', marginBottom: 2 }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', marginBottom: 2 }}>
                                     {t('state', 'State')}
                                 </Text>
-                                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#334155', fontWeight: '500' }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.6), color: '#334155', fontWeight: '500' }}>
                                     {item.state || '-'}
                                 </Text>
                             </View>
@@ -328,18 +328,18 @@ const ChallanCheckInfo = () => {
 
                         <View style={{ flexDirection: 'row', marginBottom: 12 }}>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.2), color: '#64748B', marginBottom: 2 }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', marginBottom: 2 }}>
                                     {t('challanDate', 'Date & Time')}
                                 </Text>
-                                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#334155', fontWeight: '500' }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.6), color: '#334155', fontWeight: '500' }}>
                                     {formatDate(item.challan_date_time)}
                                 </Text>
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.2), color: '#64748B', marginBottom: 2 }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', marginBottom: 2 }}>
                                     {t('accusedName', 'Accused Name')}
                                 </Text>
-                                <Text style={{ fontSize: responsiveFontSize(1.4), color: '#334155', fontWeight: '500' }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.6), color: '#334155', fontWeight: '500' }}>
                                     {item.accused_name || '-'}
                                 </Text>
                             </View>
@@ -353,11 +353,11 @@ const ChallanCheckInfo = () => {
                             justifyContent: 'space-between',
                             alignItems: 'center'
                         }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', fontWeight: '500' }}>
+                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', fontWeight: '500' }}>
                                 {t('challanAmount', 'Challan Amount')}
                             </Text>
                             <Text style={{
-                                fontSize: responsiveFontSize(1.8),
+                                fontSize: responsiveFontSize(2.0),
                                 color: amount > 0 ? '#DC2626' : '#16A34A',
                                 fontWeight: 'bold'
                             }}>
@@ -429,10 +429,10 @@ const ChallanCheckInfo = () => {
                     <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                         <Ionicons name="receipt-outline" size={30} color={colors.white} />
                     </View>
-                    <Text style={{ fontSize: responsiveFontSize(2.4), fontWeight: '700', color: '#001F3F', textAlign: 'center', marginBottom: 8 }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.6), fontWeight: '700', color: '#001F3F', textAlign: 'center', marginBottom: 8 }}>
                         {t('challanCheckTitle', 'Challan Check')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), color: '#475569', textAlign: 'center', lineHeight: responsiveFontSize(2.6), paddingHorizontal: 8 }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#475569', textAlign: 'center', lineHeight: responsiveFontSize(2.8), paddingHorizontal: 8 }}>
                         {t('challanCheckHeroDesc', 'Check pending traffic challans for your vehicle by entering the vehicle number')}
                     </Text>
                 </View>
@@ -443,13 +443,13 @@ const ChallanCheckInfo = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <MaterialCommunityIcons name="history" size={22} color="#2563EB" style={{ marginRight: 8 }} />
-                                <Text style={{ fontSize: responsiveFontSize(1.9), fontWeight: '700', color: '#334155' }}>
+                                <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155' }}>
                                     {t('challanHistory', 'Challan History')}
                                 </Text>
                             </View>
                             {historyData.length > 0 && (
                                 <View style={{ backgroundColor: '#EFF6FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-                                    <Text style={{ fontSize: responsiveFontSize(1.4), color: '#2563EB', fontWeight: '600' }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.6), color: '#2563EB', fontWeight: '600' }}>
                                         {historyData.length} {t('records', 'records')}
                                     </Text>
                                 </View>
@@ -459,7 +459,7 @@ const ChallanCheckInfo = () => {
                         {historyLoading ? (
                             <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(6), alignItems: 'center', ...shadow }}>
                                 <ActivityIndicator size="small" color={colors.royalBlue} />
-                                <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', marginTop: 12 }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.8), color: '#64748B', marginTop: 12 }}>
                                     {t('loadingHistory', 'Loading history...')}
                                 </Text>
                             </View>
@@ -472,10 +472,10 @@ const ChallanCheckInfo = () => {
                                 <View style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                                     <Ionicons name="document-text-outline" size={24} color="#94A3B8" />
                                 </View>
-                                <Text style={{ fontSize: responsiveFontSize(1.7), fontWeight: '600', color: '#334155', marginBottom: 4, textAlign: 'center' }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.9), fontWeight: '600', color: '#334155', marginBottom: 4, textAlign: 'center' }}>
                                     {t('noHistoryFound', 'No History Found')}
                                 </Text>
-                                <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B', textAlign: 'center' }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', textAlign: 'center' }}>
                                     {t('noHistoryDesc', 'Your checked challans will appear here')}
                                 </Text>
                             </View>
@@ -485,13 +485,13 @@ const ChallanCheckInfo = () => {
 
                 {/* What is Challan Check */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                    <Text style={{ fontSize: responsiveFontSize(1.9), fontWeight: '700', color: '#334155', marginBottom: 10 }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155', marginBottom: 10 }}>
                         {t('whatIsChallanCheck', 'What is Challan Check?')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.6), color: '#475569', lineHeight: responsiveFontSize(2.4), marginBottom: 10, textAlign: 'left' }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.8), color: '#475569', lineHeight: responsiveFontSize(2.6), marginBottom: 10, textAlign: 'left' }}>
                         {t('whatIsChallanCheckDesc', 'Check pending traffic challans for your vehicle by entering the vehicle number.')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B', fontStyle: 'italic', lineHeight: responsiveFontSize(2.2), textAlign: 'left' }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', fontStyle: 'italic', lineHeight: responsiveFontSize(2.4), textAlign: 'left' }}>
                         {isTransporter
                             ? (t('challanFeatureNoteTransporter') || 'This feature is available for transporters with an active TruckMitr subscription.')
                             : (t('challanFeatureNote') || 'This feature is available for drivers with an active TruckMitr subscription.')}
@@ -500,7 +500,7 @@ const ChallanCheckInfo = () => {
 
                 {/* How It Works */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                    <Text style={{ fontSize: responsiveFontSize(1.9), fontWeight: '700', color: '#334155', marginBottom: 16 }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155', marginBottom: 16 }}>
                         {t('howItWorks', 'How it works')}
                     </Text>
                     <StepItem number={1} text={t('challanStep1', 'Enter your vehicle number')} />
@@ -508,7 +508,7 @@ const ChallanCheckInfo = () => {
                     <StepItem number={3} text={t('challanStep3', 'View challan status and details')} />
                     <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 4 }}>
                         <Ionicons name="time-outline" size={18} color="#059669" style={{ marginRight: 6, marginTop: 2 }} />
-                        <Text style={{ flex: 1, fontSize: responsiveFontSize(1.5), color: '#059669', fontWeight: '600', lineHeight: responsiveFontSize(2.2), textAlign: 'left' }}>
+                        <Text style={{ flex: 1, fontSize: responsiveFontSize(1.7), color: '#059669', fontWeight: '600', lineHeight: responsiveFontSize(2.4), textAlign: 'left' }}>
                             {t('challanResultTime', 'Results are shown shortly after submission')}
                         </Text>
                     </View>
@@ -517,16 +517,16 @@ const ChallanCheckInfo = () => {
                 {/* Subscription Requirement */}
                 {!hasActivePlan && (
                     <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.9), fontWeight: '700', color: '#334155', marginBottom: 12 }}>
+                        <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155', marginBottom: 12 }}>
                             {t('subscriptionRequirement', 'Subscription Requirement')}
                         </Text>
-                        <Text style={{ fontSize: responsiveFontSize(1.6), color: '#475569', marginBottom: 10, lineHeight: responsiveFontSize(2.2), textAlign: 'left' }}>
+                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#475569', marginBottom: 10, lineHeight: responsiveFontSize(2.4), textAlign: 'left' }}>
                             {t('challanIncludedWith', 'Challan Check is included with:')}
                         </Text>
                         {!isTransporter && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                                 <Ionicons name="checkmark-circle" size={20} color="#16A34A" style={{ marginRight: 8 }} />
-                                <Text style={{ fontSize: responsiveFontSize(1.7), color: '#334155', fontWeight: '600' }}>{t('plan199', '₹199 Plan')}</Text>
+                                <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', fontWeight: '600' }}>{t('plan199', '₹199 Plan')}</Text>
                             </View>
                         )}
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
@@ -534,7 +534,7 @@ const ChallanCheckInfo = () => {
                             <Text style={{ fontSize: responsiveFontSize(1.7), color: '#334155', fontWeight: '600' }}>{t('plan499', '₹499 Plan')}</Text>
                         </View>
                         <View style={{ backgroundColor: '#FFF7ED', padding: 12, borderRadius: 8, borderLeftWidth: 3, borderLeftColor: '#F97316' }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.5), color: '#9A3412', lineHeight: responsiveFontSize(2.2), textAlign: 'left' }}>
+                            <Text style={{ fontSize: responsiveFontSize(1.7), color: '#9A3412', lineHeight: responsiveFontSize(2.4), textAlign: 'left' }}>
                                 ⚠️ {t('ensureSubscriptionActive', 'Please ensure your subscription is active to use this feature.')}
                             </Text>
                         </View>
@@ -545,10 +545,10 @@ const ChallanCheckInfo = () => {
                 <View style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), borderWidth: 1, borderColor: '#E2E8F0', flexDirection: 'row', alignItems: 'flex-start' }}>
                     <MaterialCommunityIcons name="shield-lock-outline" size={26} color="#64748B" style={{ marginRight: 12, marginTop: 2 }} />
                     <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.7), fontWeight: '700', color: '#334155', marginBottom: 4, textAlign: 'left' }}>
+                        <Text style={{ fontSize: responsiveFontSize(1.9), fontWeight: '700', color: '#334155', marginBottom: 4, textAlign: 'left' }}>
                             {t('dataSecurity', 'Data Security')}
                         </Text>
-                        <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B', lineHeight: responsiveFontSize(2.2), textAlign: 'left' }}>
+                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', lineHeight: responsiveFontSize(2.4), textAlign: 'left' }}>
                             {t('dataSecurityDesc', 'Your data is secure and used only for challan verification purposes.')}
                         </Text>
                     </View>
@@ -562,7 +562,7 @@ const ChallanCheckInfo = () => {
                     onPress={_handleCheckChallan}
                     style={{ backgroundColor: colors.royalBlue, paddingVertical: responsiveHeight(1.8), borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
                 >
-                    <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.0), fontWeight: 'bold' }}>
+                    <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.2), fontWeight: 'bold' }}>
                         {t('checkChallanBtn', 'Check Challan')}
                     </Text>
                 </TouchableOpacity>
@@ -579,7 +579,7 @@ const ChallanCheckInfo = () => {
                     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                         <View style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: responsiveWidth(5), paddingBottom: responsiveHeight(5) }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                <Text style={{ fontSize: responsiveFontSize(2), fontWeight: 'bold', color: '#001F3F' }}>
+                                <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: 'bold', color: '#001F3F' }}>
                                     {t('challanVerification', 'Challan Verification')}
                                 </Text>
                                 {!loading && (
@@ -592,16 +592,16 @@ const ChallanCheckInfo = () => {
                             {loading ? (
                                 <View style={{ alignItems: 'center', paddingVertical: 30 }}>
                                     <ActivityIndicator size="large" color={colors.royalBlue} style={{ marginBottom: 16 }} />
-                                    <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '600', color: '#001F3F', marginBottom: 8, textAlign: 'center' }}>
+                                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '600', color: '#001F3F', marginBottom: 8, textAlign: 'center' }}>
                                         {t('verifyingDetails', 'Verifying details...')}
                                     </Text>
-                                    <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B', textAlign: 'center' }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', textAlign: 'center' }}>
                                         {t('pleaseWaitMoment', 'Please wait, this may take a moment')}
                                     </Text>
                                 </View>
                             ) : (
                                 <>
-                                    <Text style={{ fontSize: responsiveFontSize(1.4), color: '#334155', marginBottom: 8, textAlign: 'left' }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.6), color: '#334155', marginBottom: 8, textAlign: 'left' }}>
                                         {t('enterVehicleNumber', 'Enter Vehicle Number')}
                                     </Text>
                                     <TextInput
@@ -610,11 +610,11 @@ const ChallanCheckInfo = () => {
                                         placeholder="MH12AB1234"
                                         placeholderTextColor="#94A3B8"
                                         autoCapitalize="characters"
-                                        style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, fontSize: responsiveFontSize(1.8), color: '#001F3F', backgroundColor: '#F8FAFC', marginBottom: 8, textAlign: 'left' }}
+                                        style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, fontSize: responsiveFontSize(2.0), color: '#001F3F', backgroundColor: '#F8FAFC', marginBottom: 8, textAlign: 'left' }}
                                     />
                                     <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24 }}>
                                         <Ionicons name="information-circle-outline" size={16} color="#64748B" style={{ marginRight: 6, marginTop: 2 }} />
-                                        <Text style={{ flex: 1, fontSize: responsiveFontSize(1.2), color: '#64748B', lineHeight: responsiveFontSize(1.8), textAlign: 'left' }}>
+                                        <Text style={{ flex: 1, fontSize: responsiveFontSize(1.4), color: '#64748B', lineHeight: responsiveFontSize(2.0), textAlign: 'left' }}>
                                             {t('enterVehicleCorrectly', 'Please enter the vehicle number correctly')}
                                         </Text>
                                     </View>
@@ -624,7 +624,7 @@ const ChallanCheckInfo = () => {
                                         style={{ backgroundColor: vehicleNumber.trim() ? colors.royalBlue : '#CBD5E1', paddingVertical: responsiveHeight(1.8), borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
                                         disabled={!vehicleNumber.trim()}
                                     >
-                                        <Text style={{ color: 'white', fontSize: responsiveFontSize(1.8), fontWeight: 'bold' }}>
+                                        <Text style={{ color: 'white', fontSize: responsiveFontSize(2.0), fontWeight: 'bold' }}>
                                             {t('verifyChallan', 'Verify Challan')}
                                         </Text>
                                     </TouchableOpacity>

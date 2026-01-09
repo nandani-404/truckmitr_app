@@ -25,7 +25,7 @@ const DriverWelfare = () => {
             <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                 <Ionicons name="checkmark" size={14} color="#16A34A" />
             </View>
-            <Text style={{ fontSize: responsiveFontSize(1.7), color: '#334155' }}>{text}</Text>
+            <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155' }}>{text}</Text>
         </View>
     );
 
@@ -33,7 +33,7 @@ const DriverWelfare = () => {
     const BulletItem = ({ text }: { text: string }) => (
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveHeight(1) }}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#E11D48', marginRight: 10, marginTop: 6 }} />
-            <Text style={{ fontSize: responsiveFontSize(1.7), color: '#334155', flex: 1 }}>{text}</Text>
+            <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', flex: 1 }}>{text}</Text>
         </View>
     );
 
@@ -54,13 +54,13 @@ const DriverWelfare = () => {
         <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)', borderLeftWidth: 4, borderLeftColor: accentColor }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                 <Text style={{ fontSize: 24, marginRight: 10 }}>{emoji}</Text>
-                <Text style={{ fontSize: responsiveFontSize(1.9), fontWeight: '700', color: '#001F3F', flex: 1 }}>{title}</Text>
+                <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#001F3F', flex: 1 }}>{title}</Text>
             </View>
             {benefits.map((benefit, index) => (
                 <BenefitItem key={index} text={benefit} />
             ))}
             <View style={{ marginTop: 8, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }}>
-                <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B', fontStyle: 'italic', textAlign: 'center' }}>
+                <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', fontStyle: 'italic', textAlign: 'center' }}>
                     {footerText}
                 </Text>
             </View>
@@ -112,38 +112,38 @@ const DriverWelfare = () => {
                 <View style={{ backgroundColor: '#EAF3FF', borderRadius: 16, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), alignItems: 'center', ...shadow, shadowColor: 'rgba(0,0,0,0.08)' }}>
                     {/* Coming Soon Badge */}
                     <View style={{ backgroundColor: '#E11D48', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, marginBottom: 12 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '700', color: colors.white }}>❤️ {t('comingSoon')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.7), fontWeight: '700', color: colors.white }}>❤️ {t('comingSoon')}</Text>
                     </View>
 
                     <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#E11D48', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                         <Ionicons name="heart" size={32} color={colors.white} />
                     </View>
-                    <Text style={{ fontSize: responsiveFontSize(2.6), fontWeight: '700', color: '#001F3F', textAlign: 'center', marginBottom: 4 }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.8), fontWeight: '700', color: '#001F3F', textAlign: 'center', marginBottom: 4 }}>
                         {t('driverWelfareTitle')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '600', color: '#E11D48', textAlign: 'center', marginBottom: 8 }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '600', color: '#E11D48', textAlign: 'center', marginBottom: 8 }}>
                         {t('becauseDriversMatter')}
                     </Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), color: '#475569', textAlign: 'center', lineHeight: responsiveFontSize(2.4) }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#475569', textAlign: 'center', lineHeight: responsiveFontSize(2.6) }}>
                         {t('driverWelfareDescription')}
                     </Text>
                 </View>
 
                 {/* 💡 2️⃣ What is Driver Welfare */}
                 <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#001F3F', marginBottom: 8 }}>{t('whatIsDriverWelfareTitle')}</Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', lineHeight: responsiveFontSize(2.4) }}>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F', marginBottom: 8 }}>{t('whatIsDriverWelfareTitle')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#64748B', lineHeight: responsiveFontSize(2.6) }}>
                         {t('whatIsDriverWelfareDesc')}
                     </Text>
                     <View style={{ backgroundColor: '#FDF2F8', padding: 10, borderRadius: 8, marginTop: 12 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.6), color: '#BE185D', fontWeight: '600', textAlign: 'center' }}>
+                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#BE185D', fontWeight: '600', textAlign: 'center' }}>
                             ❤️ {t('designedForDriverCommunity')}
                         </Text>
                     </View>
                 </View>
 
                 {/* 🧩 3️⃣ What Driver Welfare Covers - Section Title */}
-                <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#001F3F', marginBottom: 12, textAlign: 'left' }}>{t('whatDriverWelfareCovers')}</Text>
+                <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F', marginBottom: 12, textAlign: 'left' }}>{t('whatDriverWelfareCovers')}</Text>
 
                 {/* 🩺 Driver Medical Support */}
                 <WelfareSectionCard
@@ -191,7 +191,7 @@ const DriverWelfare = () => {
                 <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)', borderLeftWidth: 4, borderLeftColor: '#F59E0B' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                         <Text style={{ fontSize: 24, marginRight: 10 }}>🌟</Text>
-                        <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#001F3F' }}>{t('whyDriverWelfareMatters')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F' }}>{t('whyDriverWelfareMatters')}</Text>
                     </View>
                     <BulletItem text={t('welfareMatter1')} />
                     <BulletItem text={t('welfareMatter2')} />
@@ -200,13 +200,13 @@ const DriverWelfare = () => {
 
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, gap: 8 }}>
                         <View style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#16A34A', fontWeight: '600' }}>✔ {t('emotional')}</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#16A34A', fontWeight: '600' }}>✔ {t('emotional')}</Text>
                         </View>
                         <View style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#2563EB', fontWeight: '600' }}>✔ {t('respectful')}</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#2563EB', fontWeight: '600' }}>✔ {t('respectful')}</Text>
                         </View>
                         <View style={{ backgroundColor: '#FDF2F8', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#BE185D', fontWeight: '600' }}>✔ {t('missionDriven')}</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#BE185D', fontWeight: '600' }}>✔ {t('missionDriven')}</Text>
                         </View>
                     </View>
                 </View>
@@ -215,24 +215,24 @@ const DriverWelfare = () => {
                 <View style={{ backgroundColor: '#FEF3C7', borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), alignItems: 'center' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                         <Text style={{ fontSize: 24, marginRight: 8 }}>⏳</Text>
-                        <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: '#92400E' }}>{t('comingSoon')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#92400E' }}>{t('comingSoon')}</Text>
                     </View>
-                    <Text style={{ fontSize: responsiveFontSize(1.7), color: '#78350F', textAlign: 'center', lineHeight: responsiveFontSize(2.4) }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#78350F', textAlign: 'center', lineHeight: responsiveFontSize(2.6) }}>
                         {t('welfareComingSoonDesc')}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, backgroundColor: colors.white, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}>
                         <Ionicons name="notifications" size={16} color="#D97706" style={{ marginRight: 6 }} />
-                        <Text style={{ fontSize: responsiveFontSize(1.6), color: '#92400E', fontWeight: '600' }}>{t('stayTunedForUpdates')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#92400E', fontWeight: '600' }}>{t('stayTunedForUpdates')}</Text>
                     </View>
                 </View>
 
                 {/* 📢 6️⃣ Footer Brand Message */}
                 <View style={{ backgroundColor: '#1E3A5F', borderRadius: 12, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), alignItems: 'center' }}>
                     <Text style={{ fontSize: 28, marginBottom: 8 }}>📢</Text>
-                    <Text style={{ fontSize: responsiveFontSize(2.0), fontWeight: '700', color: colors.white, marginBottom: 4 }}>{t('driverWelfareTitle')}</Text>
-                    <Text style={{ fontSize: responsiveFontSize(1.8), color: '#93C5FD', fontStyle: 'italic', marginBottom: 8 }}>{t('careBeyondTheRoad')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: colors.white, marginBottom: 4 }}>{t('driverWelfareTitle')}</Text>
+                    <Text style={{ fontSize: responsiveFontSize(2.0), color: '#93C5FD', fontStyle: 'italic', marginBottom: 8 }}>{t('careBeyondTheRoad')}</Text>
                     <View style={{ borderTopWidth: 1, borderTopColor: '#3B5998', paddingTop: 10, width: '100%', alignItems: 'center' }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.5), color: '#A5B4FC' }}>{t('moreWelfareBenefitsLaunchingSoon')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#A5B4FC' }}>{t('moreWelfareBenefitsLaunchingSoon')}</Text>
                     </View>
                 </View>
 

@@ -289,16 +289,7 @@ const licenseTypesList = [
     { label: 'HPMV/HTV', value: 'HPMV/HTV' },
 ];
 
-const salaryRanges = [
-    { label: 'Below ₹10,000', value: 'below_10k' },
-    { label: '₹10,000 - ₹15,000', value: '10k_15k' },
-    { label: '₹15,000 - ₹20,000', value: '15k_20k' },
-    { label: '₹20,000 - ₹25,000', value: '20k_25k' },
-    { label: '₹25,000 - ₹30,000', value: '25k_30k' },
-    { label: '₹30,000 - ₹40,000', value: '30k_40k' },
-    { label: '₹40,000 - ₹50,000', value: '40k_50k' },
-    { label: 'Above ₹50,000', value: 'above_50k' },
-];
+const salaryRanges = ['15000-20000', '20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000', '55000-60000'];
 
 const endorsementOptions = [
     { id: 'hill', label: 'Hill Driving', emoji: '🏔️' },
@@ -416,16 +407,7 @@ export default function ProfileCompletion() {
         { label: t('hpmvHtv'), value: 'HPMV/HTV' },
     ];
 
-    const translatedSalaryRanges = [
-        { label: t('below10k'), value: 'below_10k' },
-        { label: t('10kTo15k'), value: '10k_15k' },
-        { label: t('15kTo20k'), value: '15k_20k' },
-        { label: t('20kTo25k'), value: '20k_25k' },
-        { label: t('25kTo30k'), value: '25k_30k' },
-        { label: t('30kTo40k'), value: '30k_40k' },
-        { label: t('40kTo50k'), value: '40k_50k' },
-        { label: t('above50k'), value: 'above_50k' },
-    ];
+    const translatedSalaryRanges = ['15000-20000', '20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000', '55000-60000'];
 
     const translatedEndorsements = [
         { id: 'hill', label: t('hillDriving'), emoji: '🏔️' },
@@ -867,8 +849,8 @@ export default function ProfileCompletion() {
             }
 
             // Sex/Gender
-            // formData.append('sex', userEdit?.Sex || '');
-            formData.append('Sex', userEdit?.Sex || '');
+            formData.append('sex', userEdit?.Sex || '');
+            // formData.append('Sex', userEdit?.Sex || '');
 
 
             // Education
@@ -939,7 +921,7 @@ export default function ProfileCompletion() {
 
             // Profile photo
             if (userEdit?.profilePath?.path && userEdit?.profilePath?.mime) {
-                formData.append('profile_photo', {
+                formData.append('images', {
                     uri: userEdit.profilePath.path,
                     type: userEdit.profilePath.mime,
                     name: userEdit.profilePath.filename || 'profile.jpg'
@@ -1144,7 +1126,7 @@ export default function ProfileCompletion() {
 
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('selectDateOfBirth')}</Text>
+                        <Text style={styles.classicLabel}>{t('selectDateOfBirth')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.classicBox}>
                             <Text style={[styles.classicBoxText, !userEdit?.DOB && { color: '#999' }]}>
                                 {userEdit?.DOB ? moment(userEdit.DOB).format('DD MMMM YYYY') : t('selectFromCalendarBelow')}
@@ -1268,7 +1250,7 @@ export default function ProfileCompletion() {
             case 'gender':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('selectYourGender')}</Text>
+                        <Text style={styles.classicLabel}>{t('selectYourGender')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.radioGroup}>
                             {['Male', 'Female', 'Other'].map((gender) => (
                                 <TouchableOpacity
@@ -1291,7 +1273,7 @@ export default function ProfileCompletion() {
             case 'education':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('highestEducation')}</Text>
+                        <Text style={styles.classicLabel}>{t('highestEducation')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.gridContainer}>
                             {translatedEducationList.map((edu) => (
                                 <TouchableOpacity
@@ -1323,7 +1305,7 @@ export default function ProfileCompletion() {
 
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('vehicleType')}</Text>
+                        <Text style={styles.classicLabel}>{t('vehicleType')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable') || 'Select all that apply'}</Text>
                         <ScrollView showsVerticalScrollIndicator={false}>
                             <View style={styles.vehicleGrid}>
@@ -1375,7 +1357,7 @@ export default function ProfileCompletion() {
             case 'experience':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('drivingExperienceYears')}</Text>
+                        <Text style={styles.classicLabel}>{t('drivingExperienceYears')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.gridContainer}>
                             {translatedExperienceList.map((exp) => (
                                 <TouchableOpacity
@@ -1397,7 +1379,7 @@ export default function ProfileCompletion() {
             case 'license':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('typeOfLicense')}</Text>
+                        <Text style={styles.classicLabel}>{t('typeOfLicense')}<Text style={{ color: 'red' }}> *</Text></Text>
                         {translatedLicenseTypes.map((type) => (
                             <TouchableOpacity
                                 key={type.value}
@@ -1421,7 +1403,7 @@ export default function ProfileCompletion() {
             case 'endorsement':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('licenseEndorsement')}</Text>
+                        <Text style={styles.classicLabel}>{t('licenseEndorsement')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
                         <View>
                             {translatedEndorsements.map((opt) => {
@@ -1453,24 +1435,24 @@ export default function ProfileCompletion() {
             case 'current_salary':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('currentSalary') || 'Current Monthly Salary'}</Text>
+                        <Text style={styles.classicLabel}>{t('currentSalary') || 'Current Monthly Salary'}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.gridContainer}>
                             {translatedSalaryRanges.map((salary) => (
                                 <TouchableOpacity
-                                    key={salary.value}
+                                    key={salary}
                                     style={[
                                         styles.salaryTile,
-                                        userEdit?.current_salary === salary.value && styles.salaryTileSelected
+                                        userEdit?.current_salary === salary && styles.salaryTileSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, current_salary: salary.value }))}
+                                    onPress={() => dispatch(userEditAction({ ...userEdit, current_salary: salary }))}
                                 >
                                     <Text style={[
                                         styles.salaryTileText,
-                                        userEdit?.current_salary === salary.value && styles.salaryTileTextSelected
+                                        userEdit?.current_salary === salary && styles.salaryTileTextSelected
                                     ]}>
-                                        {salary.label}
+                                        ₹{salary}
                                     </Text>
-                                    {userEdit?.current_salary === salary.value && (
+                                    {userEdit?.current_salary === salary && (
                                         <Ionicons name="checkmark-circle" size={16} color="#246BFD" style={{ marginLeft: 4 }} />
                                     )}
                                 </TouchableOpacity>
@@ -1481,24 +1463,24 @@ export default function ProfileCompletion() {
             case 'expected_salary':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('expectedSalary') || 'Expected Monthly Salary'}</Text>
+                        <Text style={styles.classicLabel}>{t('expectedSalary') || 'Expected Monthly Salary'}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.gridContainer}>
                             {translatedSalaryRanges.map((salary) => (
                                 <TouchableOpacity
-                                    key={salary.value}
+                                    key={salary}
                                     style={[
                                         styles.salaryTile,
-                                        userEdit?.expected_salary === salary.value && styles.salaryTileSelected
+                                        userEdit?.expected_salary === salary && styles.salaryTileSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, expected_salary: salary.value }))}
+                                    onPress={() => dispatch(userEditAction({ ...userEdit, expected_salary: salary }))}
                                 >
                                     <Text style={[
                                         styles.salaryTileText,
-                                        userEdit?.expected_salary === salary.value && styles.salaryTileTextSelected
+                                        userEdit?.expected_salary === salary && styles.salaryTileTextSelected
                                     ]}>
-                                        {salary.label}
+                                        ₹{salary}
                                     </Text>
-                                    {userEdit?.expected_salary === salary.value && (
+                                    {userEdit?.expected_salary === salary && (
                                         <Ionicons name="checkmark-circle" size={16} color="#246BFD" style={{ marginLeft: 4 }} />
                                     )}
                                 </TouchableOpacity>
@@ -1509,7 +1491,7 @@ export default function ProfileCompletion() {
             case 'avatar':
                 return (
                     <View style={[styles.stepContainer, { alignItems: 'center' }]}>
-                        <Text style={[styles.classicLabel, { marginBottom: 20 }]}>{t('profilePhoto')}</Text>
+                        <Text style={[styles.classicLabel, { marginBottom: 20 }]}>{t('profilePhoto')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <TouchableOpacity onPress={() => setProfileModalOpen(true)} style={styles.classicAvatarBox}>
                             {userEdit?.profilePath?.path ? (
                                 <Image source={{ uri: userEdit.profilePath.path }} style={styles.classicAvatarImage} />
@@ -1526,7 +1508,7 @@ export default function ProfileCompletion() {
             case 'id_numbers':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('aadharNumber')}</Text>
+                        <Text style={styles.classicLabel}>{t('aadharNumber')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <TextInput
                             style={styles.classicInput}
                             placeholder="0000 0000 0000"
@@ -1537,7 +1519,7 @@ export default function ProfileCompletion() {
                             onChangeText={(text) => dispatch(userEditAction({ ...userEdit, Aadhar_Number: text }))}
                         />
                         <Space height={20} />
-                        <Text style={styles.classicLabel}>{t('licenseNumber')}</Text>
+                        <Text style={styles.classicLabel}>{t('licenseNumber')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <TextInput
                             style={styles.classicInput}
                             placeholder="MH01 20230000000"
@@ -1548,7 +1530,7 @@ export default function ProfileCompletion() {
                         />
 
                         <Space height={20} />
-                        <Text style={styles.classicLabel}>{t('expiryDateOfLicense')}</Text>
+                        <Text style={styles.classicLabel}>{t('expiryDateOfLicense')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <TouchableOpacity style={[styles.classicInput, { justifyContent: 'center' }]} onPress={() => setLicenseExpiryModal(true)}>
                             <Text style={{ color: userEdit?.Expiry_date_of_License ? '#333' : '#999', fontSize: 16 }}>
                                 {userEdit?.Expiry_date_of_License ? moment(userEdit.Expiry_date_of_License).format('DD-MM-YYYY') : 'DD-MM-YYYY'}
@@ -1618,7 +1600,7 @@ export default function ProfileCompletion() {
             case 'fleet_size':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('fleetSize') || 'Fleet Size'}</Text>
+                        <Text style={styles.classicLabel}>{t('fleetSize') || 'Fleet Size'}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.gridContainer}>
                             {translatedFleetSizes.map((fleet) => (
                                 <TouchableOpacity
@@ -1643,7 +1625,7 @@ export default function ProfileCompletion() {
             case 'industry_segment':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('industrySegment') || 'Industry Segment'}</Text>
+                        <Text style={styles.classicLabel}>{t('industrySegment') || 'Industry Segment'}<Text style={{ color: 'red' }}> *</Text></Text>
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable') || 'Select all that apply'}</Text>
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                             {translatedIndustrySegments.map((segment) => {
@@ -1688,7 +1670,7 @@ export default function ProfileCompletion() {
             case 'avg_km_run':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('avgKmRun') || 'Average Km Run (Monthly)'}</Text>
+                        <Text style={styles.classicLabel}>{t('avgKmRun') || 'Average Km Run (Monthly)'}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.gridContainer}>
                             {translatedAvgKmRanges.map((km) => (
                                 <TouchableOpacity
@@ -1716,7 +1698,7 @@ export default function ProfileCompletion() {
             case 'operational_segment':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('operationalSegment') || 'Operational Segment'}</Text>
+                        <Text style={styles.classicLabel}>{t('operationalSegment') || 'Operational Segment'}<Text style={{ color: 'red' }}> *</Text></Text>
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
                         <View>
                             {translatedOperationalSegments.map((segment) => {

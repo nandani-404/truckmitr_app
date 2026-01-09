@@ -292,8 +292,8 @@ export default function ProfileEditNew() {
 
             // Map API fields (PascalCase/snake_case) to UI fields (snake_case)
             checkAndSet('fleet_size', [user.Fleet_Size, user.fleet_size], fleetMapping);
-            checkAndSet('industry_segment', [user.Industry_Segment, user.industry_segment]);
-            checkAndSet('avg_km_run', [user.Average_Km, user.average_km, user.avg_km_run, user.average_run], avgKmMapping);
+            checkAndSet('industry_segment', [user.Operational_Segment, user.Industry_Segment, user.industry_segment, user.operational_segment]);
+            checkAndSet('avg_km_run', [user.Average_KM, user.Average_Km, user.average_km, user.avg_km_run, user.average_run], avgKmMapping);
             checkAndSet('transport_name', [user.Transport_Name, user.transport_name]);
 
             // Vehicle Type Normalization
@@ -941,14 +941,36 @@ export default function ProfileEditNew() {
             } else {
                 console.log('NOT uploading driving_license - no new image selected');
             }
+            console.log('=== OPERATIONAL SEGMENT UPDATE DEBUG ===');
+            console.log('userEdit.industry_segment:', userEdit?.industry_segment);
+            console.log('Sending to API as industry_segment:', userEdit?.industry_segment || '');
+            
             console.log('=======================formdata==================', formData);
 
             const response = await axiosInstance.post(END_POINTS.EDIT_PROFILE, formData);
+            
+            console.log('=== API RESPONSE DEBUG ===');
+            console.log('Response status:', response?.data?.status);
+            console.log('Response message:', response?.data?.message);
+            console.log('Full response data:', JSON.stringify(response?.data, null, 2));
 
             if (response?.data?.status) {
                 showToast(response.data.message || t('profileUpdated') || 'Profile updated');
+                
+                console.log('=== FETCHING UPDATED PROFILE ===');
                 const profile = await axiosInstance.get(END_POINTS.GET_PROFILE);
+                
+                console.log('=== PROFILE FETCH RESPONSE ===');
+                console.log('Profile fetch status:', profile?.data?.status);
+                console.log('Profile data keys:', profile?.data?.data ? Object.keys(profile.data.data) : 'No data');
+                console.log('Operational_Segment in response:', profile?.data?.data?.Operational_Segment);
+                console.log('operational_segment in response:', profile?.data?.data?.operational_segment);
+                console.log('Industry_Segment in response:', profile?.data?.data?.Industry_Segment);
+                console.log('industry_segment in response:', profile?.data?.data?.industry_segment);
+                console.log('Full profile data:', JSON.stringify(profile?.data?.data, null, 2));
+                
                 if (profile?.data?.status) {
+                    console.log('=== DISPATCHING UPDATED USER DATA ===');
                     dispatch(userAction(profile.data));
                     // dispatch(userAction({
                     //     ...profile.data,
@@ -960,6 +982,8 @@ export default function ProfileEditNew() {
                     navigation.goBack(); // Go back to previous screen
                 }
             } else {
+                console.log('=== API UPDATE FAILED ===');
+                console.log('Error response:', JSON.stringify(response?.data, null, 2));
                 showToast(response?.data?.message || t('updateFailed') || 'Update failed');
             }
         } catch (error: any) {

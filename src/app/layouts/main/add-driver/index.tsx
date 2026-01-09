@@ -1,5 +1,5 @@
-import { ActivityIndicator, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import { ActivityIndicator, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, FlatList, StatusBar } from 'react-native'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next';
 import { useColor, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,6 @@ import { hitSlop } from '@truckmitr/src/app/functions';
 import { Space } from '@truckmitr/src/app/components';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { Dropdown } from 'react-native-element-dropdown';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
@@ -32,13 +31,31 @@ export default function AddDriver() {
     const [fullName, setfullName] = useState<string>('');
     const [email, setemail] = useState<string>('');
     const [mobile, setmobile] = useState<string>('');
-    const [state, setstate] = useState()
+    const [state, setstate] = useState<string>('')
     const [locations, setLocations] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+
+    // State modal
+    const [stateModalVisible, setStateModalVisible] = useState(false);
+    const [stateSearchQuery, setStateSearchQuery] = useState('');
 
     // Inside your component
     const [isExtended, setIsExtended] = useState(false);
     const [isVisible, setIsVisible] = useState(true);
+
+    // Filtered locations based on search query
+    const filteredLocations = useMemo(() => {
+        if (!stateSearchQuery.trim()) return locations;
+        return locations.filter(item =>
+            item.name.toLowerCase().includes(stateSearchQuery.toLowerCase())
+        );
+    }, [locations, stateSearchQuery]);
+
+    // Get selected state name
+    const selectedStateName = useMemo(() => {
+        const found = locations.find(item => item.id.toString() === state);
+        return found ? found.name : '';
+    }, [locations, state]);
 
     useEffect(() => {
         const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
@@ -168,18 +185,18 @@ export default function AddDriver() {
     return (
         <View style={{ flex: 1, backgroundColor: colors.white, alignItems: 'center' }}>
             <Space height={safeAreaInsets.top} />
-            {/* Header */}
+            {/* Apple-style Header */}
             <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 paddingVertical: 12,
                 paddingHorizontal: responsiveFontSize(2),
-                backgroundColor: colors.white
+                width: '100%',
             }}>
                 <TouchableOpacity
-                    onPress={_goback}
                     hitSlop={hitSlop(10)}
+                    onPress={_goback}
                     style={{
                         width: 36,
                         height: 36,
@@ -198,7 +215,7 @@ export default function AddDriver() {
                 }}>
                     {t('addDriver')}
                 </Text>
-                <View style={{ width: 36 }} />
+                <View style={{ width: responsiveFontSize(4) }} />
             </View>
             <KeyboardAwareScrollView
                 contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.white, alignItems: 'center' }}
@@ -221,6 +238,7 @@ export default function AddDriver() {
                                 }));
                             }}
                             placeholder={t('enterFullName')}
+                            placeholderTextColor={colors.blackOpacity(0.4)}
                             style={{
                                 color: colors.black,
                                 fontSize: responsiveFontSize(2),
@@ -253,6 +271,7 @@ export default function AddDriver() {
                                 }));
                             }}
                             placeholder={t('enterE-mail')}
+                            placeholderTextColor={colors.blackOpacity(0.4)}
                             keyboardType={'email-address'}
                             style={{
                                 color: colors.black,
@@ -279,9 +298,13 @@ export default function AddDriver() {
                         <TextInput
                             value={mobile}
                             placeholder={t('enterMobile')}
+                            placeholderTextColor={colors.blackOpacity(0.4)}
                             keyboardType='number-pad'
+                            maxLength={10}
                             onChangeText={(text) => {
-                                setmobile(text)
+                                // Only allow numeric characters
+                                const numericText = text.replace(/[^0-9]/g, '');
+                                setmobile(numericText)
                                 setErrors((prevData) => ({
                                     ...prevData,
                                     mobile: undefined,
@@ -304,47 +327,34 @@ export default function AddDriver() {
                         )}
                     </View>
                     <Space height={responsiveFontSize(2.5)} />
-                    {/*  */}
+
+                    {/* State Selector */}
                     <View>
                         <Text style={{ fontSize: responsiveFontSize(1.8), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(0.5) }}>{t(`state`)} <Text style={{ color: 'red' }}>*</Text></Text>
-                        <Dropdown
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setStateModalVisible(true)}
                             style={{
-                                height: responsiveHeight(6),
-                                paddingHorizontal: responsiveFontSize(1.5),
+                                height: responsiveHeight(5.5),
+                                paddingHorizontal: responsiveFontSize(2),
                                 borderRadius: 10,
-                                borderColor: colors.blackOpacity(0.5),
+                                borderColor: errors.state ? colors.roseRed : colors.blackOpacity(0.2),
                                 borderWidth: 1,
+                                backgroundColor: colors.white,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
                                 marginTop: responsiveFontSize(0.5),
-                            }}
-                            containerStyle={{ borderRadius: 10, backgroundColor: colors.white, ...shadow }}
-                            itemTextStyle={{ color: colors.blackOpacity(0.8) }}
-                            placeholderStyle={{
+                            }}>
+                            <Text style={{
                                 fontSize: responsiveFontSize(1.9),
-                                color: colors.blackOpacity(0.7),
-                                fontWeight: '400',
-                            }}
-                            selectedTextStyle={{
-                                color: colors.blackOpacity(1),
-                                fontSize: responsiveFontSize(2),
-                                fontWeight: '400',
-                            }}
-                            iconStyle={{ height: responsiveFontSize(2.8), width: responsiveFontSize(2.8) }}
-                            data={locations.length ? locations.map(item => ({ label: item.name, value: item.id.toString() })) : []}
-                            dropdownPosition="auto"
-                            maxHeight={300}
-                            labelField="label"
-                            valueField="value"
-                            placeholder={t("selectState")}
-                            searchPlaceholder="Search..."
-                            value={state}
-                            onChange={item => {
-                                setstate(item.value);
-                                setErrors((prevData) => ({
-                                    ...prevData,
-                                    state: undefined,
-                                }));
-                            }}
-                        />
+                                color: selectedStateName ? colors.black : colors.blackOpacity(0.4),
+                                fontWeight: '500',
+                            }}>
+                                {selectedStateName || t("selectState")}
+                            </Text>
+                            <Ionicons name="chevron-down" size={20} color={colors.blackOpacity(0.5)} />
+                        </TouchableOpacity>
                         {errors.state && (
                             <Text style={{ color: 'red', fontSize: responsiveFontSize(1.6), marginTop: 4 }}>{errors.state}</Text>
                         )}
@@ -389,6 +399,166 @@ export default function AddDriver() {
                     />
                 </View>
             </KeyboardAwareScrollView>
+
+            {/* Fullscreen State Picker Modal */}
+            <Modal
+                visible={stateModalVisible}
+                animationType="slide"
+                presentationStyle="fullScreen"
+                onRequestClose={() => setStateModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: colors.white }}>
+                    <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
+                    {/* Modal Header */}
+                    <View style={{
+                        paddingTop: safeAreaInsets.top,
+                        backgroundColor: colors.white,
+                        borderBottomWidth: 1,
+                        borderBottomColor: colors.blackOpacity(0.08),
+                    }}>
+                        <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            paddingHorizontal: responsiveWidth(4),
+                            paddingVertical: responsiveHeight(1),
+                        }}>
+                            <TouchableOpacity
+                                hitSlop={hitSlop(10)}
+                                onPress={() => {
+                                    setStateModalVisible(false);
+                                    setStateSearchQuery('');
+                                }}
+                                style={{
+                                    height: 40,
+                                    width: 40,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: colors.blackOpacity(0.05),
+                                    borderRadius: 12,
+                                }}>
+                                <Ionicons name="close" size={24} color={colors.royalBlue} />
+                            </TouchableOpacity>
+                            <Text style={{
+                                flex: 1,
+                                textAlign: 'center',
+                                fontSize: responsiveFontSize(2.2),
+                                fontWeight: '700',
+                                color: colors.black,
+                                marginRight: 40, // Balance the close button
+                            }}>
+                                {t('selectState')}
+                            </Text>
+                        </View>
+
+                        {/* Search Bar */}
+                        <View style={{
+                            marginHorizontal: responsiveWidth(4),
+                            marginBottom: responsiveHeight(1),
+                            backgroundColor: colors.blackOpacity(0.04),
+                            borderRadius: 12,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            paddingHorizontal: 14,
+                            height: 48,
+                        }}>
+                            <Ionicons name="search" size={20} color={colors.blackOpacity(0.4)} />
+                            <TextInput
+                                style={{
+                                    flex: 1,
+                                    marginLeft: 10,
+                                    fontSize: responsiveFontSize(1.8),
+                                    color: colors.black,
+                                    padding: 0,
+                                }}
+                                placeholder={t('searchState') || 'Search state...'}
+                                placeholderTextColor={colors.blackOpacity(0.4)}
+                                value={stateSearchQuery}
+                                onChangeText={setStateSearchQuery}
+                                autoCorrect={false}
+                            />
+                            {stateSearchQuery.length > 0 && (
+                                <TouchableOpacity onPress={() => setStateSearchQuery('')}>
+                                    <Ionicons name="close-circle" size={20} color={colors.blackOpacity(0.4)} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* State List */}
+                    <FlatList
+                        data={filteredLocations}
+                        keyExtractor={(item) => item.id.toString()}
+                        keyboardShouldPersistTaps="handled"
+                        contentContainerStyle={{
+                            paddingHorizontal: responsiveWidth(4),
+                            paddingTop: 10,
+                            paddingBottom: safeAreaInsets.bottom + 20,
+                        }}
+                        ListEmptyComponent={() => (
+                            <View style={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                paddingVertical: responsiveHeight(10),
+                            }}>
+                                <Ionicons name="location-outline" size={48} color={colors.blackOpacity(0.2)} />
+                                <Text style={{
+                                    marginTop: 12,
+                                    fontSize: responsiveFontSize(1.8),
+                                    color: colors.blackOpacity(0.4),
+                                }}>
+                                    {t('noStatesFound') || 'No states found'}
+                                </Text>
+                            </View>
+                        )}
+                        renderItem={({ item }) => {
+                            const isSelected = item.id.toString() === state;
+                            return (
+                                <TouchableOpacity
+                                    activeOpacity={0.7}
+                                    onPress={() => {
+                                        setstate(item.id.toString());
+                                        setErrors((prevData) => ({ ...prevData, state: undefined }));
+                                        setStateModalVisible(false);
+                                        setStateSearchQuery('');
+                                    }}
+                                    style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        paddingVertical: responsiveHeight(1.8),
+                                        paddingHorizontal: 16,
+                                        marginBottom: 8,
+                                        backgroundColor: isSelected ? colors.royalBlue + '10' : colors.white,
+                                        borderRadius: 12,
+                                        borderWidth: 1,
+                                        borderColor: isSelected ? colors.royalBlue : colors.blackOpacity(0.08),
+                                    }}>
+                                    <View style={{
+                                        width: 24,
+                                        height: 24,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginRight: 14,
+                                    }}>
+                                        <MaterialCommunityIcons
+                                            name={isSelected ? 'radiobox-marked' : 'radiobox-blank'}
+                                            size={24}
+                                            color={isSelected ? colors.royalBlue : colors.blackOpacity(0.3)}
+                                        />
+                                    </View>
+                                    <Text style={{
+                                        flex: 1,
+                                        fontSize: responsiveFontSize(1.9),
+                                        fontWeight: isSelected ? '600' : '500',
+                                        color: isSelected ? colors.royalBlue : colors.black,
+                                    }}>
+                                        {item.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        }}
+                    />
+                </View>
+            </Modal>
         </View>
     )
 }
