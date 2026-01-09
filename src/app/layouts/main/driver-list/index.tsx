@@ -239,7 +239,7 @@ export default function DriverList() {
                 label={t('addDriver')}
                 color={colors.white}
                 extended={isExtended}
-                onPress={() => setAddDriverModal(true)}
+                onPress={() => navigation.navigate(STACKS.ADD_DRIVER)}
                 visible={true}
                 iconMode={'dynamic'}
                 style={{

@@ -127,13 +127,10 @@ export default function VerificationDriversByTransporter() {
                 {/* 4. Pricing */}
                 <InfoCard title={t('pricing', 'Pricing')}>
                     <View style={{ marginBottom: 12 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#1E293B', fontWeight: 'bold' }}>₹500 + GST <Text style={{ fontWeight: '400', fontSize: responsiveFontSize(1.5), color: '#64748B' }}>{t('perDriver', 'per driver')}</Text></Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#1E293B', fontWeight: 'bold' }}>₹1000 + GST <Text style={{ fontWeight: '400', fontSize: responsiveFontSize(1.5), color: '#64748B' }}>{t('perDriver', 'per driver')}</Text></Text>
                         <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('pricingInclude', '(Includes ID Check, Court Check & Digital Address Check)')}</Text>
                     </View>
-                    <View style={{ marginBottom: 12 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#1E293B', fontWeight: 'bold' }}>₹400 + GST <Text style={{ fontWeight: '400', fontSize: responsiveFontSize(1.5), color: '#64748B' }}>{t('perDriver', 'per driver')}</Text></Text>
-                        <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('forUpTo10', '(For up to 10 drivers)')}</Text>
-                    </View>
+
                     <View style={{ backgroundColor: '#F1F5F9', padding: 10, borderRadius: 8 }}>
                         <Text style={{ fontSize: responsiveFontSize(1.5), color: '#334155', fontWeight: '600' }}>{t('bulkVerification', 'Bulk Verification (More than 10 drivers)')}</Text>
                         <Text style={{ fontSize: responsiveFontSize(1.4), color: '#2563EB', fontWeight: 'bold', marginTop: 2 }}>👉 {t('contactSalesForDeals', 'Contact Sales for bulk deals')}</Text>
