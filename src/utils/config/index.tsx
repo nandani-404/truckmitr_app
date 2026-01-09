@@ -131,6 +131,7 @@ export const END_POINTS = {
     AADHAAR_VERIFY: `api/kyc/aadhaar`,
     VOTER_VERIFY: `api/kyc/voter`,
     CHALLAN_VERIFY: `api/kyc/challan`,
+    DIGITAL_ADDRESS_VERIFY: `api/kyc/dav`,
     CHALLAN_HISTORY: `api/kyc/challans`,
     COURT_CASE: (user_id: any) => `api/kyc/court-case/user_id/${user_id}`,
     // GET 
