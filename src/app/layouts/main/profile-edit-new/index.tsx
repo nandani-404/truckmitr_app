@@ -823,7 +823,7 @@ export default function ProfileEditNew() {
             // Transporter fields
             formData.append('year_of_exp', userEdit?.year_of_exp || '');
             formData.append('fleet_size', userEdit?.fleet_size || '');
-            formData.append('industry_segment', userEdit?.industry_segment || '');
+            formData.append('operational_segment', userEdit?.industry_segment || '');
             formData.append('average_km', userEdit?.avg_km_run || '');
             formData.append('pan_number', userEdit?.pan || userEdit?.PAN_Number || '');
             formData.append('gst_number', userEdit?.gst || userEdit?.GST_Number || '');

@@ -599,7 +599,8 @@ export default function ProfileOverview() {
           
           {/* Edit Button (replacing filter) */}
           <TouchableOpacity
-            onPress={() => navigateToEdit()}
+            // onPress={() => navigateToEdit()}
+            activeOpacity={1}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -636,6 +637,7 @@ export default function ProfileOverview() {
         {/* Profile Photo Section */}
         <FieldGroupCard
           title={t('profilePhoto') || 'Profile Photo'}
+          icon="person-circle"
           stepId="avatar"
           fields={[
             {
