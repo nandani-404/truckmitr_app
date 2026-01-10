@@ -249,7 +249,7 @@ const DRIVER_STEPS = [
     { id: 'current_salary', title: 'currentSalary', subtitle: 'selectCurrentMonthlySalary', field: 'current_salary', required: true },
     { id: 'expected_salary', title: 'expectedSalary', subtitle: 'selectExpectedMonthlySalary', field: 'expected_salary', required: true },
     { id: 'avatar', title: 'profilePhoto', subtitle: 'addYourProfilePhoto', field: 'profilePath', required: true },
-    { id: 'id_numbers', title: 'idDetails', subtitle: 'enterIdDetails', field: 'Aadhar_Number', required: true },
+    { id: 'id_numbers', title: 'idDetails', subtitle: 'enterIdDetails', field: 'License_Number', required: true },
 ];
 
 // Transporter Steps
@@ -320,10 +320,63 @@ export default function ProfileCompletion() {
     const navigation = useNavigation<NavigatorProp>();
     const { userEdit, isTransporter, isDriver, user } = useSelector((state: any) => state?.user);
 
-    const [currentStep, setCurrentStep] = useState(0);
+    // Local state for form data instead of Redux
+    const [formData, setFormData] = useState({
+        // Basic info
+        DOB: null as Date | null,
+        Sex: '',
+        education: '',
+        vehicle_type: '',
+        Type_of_License: '',
+        endorsement: '',
+        current_salary: '',
+        expected_salary: '',
+        Aadhar_Number: '',
+        License_Number: '',
+        Expiry_date_of_License: null as Date | null,
+        profilePath: null as any,
+        aadharImagePath: null as any,
+        drivingLicensePath: null as any,
+        panImagePath: null as any,
+        gstCertificatePath: null as any,
+        Driving_Experience: '',
+
+        // Transporter fields
+        year_of_exp: '',
+        fleet_size: '',
+        industry_segment: '',
+        avg_km_run: '',
+        operational_segment: '',
+        pan: '',
+        gst: '',
+
+        // Address fields
+        address: '',
+        city: '',
+        pincode: '',
+        states: '',
+        transport_name: '',
+    });
+
+
+
+    // Helper function to update form data
+    const updateFormData = (updates: Partial<typeof formData>) => {
+        console.log('=== UPDATING FORM DATA ===');
+        console.log('Updates:', updates);
+        setFormStarted(true); // Mark that user has started filling the form
+        setFormData(prev => {
+            const newData = { ...prev, ...updates };
+            console.log('Previous form data:', prev);
+            console.log('New form data:', newData);
+            return newData;
+        });
+    };
     const [datePickerOpen, setDatePickerOpen] = useState(false);
     const [profileModalOpen, setProfileModalOpen] = useState(false);
     const [userRole, setUserRole] = useState<'driver' | 'transporter'>('driver');
+    const [currentStep, setCurrentStep] = useState(0);
+    const [formStarted, setFormStarted] = useState(false);
 
     // Set user role from Redux state immediately
     useEffect(() => {
@@ -336,6 +389,55 @@ export default function ProfileCompletion() {
             setUserRole('driver');
         }
     }, [isTransporter, isDriver, user, userEdit]);
+
+    // Initialize form data from userEdit if available, but don't overwrite existing data
+    useEffect(() => {
+        if (userEdit) {
+            setFormData(prev => {
+                // Only initialize if user hasn't started filling the form
+                if (formStarted) {
+                    console.log('User has started filling form, skipping initialization to preserve user input');
+                    return prev; // Don't overwrite existing form data
+                }
+
+                console.log('Initializing form data from userEdit');
+                return {
+                    ...prev,
+                    DOB: userEdit.DOB || null,
+                    Sex: userEdit.Sex || '',
+                    education: userEdit.education || userEdit.Highest_Education || '',
+                    vehicle_type: userEdit.vehicle_type || '',
+                    Type_of_License: userEdit.Type_of_License || '',
+                    endorsement: userEdit.endorsement || '',
+                    current_salary: userEdit.current_salary || '',
+                    expected_salary: userEdit.expected_salary || '',
+                    Aadhar_Number: userEdit.Aadhar_Number || '',
+                    License_Number: userEdit.License_Number || '',
+                    Expiry_date_of_License: userEdit.Expiry_date_of_License || null,
+                    profilePath: userEdit.profilePath || null,
+                    aadharImagePath: userEdit.aadharImagePath || null,
+                    drivingLicensePath: userEdit.drivingLicensePath || null,
+                    panImagePath: userEdit.panImagePath || null,
+                    gstCertificatePath: userEdit.gstCertificatePath || null,
+                    Driving_Experience: userEdit.Driving_Experience || '',
+                    // Transporter fields
+                    year_of_exp: userEdit.year_of_exp || '',
+                    fleet_size: userEdit.fleet_size || '',
+                    industry_segment: userEdit.industry_segment || '',
+                    avg_km_run: userEdit.avg_km_run || '',
+                    operational_segment: userEdit.operational_segment || '',
+                    pan: userEdit.pan || userEdit.PAN_Number || '',
+                    gst: userEdit.gst || userEdit.GST_Number || '',
+                    // Address fields
+                    address: userEdit.address || '',
+                    city: userEdit.city || '',
+                    pincode: userEdit.pincode || '',
+                    states: userEdit.states || '',
+                    transport_name: userEdit.transport_name || '',
+                };
+            });
+        }
+    }, [userEdit, formStarted]);
 
     // Data list states
     const [vehicleTypeList, setVehicleTypeList] = useState<any[]>(dummyVehicleTypes); // Initialize with dummy data
@@ -409,6 +511,12 @@ export default function ProfileCompletion() {
 
     const translatedSalaryRanges = ['15000-20000', '20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000', '55000-60000'];
 
+    // Current salary ranges (without 55000-60000)
+    const currentSalaryRanges = ['15000-20000', '20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000'];
+
+    // Expected salary ranges (without 15000-20000)
+    const expectedSalaryRanges = ['20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000', '55000-60000'];
+
     const translatedEndorsements = [
         { id: 'hill', label: t('hillDriving'), emoji: '🏔️' },
         { id: 'hazardous', label: t('hazardousGoods'), emoji: '☢️' },
@@ -462,16 +570,16 @@ export default function ProfileCompletion() {
     ];
 
     const translatedIndustrySegments = [
-        { label: t('ecommerce') || 'E-commerce', value: 'ecommerce' },
-        { label: t('whiteGoods') || 'White Goods', value: 'white_goods' },
-        { label: t('livestock') || 'Livestock', value: 'livestock' },
-        { label: t('perishable') || 'Perishable', value: 'perishable' },
-        { label: t('oversized') || 'Oversized', value: 'oversized' },
-        { label: t('fuelTanker') || 'Fuel Tanker', value: 'fuel_tanker' },
-        { label: t('automobileCarrier') || 'Automobile Carrier', value: 'automobile_carrier' },
-        { label: t('constructionIndustry') || 'Construction Industry', value: 'construction' },
-        { label: t('refrigeratorVehicle') || 'Refrigerator Vehicle', value: 'refrigerator' },
-        { label: t('others') || 'Others', value: 'others' },
+        { label: t('ecommerce') || 'E-commerce', value: 'E-commerce' },
+        { label: t('whiteGoods') || 'White Goods', value: 'White Goods' },
+        { label: t('livestock') || 'Livestock', value: 'Livestock' },
+        { label: t('perishable') || 'Perishable', value: 'Perishable' },
+        { label: t('oversized') || 'Oversized', value: 'Oversized' },
+        { label: t('fuelTanker') || 'Fuel Tanker', value: 'Fuel Tanker' },
+        { label: t('automobileCarrier') || 'Automobile Carrier', value: 'Automobile Carrier' },
+        { label: t('constructionIndustry') || 'Construction Industry', value: 'Construction Industry' },
+        { label: t('refrigeratorVehicle') || 'Refrigerator Vehicle', value: 'Refrigerator Vehicle' },
+        { label: t('others') || 'Others', value: 'Others' },
     ];
 
 
@@ -572,28 +680,33 @@ export default function ProfileCompletion() {
     const handleNext = async () => {
         const step = STEPS[currentStep];
 
-        // Strict Validation
+        console.log('=== HANDLE NEXT DEBUG ===');
+        console.log('Current step:', step.id);
+        console.log('Current formData:', JSON.stringify(formData, null, 2));
+        console.log('=== END HANDLE NEXT DEBUG ===');
+
+        // Strict Validation using local formData
         if (step.id === 'id_numbers') {
-            if (!userEdit?.Aadhar_Number || !userEdit?.License_Number) {
+            if (!formData?.License_Number) {
                 showToast(t('pleaseEnterAllRequiredDetails'));
                 return;
             }
         } else if (step.id === 'avatar') {
-            if (!userEdit?.profilePath) {
+            if (!formData?.profilePath) {
                 showToast(t('pleaseEnterAllRequiredDetails'));
                 return;
             }
         } else if (step.id === 'endorsement') {
-            if (!userEdit?.endorsement) {
+            if (!formData?.endorsement) {
                 showToast(t('pleaseEnterAllRequiredDetails'));
                 return;
             }
         } else if (step.id === 'location') {
-            if (!userEdit?.states || !userEdit?.city) {
+            if (!formData?.states || !formData?.city) {
                 showToast(t('pleaseEnterAllRequiredDetails') || "State and City are required");
                 return;
             }
-        } else if (step.field && !userEdit?.[step.field]) {
+        } else if (step.field && !formData?.[step.field as keyof typeof formData]) {
             showToast(t('pleaseEnterAllRequiredDetails'));
             return;
         }
@@ -618,13 +731,13 @@ export default function ProfileCompletion() {
     };
 
     const toggleEndorsement = (label: string) => {
-        let current = userEdit?.endorsement ? userEdit.endorsement.split(', ') : [];
+        let current = formData?.endorsement ? formData.endorsement.split(', ') : [];
         if (current.includes(label)) {
             current = current.filter((i: string) => i !== label);
         } else {
             current.push(label);
         }
-        dispatch(userEditAction({ ...userEdit, endorsement: current.join(', ') }));
+        updateFormData({ endorsement: current.join(',') });
     };
 
     // Cleanup any old persistence data on mount
@@ -832,51 +945,95 @@ export default function ProfileCompletion() {
 
     const submitProfile = async () => {
         setFinishing(true);
+
+        // Add a small delay to ensure all state updates have completed
+        await new Promise<void>(resolve => setTimeout(() => resolve(), 100));
+
         console.log('=== Profile Completion - Submitting to API ===');
 
+        // Add comprehensive debug logging before FormData building
+        console.log('=== FORM DATA STATE BEFORE FORMDATA ===');
+        console.log('DOB:', formData?.DOB);
+        console.log('Sex:', formData?.Sex);
+        console.log('education:', formData?.education);
+        console.log('vehicle_type:', formData?.vehicle_type);
+        console.log('Type_of_License:', formData?.Type_of_License);
+        console.log('endorsement:', formData?.endorsement);
+        console.log('current_salary:', formData?.current_salary);
+        console.log('expected_salary:', formData?.expected_salary);
+        console.log('Aadhar_Number:', formData?.Aadhar_Number);
+        console.log('License_Number:', formData?.License_Number);
+        console.log('Expiry_date_of_License:', formData?.Expiry_date_of_License);
+        console.log('profilePath:', formData?.profilePath);
+        console.log('Full formData object:', JSON.stringify(formData, null, 2));
+        console.log('=== END FORM DATA STATE DEBUG ===');
+
         try {
-            const formData = new FormData();
+            const formDataPayload = new FormData();
 
             // Common fields for both roles
-            formData.append('name', userEdit?.name || user?.name || '');
-            formData.append('email', userEdit?.email || user?.email || '');
-            formData.append('mobile', userEdit?.mobile || user?.mobile || '');
-            formData.append('father_name', userEdit?.Father_Name || user?.Father_Name || '');
+            formDataPayload.append('name', user?.name || '');
+            formDataPayload.append('email', user?.email || '');
+            formDataPayload.append('mobile', user?.mobile || '');
+            formDataPayload.append('father_name', user?.Father_Name || '');
 
             // DOB - format as d-m-Y (e.g., 29-12-2000)
-            if (userEdit?.DOB) {
-                formData.append('dob', moment(userEdit.DOB).format('DD-MM-YYYY'));
+            console.log('=== DOB DEBUG ===');
+            console.log('Raw DOB from formData:', formData?.DOB);
+            if (formData?.DOB) {
+                const formattedDOB = moment(formData.DOB).format('DD-MM-YYYY');
+                console.log('Formatted DOB for FormData:', formattedDOB);
+                formDataPayload.append('dob', formattedDOB);
+            } else {
+                console.log('⚠️ WARNING: No DOB to add to FormData');
             }
+            console.log('=== END DOB DEBUG ===');
 
             // Sex/Gender
-            formData.append('sex', userEdit?.Sex || '');
-            // formData.append('Sex', userEdit?.Sex || '');
-
+            console.log('Adding Sex to FormData:', formData?.Sex || '');
+            formDataPayload.append('sex', formData?.Sex || '');
 
             // Education
-            formData.append('highest_education', userEdit?.education || userEdit?.Highest_Education || '');
+            console.log('Adding highest_education to FormData:', formData?.education || '');
+            formDataPayload.append('highest_education', formData?.education || '');
 
             // Vehicle Type - Both Driver and Transporter now expect array format
             // Use helper to normalize corrupted data
-            const cleanVehicleTypes = normalizeArrayField(userEdit?.vehicle_type);
+            const cleanVehicleTypes = normalizeArrayField(formData?.vehicle_type);
+            console.log('=== VEHICLE TYPE DEBUG ===');
+            console.log('Raw vehicle_type from formData:', formData?.vehicle_type);
+            console.log('normalizeArrayField result:', cleanVehicleTypes);
             console.log('Cleaned Vehicle Types:', cleanVehicleTypes);
+            console.log('=== END VEHICLE TYPE DEBUG ===');
 
             if (cleanVehicleTypes.length > 0) {
                 // Both roles: API expects array format with vehicle_type[]
                 cleanVehicleTypes.forEach((vt: string) => {
-                    formData.append('vehicle_type[]', vt.trim());
+                    console.log('Adding vehicle type to FormData:', vt.trim());
+                    formDataPayload.append('vehicle_type[]', vt.trim());
                 });
+            } else {
+                console.log('⚠️ WARNING: No vehicle types to add to FormData');
             }
 
             // License Type
-            formData.append('type_of_license', userEdit?.Type_of_License || '');
+            console.log('Adding type_of_license to FormData:', formData?.Type_of_License || '');
+            formDataPayload.append('type_of_license', formData?.Type_of_License || '');
 
             // License Endorsements - API expects array
-            const endorsements = userEdit?.endorsement?.split(', ').filter(Boolean) || [];
+            console.log('=== LICENSE ENDORSEMENT DEBUG ===');
+            console.log('Raw endorsement from formData:', formData?.endorsement);
+            const endorsements = formData?.endorsement?.split(',').filter(Boolean) || []; // Fixed: removed space after comma
+            console.log('Split endorsements:', endorsements);
+            console.log('=== END LICENSE ENDORSEMENT DEBUG ===');
+
             if (endorsements.length > 0) {
                 endorsements.forEach((end: string) => {
-                    formData.append('licence_endorsement[]', end.trim());
+                    console.log('Adding endorsement to FormData:', end.trim());
+                    formDataPayload.append('licence_endorsement[]', end.trim());
                 });
+            } else {
+                console.log('⚠️ WARNING: No endorsements to add to FormData');
             }
 
             // Driving Experience - API expects CamelCase matching the missing field list
@@ -887,120 +1044,120 @@ export default function ProfileCompletion() {
                 '6-10': '6',
                 '10+': '10'
             };
-            formData.append('driving_experience', expMapping[userEdit?.Driving_Experience] || userEdit?.Driving_Experience || '0');
+            formDataPayload.append('driving_experience', expMapping[formData?.Driving_Experience || ''] || formData?.Driving_Experience || '0');
 
-            // Aadhar Number
-            formData.append('Aadhar_Number', userEdit?.Aadhar_Number || '');
+            // Aadhar Number - removed for drivers
+            // formDataPayload.append('Aadhar_Number', formData?.Aadhar_Number || '');
 
             // License Number
-            formData.append('license_number', userEdit?.license_number || userEdit?.License_Number || '');
+            formDataPayload.append('license_number', formData?.License_Number || '');
 
             // License Expiry Date - format as d-m-Y
-            if (userEdit?.Expiry_date_of_License) {
-                formData.append('expiry_date_of_license', moment(userEdit.Expiry_date_of_License).format('DD-MM-YYYY'));
+            if (formData?.Expiry_date_of_License) {
+                formDataPayload.append('expiry_date_of_license', moment(formData.Expiry_date_of_License).format('DD-MM-YYYY'));
             } else {
                 // Default to 5 years from now if not set
-                formData.append('expiry_date_of_license', moment().add(5, 'years').format('DD-MM-YYYY'));
+                formDataPayload.append('expiry_date_of_license', moment().add(5, 'years').format('DD-MM-YYYY'));
             }
 
             // Salary fields
-            formData.append('current_monthly_income', userEdit?.current_salary || userEdit?.Current_Monthly_Income || '');
-            formData.append('expected_monthly_income', userEdit?.expected_salary || userEdit?.Expected_Monthly_Income || '');
+            console.log('Adding current_monthly_income to FormData:', formData?.current_salary || '');
+            console.log('Adding expected_monthly_income to FormData:', formData?.expected_salary || '');
+            formDataPayload.append('current_monthly_income', formData?.current_salary || '');
+            formDataPayload.append('expected_monthly_income', formData?.expected_salary || '');
 
             // PAN and GST
-            formData.append('pan_number', userEdit?.pan || userEdit?.PAN_Number || '');
-            formData.append('gst_number', userEdit?.gst || userEdit?.GST_Number || '');
+            formDataPayload.append('pan_number', formData?.pan || '');
+            formDataPayload.append('gst_number', formData?.gst || '');
 
-            // Address fields (from signup data or userEdit)
-            formData.append('address', userEdit?.address || savedSignupData?.address || '');
-            formData.append('city', userEdit?.city || savedSignupData?.city || '');
-            formData.append('pincode', userEdit?.pincode || savedSignupData?.pincode || '');
-            const stateValue = userEdit?.state_id || userEdit?.states || savedSignupData?.state || '';
-            formData.append('states', stateValue);
-            formData.append('state', stateValue);
+            // Address fields (from signup data or formData)
+            formDataPayload.append('address', formData?.address || savedSignupData?.address || '');
+            formDataPayload.append('city', formData?.city || savedSignupData?.city || '');
+            formDataPayload.append('pincode', formData?.pincode || savedSignupData?.pincode || '');
+            const stateValue = formData?.states || savedSignupData?.state || '';
+            formDataPayload.append('states', stateValue);
+            formDataPayload.append('state', stateValue);
 
             // Profile photo
-            if (userEdit?.profilePath?.path && userEdit?.profilePath?.mime) {
-                formData.append('images', {
-                    uri: userEdit.profilePath.path,
-                    type: userEdit.profilePath.mime,
-                    name: userEdit.profilePath.filename || 'profile.jpg'
+            if (formData?.profilePath?.path && formData?.profilePath?.mime) {
+                formDataPayload.append('images', {
+                    uri: formData.profilePath.path,
+                    type: formData.profilePath.mime,
+                    name: formData.profilePath.filename || 'profile.jpg'
                 } as any);
             }
 
             // Aadhar photo
-            if (userEdit?.aadharImagePath?.path && userEdit?.aadharImagePath?.mime) {
-                formData.append('aadhar_photo', {
-                    uri: userEdit.aadharImagePath.path,
-                    type: userEdit.aadharImagePath.mime,
-                    name: userEdit.aadharImagePath.filename || 'aadhar.jpg'
+            if (formData?.aadharImagePath?.path && formData?.aadharImagePath?.mime) {
+                formDataPayload.append('aadhar_photo', {
+                    uri: formData.aadharImagePath.path,
+                    type: formData.aadharImagePath.mime,
+                    name: formData.aadharImagePath.filename || 'aadhar.jpg'
                 } as any);
             }
 
             // Driving License photo
-            if (userEdit?.drivingLicensePath?.path && userEdit?.drivingLicensePath?.mime) {
-                formData.append('driving_license', {
-                    uri: userEdit.drivingLicensePath.path,
-                    type: userEdit.drivingLicensePath.mime,
-                    name: userEdit.drivingLicensePath.filename || 'license.jpg'
+            if (formData?.drivingLicensePath?.path && formData?.drivingLicensePath?.mime) {
+                formDataPayload.append('driving_license', {
+                    uri: formData.drivingLicensePath.path,
+                    type: formData.drivingLicensePath.mime,
+                    name: formData.drivingLicensePath.filename || 'license.jpg'
                 } as any);
             }
 
             // ===== TRANSPORTER-SPECIFIC FIELDS =====
             if (userRole === 'transporter') {
-                formData.append('transport_name', userEdit?.transport_name || savedSignupData?.transport_name || '');
+                formDataPayload.append('transport_name', formData?.transport_name || savedSignupData?.transport_name || '');
                 // year_of_exp collected in UI should be saved as year_of_establishment in DB
-                formData.append('year_of_exp', userEdit?.year_of_exp || '');
-                formData.append('year_of_establishment', userEdit?.year_of_exp || userEdit?.year_of_establishment || userEdit?.establishment_year || '');
-                console.log('---------------year_of_establishment-', userEdit?.year_of_exp || userEdit?.year_of_establishment || userEdit?.establishment_year || '');
+                formDataPayload.append('year_of_exp', formData?.year_of_exp || '');
+                formDataPayload.append('year_of_establishment', formData?.year_of_exp || '');
+                console.log('---------------year_of_establishment-', formData?.year_of_exp || '');
 
-                formData.append('fleet_size', userEdit?.fleet_size || '');
-                formData.append('average_km', userEdit?.avg_km_run || '');
-                formData.append('registered_id', userEdit?.registered_id || '');
+                formDataPayload.append('fleet_size', formData?.fleet_size || '');
+                formDataPayload.append('average_km', formData?.avg_km_run || '');
+                formDataPayload.append('registered_id', userEdit?.registered_id || '');
 
                 // Operational Segment - UI "Industry Segment" values go here
-                const opSegments = userEdit?.industry_segment?.split(',').filter(Boolean) || [];
+                const opSegments = formData?.industry_segment?.split(',').filter(Boolean) || [];
                 if (opSegments.length > 0) {
                     opSegments.forEach((seg: string) => {
-                        formData.append('operational_segment[]', seg.trim());
+                        formDataPayload.append('operational_segment[]', seg.trim());
                     });
                 }
 
                 // Routes - UI "Operational Segment" values go here
-                const routeSegments = userEdit?.operational_segment?.split(',').filter(Boolean) || [];
+                const routeSegments = formData?.operational_segment?.split(',').filter(Boolean) || [];
                 if (routeSegments.length > 0) {
                     routeSegments.forEach((seg: string) => {
-                        formData.append('routes[]', seg.trim());
+                        formDataPayload.append('routes[]', seg.trim());
                     });
                 }
 
                 // PAN Image for transporter
-                if (userEdit?.panImagePath?.path && userEdit?.panImagePath?.mime) {
-                    formData.append('pan_image', {
-                        uri: userEdit.panImagePath.path,
-                        type: userEdit.panImagePath.mime,
-                        name: userEdit.panImagePath.filename || 'pan.jpg'
+                if (formData?.panImagePath?.path && formData?.panImagePath?.mime) {
+                    formDataPayload.append('pan_image', {
+                        uri: formData.panImagePath.path,
+                        type: formData.panImagePath.mime,
+                        name: formData.panImagePath.filename || 'pan.jpg'
                     } as any);
                 }
 
                 // GST Certificate for transporter
-                if (userEdit?.gstCertificatePath?.path && userEdit?.gstCertificatePath?.mime) {
-                    formData.append('gst_certificate', {
-                        uri: userEdit.gstCertificatePath.path,
-                        type: userEdit.gstCertificatePath.mime,
-                        name: userEdit.gstCertificatePath.filename || 'gst.jpg'
+                if (formData?.gstCertificatePath?.path && formData?.gstCertificatePath?.mime) {
+                    formDataPayload.append('gst_certificate', {
+                        uri: formData.gstCertificatePath.path,
+                        type: formData.gstCertificatePath.mime,
+                        name: formData.gstCertificatePath.filename || 'gst.jpg'
                     } as any);
                 }
             }
 
             console.log('=== Sending profile update request ===');
 
-            console.log('=== formData ===', formData);
-            logFormDataPayload(formData);
+            console.log('=== formDataPayload ===', formDataPayload);
+            logFormDataPayload(formDataPayload);
 
-
-
-            const response = await axiosInstance.post(END_POINTS.EDIT_PROFILE, formData);
+            const response = await axiosInstance.post(END_POINTS.EDIT_PROFILE, formDataPayload);
             console.log('=== Profile update response ===', response?.data);
 
             if (response?.data?.status) {
@@ -1060,7 +1217,7 @@ export default function ProfileCompletion() {
 
     const handleMissingFieldSelection = (item: any) => {
         // State selected from dropdown
-        dispatch(userEditAction({ ...userEdit, states: item.value }));
+        updateFormData({ states: item.value });
         setMissingFieldType('city'); // Prompt for city next
     };
 
@@ -1069,7 +1226,7 @@ export default function ProfileCompletion() {
             showToast(t('pleaseEnterCity') || "Please enter city");
             return;
         }
-        dispatch(userEditAction({ ...userEdit, city: tempCity.trim() }));
+        updateFormData({ city: tempCity.trim() });
         setMissingFieldModalOpen(false);
         setTimeout(() => submitProfile(), 500); // Retry submission
     };
@@ -1095,7 +1252,7 @@ export default function ProfileCompletion() {
             });
 
             if (image && image.path) {
-                dispatch(userEditAction({ ...userEdit, profilePath: image }));
+                updateFormData({ profilePath: image });
                 setProfileModalOpen(false);
                 // showToast(t('photoSelected') || "Photo selected!");
             }
@@ -1111,7 +1268,7 @@ export default function ProfileCompletion() {
 
         switch (step.id) {
             case 'dob':
-                const selectedDateString = userEdit?.DOB ? moment(userEdit.DOB).format('YYYY-MM-DD') : '';
+                const selectedDateString = formData?.DOB ? moment(formData.DOB).format('YYYY-MM-DD') : '';
                 const maxDateString = moment().subtract(18, 'years').format('YYYY-MM-DD');
                 const currentYear = moment(calendarMonth).year();
                 const currentMonthName = moment(calendarMonth).format('MMMM YYYY');
@@ -1128,14 +1285,16 @@ export default function ProfileCompletion() {
                     <View style={styles.stepContainer}>
                         <Text style={styles.classicLabel}>{t('selectDateOfBirth')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.classicBox}>
-                            <Text style={[styles.classicBoxText, !userEdit?.DOB && { color: '#999' }]}>
-                                {userEdit?.DOB ? moment(userEdit.DOB).format('DD MMMM YYYY') : t('selectFromCalendarBelow')}
+                            <Text style={[styles.classicBoxText, !formData?.DOB && { color: '#999' }]}>
+                                {formData?.DOB ? moment(formData.DOB).format('DD MMMM YYYY') : t('selectFromCalendarBelow')}
                             </Text>
                             <Ionicons name="calendar" size={20} color="#246BFD" />
                         </View>
                         <Space height={8} />
+                        
+                        {/* Commented out Calendar implementation for testing */}
+                        {/*
                         <View style={styles.inlineCalendarContainer}>
-                            {/* Custom Header with Year Picker */}
                             <View style={styles.calendarHeader}>
                                 <TouchableOpacity
                                     onPress={() => {
@@ -1176,7 +1335,8 @@ export default function ProfileCompletion() {
                                 hideDayNames={false}
                                 onDayPress={(day: any) => {
                                     const selectedDate = new Date(day.dateString);
-                                    dispatch(userEditAction({ ...userEdit, DOB: selectedDate }));
+                                    console.log('DOB selected:', selectedDate);
+                                    updateFormData({ DOB: selectedDate });
                                 }}
                                 onMonthChange={(month: any) => {
                                     setCalendarMonth(month.dateString);
@@ -1212,7 +1372,6 @@ export default function ProfileCompletion() {
                             />
                         </View>
 
-                        {/* Year Picker Modal */}
                         <Modal visible={yearPickerOpen} transparent animationType="fade">
                             <TouchableWithoutFeedback onPress={() => setYearPickerOpen(false)}>
                                 <View style={styles.yearPickerOverlay}>
@@ -1245,6 +1404,22 @@ export default function ProfileCompletion() {
                                 </View>
                             </TouchableWithoutFeedback>
                         </Modal>
+                        */}
+
+                        {/* Using DatePicker component inline (same as license expiry) */}
+                        <View style={{  borderRadius: 16, padding: 20, marginTop: 10, alignItems: 'center',  }}>
+                            <DatePicker
+                                mode="date"
+                                theme="light"
+                                date={formData?.DOB ? new Date(formData.DOB) : moment().subtract(18, 'years').toDate()}
+                                minimumDate={moment().subtract(80, 'years').toDate()}
+                                maximumDate={moment().subtract(18, 'years').toDate()}
+                                onDateChange={(date) => {
+                                    console.log('DOB selected:', date);
+                                    updateFormData({ DOB: date });
+                                }}
+                            />
+                        </View>
                     </View>
                 );
             case 'gender':
@@ -1257,14 +1432,17 @@ export default function ProfileCompletion() {
                                     key={gender}
                                     style={[
                                         styles.radioBox,
-                                        userEdit?.Sex === gender && styles.radioBoxSelected
+                                        formData?.Sex === gender && styles.radioBoxSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, Sex: gender }))}
+                                    onPress={() => {
+                                        console.log('Gender selected:', gender);
+                                        updateFormData({ Sex: gender });
+                                    }}
                                 >
-                                    <View style={[styles.radioCircle, userEdit?.Sex === gender && styles.radioCircleSelected]}>
-                                        {userEdit?.Sex === gender && <View style={styles.radioDot} />}
+                                    <View style={[styles.radioCircle, formData?.Sex === gender && styles.radioCircleSelected]}>
+                                        {formData?.Sex === gender && <View style={styles.radioDot} />}
                                     </View>
-                                    <Text style={[styles.radioText, userEdit?.Sex === gender && { color: '#246BFD' }]}>{gender}</Text>
+                                    <Text style={[styles.radioText, formData?.Sex === gender && { color: '#246BFD' }]}>{gender}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -1280,17 +1458,20 @@ export default function ProfileCompletion() {
                                     key={edu.value}
                                     style={[
                                         styles.educationTile,
-                                        userEdit?.education === edu.value && styles.educationTileSelected
+                                        formData?.education === edu.value && styles.educationTileSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, education: edu.value }))}
+                                    onPress={() => {
+                                        console.log('Education selected:', edu.value);
+                                        updateFormData({ education: edu.value });
+                                    }}
                                 >
                                     <Text style={[
                                         styles.educationTileText,
-                                        userEdit?.education === edu.value && styles.educationTileTextSelected
+                                        formData?.education === edu.value && styles.educationTileTextSelected
                                     ]}>
                                         {edu.label}
                                     </Text>
-                                    {userEdit?.education === edu.value && (
+                                    {formData?.education === edu.value && (
                                         <Ionicons name="checkmark-circle" size={18} color="#246BFD" style={{ marginLeft: 6 }} />
                                     )}
                                 </TouchableOpacity>
@@ -1301,7 +1482,7 @@ export default function ProfileCompletion() {
 
             case 'vehicle':
                 // Get current selections using normalizeArrayField to handle corrupted data
-                const currentVehicleSelections = normalizeArrayField(userEdit?.vehicle_type);
+                const currentVehicleSelections = normalizeArrayField(formData?.vehicle_type);
 
                 return (
                     <View style={styles.stepContainer}>
@@ -1320,14 +1501,14 @@ export default function ProfileCompletion() {
                                             ]}
                                             onPress={() => {
                                                 // Use normalizeArrayField to get clean current selections
-                                                const cleanSelections = normalizeArrayField(userEdit?.vehicle_type);
+                                                const cleanSelections = normalizeArrayField(formData?.vehicle_type);
                                                 let newSelection: string[];
                                                 if (isSelected) {
                                                     newSelection = cleanSelections.filter(v => v !== vehicle.value);
                                                 } else {
                                                     newSelection = [...cleanSelections, vehicle.value];
                                                 }
-                                                dispatch(userEditAction({ ...userEdit, vehicle_type: newSelection.filter(Boolean).join(',') }));
+                                                updateFormData({ vehicle_type: newSelection.filter(Boolean).join(',') });
                                             }}
                                             activeOpacity={0.7}
                                         >
@@ -1364,11 +1545,14 @@ export default function ProfileCompletion() {
                                     key={exp.value}
                                     style={[
                                         styles.gridBox,
-                                        userEdit?.Driving_Experience === exp.value && styles.gridBoxSelected
+                                        formData?.Driving_Experience === exp.value && styles.gridBoxSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, Driving_Experience: exp.value }))}
+                                    onPress={() => {
+                                        console.log('Driving Experience selected:', exp.value);
+                                        updateFormData({ Driving_Experience: exp.value });
+                                    }}
                                 >
-                                    <Text style={[styles.gridText, userEdit?.Driving_Experience === exp.value && styles.gridTextSelected]}>
+                                    <Text style={[styles.gridText, formData?.Driving_Experience === exp.value && styles.gridTextSelected]}>
                                         {exp.label}
                                     </Text>
                                 </TouchableOpacity>
@@ -1385,15 +1569,18 @@ export default function ProfileCompletion() {
                                 key={type.value}
                                 style={[
                                     styles.radioBox,
-                                    userEdit?.Type_of_License === type.value && styles.radioBoxSelected,
+                                    formData?.Type_of_License === type.value && styles.radioBoxSelected,
                                     { marginBottom: 10 }
                                 ]}
-                                onPress={() => dispatch(userEditAction({ ...userEdit, Type_of_License: type.value }))}
+                                onPress={() => {
+                                    console.log('License type selected:', type.value);
+                                    updateFormData({ Type_of_License: type.value });
+                                }}
                             >
-                                <View style={[styles.radioCircle, userEdit?.Type_of_License === type.value && styles.radioCircleSelected]}>
-                                    {userEdit?.Type_of_License === type.value && <View style={styles.radioDot} />}
+                                <View style={[styles.radioCircle, formData?.Type_of_License === type.value && styles.radioCircleSelected]}>
+                                    {formData?.Type_of_License === type.value && <View style={styles.radioDot} />}
                                 </View>
-                                <Text style={[styles.radioText, userEdit?.Type_of_License === type.value && { color: '#246BFD' }]}>
+                                <Text style={[styles.radioText, formData?.Type_of_License === type.value && { color: '#246BFD' }]}>
                                     {type.label}
                                 </Text>
                             </TouchableOpacity>
@@ -1407,7 +1594,7 @@ export default function ProfileCompletion() {
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
                         <View>
                             {translatedEndorsements.map((opt) => {
-                                const isSelected = userEdit?.endorsement?.includes(opt.label);
+                                const isSelected = formData?.endorsement?.includes(opt.label);
                                 return (
                                     <TouchableOpacity
                                         key={opt.id}
@@ -1437,22 +1624,25 @@ export default function ProfileCompletion() {
                     <View style={styles.stepContainer}>
                         <Text style={styles.classicLabel}>{t('currentSalary') || 'Current Monthly Salary'}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.gridContainer}>
-                            {translatedSalaryRanges.map((salary) => (
+                            {currentSalaryRanges.map((salary) => (
                                 <TouchableOpacity
                                     key={salary}
                                     style={[
                                         styles.salaryTile,
-                                        userEdit?.current_salary === salary && styles.salaryTileSelected
+                                        formData?.current_salary === salary && styles.salaryTileSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, current_salary: salary }))}
+                                    onPress={() => {
+                                        console.log('Current salary selected:', salary);
+                                        updateFormData({ current_salary: salary });
+                                    }}
                                 >
                                     <Text style={[
                                         styles.salaryTileText,
-                                        userEdit?.current_salary === salary && styles.salaryTileTextSelected
+                                        formData?.current_salary === salary && styles.salaryTileTextSelected
                                     ]}>
                                         ₹{salary}
                                     </Text>
-                                    {userEdit?.current_salary === salary && (
+                                    {formData?.current_salary === salary && (
                                         <Ionicons name="checkmark-circle" size={16} color="#246BFD" style={{ marginLeft: 4 }} />
                                     )}
                                 </TouchableOpacity>
@@ -1465,22 +1655,25 @@ export default function ProfileCompletion() {
                     <View style={styles.stepContainer}>
                         <Text style={styles.classicLabel}>{t('expectedSalary') || 'Expected Monthly Salary'}<Text style={{ color: 'red' }}> *</Text></Text>
                         <View style={styles.gridContainer}>
-                            {translatedSalaryRanges.map((salary) => (
+                            {expectedSalaryRanges.map((salary) => (
                                 <TouchableOpacity
                                     key={salary}
                                     style={[
                                         styles.salaryTile,
-                                        userEdit?.expected_salary === salary && styles.salaryTileSelected
+                                        formData?.expected_salary === salary && styles.salaryTileSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, expected_salary: salary }))}
+                                    onPress={() => {
+                                        console.log('Expected salary selected:', salary);
+                                        updateFormData({ expected_salary: salary });
+                                    }}
                                 >
                                     <Text style={[
                                         styles.salaryTileText,
-                                        userEdit?.expected_salary === salary && styles.salaryTileTextSelected
+                                        formData?.expected_salary === salary && styles.salaryTileTextSelected
                                     ]}>
                                         ₹{salary}
                                     </Text>
-                                    {userEdit?.expected_salary === salary && (
+                                    {formData?.expected_salary === salary && (
                                         <Ionicons name="checkmark-circle" size={16} color="#246BFD" style={{ marginLeft: 4 }} />
                                     )}
                                 </TouchableOpacity>
@@ -1493,8 +1686,8 @@ export default function ProfileCompletion() {
                     <View style={[styles.stepContainer, { alignItems: 'center' }]}>
                         <Text style={[styles.classicLabel, { marginBottom: 20 }]}>{t('profilePhoto')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <TouchableOpacity onPress={() => setProfileModalOpen(true)} style={styles.classicAvatarBox}>
-                            {userEdit?.profilePath?.path ? (
-                                <Image source={{ uri: userEdit.profilePath.path }} style={styles.classicAvatarImage} />
+                            {formData?.profilePath?.path ? (
+                                <Image source={{ uri: formData.profilePath.path }} style={styles.classicAvatarImage} />
                             ) : (
                                 <Ionicons name="camera-outline" size={40} color="#ccc" />
                             )}
@@ -1508,32 +1701,21 @@ export default function ProfileCompletion() {
             case 'id_numbers':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('aadharNumber')}<Text style={{ color: 'red' }}> *</Text></Text>
-                        <TextInput
-                            style={styles.classicInput}
-                            placeholder="0000 0000 0000"
-                            placeholderTextColor="#999"
-                            keyboardType="number-pad"
-                            maxLength={12}
-                            value={userEdit?.Aadhar_Number || ''}
-                            onChangeText={(text) => dispatch(userEditAction({ ...userEdit, Aadhar_Number: text }))}
-                        />
-                        <Space height={20} />
                         <Text style={styles.classicLabel}>{t('licenseNumber')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <TextInput
                             style={styles.classicInput}
                             placeholder="MH01 20230000000"
                             placeholderTextColor="#999"
                             autoCapitalize="characters"
-                            value={userEdit?.License_Number || ''}
-                            onChangeText={(text) => dispatch(userEditAction({ ...userEdit, License_Number: text }))}
+                            value={formData?.License_Number || ''}
+                            onChangeText={(text) => updateFormData({ License_Number: text })}
                         />
 
                         <Space height={20} />
                         <Text style={styles.classicLabel}>{t('expiryDateOfLicense')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <TouchableOpacity style={[styles.classicInput, { justifyContent: 'center' }]} onPress={() => setLicenseExpiryModal(true)}>
-                            <Text style={{ color: userEdit?.Expiry_date_of_License ? '#333' : '#999', fontSize: 16 }}>
-                                {userEdit?.Expiry_date_of_License ? moment(userEdit.Expiry_date_of_License).format('DD-MM-YYYY') : 'DD-MM-YYYY'}
+                            <Text style={{ color: formData?.Expiry_date_of_License ? '#333' : '#999', fontSize: 16 }}>
+                                {formData?.Expiry_date_of_License ? moment(formData.Expiry_date_of_License).format('DD-MM-YYYY') : 'DD-MM-YYYY'}
                             </Text>
                             <Ionicons name="calendar" size={20} color={colors.royalBlue} style={{ position: 'absolute', right: 14, top: 14 }} />
                         </TouchableOpacity>
@@ -1546,10 +1728,10 @@ export default function ProfileCompletion() {
                                         <DatePicker
                                             mode="date"
                                             theme="light"
-                                            date={userEdit?.Expiry_date_of_License ? new Date(userEdit.Expiry_date_of_License) : new Date()}
+                                            date={formData?.Expiry_date_of_License ? new Date(formData.Expiry_date_of_License) : new Date()}
                                             minimumDate={new Date()}
                                             maximumDate={moment().add(30, 'years').toDate()}
-                                            onDateChange={(date) => dispatch(userEditAction({ ...userEdit, Expiry_date_of_License: date }))}
+                                            onDateChange={(date) => updateFormData({ Expiry_date_of_License: date })}
                                         />
                                         <View style={{ flexDirection: 'row', marginTop: 16 }}>
                                             <TouchableOpacity
@@ -1582,13 +1764,13 @@ export default function ProfileCompletion() {
                                     key={exp.value}
                                     style={[
                                         styles.experienceTile,
-                                        userEdit?.year_of_exp === exp.value && styles.experienceTileSelected
+                                        formData?.year_of_exp === exp.value && styles.experienceTileSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, year_of_exp: exp.value }))}
+                                    onPress={() => updateFormData({ year_of_exp: exp.value })}
                                 >
                                     <Text style={[
                                         styles.experienceTileText,
-                                        userEdit?.year_of_exp === exp.value && styles.experienceTileTextSelected
+                                        formData?.year_of_exp === exp.value && styles.experienceTileTextSelected
                                     ]}>
                                         {exp.label}
                                     </Text>
@@ -1607,13 +1789,13 @@ export default function ProfileCompletion() {
                                     key={fleet.value}
                                     style={[
                                         styles.experienceTile,
-                                        userEdit?.fleet_size === fleet.value && styles.experienceTileSelected
+                                        formData?.fleet_size === fleet.value && styles.experienceTileSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, fleet_size: fleet.value }))}
+                                    onPress={() => updateFormData({ fleet_size: fleet.value })}
                                 >
                                     <Text style={[
                                         styles.experienceTileText,
-                                        userEdit?.fleet_size === fleet.value && styles.experienceTileTextSelected
+                                        formData?.fleet_size === fleet.value && styles.experienceTileTextSelected
                                     ]}>
                                         {fleet.label}
                                     </Text>
@@ -1629,7 +1811,7 @@ export default function ProfileCompletion() {
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable') || 'Select all that apply'}</Text>
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                             {translatedIndustrySegments.map((segment) => {
-                                const selectedSegments = userEdit?.industry_segment?.split(',') || [];
+                                const selectedSegments = formData?.industry_segment?.split(',') || [];
                                 const isSelected = selectedSegments.includes(segment.value);
                                 return (
                                     <TouchableOpacity
@@ -1645,7 +1827,7 @@ export default function ProfileCompletion() {
                                             } else {
                                                 newSegments.push(segment.value);
                                             }
-                                            dispatch(userEditAction({ ...userEdit, industry_segment: newSegments.filter(Boolean).join(',') }));
+                                            updateFormData({ industry_segment: newSegments.filter(Boolean).join(',') });
                                         }}
                                     >
                                         <Text style={[
@@ -1677,17 +1859,17 @@ export default function ProfileCompletion() {
                                     key={km.value}
                                     style={[
                                         styles.salaryTile,
-                                        userEdit?.avg_km_run === km.value && styles.salaryTileSelected
+                                        formData?.avg_km_run === km.value && styles.salaryTileSelected
                                     ]}
-                                    onPress={() => dispatch(userEditAction({ ...userEdit, avg_km_run: km.value }))}
+                                    onPress={() => updateFormData({ avg_km_run: km.value })}
                                 >
                                     <Text style={[
                                         styles.salaryTileText,
-                                        userEdit?.avg_km_run === km.value && styles.salaryTileTextSelected
+                                        formData?.avg_km_run === km.value && styles.salaryTileTextSelected
                                     ]}>
                                         {km.label}
                                     </Text>
-                                    {userEdit?.avg_km_run === km.value && (
+                                    {formData?.avg_km_run === km.value && (
                                         <Ionicons name="checkmark-circle" size={16} color="#246BFD" style={{ marginLeft: 4 }} />
                                     )}
                                 </TouchableOpacity>
@@ -1702,7 +1884,7 @@ export default function ProfileCompletion() {
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
                         <View>
                             {translatedOperationalSegments.map((segment) => {
-                                const selectedSegments = userEdit?.operational_segment?.split(',') || [];
+                                const selectedSegments = formData?.operational_segment?.split(',') || [];
                                 const isSelected = selectedSegments.includes(segment.value);
                                 return (
                                     <TouchableOpacity
@@ -1718,7 +1900,7 @@ export default function ProfileCompletion() {
                                             } else {
                                                 newSegments.push(segment.value);
                                             }
-                                            dispatch(userEditAction({ ...userEdit, operational_segment: newSegments.filter(Boolean).join(',') }));
+                                            updateFormData({ operational_segment: newSegments.filter(Boolean).join(',') });
                                         }}
                                     >
                                         <View style={styles.endorsementContent}>
@@ -1750,8 +1932,8 @@ export default function ProfileCompletion() {
                             style={styles.classicInput}
                             placeholder={t('enterPanNumber') || 'Enter PAN Number'}
                             placeholderTextColor="#999"
-                            value={userEdit?.pan || ''}
-                            onChangeText={(text) => dispatch(userEditAction({ ...userEdit, pan: text.toUpperCase() }))}
+                            value={formData?.pan || ''}
+                            onChangeText={(text) => updateFormData({ pan: text.toUpperCase() })}
                             autoCapitalize="characters"
                             maxLength={10}
                         />
@@ -1764,8 +1946,8 @@ export default function ProfileCompletion() {
                             style={styles.classicInput}
                             placeholder={t('enterGstNumber') || 'Enter GST Number'}
                             placeholderTextColor="#999"
-                            value={userEdit?.gst || ''}
-                            onChangeText={(text) => dispatch(userEditAction({ ...userEdit, gst: text.toUpperCase() }))}
+                            value={formData?.gst || ''}
+                            onChangeText={(text) => updateFormData({ gst: text.toUpperCase() })}
                             autoCapitalize="characters"
                             maxLength={15}
                         />
@@ -1928,7 +2110,7 @@ export default function ProfileCompletion() {
                                 placeholder={t('selectState')}
                                 search
                                 searchPlaceholder="Search..."
-                                value={userEdit?.states}
+                                value={formData?.states}
                                 onChange={handleMissingFieldSelection}
                             />
                         ) : (
