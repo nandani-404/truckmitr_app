@@ -210,7 +210,7 @@ interface FaceMatchResponse {
     verified?: boolean;
 }
 
-type TabType = 'DL' | 'PAN' | 'AADHAAR' | 'VOTER' | 'FACE';
+type TabType = 'DL' | 'PAN' | 'FACE';
 
 export default function DocumentVerification() {
     const route: any = useRoute();
@@ -836,70 +836,6 @@ export default function DocumentVerification() {
             } finally {
                 setIsLoading(false);
             }
-        } else if (activeTab === 'AADHAAR') {
-            if (!validateAadhaar(aadhaarNumber)) return;
-
-            // Check consent for Aadhaar verification
-            if (!aadhaarConsentChecked) {
-                showToast(t('aadhaarConsentRequired') || 'Please provide consent to proceed');
-                return;
-            }
-
-            try {
-                setIsLoading(true);
-
-                // Get user's name from profile - prioritize 'name' as used in profile-edit
-                const userName = user?.name || user?.Name || user?.full_name || user?.first_name || 'User';
-
-                const payload = {
-                    doc_type: ["aadhaar", "pan"],
-                    udf1: aadhaarNumber,
-                    udf2: "first_name",
-                    udf3: userName,
-                    consent: "Y",
-                    consent_text: "We confirm obtaining valid customer consent to access/process their data. Consent remains valid, informed, and unwithdrawn."
-                };
-
-                const config = { headers: { 'Content-Type': 'application/json' } };
-                const response = await axiosInstance.post(END_POINTS.DOC_VERIFY, payload, config);
-
-                if (response?.data?.status === 1 && response?.data?.result?.url) {
-                    // Set the DigiLocker URL and show the WebView modal
-                    setDigiLockerUrl(response.data.result.url);
-                    setShowDigiLockerModal(true);
-                    setAadhaarResult(response.data);
-                } else {
-                    const apiError = response?.data?.message || t('verificationFailed') || 'Verification failed';
-                    processError(apiError);
-                }
-            } catch (err: any) {
-                const msg = err?.response?.data?.message || t('errorOccurred') || 'An error occurred';
-                processError(msg);
-            } finally {
-                setIsLoading(false);
-            }
-        } else if (activeTab === 'VOTER') {
-            if (!validateVoterId(voterIdNumber)) return;
-
-            try {
-                setIsLoading(true);
-                const payload = { voter_id: voterIdNumber };
-                const config = { headers: { 'Content-Type': 'application/json' } };
-                const response = await axiosInstance.post(END_POINTS.VOTER_VERIFY, payload, config);
-
-                if (response?.data?.status === 1) {
-                    setVoterResult(response.data);
-                    cardScale.value = 0;
-                } else {
-                    const apiError = response?.data?.message || t('verificationFailed') || 'Verification failed';
-                    processError(apiError);
-                }
-            } catch (err: any) {
-                const msg = err?.response?.data?.message || t('errorOccurred') || 'An error occurred';
-                processError(msg);
-            } finally {
-                setIsLoading(false);
-            }
         } else if (activeTab === 'FACE') {
             if (!validateFaceVerification()) return;
 
@@ -946,9 +882,7 @@ export default function DocumentVerification() {
     // Render Logic
     const isSuccess = activeTab === 'DL' ? !!(dlResult?.status === 1) :
         activeTab === 'PAN' ? !!(panResult?.status === 1) :
-            activeTab === 'AADHAAR' ? !!(aadhaarResult?.status === 1) :
-                activeTab === 'VOTER' ? !!(voterResult?.status === 1) :
-                    activeTab === 'FACE' ? !!(faceResult?.status === 1) : false;
+            activeTab === 'FACE' ? !!(faceResult?.status === 1) : false;
 
     const renderSuccessView = () => {
         if (activeTab === 'DL' && dlResult?.result) {
@@ -1036,36 +970,6 @@ export default function DocumentVerification() {
                     </Animated.View>
                 </View>
             );
-        } else if (activeTab === 'AADHAAR' && aadhaarResult) {
-            return (
-                <View>
-                    <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.detailsCard}>
-                        <View style={styles.detailsHeader}>
-                            <MaterialCommunityIcons name="card-account-details" size={24} color={COLORS.primary} />
-                            <Text style={styles.detailsTitle}>{t('aadhaarDetails') || 'Aadhaar Details'}</Text>
-                        </View>
-                        <View style={styles.detailsGrid}>
-                            <DetailRow icon="shield-checkmark" label={t('status') || 'Status'} value="Verified" isStatus statusType="success" />
-                            {/* Add more fields if available in result */}
-                        </View>
-                    </Animated.View>
-                </View>
-            );
-        } else if (activeTab === 'VOTER' && voterResult) {
-            return (
-                <View>
-                    <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.detailsCard}>
-                        <View style={styles.detailsHeader}>
-                            <MaterialCommunityIcons name="card-account-details" size={24} color={COLORS.primary} />
-                            <Text style={styles.detailsTitle}>{t('voterIdDetails') || 'Voter ID Details'}</Text>
-                        </View>
-                        <View style={styles.detailsGrid}>
-                            <DetailRow icon="shield-checkmark" label={t('status') || 'Status'} value="Verified" isStatus statusType="success" />
-                            {/* Add more fields if available in result */}
-                        </View>
-                    </Animated.View>
-                </View>
-            );
         } else if (activeTab === 'FACE' && faceResult) {
             return (
                 <View>
@@ -1127,14 +1031,10 @@ export default function DocumentVerification() {
             {/* Required Documents Title */}
             <Text style={styles.requiredDocsTitle}>{t('requiredDocuments') || 'Required Documents'}</Text>
 
-            {/* 3x2 Grid of Rectangular Tab Buttons */}
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-                <TabButton type='DL' label='DL' icon='car-outline' />
-                <TabButton type='AADHAAR' label='Aadhar' icon='finger-print' />
-                <TabButton type='PAN' label='PAN' icon='card-outline' />
-            </View>
+            {/* Tab Buttons Row */}
             <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TabButton type='VOTER' label='Voter' icon='person-outline' />
+                <TabButton type='DL' label='DL' icon='car-outline' />
+                <TabButton type='PAN' label='PAN' icon='card-outline' />
                 <TabButton type='FACE' label={t('face') || 'Face'} icon='scan-outline' />
             </View>
         </View>
@@ -1215,8 +1115,6 @@ export default function DocumentVerification() {
                                     // Reset to allow verify other doc or update
                                     if (activeTab === 'DL') setDlResult(null);
                                     else if (activeTab === 'PAN') setPanResult(null);
-                                    else if (activeTab === 'AADHAAR') setAadhaarResult(null);
-                                    else if (activeTab === 'VOTER') setVoterResult(null);
                                     else if (activeTab === 'FACE') {
                                         setFaceResult(null);
                                         setFaceImage1(null);
@@ -1274,57 +1172,9 @@ export default function DocumentVerification() {
                                 </View>
                             )}
 
-                            {activeTab === 'AADHAAR' && (
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}><Ionicons name="finger-print" size={14} color={COLORS.textMuted} />  {t('aadhaarNumber') || 'Aadhaar Number'}</Text>
-                                    <View style={[styles.inputContainer, inputError ? styles.inputError : null]}>
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Enter 12-digit Aadhaar Number"
-                                            placeholderTextColor={COLORS.textLight}
-                                            value={aadhaarNumber}
-                                            onChangeText={handleAadhaarChange}
-                                            maxLength={12}
-                                            keyboardType="numeric"
-                                            editable={!isFetchingProfile}
-                                        />
-                                    </View>
-                                    <Text style={styles.inputHint}>Format: 12-digit numeric code</Text>
 
-                                    {/* Aadhaar Consent Checkbox */}
-                                    <TouchableOpacity
-                                        style={styles.consentRow}
-                                        onPress={() => setAadhaarConsentChecked(!aadhaarConsentChecked)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <View style={[styles.checkbox, aadhaarConsentChecked && styles.checkboxChecked]}>
-                                            {aadhaarConsentChecked && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
-                                        </View>
-                                        <Text style={styles.consentText}>
-                                            {t('aadhaarConsentText') || 'I consent to verify my identity via DigiLocker for Aadhaar and PAN verification.'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            )}
 
-                            {activeTab === 'VOTER' && (
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}><Ionicons name="person" size={14} color={COLORS.textMuted} />  {t('voterIdNumber') || 'Voter ID Number'}</Text>
-                                    <View style={[styles.inputContainer, inputError ? styles.inputError : null]}>
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Enter Voter ID"
-                                            placeholderTextColor={COLORS.textLight}
-                                            value={voterIdNumber}
-                                            onChangeText={handleVoterIdChange}
-                                            maxLength={15}
-                                            autoCapitalize="characters"
-                                            editable={!isFetchingProfile}
-                                        />
-                                    </View>
-                                    <Text style={styles.inputHint}>Format: Alphanumeric ID</Text>
-                                </View>
-                            )}
+
 
                             {activeTab === 'FACE' && (
                                 canAccessIdVerification ? (

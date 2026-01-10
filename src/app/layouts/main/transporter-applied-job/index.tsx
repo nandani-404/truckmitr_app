@@ -576,6 +576,11 @@ export default function TransporterAppliedJob() {
             License_number: driver?.License_number,
             Expiry_date_of_license: driver?.Expiry_date_of_license,
             payments_type: driver?.payments_type,
+            // Verification status fields
+            dl_verification_status: driver?.dl_verification_status,
+            face_match_verified: driver?.face_match_verified,
+            court_check_status: driver?.court_check_status,
+            address_verification_status: driver?.address_verification_status,
         });
 
         // Pass full item to check subscription at both levels
@@ -727,96 +732,71 @@ export default function TransporterAppliedJob() {
                     </Text>
                 </View>
 
-                {/* VERIFICATION + TRUST ROW - Combined for compact */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, flexWrap: 'wrap' }}>
-                    {/* Verification Icons */}
-                    {
-                        tag.label === 'Verified Driver' ? (
-                            <>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="check-circle" size={14} color="#1FA84F" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>ID</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="check-circle" size={14} color="#1FA84F" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Face</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="cancel" size={14} color="#EF4444" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Court</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="cancel" size={14} color="#EF4444" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Digital Address</Text>
-                                </View>
-                            </>
-                        ) : tag.label === 'Job Ready Driver' ? (
-                            <>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="cancel" size={14} color="#EF4444" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>ID</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="cancel" size={14} color="#EF4444" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Face</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="cancel" size={14} color="#EF4444" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Court</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="cancel" size={14} color="#EF4444" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Digital Address</Text>
-                                </View>
-                            </>
-                        ) : tag.label === 'Trusted Driver' ? (
-                            <>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="check-circle" size={14} color="#1FA84F" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>ID</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="check-circle" size={14} color="#1FA84F" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Face</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="check-circle" size={14} color="#1FA84F" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Court</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="check-circle" size={14} color="#1FA84F" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Digital Address</Text>
-                                </View>
-                            </>
-                        ) : (
-                            <>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="check-circle" size={14} color="#1FA84F" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>ID</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="check-circle" size={14} color="#1FA84F" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Face</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
-                                    <MaterialIcons name="check-circle" size={14} color="#1FA84F" />
-                                    <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Address</Text>
-                                </View>
-                            </>
-                        )
-                    }
-                    {/* Trust Badge - Hide for Verified and Job Ready Driver */}
-                    {
-                        tag.label !== 'Verified Driver' && tag.label !== 'Job Ready Driver' && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <MaterialIcons name="verified-user" size={14} color="#2E7D32" />
-                                <Text style={{ marginLeft: 4, fontSize: 12, color: '#2E7D32' }}>
-                                    Fully verified
-                                </Text>
+                {/* VERIFICATION + TRUST ROW - Dynamic based on API response */}
+                {(() => {
+                    // Get verification statuses from driver_details
+                    const isIdVerified = driver?.dl_verification_status === 'verified';
+                    const isFaceVerified = driver?.face_match_verified === 'verified' || driver?.face_match_verified === true;
+                    const isCourtVerified = driver?.court_check_status === 'verified' || driver?.court_check_status?.status === 'verified';
+                    const isAddressVerified = driver?.address_verification_status === 'verified' || driver?.address_verification_status?.status === 'verified';
+
+                    // Check if all verifications are complete
+                    const isFullyVerified = isIdVerified && isFaceVerified && isCourtVerified && isAddressVerified;
+
+                    return (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, flexWrap: 'wrap' }}>
+                            {/* ID Verification */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
+                                <MaterialIcons
+                                    name={isIdVerified ? "check-circle" : "cancel"}
+                                    size={14}
+                                    color={isIdVerified ? "#1FA84F" : "#EF4444"}
+                                />
+                                <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>ID</Text>
                             </View>
-                        )
-                    }
-                </View >
+
+                            {/* Face Verification */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
+                                <MaterialIcons
+                                    name={isFaceVerified ? "check-circle" : "cancel"}
+                                    size={14}
+                                    color={isFaceVerified ? "#1FA84F" : "#EF4444"}
+                                />
+                                <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Face</Text>
+                            </View>
+
+                            {/* Court Verification */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
+                                <MaterialIcons
+                                    name={isCourtVerified ? "check-circle" : "cancel"}
+                                    size={14}
+                                    color={isCourtVerified ? "#1FA84F" : "#EF4444"}
+                                />
+                                <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Court</Text>
+                            </View>
+
+                            {/* Digital Address Verification */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 14 }}>
+                                <MaterialIcons
+                                    name={isAddressVerified ? "check-circle" : "cancel"}
+                                    size={14}
+                                    color={isAddressVerified ? "#1FA84F" : "#EF4444"}
+                                />
+                                <Text style={{ marginLeft: 3, fontSize: 12, color: '#222222' }}>Digital Address</Text>
+                            </View>
+
+                            {/* Fully Verified Badge - Only show when all 4 verifications are complete */}
+                            {isFullyVerified && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <MaterialIcons name="verified-user" size={14} color="#2E7D32" />
+                                    <Text style={{ marginLeft: 4, fontSize: 12, color: '#2E7D32' }}>
+                                        Fully verified
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    );
+                })()}
 
                 {/* DIVIDER */}
                 < View style={{ height: 1, backgroundColor: '#E5E5E5', marginVertical: 10 }} />
