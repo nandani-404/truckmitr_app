@@ -170,7 +170,7 @@ const CourtCheckInfo = () => {
         }
     };
     const _contactSupport = () => {
-        Linking.openURL('tel:+911234567890');
+        Linking.openURL('tel:+9118001024558');
     };
     const _refreshPage = () => {
         setRefreshKey(prev => prev + 1);

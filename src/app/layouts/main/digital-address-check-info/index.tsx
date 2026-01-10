@@ -163,10 +163,10 @@ const DigitalAddressCheckInfo = () => {
                     name: fullName.trim(),
                     mobile: mobileNumber.trim(),
                     address: primaryAddress,
-                    address_type: addressType
+                    address_type: String(addressType) // Ensure it's sent as string "Permanent" or "Current"
                 };
 
-                console.log('DAV API Payload:', payload);
+                console.log('DAV API Payload:', JSON.stringify(payload));
 
                 const response: any = await axiosInstance.post(END_POINTS.DIGITAL_ADDRESS_VERIFY, payload);
 
@@ -201,7 +201,7 @@ const DigitalAddressCheckInfo = () => {
     };
 
     const _contactSupport = () => {
-        Linking.openURL('tel:+911234567890');
+        Linking.openURL('tel:+9118001024558');
     };
 
     const _refreshPage = () => {
