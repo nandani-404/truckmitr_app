@@ -98,15 +98,15 @@ const getDrivingExperienceLabel = (value: string | undefined): string => {
 // Helper function to get license endorsement names from IDs
 const getLicenseEndorsementNames = (endorsementValue: any): string => {
   if (!endorsementValue) return 'Not Provided'
-  
+
   // Remove surrounding quotes if present
   let cleanValue = endorsementValue
   if (typeof endorsementValue === 'string') {
     cleanValue = endorsementValue.replace(/^["']|["']$/g, '').trim()
   }
-  
+
   let endorsementIds: string[] = []
-  
+
   // Handle different formats
   if (Array.isArray(cleanValue)) {
     endorsementIds = cleanValue.map(e => String(e).trim().toLowerCase()).filter(e => e && e !== '')
@@ -129,7 +129,7 @@ const getLicenseEndorsementNames = (endorsementValue: any): string => {
       endorsementIds = [trimmed]
     }
   }
-  
+
   // Filter out empty strings and map IDs to names
   const endorsementNames = endorsementIds
     .filter(id => id && id !== '') // Remove empty strings
@@ -137,7 +137,7 @@ const getLicenseEndorsementNames = (endorsementValue: any): string => {
       return LICENSE_ENDORSEMENT_MAP[id] || id // Return mapped name or original ID if not found
     })
     .filter(name => name && name !== '') // Remove any resulting empty names
-  
+
   return endorsementNames.length > 0 ? endorsementNames.join(', ') : 'Not Provided'
 }
 
@@ -154,15 +154,15 @@ const getStateName = (stateValue: string | number | undefined): string => {
 // Helper function to get vehicle type names from IDs
 const getVehicleTypeNames = (vehicleTypeValue: any): string => {
   if (!vehicleTypeValue) return 'Not Provided'
-  
+
   // Remove surrounding quotes if present
   let cleanValue = vehicleTypeValue
   if (typeof vehicleTypeValue === 'string') {
     cleanValue = vehicleTypeValue.replace(/^["']|["']$/g, '').trim()
   }
-  
+
   let vehicleIds: string[] = []
-  
+
   // Handle different formats
   if (Array.isArray(cleanValue)) {
     vehicleIds = cleanValue.map(v => String(v).trim()).filter(v => v && v !== '')
@@ -185,7 +185,7 @@ const getVehicleTypeNames = (vehicleTypeValue: any): string => {
       vehicleIds = [trimmed]
     }
   }
-  
+
   // Map IDs to names
   const vehicleNames = vehicleIds
     .filter(id => id && id !== '') // Remove empty strings
@@ -193,20 +193,20 @@ const getVehicleTypeNames = (vehicleTypeValue: any): string => {
       return VEHICLE_TYPE_MAP[id] || id // Return mapped name or original ID if not found
     })
     .filter(name => name && name !== '') // Remove any resulting empty names
-  
+
   return vehicleNames.length > 0 ? vehicleNames.join(', ') : 'Not Provided'
 }
 
 // Helper function to get preferred location name from ID using API data
 const getPreferredLocationName = (locationValue: string | undefined, locationsData: any[]): string => {
   if (!locationValue) return 'Not Provided'
-  
+
   // Find location by ID in API data
   const location = locationsData.find(loc => String(loc.id) === String(locationValue))
   if (location) {
     return location.name
   }
-  
+
   // Fallback to hardcoded mapping if API data not available
   return getStateName(locationValue)
 }
@@ -241,7 +241,7 @@ const FieldGroupCard: React.FC<FieldGroupCardProps> = ({
   const renderIcon = () => {
     if (!icon) return null
     const iconProps = { name: icon, size: 22, color: colors.royalBlue }
-    
+
     switch (iconLibrary) {
       case 'MaterialCommunityIcons':
         return <MaterialCommunityIcons {...iconProps} />
@@ -293,8 +293,8 @@ const FieldGroupCard: React.FC<FieldGroupCardProps> = ({
           </Text>
         </View>
         {onEdit && (
-          <TouchableOpacity 
-            onPress={() => onEdit(stepId)} 
+          <TouchableOpacity
+            onPress={() => onEdit(stepId)}
             style={[
               styles.editButton,
               {
@@ -313,7 +313,7 @@ const FieldGroupCard: React.FC<FieldGroupCardProps> = ({
           {fields.map((field, index) => (
             <View key={index} style={[
               styles.fieldRow,
-              index < fields.length - 1 && { 
+              index < fields.length - 1 && {
                 marginBottom: 16,
                 paddingBottom: 16,
                 borderBottomWidth: 1,
@@ -331,7 +331,7 @@ const FieldGroupCard: React.FC<FieldGroupCardProps> = ({
               ]}>
                 {field.label}
               </Text>
-              
+
               <View style={styles.fieldValueContainer}>
                 {field.isImage && field.imageUri ? (
                   <View style={styles.imageContainer}>
@@ -374,7 +374,7 @@ export default function ProfileOverview() {
   const safeAreaInsets = useSafeAreaInsets()
   const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale()
   const navigation = useNavigation<NavigatorProp>()
-  
+
   const [loading, setLoading] = useState(false)
   const [locations, setLocations] = useState<any[]>([])
 
@@ -555,7 +555,7 @@ export default function ProfileOverview() {
   return (
     <View style={[styles.container, { backgroundColor: colors.white }]}>
       <Space height={safeAreaInsets.top} />
-      
+
       {/* Header - Same as AvailableJob */}
       <View style={{
         backgroundColor: colors.white,
@@ -596,7 +596,7 @@ export default function ProfileOverview() {
           }}>
             {t('profileOverview') || 'Profile Overview'}
           </Text>
-          
+
           {/* Edit Button (replacing filter) */}
           <TouchableOpacity
             // onPress={() => navigateToEdit()}
@@ -624,12 +624,12 @@ export default function ProfileOverview() {
       </View>
 
       <ScrollView
-        style={{ 
+        style={{
           backgroundColor: colors.background,
           flex: 1,
         }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ 
+        contentContainerStyle={{
           paddingBottom: responsiveHeight(4),
           paddingTop: responsiveHeight(2),
         }}
@@ -875,7 +875,7 @@ export default function ProfileOverview() {
             />
 
             {/* Aadhar Documents Section */}
-            <FieldGroupCard
+            {/* <FieldGroupCard
               title={t('aadharDocuments') || 'Aadhar Documents'}
               icon="card"
               stepId="aadhar_details"
@@ -892,7 +892,7 @@ export default function ProfileOverview() {
                 },
               ]}
               onEdit={navigateToEdit}
-            />
+            /> */}
 
             {/* License Documents Section */}
             <FieldGroupCard
@@ -1016,6 +1016,15 @@ export default function ProfileOverview() {
                   isImage: true,
                   imageUri: getImageUri(user?.PAN_Image),
                 },
+              ]}
+              onEdit={navigateToEdit}
+            />
+
+            <FieldGroupCard
+              title={t('gstDocuments') || 'GST Documents'}
+              icon="receipt"
+              stepId="pan_gst"
+              fields={[
                 {
                   label: t('gstNumber') || 'GST Number',
                   value: user?.GST_Number,

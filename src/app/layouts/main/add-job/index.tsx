@@ -112,12 +112,15 @@ const drivingExperienceArray = [
 ];
 
 const salaryRanges = [
+
     { label: '₹20,000 - 25,000', value: '20000-25000' },
     { label: '₹25,000 - 30,000', value: '25000-30000' },
     { label: '₹30,000 - 35,000', value: '30000-35000' },
     { label: '₹35,000 - 40,000', value: '35000-40000' },
-    { label: '₹40,000 - 50,000', value: '40000-50000' },
-    { label: '₹50,000+', value: '50000+' },
+    { label: '₹40,000 - 45,000', value: '40000-45000' },
+    { label: '₹45,000 - 50,000', value: '45000-50000' },
+    { label: '₹50,000 - 55,000', value: '50000-55000' },
+    { label: '₹55,000 - 60,000', value: '55000-60000' },
 ];
 
 const licenseTypes = [
@@ -2711,6 +2714,14 @@ export default function AddJob() {
                                     {parseInt(addJob?.Job_Management) || 1}
                                 </Text>
                             </View>
+                            {/* Close Button */}
+                            <TouchableOpacity
+                                onPress={() => setShowSkipConfirmDialog(true)}
+                                style={jobPremiumStyles.closeButton}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="close" size={18} color="#6C757D" />
+                            </TouchableOpacity>
                         </View>
 
                         {/* Plans */}
@@ -4134,6 +4145,15 @@ const jobPremiumStyles = StyleSheet.create({
         fontSize: 12,
         color: '#2563EB',
         fontWeight: '700',
+    },
+    closeButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#F3F4F6',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 8,
     },
     guaranteeBadge: {
         flexDirection: 'row',
