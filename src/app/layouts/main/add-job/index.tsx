@@ -1363,7 +1363,7 @@ export default function AddJob() {
                                 {/* Conditional Amount Input - Below Yes */}
                                 {addJob?.trip_incentive_provided === 'yes' && (
                                     <View style={styles.conditionalInputInline}>
-                                        <Text style={styles.conditionalLabel}>{t('enterAmountPerDay') || 'Enter Amount (₹/day)'}</Text>
+                                        <Text style={styles.conditionalLabel}>{t('enterAmount')} (₹) </Text>
                                         <TextInput
                                             style={styles.amountInput}
                                             placeholder={t('enterTripIncentiveAmount') || '₹ Enter trip incentive per day'}
@@ -1748,16 +1748,58 @@ export default function AddJob() {
                                 hideDayNames={false}
                                 onDayPress={(day: any) => {
                                     const selectedDate = new Date(day.dateString);
+                                    const today = moment().startOf('day');
+                                    const selectedMoment = moment(day.dateString).startOf('day');
+                                    const minAllowedDate = today.clone().add(4, 'days');
+
+                                    // Check if selected date is before the minimum allowed date (4 days from today)
+                                    if (selectedMoment.isBefore(minAllowedDate)) {
+                                        showToast(t('applicationDeadlineValidation') || 'You can only select deadline after 4 days');
+                                        return;
+                                    }
+
                                     dispatch(jobAddAction({ ...addJob, Application_Deadline: selectedDate }));
                                 }}
                                 onMonthChange={(month: any) => {
                                     setCalendarMonth(month.dateString);
                                 }}
                                 markedDates={{
-                                    [selectedDateString]: {
-                                        selected: true,
-                                        selectedColor: '#246BFD',
-                                    }
+                                    ...(() => {
+                                        const disabledDates: any = {};
+                                        const today = moment();
+                                        const todayString = today.format('YYYY-MM-DD');
+
+                                        // Mark next 4 days as disabled
+                                        for (let i = 0; i < 4; i++) {
+                                            const date = today.clone().add(i, 'days').format('YYYY-MM-DD');
+
+                                            if (date === todayString) {
+                                                // Today's date - special styling (don't mark as disabled to keep blue color)
+                                                disabledDates[date] = {
+                                                    marked: true,
+                                                    dotColor: '#246BFD',
+                                                    // Don't set disabled: true to preserve todayTextColor from theme
+                                                };
+                                            } else {
+                                                // Other disabled dates (next 3 days)
+                                                disabledDates[date] = {
+                                                    disabled: true,
+                                                    disableTouchEvent: false, // Allow touch to show toast
+                                                    textColor: '#ccc',
+                                                };
+                                            }
+                                        }
+
+                                        // Add selected date styling (override if selected)
+                                        if (selectedDateString && !disabledDates[selectedDateString]) {
+                                            disabledDates[selectedDateString] = {
+                                                selected: true,
+                                                selectedColor: '#246BFD',
+                                            };
+                                        }
+
+                                        return disabledDates;
+                                    })()
                                 }}
                                 theme={{
                                     backgroundColor: 'transparent',
@@ -2234,7 +2276,7 @@ export default function AddJob() {
                                         onPress={() => navigation.navigate(STACKS?.TRANSPORTER_CONSENT)}
                                         style={{ color: '#246BFD', fontWeight: '600' }}
                                     >
-                                        {t('transporterConsent') || 'Transporter Consent'}
+                                        {' '}{t('transporterConsent') || 'Transporter Consent'}
                                     </Text>
                                     {t('addJobPolicy') || ' policy for adding jobs.'}
                                 </Text>

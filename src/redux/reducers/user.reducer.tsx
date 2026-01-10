@@ -33,10 +33,25 @@ const userReducer = (state = initialState, action: any) => {
         case TYPES['FETCH_USER']:
             let editData = payload?.user;
             if (typeof editData?.Operational_Segment === 'string') {
+                console.log('=== USER REDUCER OPERATIONAL_SEGMENT DEBUG ===');
+                console.log('Original Operational_Segment:', editData.Operational_Segment);
+                console.log('Operational_Segment type:', typeof editData.Operational_Segment);
+                console.log('Starts with [ or {?', editData.Operational_Segment.trim().startsWith('[') || editData.Operational_Segment.trim().startsWith('{'));
+                
                 try {
-                    editData.Operational_Segment = JSON.parse(editData.Operational_Segment);
+                    // Only try to parse if it looks like JSON (starts with [ or {)
+                    if (editData.Operational_Segment.trim().startsWith('[') || editData.Operational_Segment.trim().startsWith('{')) {
+                        console.log('Attempting JSON parse...');
+                        editData.Operational_Segment = JSON.parse(editData.Operational_Segment);
+                        console.log('JSON parse successful:', editData.Operational_Segment);
+                    } else {
+                        console.log('Keeping as plain string (not JSON format)');
+                    }
+                    // If it's a plain string like "ecommerce,white_goods", leave it as is
                 } catch (e) {
                     console.error("Invalid JSON string in Operational_Segment", e);
+                    console.log('Keeping original string value due to parse error');
+                    // Keep the original string value if JSON parsing fails
                 }
             }
 

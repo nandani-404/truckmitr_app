@@ -47,7 +47,7 @@ export const END_POINTS = {
     PRIVACY_POLICY: `api/privacy-policy`,
     TERMS_AND_CONDITIONS: `api/terms-and-conditions`,
     DRIVER_CONSENT: `api/driver-consent-for-job-application-data-sharing`,
-    // TRANSPORTER_CONSENT: `api/transporter-consent-for-job-posting-data-sharing`,
+    TRANSPORTER_CONSENT: `api/transporter-consent-for-job-posting-data-sharing`,
     SUBSCRIPTION_CONSENT: `api/subscription-consent-and-disclaimer`,
 
     TRANSPORTER_ADD_JOB: `api/transporter/add-job`,

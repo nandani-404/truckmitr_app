@@ -408,8 +408,9 @@ export default function TransporterAppliedJob() {
 
             console.log('----------formdata-------', formData);
 
-
             const response: any = await axiosInstance.post(END_POINTS.TRANSPORTER_SCHEDULE_INTERVIEW, formData);
+            console.log('Schedule interview API response:', response?.data);
+            
             if (response?.data?.status) {
                 showToast(response?.data?.message || 'Interview scheduled successfully');
                 // Reset states
@@ -420,15 +421,20 @@ export default function TransporterAppliedJob() {
                 setTempIsDateSelected(false);
                 setTempIsTimeSelected(false);
 
+                // Close modal and refresh data
                 setShowScheduleModal(false);
                 setloading(true);
                 _fetchJobs();
             } else {
                 showToast(response?.data?.message || 'Failed to schedule interview');
+                // Close modal even if API returns error status
+                setShowScheduleModal(false);
             }
         } catch (error) {
             console.error('Error scheduling interview:', error);
             showToast('Something went wrong');
+            // Close modal even on error
+            setShowScheduleModal(false);
         } finally {
             setScheduleLoading(false);
         }

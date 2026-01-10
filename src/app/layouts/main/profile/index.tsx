@@ -966,7 +966,7 @@ export default function Profile() {
         ]}>
           {/* Profile Avatar with Progress Ring */}
           <TouchableOpacity
-            onPress={_navigateProfileEdit}
+            onPress={_navigateProfileOverview}
             activeOpacity={0.9}
             style={styles.avatarContainer}
           >
@@ -1112,7 +1112,7 @@ export default function Profile() {
 
           {/* Edit Button */}
           <TouchableOpacity
-            onPress={_navigateProfileEdit}
+            onPress={_navigateProfileOverview}
             activeOpacity={0.7}
             style={[
               styles.editButton,
@@ -1170,7 +1170,7 @@ export default function Profile() {
                   </View>
                 </View>
                 <TouchableOpacity
-                  onPress={_navigateProfileEdit}
+                  onPress={_navigateProfileOverview}
                   activeOpacity={0.8}
                   style={[
                     styles.completeButton,
@@ -1561,11 +1561,11 @@ export default function Profile() {
             onPress={_navigateProfileOverview}
           />
           <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
-          <MenuItem
+          {/* <MenuItem
             icon={<Feather name="edit-2" size={20} color={colors.royalBlue} />}
             title={t('editProfile') || 'Edit Profile'}
             onPress={_navigateProfileEdit}
-          />
+          /> */}
           {isDriver && (
             <>
               <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />

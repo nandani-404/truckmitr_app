@@ -65,19 +65,19 @@ const RenderDriverList = ({ item, fetchDriverList, job_id }: any) => {
     const [checkBoxSelect, setCheckBoxSelect] = useState<{ [id: number]: boolean }>({});
     const [errors, setErrors] = useState<{ [id: number]: { checkBox?: string } }>({});
     const navigation = useNavigation<NavigatorProp>();
-    
 
-  const validate = (id: number): boolean => {
-    let valid = true;
-    const newErrors: { [key: string]: string } = {};
 
-    if (!checkBoxSelect[id]) {
-      newErrors.checkBox = t(`youNeedToAcceptTruckMitr`);
-      valid = false;
-    }
-    setErrors(prev => ({ ...prev, [id]: newErrors }));
-    return valid;
-  };
+    const validate = (id: number): boolean => {
+        let valid = true;
+        const newErrors: { [key: string]: string } = {};
+
+        if (!checkBoxSelect[id]) {
+            newErrors.checkBox = t(`youNeedToAcceptTruckMitr`);
+            valid = false;
+        }
+        setErrors(prev => ({ ...prev, [id]: newErrors }));
+        return valid;
+    };
 
     const handleInvite = async () => {
         if (!validate(item?.id)) return;
@@ -105,8 +105,8 @@ const RenderDriverList = ({ item, fetchDriverList, job_id }: any) => {
     };
 
     const _onpressCheckBox = (id: number) => {
-       setCheckBoxSelect(prev => ({ ...prev, [id]: !prev[id] }));
-       setErrors(prev => ({ ...prev, [id]: { checkBox: undefined } }));
+        setCheckBoxSelect(prev => ({ ...prev, [id]: !prev[id] }));
+        setErrors(prev => ({ ...prev, [id]: { checkBox: undefined } }));
     };
 
     return (
@@ -308,27 +308,27 @@ const RenderDriverList = ({ item, fetchDriverList, job_id }: any) => {
                 </View>
             </View>
             <Space height={responsiveHeight(2)} />
-                                                        <View style={{ flexDirection: 'row' }}>
-                                                                <TouchableOpacity activeOpacity={1} onPress={() => _onpressCheckBox(item.id)}>
-                                                                  <MaterialCommunityIcons
-                                                                    name={checkBoxSelect[item.id] ? 'checkbox-marked' : 'checkbox-blank-outline'}
-                                                                    size={24}
-                                                                    color={colors.royalBlue}
-                                                                  />
-                                                                </TouchableOpacity>
-                                                        <Text style={{ color: colors.blackOpacity(0.7), marginStart: responsiveFontSize(1), flexShrink: 1, flexWrap: 'wrap' }}>
-                                                                {t(`iAgreeToTruckMitr`)}
-                                                                <Text onPress={() => navigation.navigate(STACKS?.TRANSPORTER_CONSENT)} style={{ color: colors.royalBlue, fontWeight: '500' }}> {t(`transporterConsent`)}</Text>
-                                                                {t(`addJobPolicy`)}
-                                                        </Text>
-                                                              </View>
-                                                              {errors[item.id]?.checkBox && (
-                                                                <View style={{ flexDirection: 'row', marginTop: responsiveHeight(1) }}>
-                                                                  <Text style={{ color: colors.error, fontSize: responsiveFontSize(1.7), marginLeft: responsiveFontSize(0.5) }}>
-                                                                    {errors[item.id]?.checkBox}
-                                                                  </Text>
-                                                                </View>
-                                                              )}
+            <View style={{ flexDirection: 'row' }}>
+                <TouchableOpacity activeOpacity={1} onPress={() => _onpressCheckBox(item.id)}>
+                    <MaterialCommunityIcons
+                        name={checkBoxSelect[item.id] ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                        size={24}
+                        color={colors.royalBlue}
+                    />
+                </TouchableOpacity>
+                <Text style={{ color: colors.blackOpacity(0.7), marginStart: responsiveFontSize(1), flexShrink: 1, flexWrap: 'wrap' }}>
+                    {t(`iAgreeToTruckMitr`)}
+                    <Text onPress={() => navigation.navigate(STACKS?.TRANSPORTER_CONSENT)} style={{ color: colors.royalBlue, fontWeight: '500' }}> {t(`transporterConsent`)}</Text>
+                    {t(`addJobPolicy`)}
+                </Text>
+            </View>
+            {errors[item.id]?.checkBox && (
+                <View style={{ flexDirection: 'row', marginTop: responsiveHeight(1) }}>
+                    <Text style={{ color: colors.error, fontSize: responsiveFontSize(1.7), marginLeft: responsiveFontSize(0.5) }}>
+                        {errors[item.id]?.checkBox}
+                    </Text>
+                </View>
+            )}
             <Space height={responsiveHeight(2)} />
             <TouchableOpacity
                 style={{
