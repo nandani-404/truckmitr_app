@@ -410,7 +410,7 @@ export default function TransporterAppliedJob() {
 
             const response: any = await axiosInstance.post(END_POINTS.TRANSPORTER_SCHEDULE_INTERVIEW, formData);
             console.log('Schedule interview API response:', response?.data);
-            
+
             if (response?.data?.status) {
                 showToast(response?.data?.message || 'Interview scheduled successfully');
                 // Reset states
@@ -583,7 +583,7 @@ export default function TransporterAppliedJob() {
             Expiry_date_of_license: driver?.Expiry_date_of_license,
             payments_type: driver?.payments_type,
             // Verification status fields
-            dl_verification_status: driver?.dl_verification_status,
+            dl_name_verified: driver?.dl_name_verified,
             face_match_verified: driver?.face_match_verified,
             court_check_status: driver?.court_check_status,
             address_verification_status: driver?.address_verification_status,
@@ -741,7 +741,7 @@ export default function TransporterAppliedJob() {
                 {/* VERIFICATION + TRUST ROW - Dynamic based on API response */}
                 {(() => {
                     // Get verification statuses from driver_details
-                    const isIdVerified = driver?.dl_verification_status === 'verified';
+                    const isIdVerified = driver?.dl_name_verified === 'verified';
                     const isFaceVerified = driver?.face_match_verified === 'verified' || driver?.face_match_verified === true;
                     const isCourtVerified = driver?.court_check_status === 'verified' || driver?.court_check_status?.status === 'verified';
                     const isAddressVerified = driver?.address_verification_status === 'verified' || driver?.address_verification_status?.status === 'verified';
@@ -1873,7 +1873,7 @@ export default function TransporterAppliedJob() {
                                 }}>
                                     <SectionHeader title={t('licenseDocuments') || 'License & Documents'} icon="document-text-outline" />
                                     <DetailItem label={t('licenseType') || 'License Type'} value={licenseType} />
-                                    <DetailItem label={t('aadharNumber') || 'Aadhar No.'} value={maskAadhar(aadharNo)} />
+                                    {/* <DetailItem label={t('aadharNumber') || 'Aadhar No.'} value={maskAadhar(aadharNo)} /> */}
                                     <DetailItem label={t('licenseNo') || 'License No.'} value={maskLicense(licenseNo)} />
                                     <DetailItem label={t('licenseExpiry') || 'License Expiry'} value={licenseExpiry} />
                                     <DetailItem label={t('panNumber') || 'PAN No.'} value={maskPan(panNo)} />
