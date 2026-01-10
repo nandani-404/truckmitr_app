@@ -257,6 +257,7 @@
   "vihicleTypeRequired": "Vahan ka type zaroori hai",
   "experienceYearsRequired": "Anubhav (saalon mein) zaroori hai",
   "applicationDeadline": "Aavedan ki antim tareekh",
+  "applicationDeadlineValidation": "Aap sirf 4 din baad ki tareekh chunh sakte hain",
   "numberOfDrivers": "Drivers ki sankhya",
   "enterNumberOfDrivers": "Drivers ki sankhya daalein",
   "jobDescription_500_character": "Naukri ka description (kam se kam 500 characters)",

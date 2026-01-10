@@ -268,6 +268,7 @@
   "vihicleTypeRequired": "Vihicle Type is required",
   "experienceYearsRequired": "Experience in Years is required",
   "applicationDeadline": "Application Deadline",
+  "applicationDeadlineValidation": "You can only select deadline after 4 days",
   "numberOfDrivers": "Number of Drivers",
   "enterNumberOfDrivers": "Enter Number of Drivers",
   "jobDescription_500_character": "Job Description (minimum 500 character allowed)",
