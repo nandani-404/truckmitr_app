@@ -735,12 +735,12 @@ export default function ProfileOverview() {
         {/* Education Section - Separate step for drivers only */}
         {isDriver && (
           <FieldGroupCard
-            title={t('education') || 'Education'}
+            title={t('educationStep') || 'Education'}
             icon="school"
             stepId="education"
             fields={[
               {
-                label: t('education') || 'Education',
+                label: t('educationStep') || 'Education',
                 value: user?.Highest_Education || user?.education,
               },
             ]}
