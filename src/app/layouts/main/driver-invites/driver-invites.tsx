@@ -67,16 +67,16 @@ const RenderInviteItem: React.FC<{ item: InviteItem; fetchInvites: () => void }>
     const navigation = useNavigation<NavigatorProp>();
 
     const validate = (id: number): boolean => {
-    let valid = true;
-    const newErrors: { [key: string]: string } = {};
+        let valid = true;
+        const newErrors: { [key: string]: string } = {};
 
-    if (!checkBoxSelect[id]) {
-      newErrors.checkBox = t(`youNeedToAcceptTruckMitr`);
-      valid = false;
-    }
-    setErrors(prev => ({ ...prev, [id]: newErrors }));
-    return valid;
-  };
+        if (!checkBoxSelect[id]) {
+            newErrors.checkBox = t(`youNeedToAcceptTruckMitr`);
+            valid = false;
+        }
+        setErrors(prev => ({ ...prev, [id]: newErrors }));
+        return valid;
+    };
 
 
     const handleAccept = async () => {
@@ -187,21 +187,21 @@ const RenderInviteItem: React.FC<{ item: InviteItem; fetchInvites: () => void }>
     };
 
     const _onpressCheckBox = (id: number) => {
-       setCheckBoxSelect(prev => ({ ...prev, [id]: !prev[id] }));
-       setErrors(prev => ({ ...prev, [id]: { checkBox: undefined } }));
+        setCheckBoxSelect(prev => ({ ...prev, [id]: !prev[id] }));
+        setErrors(prev => ({ ...prev, [id]: { checkBox: undefined } }));
     };
 
     const callToTransporter = async (item: any) => {
         try {
-        Linking.openURL(`tel:${item.transporter?.mobile}`)
-         const formData = new FormData();
+            Linking.openURL(`tel:${item.transporter?.mobile}`)
+            const formData = new FormData();
             formData.append('id', item.transporter?.id);
             formData.append('job_id', item.job?.job_id);
             const response: any = await axiosInstance.post(END_POINTS?.CALL_TRANSPORTER, formData);
             if (response?.data?.status) {
                 console.log(response, "response")
             }
-        } catch(error){
+        } catch (error) {
             console.log(error)
         }
     }
@@ -448,29 +448,29 @@ const RenderInviteItem: React.FC<{ item: InviteItem; fetchInvites: () => void }>
                     </View>
                 </View>
             </View>
-                                                                   {item.status === "pending" && <> <Space height={responsiveHeight(2)} /> <View style={{ flexDirection: 'row' }}>
-                                                                            <TouchableOpacity activeOpacity={1} onPress={() => _onpressCheckBox(item.id)}>
-                                                                              <MaterialCommunityIcons
-                                                                                name={checkBoxSelect[item.id] ? 'checkbox-marked' : 'checkbox-blank-outline'}
-                                                                                size={24}
-                                                                                color={colors.royalBlue}
-                                                                              />
-                                                                            </TouchableOpacity>
-                                                              <Text style={{ color: colors.blackOpacity(0.7), marginStart: responsiveFontSize(1), flexShrink: 1, flexWrap: 'wrap' }}>
-                                                                                                                 {t(`iAgreeToTruckMitr`)}
-                                                                                                                 <Text onPress={() => navigation.navigate(STACKS?.DRIVER_CONSENT)} style={{ color: colors.royalBlue, fontWeight: '500' }}> {t(`driverConsent`)}</Text>
-                                                                                                                 {t(`applyJobPolicy`)}
-                                                                                                       
-                                                                    </Text>
-                                                                          </View> </>}
-                                                                          {errors[item.id]?.checkBox && (
-                                                                            <View style={{ flexDirection: 'row', marginTop: responsiveHeight(1) }}>
-                                                                              <Text style={{ color: colors.error, fontSize: responsiveFontSize(1.7), marginLeft: responsiveFontSize(0.5) }}>
-                                                                                {errors[item.id]?.checkBox}
-                                                                              </Text>
-                                                                            </View>
-                                                                          )}
-                        <Space height={responsiveHeight(2)} />
+            {item.status === "pending" && <> <Space height={responsiveHeight(2)} /> <View style={{ flexDirection: 'row' }}>
+                <TouchableOpacity activeOpacity={1} onPress={() => _onpressCheckBox(item.id)}>
+                    <MaterialCommunityIcons
+                        name={checkBoxSelect[item.id] ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                        size={24}
+                        color={colors.royalBlue}
+                    />
+                </TouchableOpacity>
+                <Text style={{ color: colors.blackOpacity(0.7), marginStart: responsiveFontSize(1), flexShrink: 1, flexWrap: 'wrap' }}>
+                    {t(`iAgreeToTruckMitr`)}
+                    <Text onPress={() => navigation.navigate(STACKS?.DRIVER_CONSENT)} style={{ color: colors.royalBlue, fontWeight: '500' }}> {t(`driverConsent`)}</Text>
+                    {t(`applyJobPolicy`)}
+
+                </Text>
+            </View> </>}
+            {errors[item.id]?.checkBox && (
+                <View style={{ flexDirection: 'row', marginTop: responsiveHeight(1) }}>
+                    <Text style={{ color: colors.error, fontSize: responsiveFontSize(1.7), marginLeft: responsiveFontSize(0.5) }}>
+                        {errors[item.id]?.checkBox}
+                    </Text>
+                </View>
+            )}
+            <Space height={responsiveHeight(2)} />
             {/* Action Buttons or Contact Info */}
             {item.status === 'pending' ? (
                 <View style={{
@@ -651,11 +651,50 @@ export default function DriverInvites() {
     return (
         <View style={{ flex: 1, backgroundColor: colors.white }}>
             <Space height={safeAreaInsets.top} />
-            <View style={{ flexDirection: 'row', width: '100%', alignItems: 'center', padding: responsiveWidth(3) }}>
-                <TouchableOpacity hitSlop={hitSlop(10)} onPress={_goback} style={{ height: responsiveFontSize(4), width: responsiveFontSize(4), alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, borderRadius: 100, zIndex: 100 }}>
-                    <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={{ width: responsiveWidth(100), fontSize: responsiveFontSize(2.2), color: colors.royalBlue, fontWeight: 'bold', textAlign: 'center', position: 'absolute', zIndex: 1 }}>{t('transporterInvitations')}</Text>
+            {/* Header */}
+            <View style={{
+                backgroundColor: colors.white,
+                paddingHorizontal: responsiveWidth(4),
+                paddingVertical: responsiveHeight(2),
+                borderBottomWidth: 1,
+                borderBottomColor: colors.blackOpacity(0.06),
+                shadowColor: colors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 3,
+            }}>
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <TouchableOpacity
+                        hitSlop={hitSlop(10)}
+                        onPress={_goback}
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            height: responsiveFontSize(5),
+                            width: responsiveFontSize(5),
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.royalBlue + '12',
+                            borderRadius: responsiveFontSize(2.5),
+                        }}
+                    >
+                        <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
+                    </TouchableOpacity>
+
+                    <Text style={{
+                        fontSize: responsiveFontSize(2.4),
+                        color: colors.black,
+                        fontWeight: '700',
+                        letterSpacing: -0.3
+                    }}>
+                        {t('transporterInvitations')}
+                    </Text>
+                </View>
             </View>
 
             {loading ? (

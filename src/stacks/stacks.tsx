@@ -54,6 +54,7 @@ export type NavigatorParams = {
     jobStep2: undefined
     jobStep3: undefined
     viewJobs: undefined
+    purchaseInvoices: undefined
     addDriver: undefined
     excelImport: undefined
     transporterAppliedJob: undefined
@@ -186,6 +187,7 @@ export const STACKS = {
     JOB_STEP2: 'jobStep2',
     JOB_STEP3: 'jobStep3',
     VIEW_JOBS: 'viewJobs',
+    PURCHASE_INVOICES: 'purchaseInvoices',
     TRANSPORTER_APPLIED_JOB: 'transporterAppliedJob',
     ADD_DRIVER: 'addDriver',
     EXCEL_IMPORT: 'excelImport',

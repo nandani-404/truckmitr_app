@@ -2145,5 +2145,21 @@
   "permanentAddressDesc": "आधिकारिक दस्तावेजों के अनुसार पता",
   "currentAddress": "वर्तमान पता",
   "currentAddressDesc": "जहाँ आप वर्तमान में रहते हैं",
-  "addressTypeInfo": "वह पता प्रकार चुनें जिसे आप सत्यापित करना चाहते हैं"
+  "addressTypeInfo": "वह पता प्रकार चुनें जिसे आप सत्यापित करना चाहते हैं",
+  "purchaseInvoices": "खरीद चालान",
+  "searchInvoices": "चालान खोजें",
+  "noInvoicesFound": "कोई चालान नहीं मिला",
+  "noInvoicesYet": "अभी तक कोई चालान नहीं",
+  "noInvoicesDescription": "नौकरी पोस्ट करने के बाद आपके खरीद चालान यहाँ दिखाई देंगे",
+  "totalInvoices": "कुल चालान",
+  "totalSpent": "कुल खर्च",
+  "planAmount": "प्लान राशि",
+  "planType": "प्लान प्रकार",
+  "purchaseDate": "खरीद तिथि",
+  "invoiceNotAvailable": "इनवॉइस उपलब्ध नहीं है",
+  "invoiceOpened": "इनवॉइस ब्राउज़र में खोला गया",
+  "downloadFailed": "डाउनलोड असफल। कृपया पुनः प्रयास करें।",
+  "expiryDate": "समाप्ति तिथि",
+  "downloadingInvoice": "इनवॉइस डाउनलोड हो रहा है",
+  "invoiceDownloadedSuccessfully": "इनवॉइस सफलतापूर्वक डाउनलोड हो गया"
 }

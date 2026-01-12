@@ -373,17 +373,17 @@ export default function Verification({ navigation }: any) {
 
   // Reusable back button component
   const BackButton = () => (
-    <TouchableOpacity 
-      hitSlop={hitSlop(10)} 
-      onPress={_goback} 
-      style={{ 
-        height: responsiveFontSize(4), 
-        width: responsiveFontSize(4), 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        backgroundColor: colors.white, 
-        borderRadius: 100, 
-        zIndex: 100 
+    <TouchableOpacity
+      hitSlop={hitSlop(10)}
+      onPress={_goback}
+      style={{
+        height: responsiveFontSize(4),
+        width: responsiveFontSize(4),
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.white,
+        borderRadius: 100,
+        zIndex: 100
       }}
     >
       <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
@@ -511,43 +511,72 @@ export default function Verification({ navigation }: any) {
         translucent={false}
       />
       <Space height={safeAreaInsets.top} />
-      <View style={{ flexDirection: 'row', width: '100%', alignItems: 'center', padding: responsiveWidth(3) }}>
-        <TouchableOpacity hitSlop={hitSlop(10)} onPress={_goback} style={{ height: responsiveFontSize(4), width: responsiveFontSize(4), alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, borderRadius: 100, zIndex: 100 }}>
-          <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
-        </TouchableOpacity>
-        <Text style={{  width: responsiveWidth(100),
-                        fontSize: responsiveFontSize(2.2),
-                        color: colors.royalBlue,
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                        position: 'absolute',
-                        zIndex: 1, }}>{t(`getVerifiedNow`)}</Text>
-        <TouchableOpacity
-          hitSlop={hitSlop(10)}
-          onPress={onRefresh}
-          disabled={refreshing}
-          style={{
-            position: 'absolute',
-            right: responsiveWidth(5),
-            height: responsiveFontSize(4),
-            width: responsiveFontSize(4),
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.white,
-            borderRadius: 100,
-            zIndex: 100
-          }}
-        >
-          {refreshing ? (
-            <ActivityIndicator size="small" color={colors.royalBlue} />
-          ) : (
-            <Ionicons
-              name={'refresh'}
-              size={24}
-              color={colors.royalBlue}
-            />
-          )}
-        </TouchableOpacity>
+      {/* Header */}
+      <View style={{
+        backgroundColor: colors.white,
+        paddingHorizontal: responsiveWidth(4),
+        paddingVertical: responsiveHeight(2),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.blackOpacity(0.06),
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
+      }}>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <TouchableOpacity
+            hitSlop={hitSlop(10)}
+            onPress={_goback}
+            style={{
+              position: 'absolute',
+              left: 0,
+              height: responsiveFontSize(5),
+              width: responsiveFontSize(5),
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.royalBlue + '12',
+              borderRadius: responsiveFontSize(2.5),
+            }}
+          >
+            <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
+          </TouchableOpacity>
+
+          <Text style={{
+            fontSize: responsiveFontSize(2.4),
+            color: colors.black,
+            fontWeight: '700',
+            letterSpacing: -0.3
+          }}>
+            {t(`getVerifiedNow`)}
+          </Text>
+
+          <TouchableOpacity
+            hitSlop={hitSlop(10)}
+            onPress={onRefresh}
+            disabled={refreshing}
+            style={{
+              position: 'absolute',
+              right: 0,
+              height: responsiveFontSize(5),
+              width: responsiveFontSize(5),
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.royalBlue + '12',
+              borderRadius: responsiveFontSize(2.5),
+            }}
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color={colors.royalBlue} />
+            ) : (
+              <Ionicons name={'refresh'} size={24} color={colors.royalBlue} />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: responsiveHeight(8) }} showsVerticalScrollIndicator={false}>
@@ -556,12 +585,12 @@ export default function Verification({ navigation }: any) {
 
           {(overallStatus !== 'not_started' && overallStatus !== 'payment_required') && (
             <View style={{ paddingHorizontal: responsiveWidth(5), marginTop: responsiveFontSize(2) }}>
-              <View style={{ 
-                backgroundColor: overallStatus === 'rejected' 
-                  ? colors.blackOpacity(0.05) 
-                  : colors.royalBlueOpacity(0.05), 
-                borderRadius: 12, 
-                padding: responsiveFontSize(2), 
+              <View style={{
+                backgroundColor: overallStatus === 'rejected'
+                  ? colors.blackOpacity(0.05)
+                  : colors.royalBlueOpacity(0.05),
+                borderRadius: 12,
+                padding: responsiveFontSize(2),
                 marginBottom: responsiveFontSize(2),
                 borderWidth: overallStatus === 'rejected' ? 1 : 0,
                 borderColor: overallStatus === 'rejected' ? colors.roseRedOpacity(0.3) : 'transparent'
@@ -580,10 +609,10 @@ export default function Verification({ navigation }: any) {
                   onPress={statusContent.buttonAction}
                   disabled={startingVerification}
                   style={{
-                    backgroundColor: startingVerification 
-                      ? colors.blackOpacity(0.3) 
-                      : overallStatus === 'rejected' 
-                        ? colors.roseRedOpacity(0.8) 
+                    backgroundColor: startingVerification
+                      ? colors.blackOpacity(0.3)
+                      : overallStatus === 'rejected'
+                        ? colors.roseRedOpacity(0.8)
                         : colors.royalBlue,
                     paddingVertical: responsiveFontSize(1.2),
                     borderRadius: 8,
@@ -674,8 +703,8 @@ export default function Verification({ navigation }: any) {
                   backgroundColor: (overallStatus === 'completed' || overallStatus === 'verified' || verificationStatus?.final_status === 'completed')
                     ? colors.greenOpacitiy(0.1)
                     : overallStatus === 'rejected'
-                    ? colors.roseRedOpacity(0.1)
-                    : colors.royalBlueOpacity(0.1),
+                      ? colors.roseRedOpacity(0.1)
+                      : colors.royalBlueOpacity(0.1),
                   padding: responsiveFontSize(1.5),
                   borderRadius: 8,
                   marginBottom: responsiveFontSize(1),
@@ -687,22 +716,22 @@ export default function Verification({ navigation }: any) {
                   name={(overallStatus === 'completed' || overallStatus === 'verified' || verificationStatus?.final_status === 'completed')
                     ? "checkmark-circle"
                     : overallStatus === 'rejected'
-                    ? "close-circle"
-                    : "time"}
+                      ? "close-circle"
+                      : "time"}
                   size={20}
                   color={(overallStatus === 'completed' || overallStatus === 'verified' || verificationStatus?.final_status === 'completed')
                     ? colors.greenOpacitiy(1)
                     : overallStatus === 'rejected'
-                    ? colors.roseRedOpacity(1)
-                    : colors.royalBlue}
+                      ? colors.roseRedOpacity(1)
+                      : colors.royalBlue}
                 />
                 <Text
                   style={{
                     color: (overallStatus === 'completed' || overallStatus === 'verified' || verificationStatus?.final_status === 'completed')
                       ? colors.greenOpacitiy(1)
                       : overallStatus === 'rejected'
-                      ? colors.roseRedOpacity(1)
-                      : colors.royalBlue,
+                        ? colors.roseRedOpacity(1)
+                        : colors.royalBlue,
                     fontSize: responsiveFontSize(1.8),
                     fontWeight: '500',
                     marginLeft: responsiveFontSize(1),
@@ -711,8 +740,8 @@ export default function Verification({ navigation }: any) {
                   {(overallStatus === 'completed' || overallStatus === 'verified' || verificationStatus?.final_status === 'completed')
                     ? t('verificationCompleted')
                     : overallStatus === 'rejected'
-                    ? t('verificationRejected')
-                    : t('verificationInProgress')}
+                      ? t('verificationRejected')
+                      : t('verificationInProgress')}
                 </Text>
               </View>
             )}
@@ -732,16 +761,16 @@ export default function Verification({ navigation }: any) {
                 >
                   {t('rejectionDetails')}
                 </Text>
-                
+
                 {/* ID Verification Status */}
                 {verificationStatus.id_status && (
-                    <View
+                  <View
                     style={{
-                      backgroundColor: verificationStatus.id_status.status === 'verified' 
-                        ? colors.greenOpacitiy(0.1) 
+                      backgroundColor: verificationStatus.id_status.status === 'verified'
+                        ? colors.greenOpacitiy(0.1)
                         : verificationStatus.id_status.status === 'pending'
-                        ? colors.royalBlueOpacity(0.1)
-                        : colors.roseRedOpacity(0.1),
+                          ? colors.royalBlueOpacity(0.1)
+                          : colors.roseRedOpacity(0.1),
                       padding: responsiveFontSize(1.2),
                       borderRadius: 8,
                       marginBottom: responsiveFontSize(0.8),
@@ -749,52 +778,52 @@ export default function Verification({ navigation }: any) {
                       alignItems: 'center',
                     }}
                   >
- 
-                                        <Ionicons
-                      name={verificationStatus.id_status.status === 'verified' 
-                        ? "checkmark-circle" 
+
+                    <Ionicons
+                      name={verificationStatus.id_status.status === 'verified'
+                        ? "checkmark-circle"
                         : verificationStatus.id_status.status === 'pending'
-                        ? "time"
-                        : "close-circle"}
+                          ? "time"
+                          : "close-circle"}
                       size={18}
-                      color={verificationStatus.id_status.status === 'verified' 
-                        ? colors.greenOpacitiy(1) 
+                      color={verificationStatus.id_status.status === 'verified'
+                        ? colors.greenOpacitiy(1)
                         : verificationStatus.id_status.status === 'pending'
-                        ? colors.royalBlue
-                        : colors.roseRedOpacity(1)}
+                          ? colors.royalBlue
+                          : colors.roseRedOpacity(1)}
                     />
-                    
+
                     <Text
                       style={{
-                        color: verificationStatus.id_status.status === 'verified' 
-                          ? colors.greenOpacitiy(1) 
+                        color: verificationStatus.id_status.status === 'verified'
+                          ? colors.greenOpacitiy(1)
                           : verificationStatus.id_status.status === 'pending'
-                          ? colors.royalBlue
-                          : colors.roseRedOpacity(1),
+                            ? colors.royalBlue
+                            : colors.roseRedOpacity(1),
                         fontSize: responsiveFontSize(1.6),
                         fontWeight: '500',
                         marginLeft: responsiveFontSize(0.8),
                         flex: 1,
                       }}
                     >
-                      {t('idVerification')}: {verificationStatus.id_status.status === 'verified' 
-                        ? t('verified') 
+                      {t('idVerification')}: {verificationStatus.id_status.status === 'verified'
+                        ? t('verified')
                         : verificationStatus.id_status.status === 'pending'
-                        ? t('pending')
-                        : t('rejected')}
+                          ? t('pending')
+                          : t('rejected')}
                     </Text>
                   </View>
                 )}
 
                 {/* Address Verification Status */}
                 {verificationStatus.address_status && (
-                    <View
+                  <View
                     style={{
-                      backgroundColor: verificationStatus.address_status.status === 'verified' 
-                        ? colors.greenOpacitiy(0.1) 
+                      backgroundColor: verificationStatus.address_status.status === 'verified'
+                        ? colors.greenOpacitiy(0.1)
                         : verificationStatus.address_status.status === 'pending'
-                        ? colors.royalBlueOpacity(0.1)
-                        : colors.roseRedOpacity(0.1),
+                          ? colors.royalBlueOpacity(0.1)
+                          : colors.roseRedOpacity(0.1),
                       padding: responsiveFontSize(1.2),
                       borderRadius: 8,
                       marginBottom: responsiveFontSize(0.8),
@@ -802,38 +831,38 @@ export default function Verification({ navigation }: any) {
                       alignItems: 'center',
                     }}
                   >
- 
-                                        <Ionicons
-                      name={verificationStatus.address_status.status === 'verified' 
-                        ? "checkmark-circle" 
+
+                    <Ionicons
+                      name={verificationStatus.address_status.status === 'verified'
+                        ? "checkmark-circle"
                         : verificationStatus.address_status.status === 'pending'
-                        ? "time"
-                        : "close-circle"}
+                          ? "time"
+                          : "close-circle"}
                       size={18}
-                      color={verificationStatus.address_status.status === 'verified' 
-                        ? colors.greenOpacitiy(1) 
+                      color={verificationStatus.address_status.status === 'verified'
+                        ? colors.greenOpacitiy(1)
                         : verificationStatus.address_status.status === 'pending'
-                        ? colors.royalBlue
-                        : colors.roseRedOpacity(1)}
-                    />
-                                   <Text
-                      style={{
-                        color: verificationStatus.address_status.status === 'verified' 
-                          ? colors.greenOpacitiy(1) 
-                          : verificationStatus.address_status.status === 'pending'
                           ? colors.royalBlue
-                          : colors.roseRedOpacity(1),
+                          : colors.roseRedOpacity(1)}
+                    />
+                    <Text
+                      style={{
+                        color: verificationStatus.address_status.status === 'verified'
+                          ? colors.greenOpacitiy(1)
+                          : verificationStatus.address_status.status === 'pending'
+                            ? colors.royalBlue
+                            : colors.roseRedOpacity(1),
                         fontSize: responsiveFontSize(1.6),
                         fontWeight: '500',
                         marginLeft: responsiveFontSize(0.8),
                         flex: 1,
                       }}
                     >
-                      {t('addressVerification')}: {verificationStatus.address_status.status === 'verified' 
-                        ? t('verified') 
+                      {t('addressVerification')}: {verificationStatus.address_status.status === 'verified'
+                        ? t('verified')
                         : verificationStatus.address_status.status === 'pending'
-                        ? t('pending')
-                        : t('rejected')}
+                          ? t('pending')
+                          : t('rejected')}
                     </Text>
                   </View>
                 )}
@@ -842,11 +871,11 @@ export default function Verification({ navigation }: any) {
                 {verificationStatus.court_check_status && (
                   <View
                     style={{
-                      backgroundColor: verificationStatus.court_check_status.status === 'verified' 
-                        ? colors.greenOpacitiy(0.1) 
+                      backgroundColor: verificationStatus.court_check_status.status === 'verified'
+                        ? colors.greenOpacitiy(0.1)
                         : verificationStatus.court_check_status.status === 'pending'
-                        ? colors.royalBlueOpacity(0.1)
-                        : colors.roseRedOpacity(0.1),
+                          ? colors.royalBlueOpacity(0.1)
+                          : colors.roseRedOpacity(0.1),
                       padding: responsiveFontSize(1.2),
                       borderRadius: 8,
                       marginBottom: responsiveFontSize(0.8),
@@ -855,36 +884,36 @@ export default function Verification({ navigation }: any) {
                     }}
                   >
                     <Ionicons
-                      name={verificationStatus.court_check_status.status === 'verified' 
-                        ? "checkmark-circle" 
+                      name={verificationStatus.court_check_status.status === 'verified'
+                        ? "checkmark-circle"
                         : verificationStatus.court_check_status.status === 'pending'
-                        ? "time"
-                        : "close-circle"}
+                          ? "time"
+                          : "close-circle"}
                       size={18}
-                      color={verificationStatus.court_check_status.status === 'verified' 
-                        ? colors.greenOpacitiy(1) 
+                      color={verificationStatus.court_check_status.status === 'verified'
+                        ? colors.greenOpacitiy(1)
                         : verificationStatus.court_check_status.status === 'pending'
-                        ? colors.royalBlue
-                        : colors.roseRedOpacity(1)}
+                          ? colors.royalBlue
+                          : colors.roseRedOpacity(1)}
                     />
                     <Text
                       style={{
-                        color: verificationStatus.court_check_status.status === 'verified' 
-                          ? colors.greenOpacitiy(1) 
+                        color: verificationStatus.court_check_status.status === 'verified'
+                          ? colors.greenOpacitiy(1)
                           : verificationStatus.court_check_status.status === 'pending'
-                          ? colors.royalBlue
-                          : colors.roseRedOpacity(1),
+                            ? colors.royalBlue
+                            : colors.roseRedOpacity(1),
                         fontSize: responsiveFontSize(1.6),
                         fontWeight: '500',
                         marginLeft: responsiveFontSize(0.8),
                         flex: 1,
                       }}
                     >
-                      {t('courtCheck')}: {verificationStatus.court_check_status.status === 'verified' 
-                        ? t('verified') 
+                      {t('courtCheck')}: {verificationStatus.court_check_status.status === 'verified'
+                        ? t('verified')
                         : verificationStatus.court_check_status.status === 'pending'
-                        ? t('pending')
-                        : t('rejected')}
+                          ? t('pending')
+                          : t('rejected')}
                     </Text>
                   </View>
                 )}
@@ -952,133 +981,133 @@ export default function Verification({ navigation }: any) {
           </View>
         )}
 
-   
-          <Space height={responsiveFontSize(2)} />
-          {/* Payment Required Section */}
-          {/* Payment Features */}
-          <View
+
+        <Space height={responsiveFontSize(2)} />
+        {/* Payment Required Section */}
+        {/* Payment Features */}
+        <View
+          style={{
+            marginHorizontal: responsiveWidth(3),
+            backgroundColor: colors.white,
+            borderRadius: 12,
+            padding: responsiveFontSize(1.5),
+            marginBottom: responsiveFontSize(3.5),
+            borderWidth: 1,
+            borderColor: colors.blackOpacity(0.1),
+          }}
+        >
+          <Text
             style={{
-              marginHorizontal: responsiveWidth(3),
-              backgroundColor: colors.white,
-              borderRadius: 12,
-              padding: responsiveFontSize(1.5),
-              marginBottom: responsiveFontSize(3.5),
-              borderWidth: 1,
-              borderColor: colors.blackOpacity(0.1),
+              color: colors.black,
+              fontSize: responsiveFontSize(2),
+              fontWeight: 'bold',
+              marginBottom: responsiveFontSize(1.2),
+              textAlign: 'center'
             }}
           >
-            <Text
+            {t('whyGetVerified')}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View
               style={{
-                color: colors.black,
-                fontSize: responsiveFontSize(2),
-                fontWeight: 'bold',
-                marginBottom: responsiveFontSize(1.2),
-                textAlign: 'center'
+                height: responsiveFontSize(3.2),
+                width: responsiveFontSize(3.2),
+                backgroundColor: colors.blackOpacity(0.03),
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 100,
+                marginRight: responsiveFontSize(1),
+                marginBottom: 3
               }}
             >
-              {t('whyGetVerified')}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View
+              <Image
                 style={{
-                  height: responsiveFontSize(3.2),
-                  width: responsiveFontSize(3.2),
-                  backgroundColor: colors.blackOpacity(0.03),
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 100,
-                  marginRight: responsiveFontSize(1),
-                  marginBottom: 3
+                  height: responsiveFontSize(2),
+                  width: responsiveFontSize(2),
                 }}
-              >
-                <Image
-                  style={{
-                    height: responsiveFontSize(2),
-                    width: responsiveFontSize(2),
-                  }}
-                  source={{
-                    uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
-                  }}
-                />
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{
-                  color: colors.blackOpacity(0.8),
-                  fontSize: responsiveFontSize(1.8),
-                  fontWeight: '500',
-                }}>
-                  {t('increaseYourChances')}
-                </Text>
-              </View>
+                source={{
+                  uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
+                }}
+              />
             </View>
-
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View
-                style={{
-                  height: responsiveFontSize(3.2),
-                  width: responsiveFontSize(3.2),
-                  backgroundColor: colors.blackOpacity(0.03),
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 100,
-                  marginRight: responsiveFontSize(1),
-                }}
-              >
-                <Image
-                  style={{
-                    height: responsiveFontSize(2),
-                    width: responsiveFontSize(2),
-                  }}
-                  source={{
-                    uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
-                  }}
-                />
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{
-                  color: colors.blackOpacity(0.8),
-                  fontSize: responsiveFontSize(1.8),
-                  fontWeight: '500',
-                }}>
-                  {t('buildCredibility')}
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 2 }}>
-              <View
-                style={{
-                  height: responsiveFontSize(3.2),
-                  width: responsiveFontSize(3.2),
-                  backgroundColor: colors.blackOpacity(0.03),
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 100,
-                  marginRight: responsiveFontSize(1),
-                }}
-              >
-                <Image
-                  style={{
-                    height: responsiveFontSize(2),
-                    width: responsiveFontSize(2),
-                  }}
-                  source={{
-                    uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
-                  }}
-                />
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{
-                  color: colors.blackOpacity(0.8),
-                  fontSize: responsiveFontSize(1.8),
-                  fontWeight: '500',
-                }}>
-                  {t('accessPremiumFeatures')}
-                </Text>
-              </View>
+              <Text style={{
+                color: colors.blackOpacity(0.8),
+                fontSize: responsiveFontSize(1.8),
+                fontWeight: '500',
+              }}>
+                {t('increaseYourChances')}
+              </Text>
             </View>
           </View>
-          {verificationVideoUrl && <>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View
+              style={{
+                height: responsiveFontSize(3.2),
+                width: responsiveFontSize(3.2),
+                backgroundColor: colors.blackOpacity(0.03),
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 100,
+                marginRight: responsiveFontSize(1),
+              }}
+            >
+              <Image
+                style={{
+                  height: responsiveFontSize(2),
+                  width: responsiveFontSize(2),
+                }}
+                source={{
+                  uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
+                }}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{
+                color: colors.blackOpacity(0.8),
+                fontSize: responsiveFontSize(1.8),
+                fontWeight: '500',
+              }}>
+                {t('buildCredibility')}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 2 }}>
+            <View
+              style={{
+                height: responsiveFontSize(3.2),
+                width: responsiveFontSize(3.2),
+                backgroundColor: colors.blackOpacity(0.03),
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 100,
+                marginRight: responsiveFontSize(1),
+              }}
+            >
+              <Image
+                style={{
+                  height: responsiveFontSize(2),
+                  width: responsiveFontSize(2),
+                }}
+                source={{
+                  uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
+                }}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{
+                color: colors.blackOpacity(0.8),
+                fontSize: responsiveFontSize(1.8),
+                fontWeight: '500',
+              }}>
+                {t('accessPremiumFeatures')}
+              </Text>
+            </View>
+          </View>
+        </View>
+        {verificationVideoUrl && <>
           {/* Watch Tutorial Section */}
           <View style={{ paddingHorizontal: responsiveWidth(5) }}>
             {/* Video Heading */}
@@ -1126,267 +1155,267 @@ export default function Verification({ navigation }: any) {
             </View>
           </View>
           <Space height={responsiveFontSize(3)} />
-          </>}
-          {/* Verification Process Section */}
-          <View
-            style={{
-              marginHorizontal: responsiveWidth(3),
-              backgroundColor: colors.white,
-              borderRadius: 12,
-              padding: responsiveFontSize(1.5),
-              marginBottom: responsiveFontSize(3.5),
-              borderWidth: 1,
-              borderColor: colors.blackOpacity(0.1),
-            }}
-          >
-            <Text style={{
-              color: colors.black,
-              fontSize: responsiveFontSize(2),
-              fontWeight: 'bold',
-              marginBottom: responsiveFontSize(2),
-              textAlign: 'center'
-            }}>
-              {t('verificationProcess')}
-            </Text>
+        </>}
+        {/* Verification Process Section */}
+        <View
+          style={{
+            marginHorizontal: responsiveWidth(3),
+            backgroundColor: colors.white,
+            borderRadius: 12,
+            padding: responsiveFontSize(1.5),
+            marginBottom: responsiveFontSize(3.5),
+            borderWidth: 1,
+            borderColor: colors.blackOpacity(0.1),
+          }}
+        >
+          <Text style={{
+            color: colors.black,
+            fontSize: responsiveFontSize(2),
+            fontWeight: 'bold',
+            marginBottom: responsiveFontSize(2),
+            textAlign: 'center'
+          }}>
+            {t('verificationProcess')}
+          </Text>
 
-            {/* Compact Process Layout */}
-            <View style={{ marginBottom: responsiveFontSize(1) }}>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveFontSize(1.6) }}>
-                <View
+          {/* Compact Process Layout */}
+          <View style={{ marginBottom: responsiveFontSize(1) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveFontSize(1.6) }}>
+              <View
+                style={{
+                  height: responsiveFontSize(3.2),
+                  width: responsiveFontSize(3.2),
+                  backgroundColor: colors.blackOpacity(0.03),
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 100,
+                  marginRight: responsiveFontSize(1),
+                }}
+              >
+                <Image
                   style={{
-                    height: responsiveFontSize(3.2),
-                    width: responsiveFontSize(3.2),
-                    backgroundColor: colors.blackOpacity(0.03),
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 100,
-                    marginRight: responsiveFontSize(1),
+                    height: responsiveFontSize(2),
+                    width: responsiveFontSize(2),
                   }}
-                >
-                  <Image
-                    style={{
-                      height: responsiveFontSize(2),
-                      width: responsiveFontSize(2),
-                    }}
-                    source={{
-                      uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
-                    }}
-                  />
-                </View>
-
-                {/* Step Content */}
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: responsiveFontSize(0.3) }}>
-                    <Text
-                      style={{
-                        fontSize: responsiveFontSize(1.8),
-                        fontWeight: '600',
-                        color: colors.black,
-                      }}
-                    >
-                      {t('watchVideoTutorial')}
-                    </Text>
-                  </View>
-                  <Text style={{
-                    color: colors.blackOpacity(0.8),
-                    fontSize: responsiveFontSize(1.4),
-                    fontWeight: '500',
-                  }}>
-                    {t('watchVideoDescription')}
-                  </Text>
-                </View>
+                  source={{
+                    uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
+                  }}
+                />
               </View>
 
-              {/* Step 2: Pay Verification Charges */}
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveFontSize(1.6) }}>
-                <View
-                  style={{
-                    height: responsiveFontSize(3.2),
-                    width: responsiveFontSize(3.2),
-                    backgroundColor: colors.blackOpacity(0.03),
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 100,
-                    marginRight: responsiveFontSize(1),
-                  }}
-                >
-                  <Image
+              {/* Step Content */}
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: responsiveFontSize(0.3) }}>
+                  <Text
                     style={{
-                      height: responsiveFontSize(2),
-                      width: responsiveFontSize(2),
+                      fontSize: responsiveFontSize(1.8),
+                      fontWeight: '600',
+                      color: colors.black,
                     }}
-                    source={{
-                      uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
-                    }}
-                  />
-                </View>
-
-                {/* Step Content */}
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: responsiveFontSize(0.3) }}>
-                    <Text
-                      style={{
-                        fontSize: responsiveFontSize(1.8),
-                        fontWeight: '600',
-                        color: colors.black,
-                      }}
-                    >
-                      {t('payVerificationCharges')}
-                    </Text>
-                  </View>
-                  <Text style={{
-                    color: colors.blackOpacity(0.8),
-                    fontSize: responsiveFontSize(1.4),
-                    fontWeight: '500',
-                  }}>
-                    {t('verificationChargesDescription')}
+                  >
+                    {t('watchVideoTutorial')}
                   </Text>
                 </View>
+                <Text style={{
+                  color: colors.blackOpacity(0.8),
+                  fontSize: responsiveFontSize(1.4),
+                  fontWeight: '500',
+                }}>
+                  {t('watchVideoDescription')}
+                </Text>
+              </View>
+            </View>
+
+            {/* Step 2: Pay Verification Charges */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveFontSize(1.6) }}>
+              <View
+                style={{
+                  height: responsiveFontSize(3.2),
+                  width: responsiveFontSize(3.2),
+                  backgroundColor: colors.blackOpacity(0.03),
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 100,
+                  marginRight: responsiveFontSize(1),
+                }}
+              >
+                <Image
+                  style={{
+                    height: responsiveFontSize(2),
+                    width: responsiveFontSize(2),
+                  }}
+                  source={{
+                    uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
+                  }}
+                />
               </View>
 
-              {/* Step 3: Upload Documents */}
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveFontSize(1.6) }}>
-                <View
-                  style={{
-                    height: responsiveFontSize(3.2),
-                    width: responsiveFontSize(3.2),
-                    backgroundColor: colors.blackOpacity(0.03),
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 100,
-                    marginRight: responsiveFontSize(1),
-                  }}
-                >
-                  <Image
+              {/* Step Content */}
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: responsiveFontSize(0.3) }}>
+                  <Text
                     style={{
-                      height: responsiveFontSize(2),
-                      width: responsiveFontSize(2),
+                      fontSize: responsiveFontSize(1.8),
+                      fontWeight: '600',
+                      color: colors.black,
                     }}
-                    source={{
-                      uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
-                    }}
-                  />
-                </View>
-
-                {/* Step Content */}
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: responsiveFontSize(0.3) }}>
-                    <Text
-                      style={{
-                        fontSize: responsiveFontSize(1.8),
-                        fontWeight: '600',
-                        color: colors.black,
-                      }}
-                    >
-                      {t('uploadRequiredDocuments')}
-                    </Text>
-                  </View>
-                  <Text style={{
-                    color: colors.blackOpacity(0.8),
-                    fontSize: responsiveFontSize(1.4),
-                    fontWeight: '500',
-                  }}>
-                    {t('uploadDocumentsDescription')}
+                  >
+                    {t('payVerificationCharges')}
                   </Text>
                 </View>
+                <Text style={{
+                  color: colors.blackOpacity(0.8),
+                  fontSize: responsiveFontSize(1.4),
+                  fontWeight: '500',
+                }}>
+                  {t('verificationChargesDescription')}
+                </Text>
+              </View>
+            </View>
+
+            {/* Step 3: Upload Documents */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveFontSize(1.6) }}>
+              <View
+                style={{
+                  height: responsiveFontSize(3.2),
+                  width: responsiveFontSize(3.2),
+                  backgroundColor: colors.blackOpacity(0.03),
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 100,
+                  marginRight: responsiveFontSize(1),
+                }}
+              >
+                <Image
+                  style={{
+                    height: responsiveFontSize(2),
+                    width: responsiveFontSize(2),
+                  }}
+                  source={{
+                    uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
+                  }}
+                />
               </View>
 
-              {/* Step 4: Verification Process */}
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveFontSize(1.6) }}>
-                <View
-                  style={{
-                    height: responsiveFontSize(3.2),
-                    width: responsiveFontSize(3.2),
-                    backgroundColor: colors.blackOpacity(0.03),
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 100,
-                    marginRight: responsiveFontSize(1),
-                  }}
-                >
-                  <Image
+              {/* Step Content */}
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: responsiveFontSize(0.3) }}>
+                  <Text
                     style={{
-                      height: responsiveFontSize(2),
-                      width: responsiveFontSize(2),
+                      fontSize: responsiveFontSize(1.8),
+                      fontWeight: '600',
+                      color: colors.black,
                     }}
-                    source={{
-                      uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
-                    }}
-                  />
-                </View>
-
-                {/* Step Content */}
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: responsiveFontSize(0.3) }}>
-                    <Text
-                      style={{
-                        fontSize: responsiveFontSize(1.8),
-                        fontWeight: '600',
-                        color: colors.black,
-                      }}
-                    >
-                      {t('completeVerification')}
-                    </Text>
-                  </View>
-                  <Text style={{
-                    color: colors.blackOpacity(0.8),
-                    fontSize: responsiveFontSize(1.4),
-                    fontWeight: '500',
-                  }}>
-                    {t('completeVerificationDescription')}
+                  >
+                    {t('uploadRequiredDocuments')}
                   </Text>
                 </View>
+                <Text style={{
+                  color: colors.blackOpacity(0.8),
+                  fontSize: responsiveFontSize(1.4),
+                  fontWeight: '500',
+                }}>
+                  {t('uploadDocumentsDescription')}
+                </Text>
+              </View>
+            </View>
+
+            {/* Step 4: Verification Process */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: responsiveFontSize(1.6) }}>
+              <View
+                style={{
+                  height: responsiveFontSize(3.2),
+                  width: responsiveFontSize(3.2),
+                  backgroundColor: colors.blackOpacity(0.03),
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 100,
+                  marginRight: responsiveFontSize(1),
+                }}
+              >
+                <Image
+                  style={{
+                    height: responsiveFontSize(2),
+                    width: responsiveFontSize(2),
+                  }}
+                  source={{
+                    uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
+                  }}
+                />
               </View>
 
-              {/* Step 5: Report Upload */}
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', paddingVertical: responsiveFontSize(0.5) }}>
-                <View
-                  style={{
-                    height: responsiveFontSize(3.2),
-                    width: responsiveFontSize(3.2),
-                    backgroundColor: colors.blackOpacity(0.03),
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 100,
-                    marginRight: responsiveFontSize(1),
-                  }}
-                >
-                  <Image
+              {/* Step Content */}
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: responsiveFontSize(0.3) }}>
+                  <Text
                     style={{
-                      height: responsiveFontSize(2),
-                      width: responsiveFontSize(2),
+                      fontSize: responsiveFontSize(1.8),
+                      fontWeight: '600',
+                      color: colors.black,
                     }}
-                    source={{
-                      uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
-                    }}
-                  />
-                </View>
-
-                {/* Step Content */}
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text
-                      style={{
-                        fontSize: responsiveFontSize(1.8),
-                        fontWeight: '600',
-                        color: colors.black,
-                      }}
-                    >
-                      {t('verificationReportUpload')}
-                    </Text>
-                  </View>
-                  <Text style={{
-                    color: colors.blackOpacity(0.8),
-                    fontSize: responsiveFontSize(1.4),
-                    fontWeight: '500',
-                  }}>
-                    {t('verificationReportDescription')}
+                  >
+                    {t('completeVerification')}
                   </Text>
                 </View>
+                <Text style={{
+                  color: colors.blackOpacity(0.8),
+                  fontSize: responsiveFontSize(1.4),
+                  fontWeight: '500',
+                }}>
+                  {t('completeVerificationDescription')}
+                </Text>
+              </View>
+            </View>
+
+            {/* Step 5: Report Upload */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', paddingVertical: responsiveFontSize(0.5) }}>
+              <View
+                style={{
+                  height: responsiveFontSize(3.2),
+                  width: responsiveFontSize(3.2),
+                  backgroundColor: colors.blackOpacity(0.03),
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 100,
+                  marginRight: responsiveFontSize(1),
+                }}
+              >
+                <Image
+                  style={{
+                    height: responsiveFontSize(2),
+                    width: responsiveFontSize(2),
+                  }}
+                  source={{
+                    uri: 'https://cdn-icons-png.flaticon.com/512/10703/10703030.png',
+                  }}
+                />
+              </View>
+
+              {/* Step Content */}
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text
+                    style={{
+                      fontSize: responsiveFontSize(1.8),
+                      fontWeight: '600',
+                      color: colors.black,
+                    }}
+                  >
+                    {t('verificationReportUpload')}
+                  </Text>
+                </View>
+                <Text style={{
+                  color: colors.blackOpacity(0.8),
+                  fontSize: responsiveFontSize(1.4),
+                  fontWeight: '500',
+                }}>
+                  {t('verificationReportDescription')}
+                </Text>
               </View>
             </View>
           </View>
-    \
+        </View>
+        \
 
         {/* Pay Now Button Section - Only show for initial payment */}
         {(overallStatus === 'not_started' || overallStatus === 'payment_required') && (

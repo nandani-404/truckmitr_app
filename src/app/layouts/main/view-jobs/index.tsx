@@ -433,19 +433,68 @@ export default function AvailableJob() {
         <View style={[styles.container, { backgroundColor: colors.white }]}>
             <Space height={safeAreaInsets.top} />
 
-            {/* Apple-style Header */}
-            <View style={[styles.header, { paddingHorizontal: responsiveFontSize(2) }]}>
-                <TouchableOpacity
-                    hitSlop={hitSlop(10)}
-                    onPress={_goback}
-                    style={[styles.backButton, { backgroundColor: colors.blackOpacity(0.05) }]}
-                >
-                    <Ionicons name={'chevron-back'} size={22} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: colors.black, fontSize: responsiveFontSize(2.2) }]}>
-                    {t('jobsList')} ({jobList.length})
-                </Text>
-                <View style={{ width: responsiveFontSize(4) }} />
+            {/* Header */}
+            <View style={{
+                backgroundColor: colors.white,
+                paddingHorizontal: responsiveWidth(4),
+                paddingVertical: responsiveHeight(2),
+                borderBottomWidth: 1,
+                borderBottomColor: colors.blackOpacity(0.06),
+                shadowColor: colors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 3,
+            }}>
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <TouchableOpacity
+                        hitSlop={hitSlop(10)}
+                        onPress={_goback}
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            height: responsiveFontSize(5),
+                            width: responsiveFontSize(5),
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.royalBlue + '12',
+                            borderRadius: responsiveFontSize(2.5),
+                        }}
+                    >
+                        <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
+                    </TouchableOpacity>
+
+                    <Text style={{
+                        fontSize: responsiveFontSize(2.4),
+                        color: colors.black,
+                        fontWeight: '700',
+                        letterSpacing: -0.3
+                    }}>
+                        {t('jobsList')} ({jobList.length})
+                    </Text>
+
+                    {/* Invoice Button */}
+                    <TouchableOpacity
+                        hitSlop={hitSlop(10)}
+                        onPress={() => navigation.navigate(STACKS.PURCHASE_INVOICES)}
+                        style={{
+                            position: 'absolute',
+                            right: 0,
+                            height: responsiveFontSize(5),
+                            width: responsiveFontSize(5),
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.royalBlue + '12',
+                            borderRadius: responsiveFontSize(2.5),
+                        }}
+                    >
+                        <MaterialCommunityIcons name={'receipt'} size={20} color={colors.royalBlue} />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* Apple-style Search Bar */}
@@ -547,6 +596,13 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
     },
     backButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    invoiceButton: {
         width: 36,
         height: 36,
         borderRadius: 18,

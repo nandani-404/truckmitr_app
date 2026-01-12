@@ -700,7 +700,7 @@ const Home = React.forwardRef((props, ref) => {
     const _navigateAddJob = () => {
         // Clear any existing job data from Redux
         dispatch(jobAddAction({}));
-        return navigation.navigate(STACKS.ADD_JOB)
+        // return navigation.navigate(STACKS.ADD_JOB)
         if (subscriptionDetails?.showSubscriptionModel && isTransporter) {
             dispatch(subscriptionModalAction(true))
         } else {

@@ -37,6 +37,7 @@ import FleetManagementSolution from '../app/layouts/main/fleet-management-soluti
 import FuelDiscount from '../app/layouts/main/fuel-discount';
 import TruckInsurance from '../app/layouts/main/truck-insurance';
 import AddSingleDriverInfo from '../app/layouts/main/add-single-driver-info';
+import PurchaseInvoices from '../app/layouts/main/purchase-invoices';
 
 const Stack = createNativeStackNavigator();
 
@@ -154,6 +155,7 @@ export default function Main() {
       <Stack.Screen name={STACKS.JOB_STEP2} component={JobStep2} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.JOB_STEP3} component={JobStep3} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.VIEW_JOBS} component={ViewJobs} options={{ animation: 'fade' }} />
+      <Stack.Screen name={STACKS.PURCHASE_INVOICES} component={PurchaseInvoices} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.TRANSPORTER_APPLIED_JOB} component={TransporterAppliedJob} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.ADD_DRIVER} component={AddDriver} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.DRIVER_LIST} component={DriverList} options={{ animation: 'fade' }} />
