@@ -38,6 +38,7 @@ import FuelDiscount from '../app/layouts/main/fuel-discount';
 import TruckInsurance from '../app/layouts/main/truck-insurance';
 import AddSingleDriverInfo from '../app/layouts/main/add-single-driver-info';
 import PurchaseInvoices from '../app/layouts/main/purchase-invoices';
+import { AppState } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 
@@ -108,22 +109,35 @@ export default function Main() {
       return;
     }
 
-    const initZego = async () => {
-      try {
-        console.log('🚀 Initializing Zego Call Service for:', user.unique_id);
-        await initializeZeegoService({
+    // const initZego = async () => {
+    //   try {
+    //     console.log('🚀 Initializing Zego Call Service for:', user.unique_id);
+    //     await initializeZeegoService({
+    //       userID: user.unique_id,
+    //       userName: user.name ?? 'User',
+    //     });
+
+    //     hasInitZego.current = true;
+    //   } catch (e) {
+    //     console.error('❌ Zego init error:', e);
+    //   }
+    // };
+
+    // initZego();
+  }, [isAuthenticated, user?.unique_id]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', state => {
+      if (state === 'active' && user?.unique_id) {
+        initializeZeegoService({
           userID: user.unique_id,
           userName: user.name ?? 'User',
         });
-
-        hasInitZego.current = true;
-      } catch (e) {
-        console.error('❌ Zego init error:', e);
       }
-    };
+    });
 
-    initZego();
-  }, [isAuthenticated, user?.unique_id]);
+    return () => sub.remove();
+  }, [user?.unique_id]);
 
 
   return (

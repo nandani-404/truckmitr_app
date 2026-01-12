@@ -262,7 +262,7 @@ const TRANSPORTER_STEPS = [
     { id: 'industry_segment', title: 'industrySegment', subtitle: 'selectIndustrySegment', field: 'industry_segment', required: true },
     { id: 'avg_km_run', title: 'avgKmRun', subtitle: 'enterAverageKmRun', field: 'avg_km_run', required: true },
     { id: 'vehicle', title: 'vehicleType', subtitle: 'selectVehicleType', field: 'vehicle_type', required: true },
-    { id: 'operational_segment', title: 'operationalSegment', subtitle: 'selectOperationalSegment', field: 'operational_segment', required: true },
+    { id: 'operational_segment', title: 'routes', subtitle: 'selectOperationalSegment', field: 'operational_segment', required: true },
     { id: 'pan_gst', title: 'panGstDetails', subtitle: 'enterPanGstDetails', field: 'pan', required: false },
 ];
 
@@ -1886,13 +1886,14 @@ export default function ProfileCompletion() {
             case 'operational_segment':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('operationalSegment') || 'Operational Segment'}<Text style={{ color: 'red' }}> *</Text></Text>
+                        <Text style={styles.classicLabel}>{t('routes') || 'Routes'}<Text style={{ color: 'red' }}> *</Text></Text>
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
                         <View>
                             {translatedOperationalSegments.map((segment) => {
                                 const selectedSegments = formData?.operational_segment?.split(',') || [];
                                 const isSelected = selectedSegments.includes(segment.value);
                                 return (
+                                    //sourabh
                                     <TouchableOpacity
                                         key={segment.value}
                                         style={[
@@ -1978,7 +1979,7 @@ export default function ProfileCompletion() {
                 ) : <View style={styles.navBtn} />}
 
                 <View style={styles.headerCenterContent}>
-                    <Text style={styles.headerTitle}>{t('completeProfile')}</Text>
+                    <Text style={styles.headerTitle}>{t('profile')}</Text>
                     <Text style={styles.stepCounterText}>
                         {t('step') || 'Step'} {currentStep + 1} {t('of') || 'of'} {STEPS.length}
                     </Text>

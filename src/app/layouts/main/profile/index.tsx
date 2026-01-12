@@ -46,6 +46,7 @@ import { ImageBackground } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import RNShare from 'react-native-share';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { onUserLogout } from '@truckmitr/src/utils/zegoService';
 // Membership Card Asset Images
 const LOGO_IMAGE = require('@truckmitr/src/assets/membership-card/logotrick.png');
 
@@ -718,6 +719,8 @@ export default function Profile() {
     };
 
     try {
+      await onUserLogout(); // 🔥 VERY IMPORTANT
+
       const response: any = await axiosInstance.post(END_POINTS?.DELETE_ACCOUNT);
 
       if (response?.data?.status) {
@@ -806,7 +809,7 @@ export default function Profile() {
         user_email: userinfo.email,
         user_role: userinfo.role,
       };
-
+      await onUserLogout(); // 🔥 VERY IMPORTANT
       await analytics().logEvent('user_logout', eventParams);
       AppEventsLogger.logEvent('user_logout', eventParams);
       await new Promise<void>(res => setTimeout(() => res(), 500));

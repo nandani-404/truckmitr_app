@@ -1463,7 +1463,7 @@ export default function ProfileEditNew() {
                 return (
                     <View style={styles.stepContent}>
                         <Text style={styles.inputLabel}>{t('licenseNumber')} <Text style={styles.requiredAsterisk}>*</Text></Text>
-                        <TextInput style={styles.textInput} placeholder="MH01 20230000000" placeholderTextColor="#999" autoCapitalize="characters" value={userEdit?.License_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, License_Number: text }))} />
+                        <TextInput style={styles.textInput} placeholder="MH0120230000000" placeholderTextColor="#999" autoCapitalize="characters" maxLength={16} value={userEdit?.License_Number || ''} onChangeText={(text) => { const formattedText = text.replace(/[^a-zA-Z0-9]/g, ''); dispatch(userEditAction({ ...userEdit, License_Number: formattedText })); }} />
                         <Space height={16} />
                         <Text style={styles.inputLabel}>{t('expiryDateOfLicense')}</Text>
                         <TouchableOpacity style={styles.dateDisplay} onPress={() => setLicenseExpiryModal(true)}><Text style={styles.dateText}>{userEdit?.Expiry_date_of_License ? moment(licenseExpiry).format('DD-MM-YYYY') : 'DD-MM-YYYY'}</Text><Ionicons name="calendar" size={20} color={colors.royalBlue} /></TouchableOpacity>
@@ -1539,7 +1539,7 @@ export default function ProfileEditNew() {
                 return (
                     <View style={styles.stepContent}>
                         <Text style={styles.inputLabel}>{t('panNumber') || 'PAN Number'} <Text style={styles.requiredAsterisk}>*</Text></Text>
-                        <TextInput style={styles.textInput} placeholder="ABCDE1234F" placeholderTextColor="#999" autoCapitalize="characters" maxLength={10} value={userEdit?.pan || userEdit?.PAN_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, pan: text.toUpperCase(), PAN_Number: text.toUpperCase() }))} />
+                        <TextInput style={styles.textInput} placeholder="ABCDE1234F" placeholderTextColor="#999" autoCapitalize="characters" maxLength={10} value={userEdit?.pan || userEdit?.PAN_Number || ''} onChangeText={(text) => { const formattedText = text.toUpperCase().replace(/[^a-zA-Z0-9]/g, ''); dispatch(userEditAction({ ...userEdit, pan: formattedText, PAN_Number: formattedText })); }} />
                         <Space height={16} />
                         <DocumentUpload
                             label={<Text>{t('uploadPanDocument')} <Text style={styles.requiredAsterisk}>*</Text></Text>}
@@ -1550,7 +1550,7 @@ export default function ProfileEditNew() {
                         />
                         <Space height={20} />
                         <Text style={styles.inputLabel}>{t('gstNumber') || 'GST Number'}</Text>
-                        <TextInput style={styles.textInput} placeholder="22AAAAA0000A1Z5" placeholderTextColor="#999" autoCapitalize="characters" maxLength={15} value={userEdit?.gst || userEdit?.GST_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, gst: text.toUpperCase(), GST_Number: text.toUpperCase() }))} />
+                        <TextInput style={styles.textInput} placeholder="22AAAAA0000A1Z5" placeholderTextColor="#999" autoCapitalize="characters" maxLength={15} value={userEdit?.gst || userEdit?.GST_Number || ''} onChangeText={(text) => { const formattedText = text.toUpperCase().replace(/[^a-zA-Z0-9]/g, ''); dispatch(userEditAction({ ...userEdit, gst: formattedText, GST_Number: formattedText })); }} />
                         <Space height={16} />
                         <DocumentUpload
                             label={t('uploadGstCertificate')}
