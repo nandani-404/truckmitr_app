@@ -243,14 +243,16 @@ export default function PaymentSuccess() {
             showToast(t('pleaseEnterValidEmail'));
             return;
         }
-        if (email && email !== user?.email) {
+        if (email) {
             try {
                 let emailFormData = new FormData();
                 emailFormData.append('email', email);
                 setEmailPopupVisible(false);
                 await axiosInstance.post(END_POINTS.PAYMENT_SEND_INVOICE_EMAIL, emailFormData);
+                showToast(t('invoiceSentSuccess') || 'Invoice sent successfully!');
             } catch (error) {
                 console.log('Email update error:', error);
+                showToast(t('invoiceSendFailed') || 'Failed to send invoice');
             }
         }
         setEmailPopupVisible(false);
