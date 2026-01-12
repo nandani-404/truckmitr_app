@@ -445,7 +445,14 @@ export default function AvailableJob() {
                 <Text style={[styles.headerTitle, { color: colors.black, fontSize: responsiveFontSize(2.2) }]}>
                     {t('jobsList')} ({jobList.length})
                 </Text>
-                <View style={{ width: responsiveFontSize(4) }} />
+                {/* Invoice Button */}
+                <TouchableOpacity
+                    hitSlop={hitSlop(10)}
+                    onPress={() => navigation.navigate(STACKS.PURCHASE_INVOICES)}
+                    style={[styles.invoiceButton, { backgroundColor: colors.royalBlueOpacity(0.1) }]}
+                >
+                    <MaterialCommunityIcons name={'receipt'} size={20} color={colors.royalBlue} />
+                </TouchableOpacity>
             </View>
 
             {/* Apple-style Search Bar */}
@@ -547,6 +554,13 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
     },
     backButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    invoiceButton: {
         width: 36,
         height: 36,
         borderRadius: 18,

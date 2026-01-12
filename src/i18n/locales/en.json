@@ -2253,5 +2253,21 @@
   "noDriversYet": "No Drivers Yet",
   "clearSearch": "Clear Search",
   "driverFound": "driver found",
-  "driversFound": "drivers found"
+  "driversFound": "drivers found",
+  "purchaseInvoices": "Purchase Invoices",
+  "searchInvoices": "Search Invoices",
+  "noInvoicesFound": "No invoices found",
+  "noInvoicesYet": "No Invoices Yet",
+  "noInvoicesDescription": "Your purchase invoices will appear here after you post jobs",
+  "totalInvoices": "Total Invoices",
+  "totalSpent": "Total Spent",
+  "planAmount": "Plan Amount",
+  "planType": "Plan Type",
+  "purchaseDate": "Purchase Date",
+  "invoiceNotAvailable": "Invoice not available",
+  "invoiceOpened": "Invoice opened in browser",
+  "downloadFailed": "Download failed. Please try again.",
+  "expiryDate": "Expiry Date",
+  "downloadingInvoice": "Downloading Invoice",
+  "invoiceDownloadedSuccessfully": "Invoice downloaded successfully"
 }
