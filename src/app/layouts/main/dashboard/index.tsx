@@ -281,13 +281,56 @@ export default function Dashboard() {
         }
     };
 
+    // State for transporter's added drivers count
+    const [addedDriversCount, setAddedDriversCount] = React.useState<number | null>(null);
+
+    const getAddedDriversCount = async () => {
+        try {
+            const response: any = await axiosInstance.get(END_POINTS.TRANSPORTER_DRIVERS(''));
+            if (response?.data?.status && Array.isArray(response?.data?.drivers)) {
+                setAddedDriversCount(response.data.drivers.length);
+            } else {
+                setAddedDriversCount(0);
+            }
+        } catch (error) {
+            console.error('Error fetching added drivers count:', error);
+            setAddedDriversCount(0);
+        }
+    };
+
+    // State for transporter's sent invitations count
+    const [invitationsCount, setInvitationsCount] = React.useState<number | null>(null);
+
+    const getInvitationsCount = async () => {
+        try {
+            const response: any = await axiosInstance.get(END_POINTS.TRANSPORTER_INVITES);
+            if (response?.data?.status) {
+                // Count invitations from all categories
+                const acceptedCount = response.data.accepted?.length || 0;
+                const pendingCount = response.data.pending?.length || 0;
+                const rejectedCount = response.data.rejected?.length || 0;
+                const totalCount = acceptedCount + pendingCount + rejectedCount;
+                setInvitationsCount(totalCount);
+            } else {
+                setInvitationsCount(0);
+            }
+        } catch (error) {
+            console.error('Error fetching invitations count:', error);
+            setInvitationsCount(0);
+        }
+    };
+
     // Fetch jobs that suits you count
     useEffect(() => {
         if (isDriver) {
             getSuitsJobCount();
             getInterviewsCount();
         }
-    }, [isDriver]);
+        if (isTransporter) {
+            getAddedDriversCount();
+            getInvitationsCount();
+        }
+    }, [isDriver, isTransporter]);
 
     // Determine Driver Badge Text using utility function
     // const driverBadgeText = getUserBadgeText({
@@ -377,7 +420,7 @@ export default function Dashboard() {
 
             {/* Simple Header - Profile Left, Info Right */}
             {isDriver ? (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: responsiveWidth(5), paddingBottom: responsiveWidth(3), paddingTop: 0, alignItems: 'flex-start', marginTop: responsiveHeight(1) }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: responsiveWidth(5), paddingBottom: responsiveWidth(8), paddingTop: 0, alignItems: 'flex-start', marginTop: responsiveHeight(4) }}>
                     {/* Left: Hi, Name, TM ID, Driver Badge */}
                     <View>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -441,7 +484,7 @@ export default function Dashboard() {
                     </View>
                 </View>
             ) : (
-                <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(5), paddingBottom: responsiveWidth(5), paddingTop: 0, alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(5), paddingBottom: responsiveWidth(8), paddingTop: 0, alignItems: 'center', marginTop: responsiveHeight(4) }}>
                     {/* Left: Profile Avatar with Progress Ring */}
                     <View style={{ alignItems: 'center' }}>
                         <TouchableOpacity onPress={() => navigation.navigate(STACKS.PROFILE)} activeOpacity={1} style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -517,7 +560,7 @@ export default function Dashboard() {
                     />
                     <CenteredDashboardCard
                         title={t('totalAddedDriver', 'Total Added Driver')}
-                        count={dashboard?.total_added_drivers || 0}
+                        count={addedDriversCount !== null ? addedDriversCount : (dashboard?.total_added_drivers || 0)}
                         icon="https://cdn-icons-png.flaticon.com/512/6012/6012282.png"
                         onPress={() => navigation.navigate(STACKS.DRIVER_LIST)}
                         colors={colors}
@@ -536,9 +579,9 @@ export default function Dashboard() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 24 }}>
                     <CenteredDashboardCard
                         title={t('inviteDriverForJob', 'Invite Driver for a Job')}
-                        count={dashboard?.total_invites || 0}
+                        count={invitationsCount !== null ? invitationsCount : (dashboard?.total_invites || 0)}
                         icon="https://cdn-icons-png.flaticon.com/512/6003/6003724.png"
-                        onPress={() => navigation.navigate(STACKS.ALLDRIVER_LIST_WITH_TABS)}
+                        onPress={() => navigation.navigate(STACKS.ALLDRIVER_LIST_WITH_TABS, { initialTab: 'myInvites' })}
                         colors={colors}
                         shadow={shadow}
                         responsiveFontSize={responsiveFontSize}

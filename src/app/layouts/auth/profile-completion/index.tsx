@@ -1710,11 +1710,15 @@ export default function ProfileCompletion() {
                         <Text style={styles.classicLabel}>{t('licenseNumber')}<Text style={{ color: 'red' }}> *</Text></Text>
                         <TextInput
                             style={styles.classicInput}
-                            placeholder="MH01 20230000000"
+                            placeholder="MH0120230000000"
                             placeholderTextColor="#999"
                             autoCapitalize="characters"
+                            maxLength={16}
                             value={formData?.License_Number || ''}
-                            onChangeText={(text) => updateFormData({ License_Number: text })}
+                            onChangeText={(text) => {
+                                const formattedText = text.replace(/[^a-zA-Z0-9]/g, '');
+                                updateFormData({ License_Number: formattedText });
+                            }}
                         />
 
                         <Space height={20} />
@@ -1939,7 +1943,10 @@ export default function ProfileCompletion() {
                             placeholder={t('enterPanNumber') || 'Enter PAN Number'}
                             placeholderTextColor="#999"
                             value={formData?.pan || ''}
-                            onChangeText={(text) => updateFormData({ pan: text.toUpperCase() })}
+                            onChangeText={(text) => {
+                                const formattedText = text.toUpperCase().replace(/[^a-zA-Z0-9]/g, '');
+                                updateFormData({ pan: formattedText });
+                            }}
                             autoCapitalize="characters"
                             maxLength={10}
                         />
@@ -1953,7 +1960,10 @@ export default function ProfileCompletion() {
                             placeholder={t('enterGstNumber') || 'Enter GST Number'}
                             placeholderTextColor="#999"
                             value={formData?.gst || ''}
-                            onChangeText={(text) => updateFormData({ gst: text.toUpperCase() })}
+                            onChangeText={(text) => {
+                                const formattedText = text.toUpperCase().replace(/[^a-zA-Z0-9]/g, '');
+                                updateFormData({ gst: formattedText });
+                            }}
                             autoCapitalize="characters"
                             maxLength={15}
                         />

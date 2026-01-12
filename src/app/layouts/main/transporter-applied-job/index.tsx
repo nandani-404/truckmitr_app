@@ -1686,35 +1686,36 @@ export default function TransporterAppliedJob() {
                         const email = driver?.driver_email || driver?.email || '';
                         const mobile = driver?.driver_mobile || driver?.mobile || '';
 
-                        // Personal Info
-                        const fatherName = driver?.father_name || driver?.Father_Name || 'N/A';
-                        const dob = driver?.driver_DOB || driver?.dob || driver?.date_of_birth || driver?.DOB
-                            ? moment(driver?.driver_DOB || driver?.dob || driver?.date_of_birth || driver?.DOB).format('DD MMM YYYY')
+                        // Personal Info - Updated for new API response
+                        const fatherName = driver?.driver_father_name || driver?.father_name || driver?.Father_Name || 'N/A';
+                        const dob = driver?.driver_dob || driver?.driver_DOB || driver?.dob || driver?.date_of_birth || driver?.DOB
+                            ? moment(driver?.driver_dob || driver?.driver_DOB || driver?.dob || driver?.date_of_birth || driver?.DOB).format('DD MMM YYYY')
                             : 'N/A';
-                        const gender = driver?.gender || driver?.Gender || 'N/A';
-                        const maritalStatus = driver?.marital_status || driver?.Marital_Status || 'N/A';
-                        const education = driver?.education || driver?.Education || driver?.qualification || 'N/A';
+                        const gender = driver?.driver_gender || driver?.gender || driver?.Gender || 'N/A';
+                        const maritalStatus = driver?.driver_marital || driver?.marital_status || driver?.Marital_Status || 'N/A';
+                        const education = driver?.driver_Education || driver?.education || driver?.Education || driver?.qualification || 'N/A';
 
-                        // Address Details
-                        const address = driver?.address || driver?.Address || driver?.permanent_address || 'N/A';
-                        const pincode = driver?.pincode || driver?.Pincode || driver?.pin_code || 'N/A';
+                        // Address Details - Updated for new API response
+                        const address = driver?.driver_address || driver?.address || driver?.Address || driver?.permanent_address || 'N/A';
+                        const pincode = driver?.driver_pincode || driver?.pincode || driver?.Pincode || driver?.pin_code || 'N/A';
                         const district = driver?.district || driver?.District || driver?.city || 'N/A';
                         const state = driver?.state || driver?.State || driver?.states || 'N/A';
 
-                        // Work Info
-                        const vehicleType = driver?.vehicle_type || driver?.Vehicle_Type || driver?.preferred_vehicle || 'N/A';
+                        // Work Info - Updated for new API response
+                        const vehicleTypeData = driver?.vehicle_type || driver?.Vehicle_Type || driver?.preferred_vehicle;
+                        const vehicleType = Array.isArray(vehicleTypeData) ? vehicleTypeData.join(', ') : (vehicleTypeData || 'N/A');
                         const drivingExp = driver?.Driver_Experience || driver?.driving_exp || driver?.driving_experience || 'N/A';
                         const preferredLocation = driver?.Preferred_Location || driver?.preferred_location || driver?.preferred_city || 'N/A';
-                        const licenseEndorsement = driver?.licence_endorsement || driver?.license_endorsement || 'N/A';
+                        const licenseEndorsement = driver?.driver_license_endorsment || driver?.licence_endorsement || driver?.license_endorsement || 'N/A';
 
-                        // License/Documents Info
+                        // License/Documents Info - Updated for new API response
                         const licenseType = driver?.Type_of_License || driver?.license_type || 'N/A';
                         const aadharNo = driver?.Aadhar_Number || driver?.aadhar_number || driver?.aadhar_no || '';
                         const licenseNo = driver?.License_number || driver?.license_no || '';
                         const licenseExpiry = driver?.Expiry_date_of_license || driver?.license_expiry
                             ? moment(driver?.Expiry_date_of_license || driver?.license_expiry).format('DD MMM YYYY')
                             : 'N/A';
-                        const panNo = driver?.PAN_Number || driver?.pan_number || driver?.Pan_Number || driver?.pan_no || '';
+                        const panNo = driver?.driver_pan || driver?.PAN_Number || driver?.pan_number || driver?.Pan_Number || driver?.pan_no || '';
 
                         const profileImage =
                             driver?.driver_picture
