@@ -66,16 +66,33 @@ const STATE_ID_MAP: Record<string, string> = {
   '36': 'West Bengal',
 }
 
-// Vehicle Type ID to Name Mapping
+// Vehicle Type ID to Name Mapping (from database vehicle_type table)
 const VEHICLE_TYPE_MAP: Record<string, string> = {
-  '1': 'Cargo Truck (Open)',
-  '2': 'Cargo Truck (Closed)',
-  '3': 'Tipper',
-  '4': 'Trailer',
-  '5': 'Tanker',
-  '6': 'Car Carrier',
-  '7': 'Container',
-  '8': 'Reefer',
+  '1': 'Container Trucks',
+  '2': 'Heavy Commercial Vehicles',
+  '3': 'Heavy Open Body Trucks',
+  '4': 'Light Commercial Vehicles',
+  '5': 'Light Open Body Trucks',
+  '6': 'Medium Commercial Vehicles',
+  '7': 'Multi-Axle Trucks',
+  '8': 'Refrigerated Trucks',
+  '9': 'Special Purpose Trucks',
+  '10': 'Tankers',
+  '11': 'Tippers',
+  '13': 'Crane Mounted Lorries',
+  '14': 'Curtainsiders',
+  '15': 'Flatbeds',
+  '16': 'Light Commercial Vehicles (LCVs)',
+  '17': 'Medium and Heavy Commercial Vehicles (MHCVs)',
+  '18': 'Mini Trucks',
+  '19': 'Moffett Lorries',
+  '20': 'Pickups',
+  '21': 'Three-Wheelers',
+  '22': 'Trailer Trucks',
+  '23': 'Transporters',
+  '24': 'Trucks',
+  '25': 'Walking Floor Lorries',
+  '26': 'Comfortable with All',
 }
 
 // License Endorsement ID to Name Mapping
@@ -408,7 +425,7 @@ export default function ProfileOverview() {
             console.log('Industry_Segment:', profile?.data?.data?.Industry_Segment);
             console.log('industry_segment:', profile?.data?.data?.industry_segment);
             console.log('Full user data:', JSON.stringify(profile?.data?.data, null, 2));
-            
+
             dispatch(userAction(profile?.data))
           }
         } catch (error) {
@@ -447,17 +464,17 @@ export default function ProfileOverview() {
     console.log('=== FORMAT OPERATIONAL SEGMENT ===');
     console.log('Input segment value:', segment);
     console.log('Input segment type:', typeof segment);
-    
+
     if (!segment) {
       console.log('No segment value, returning "Not Provided"');
       return 'Not Provided'
     }
-    
+
     // Handle comma-separated values
     if (typeof segment === 'string') {
       const segments = segment.split(',').map(s => s.trim()).filter(Boolean)
       console.log('Parsed segments array:', segments);
-      
+
       // Map internal values to display names
       const segmentMap: Record<string, string> = {
         'ecommerce': 'E-commerce',
@@ -471,25 +488,25 @@ export default function ProfileOverview() {
         'refrigerator': 'Refrigerator',
         'others': 'Others'
       }
-      
+
       const displayNames = segments.map(seg => {
         const mapped = segmentMap[seg] || seg;
         console.log(`Mapping "${seg}" -> "${mapped}"`);
         return mapped;
       });
-      
+
       const result = displayNames.join(', ');
       console.log('Final formatted result:', result);
       return result;
     }
-    
+
     console.log('Non-string segment, returning as string:', String(segment));
     return String(segment)
   }
 
   const formatAverageKm = (avgKm: any): string => {
     if (!avgKm) return 'Not Provided'
-    
+
     // Map internal values to display names
     const avgKmMap: Record<string, string> = {
       'less_1000': '< 1000 km',
@@ -498,13 +515,13 @@ export default function ProfileOverview() {
       '5000_10000': '5000 - 10000 km',
       '10000_plus': '10000+ km'
     }
-    
+
     return avgKmMap[avgKm] || avgKm
   }
 
   const formatYearsOfOperation = (years: any): string => {
     if (!years) return 'Not Provided'
-    
+
     // Map internal values to display names
     const yearsMap: Record<string, string> = {
       'less_than_1': 'Less than 1 year',
@@ -513,7 +530,7 @@ export default function ProfileOverview() {
       '6-10': '6-10 years',
       '10+': '10+ years'
     }
-    
+
     return yearsMap[years] || `${years} years`
   }
 
@@ -731,7 +748,7 @@ export default function ProfileOverview() {
             />
           </>
         )}
-        
+
         {/* Education Section - Separate step for drivers only */}
         {isDriver && (
           <FieldGroupCard

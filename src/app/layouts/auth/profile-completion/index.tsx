@@ -300,14 +300,17 @@ const endorsementOptions = [
     { id: 'other', label: 'Other', emoji: '📋' },
 ];
 
+// Vehicle type IDs match the database vehicle_type table:
+// 1=Container Trucks, 3=Heavy Open Body Trucks, 4=Light Commercial Vehicles,
+// 8=Refrigerated Trucks, 9=Special Purpose Trucks, 10=Tankers, 11=Tippers, 22=Trailer Trucks
 const dummyVehicleTypes = [
-    { label: 'Cargo Truck (Open)', value: '1', image: TruckImages.cargoOpen },
-    { label: 'Cargo Truck (Closed)', value: '2', image: TruckImages.cargoClosed },
-    { label: 'Tipper Trucks', value: '3', image: TruckImages.tipper },
-    { label: 'Trailer / Semi-Trailer Trucks', value: '4', image: TruckImages.trailer },
-    { label: 'Tankers', value: '5', image: TruckImages.tanker },
-    { label: 'Car Carriers', value: '6', image: TruckImages.carCarrier },
-    { label: 'Container Trucks', value: '7', image: TruckImages.container },
+    { label: 'Cargo Truck (Open)', value: '3', image: TruckImages.cargoOpen },
+    { label: 'Cargo Truck (Closed)', value: '4', image: TruckImages.cargoClosed },
+    { label: 'Tipper Trucks', value: '11', image: TruckImages.tipper },
+    { label: 'Trailer / Semi-Trailer Trucks', value: '22', image: TruckImages.trailer },
+    { label: 'Tankers', value: '10', image: TruckImages.tanker },
+    { label: 'Car Carriers', value: '9', image: TruckImages.carCarrier },
+    { label: 'Container Trucks', value: '1', image: TruckImages.container },
     { label: 'Refrigerator (Reefer) Trucks', value: '8', image: TruckImages.reefer },
 ];
 
@@ -526,14 +529,15 @@ export default function ProfileCompletion() {
         { id: 'other', label: t('other'), emoji: '📋' },
     ];
 
+    // Vehicle type IDs match the database vehicle_type table
     const translatedVehicleTypes = [
-        { label: t('cargoTruckOpen'), value: '1', image: TruckImages.cargoOpen },
-        { label: t('cargoTruckClosed'), value: '2', image: TruckImages.cargoClosed },
-        { label: t('tipperTrucks'), value: '3', image: TruckImages.tipper },
-        { label: t('trailerTrucks'), value: '4', image: TruckImages.trailer },
-        { label: t('tankers'), value: '5', image: TruckImages.tanker },
-        { label: t('carCarriers'), value: '6', image: TruckImages.carCarrier },
-        { label: t('containerTrucks'), value: '7', image: TruckImages.container },
+        { label: t('cargoTruckOpen'), value: '3', image: TruckImages.cargoOpen },
+        { label: t('cargoTruckClosed'), value: '4', image: TruckImages.cargoClosed },
+        { label: t('tipperTrucks'), value: '11', image: TruckImages.tipper },
+        { label: t('trailerTrucks'), value: '22', image: TruckImages.trailer },
+        { label: t('tankers'), value: '10', image: TruckImages.tanker },
+        { label: t('carCarriers'), value: '9', image: TruckImages.carCarrier },
+        { label: t('containerTrucks'), value: '1', image: TruckImages.container },
         { label: t('reeferTrucks'), value: '8', image: TruckImages.reefer },
     ];
 
@@ -1291,7 +1295,7 @@ export default function ProfileCompletion() {
                             <Ionicons name="calendar" size={20} color="#246BFD" />
                         </View>
                         <Space height={8} />
-                        
+
                         {/* Commented out Calendar implementation for testing */}
                         {/*
                         <View style={styles.inlineCalendarContainer}>
@@ -1407,7 +1411,7 @@ export default function ProfileCompletion() {
                         */}
 
                         {/* Using DatePicker component inline (same as license expiry) */}
-                        <View style={{  borderRadius: 16, padding: 20, marginTop: 10, alignItems: 'center',  }}>
+                        <View style={{ borderRadius: 16, padding: 20, marginTop: 10, alignItems: 'center', }}>
                             <DatePicker
                                 mode="date"
                                 theme="light"

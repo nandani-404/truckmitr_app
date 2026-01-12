@@ -87,7 +87,7 @@ export default function ProfileEditNew() {
     // Get initial step from route params or default to 0
     const initialStepId = route.params?.stepId;
     const initialStepIndex = initialStepId ? STEPS.findIndex(step => step.id === initialStepId) : 0;
-    
+
     // Fixed step - no navigation between steps
     const currentStep = initialStepIndex >= 0 ? initialStepIndex : 0;
     const [imagePickerOpen, setImagePickerOpen] = useState(false);
@@ -208,7 +208,7 @@ export default function ProfileEditNew() {
     useEffect(() => {
         // Skip normalization if user is actively uploading images
         if (imagePickerOpen) return;
-        
+
         // Debug logs to see what we're receiving
         console.log('=== Normalization Effect Triggered ===');
         console.log('User Role:', userRole);
@@ -440,7 +440,7 @@ export default function ProfileEditNew() {
     useEffect(() => {
         // Skip normalization if user is actively uploading images
         if (imagePickerOpen) return;
-        
+
         if (userRole === 'driver' && user) {
             let shouldUpdate = false;
             const updates: any = {};
@@ -697,7 +697,7 @@ export default function ProfileEditNew() {
         if (!validateCurrentStep()) {
             return;
         }
-        
+
         // Submit the profile update
         submitProfile();
     };
@@ -944,11 +944,11 @@ export default function ProfileEditNew() {
             console.log('=== OPERATIONAL SEGMENT UPDATE DEBUG ===');
             console.log('userEdit.industry_segment:', userEdit?.industry_segment);
             console.log('Sending to API as industry_segment:', userEdit?.industry_segment || '');
-            
+
             console.log('=======================formdata==================', formData);
 
             const response = await axiosInstance.post(END_POINTS.EDIT_PROFILE, formData);
-            
+
             console.log('=== API RESPONSE DEBUG ===');
             console.log('Response status:', response?.data?.status);
             console.log('Response message:', response?.data?.message);
@@ -956,10 +956,10 @@ export default function ProfileEditNew() {
 
             if (response?.data?.status) {
                 showToast(response.data.message || t('profileUpdated') || 'Profile updated');
-                
+
                 console.log('=== FETCHING UPDATED PROFILE ===');
                 const profile = await axiosInstance.get(END_POINTS.GET_PROFILE);
-                
+
                 console.log('=== PROFILE FETCH RESPONSE ===');
                 console.log('Profile fetch status:', profile?.data?.status);
                 console.log('Profile data keys:', profile?.data?.data ? Object.keys(profile.data.data) : 'No data');
@@ -968,7 +968,7 @@ export default function ProfileEditNew() {
                 console.log('Industry_Segment in response:', profile?.data?.data?.Industry_Segment);
                 console.log('industry_segment in response:', profile?.data?.data?.industry_segment);
                 console.log('Full profile data:', JSON.stringify(profile?.data?.data, null, 2));
-                
+
                 if (profile?.data?.status) {
                     console.log('=== DISPATCHING UPDATED USER DATA ===');
                     dispatch(userAction(profile.data));
@@ -1274,14 +1274,17 @@ export default function ProfileEditNew() {
 
             case 'vehicle':
                 // Use only 8 predefined trucks with images (matching profile-completion)
+                // IDs match the vehicle_type database table:
+                // 1=Container Trucks, 3=Heavy Open Body Trucks, 4=Light Commercial Vehicles,
+                // 8=Refrigerated Trucks, 9=Special Purpose Trucks, 10=Tankers, 11=Tippers, 22=Trailer Trucks
                 const VEHICLE_TYPES_WITH_IMAGES = [
-                    { id: '1', name: t('cargoTruckOpen') || 'Cargo Truck (Open)', imgKey: 'cargoOpen' },
-                    { id: '2', name: t('cargoTruckClosed') || 'Cargo Truck (Closed)', imgKey: 'cargoClosed' },
-                    { id: '3', name: t('tipperTrucks') || 'Tipper Trucks', imgKey: 'tipper' },
-                    { id: '4', name: t('trailerTrucks') || 'Trailer Trucks', imgKey: 'trailer' },
-                    { id: '5', name: t('tankers') || 'Tankers', imgKey: 'tanker' },
-                    { id: '6', name: t('carCarriers') || 'Car Carriers', imgKey: 'carCarrier' },
-                    { id: '7', name: t('containerTrucks') || 'Container Trucks', imgKey: 'container' },
+                    { id: '3', name: t('cargoTruckOpen') || 'Cargo Truck (Open)', imgKey: 'cargoOpen' },
+                    { id: '4', name: t('cargoTruckClosed') || 'Cargo Truck (Closed)', imgKey: 'cargoClosed' },
+                    { id: '11', name: t('tipperTrucks') || 'Tipper Trucks', imgKey: 'tipper' },
+                    { id: '22', name: t('trailerTrucks') || 'Trailer Trucks', imgKey: 'trailer' },
+                    { id: '10', name: t('tankers') || 'Tankers', imgKey: 'tanker' },
+                    { id: '9', name: t('carCarriers') || 'Car Carriers', imgKey: 'carCarrier' },
+                    { id: '1', name: t('containerTrucks') || 'Container Trucks', imgKey: 'container' },
                     { id: '8', name: t('reeferTrucks') || 'Refrigerator Trucks', imgKey: 'reefer' },
                 ];
 
