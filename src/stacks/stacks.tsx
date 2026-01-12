@@ -92,7 +92,7 @@ export type NavigatorParams = {
     loadingModal: any
     VerificationDriversByTransporter: undefined
     invites: undefined
-    "All Drivers": { job_id?: any } | undefined
+    "All Drivers": { job_id?: any; initialTab?: 'all' | 'myInvites' } | undefined
     Verification: undefined
     referral: undefined
     membershipCard: undefined

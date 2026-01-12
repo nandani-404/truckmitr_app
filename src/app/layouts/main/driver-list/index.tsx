@@ -6,6 +6,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Space } from '@truckmitr/src/app/components';
+
 import { hitSlop, isIOS } from '@truckmitr/src/app/functions';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
@@ -18,6 +19,8 @@ import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
 import { driverProfileEditAction, subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import { useDispatch, useSelector } from 'react-redux';
+
+
 import { useTranslation } from 'react-i18next';
 import { AnimatedFAB } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
@@ -26,7 +29,8 @@ type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorP
 
 const RenderDriverList = ({ item, fetchDriverList }: any) => {
     const { t } = useTranslation();
-    const dispatch = useDispatch()
+    // const dispatch = useDispatch()
+
     const colors = useColor();
     const { shadow } = useShadow()
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
@@ -63,10 +67,12 @@ const RenderDriverList = ({ item, fetchDriverList }: any) => {
         )
     }
 
-    const _navigateEditDriver = () => {
-        dispatch(driverProfileEditAction({ ...item }));
-        navigation.navigate(STACKS?.DRIVER_PROFILE_EDIT_BY_TRANSPORTER)
-    }
+
+
+    // const _navigateEditDriver = () => {
+    //     dispatch(driverProfileEditAction({ ...item }));
+    //     navigation.navigate(STACKS?.DRIVER_PROFILE_EDIT_BY_TRANSPORTER)
+    // }
 
     const getDriverImage = () => {
         if (item?.images) {
@@ -98,41 +104,13 @@ const RenderDriverList = ({ item, fetchDriverList }: any) => {
                 }}
             >
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: 'rgba(255,255,255,0.2)',
-                        paddingHorizontal: responsiveFontSize(1),
-                        paddingVertical: responsiveFontSize(0.3),
-                        borderRadius: 100
-                    }}>
-                        <Image
-                            style={{ height: responsiveFontSize(2), width: responsiveFontSize(2) }}
-                            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/11881/11881945.png' }}
-                        />
-                        <Text style={{
-                            color: colors.white,
-                            fontSize: responsiveFontSize(1.5),
-                            fontWeight: '600',
-                            marginLeft: responsiveFontSize(0.4)
-                        }}>
-                            {item?.ranking || 'N/A'}
-                        </Text>
-                    </View>
+
                     <View style={{ flexDirection: 'row', marginLeft: responsiveFontSize(1) }}>
-                        {Array.from({ length: 5 }).map((_, i) => (
-                            <FontAwesome
-                                key={i}
-                                name={'star'}
-                                size={responsiveFontSize(1.4)}
-                                color={i < item?.star_rating ? '#FFD700' : 'rgba(255,255,255,0.4)'}
-                                style={{ marginRight: responsiveFontSize(0.3) }}
-                            />
-                        ))}
+
                     </View>
                 </View>
                 <View style={{ flexDirection: 'row' }}>
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         onPress={_navigateEditDriver}
                         style={{
                             height: responsiveFontSize(3.5),
@@ -145,7 +123,7 @@ const RenderDriverList = ({ item, fetchDriverList }: any) => {
                     >
                         <Feather name="edit-2" size={responsiveFontSize(1.6)} color={colors.white} />
                     </TouchableOpacity>
-                    <Space width={responsiveFontSize(1)} />
+                    <Space width={responsiveFontSize(1)} /> */}
                     <TouchableOpacity
                         onPress={_onPressDeleteDriver}
                         style={{
@@ -281,7 +259,8 @@ const RenderDriverList = ({ item, fetchDriverList }: any) => {
 }
 
 export default function DriverList() {
-    const dispatch = useDispatch()
+    // const dispatch = useDispatch()
+
     const { t } = useTranslation();
     useStatusBarStyle('dark-content')
     const colors = useColor();
@@ -453,60 +432,67 @@ export default function DriverList() {
     return (
         <View style={{ flex: 1, backgroundColor: colors.white }}>
             {/* Header */}
-            <LinearGradient
-                colors={[colors.royalBlue, colors.royalBlueOpacity(0.9)]}
-                style={{
-                    paddingTop: safeAreaInsets.top,
-                    paddingBottom: responsiveFontSize(2),
-                    paddingHorizontal: responsiveWidth(4),
-                    borderBottomLeftRadius: 24,
-                    borderBottomRightRadius: 24,
-                }}
-            >
+            <View style={{
+                backgroundColor: colors.white,
+                paddingTop: safeAreaInsets.top + responsiveHeight(1),
+                paddingHorizontal: responsiveWidth(4),
+                paddingVertical: responsiveHeight(2),
+                borderBottomWidth: 1,
+                borderBottomColor: colors.blackOpacity(0.06),
+                shadowColor: colors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 3,
+            }}>
                 <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    paddingVertical: responsiveFontSize(1)
+                    justifyContent: 'center'
                 }}>
                     <TouchableOpacity
                         hitSlop={hitSlop(10)}
                         onPress={_goback}
                         style={{
-                            height: responsiveFontSize(4),
-                            width: responsiveFontSize(4),
+                            position: 'absolute',
+                            left: 0,
+                            height: responsiveFontSize(5),
+                            width: responsiveFontSize(5),
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: 'rgba(255,255,255,0.2)',
-                            borderRadius: 100,
+                            backgroundColor: colors.royalBlue + '12',
+                            borderRadius: responsiveFontSize(2.5),
                         }}
                     >
-                        <Ionicons name={'chevron-back'} size={22} color={colors.white} />
+                        <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
                     </TouchableOpacity>
+
                     <Text style={{
-                        flex: 1,
                         fontSize: responsiveFontSize(2.4),
-                        color: colors.white,
+                        color: colors.black,
                         fontWeight: '700',
-                        textAlign: 'center',
-                        marginRight: responsiveFontSize(4)
+                        letterSpacing: -0.3
                     }}>
                         {t('driverList')}
                     </Text>
                 </View>
+            </View>
 
-                {/* Search Bar */}
+            {/* Search Bar */}
+            <View style={{
+                paddingHorizontal: responsiveWidth(4),
+                paddingVertical: responsiveFontSize(1.5),
+                backgroundColor: colors.white,
+            }}>
                 <View style={{
                     flexDirection: 'row',
                     height: responsiveHeight(5.5),
-                    backgroundColor: colors.white,
+                    backgroundColor: colors.blackOpacity(0.04),
                     alignItems: 'center',
                     borderRadius: 12,
                     paddingHorizontal: responsiveWidth(4),
-                    marginTop: responsiveFontSize(1),
-                    ...shadow,
-                    shadowColor: 'rgba(0,0,0,0.1)'
                 }}>
-                    <Feather name={'search'} size={20} color={colors.royalBlueOpacity(0.6)} />
+                    <Feather name={'search'} size={20} color={colors.blackOpacity(0.4)} />
                     <TextInput
                         value={search}
                         onChangeText={_handleSearch}
@@ -526,9 +512,7 @@ export default function DriverList() {
                         </TouchableOpacity>
                     )}
                 </View>
-            </LinearGradient>
-
-            <Space height={responsiveFontSize(1.5)} />
+            </View>
 
             {/* Content */}
             {loading ? (

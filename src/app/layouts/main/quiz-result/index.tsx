@@ -389,7 +389,7 @@ export default function QuizResult() {
                         <Text style={{ flex: 1, color: colors.blackOpacity(.5), marginStart: responsiveFontSize(1) }}>{t('profileIncompleteTitle')}</Text>
                     </View>
                     <TouchableOpacity onPress={_navigateProfileEdit} activeOpacity={.7} style={{ backgroundColor: colors.royalBlue, alignItems: 'center', justifyContent: 'center', padding: responsiveFontSize(1), marginTop: responsiveFontSize(2), borderRadius: 5 }}>
-                        <Text style={{ color: colors.white, fontSize: responsiveFontSize(1.8), fontWeight: '500', }}>{t(`completeProfile`)}</Text>
+                        <Text style={{ color: colors.white, fontSize: responsiveFontSize(1.8), fontWeight: '500', }}>{t(`completeProfiles`)}</Text>
                     </TouchableOpacity>
                 </View>
             </View>}
