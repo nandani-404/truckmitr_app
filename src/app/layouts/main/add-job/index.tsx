@@ -64,6 +64,7 @@ const TruckImages = {
     carCarrier: require('@truckmitr/src/assets/trucks/car_carrier.png'),
     container: require('@truckmitr/src/assets/trucks/container.png'),
     reefer: require('@truckmitr/src/assets/trucks/refregerator.png'),
+    pickUp: require('@truckmitr/src/assets/trucks/pickup_truck.png'),
 };
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
@@ -82,7 +83,7 @@ const JOB_STEPS = [
     { id: 'food_allowance', title: 'foodAllowance', subtitle: 'selectFoodAllowanceHint', field: 'food_allowance_provided', required: true, icon: 'restaurant-outline' },
     { id: 'trip_incentive', title: 'tripIncentive', subtitle: 'selectTripIncentiveHint', field: null, required: false, icon: 'gift-outline' },
     { id: 'accommodation', title: 'accommodationFacility', subtitle: 'selectAccommodationHint', field: 'accommodation_provided', required: true, icon: 'home-outline' },
-    { id: 'mileage', title: 'mileageRequired', subtitle: 'selectMileageHint', field: 'mileage_required', required: true, icon: 'speedometer-outline' },
+    { id: 'mileage', title: 'mileage', subtitle: 'selectMileageHint', field: 'mileage_required', required: true, icon: 'speedometer-outline' },
     { id: 'fastag', title: 'fastagRoadKharcha', subtitle: 'selectFastagHint', field: null, required: false, icon: 'card-outline' },
     { id: 'drivers_count', title: 'numberOfDrivers', subtitle: 'enterDriversCountHint', field: 'Job_Management', required: true, icon: 'people-outline' },
     { id: 'job_description', title: 'jobDescriptionTitle', subtitle: 'writeDescriptionHint', field: 'Job_Description', required: true, icon: 'document-text-outline' },
@@ -94,12 +95,12 @@ const JOB_STEPS = [
 // Data Arrays
 const vehicleTypes = [
     { label: 'Cargo Truck (Open)', value: 'Cargo Truck (Open)', image: TruckImages.cargoOpen },
-    { label: 'Cargo Truck (Closed)', value: 'Cargo Truck (Closed)', image: TruckImages.cargoClosed },
+    { label: 'Container Trucks', value: 'Container Trucks', image: TruckImages.container },
     { label: 'Tipper Trucks', value: 'Tipper Trucks', image: TruckImages.tipper },
     { label: 'Trailer / Semi-Trailer', value: 'Trailer / Semi-Trailer Trucks', image: TruckImages.trailer },
     { label: 'Tankers', value: 'Tankers', image: TruckImages.tanker },
     { label: 'Car Carriers', value: 'Car Carriers', image: TruckImages.carCarrier },
-    { label: 'Container Trucks', value: 'Container Trucks', image: TruckImages.container },
+    { label: 'Pick up', value: 'Pick up', image: TruckImages.pickUp },
     { label: 'Reefer Trucks', value: 'Refrigerator (Reefer) Trucks', image: TruckImages.reefer },
 ];
 
@@ -645,6 +646,12 @@ export default function AddJob() {
                 return;
             }
         } else if (step.id === 'mileage') {
+            // Validate mileage selection is required
+            if (!addJob?.mileage_required) {
+                triggerShake();
+                showToast(t('pleaseSelectMileage') || 'Please select Yes or No for mileage');
+                return;
+            }
             // Validate mileage amount if "Yes" is selected
             if (addJob?.mileage_required === 'yes' && (!addJob?.mileage_amount || addJob.mileage_amount.trim() === '')) {
                 triggerShake();
@@ -1462,7 +1469,7 @@ export default function AddJob() {
             case 'mileage':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('mileageRequired') || 'Mileage Required'}</Text>
+                        <Text style={styles.classicLabel}>{t('mileage') || 'Mileage'}</Text>
                         <Text style={[styles.helperText, { marginBottom: 12, marginTop: 0 }]}>
                             {t('mileageHintDetail') || 'Do you require mileage tracking from the driver?'}
                         </Text>
@@ -2126,7 +2133,7 @@ export default function AddJob() {
                                 <View style={[styles.summaryIconContainer, { backgroundColor: '#F0F9FF' }]}>
                                     <Ionicons name="speedometer" size={18} color="#0EA5E9" />
                                 </View>
-                                <Text style={styles.summaryCardTitle}>{t('mileageRequired') || 'Mileage Required'}</Text>
+                                <Text style={styles.summaryCardTitle}>{t('mileage') || 'Mileage'}</Text>
                             </View>
                             <Text style={styles.summaryCardValue}>
                                 {addJob?.mileage_required === 'yes'

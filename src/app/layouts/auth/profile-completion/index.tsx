@@ -64,6 +64,8 @@ const TruckImages = {
     carCarrier: require('@truckmitr/src/assets/trucks/car_carrier.png'),
     container: require('@truckmitr/src/assets/trucks/container.png'),
     reefer: require('@truckmitr/src/assets/trucks/refregerator.png'),
+    pickUp: require('@truckmitr/src/assets/trucks/pickup_truck.png'),
+
 };
 
 // Voice file mapping for Hindi step descriptions - Profile Completion
@@ -532,12 +534,12 @@ export default function ProfileCompletion() {
     // Vehicle type IDs match the database vehicle_type table
     const translatedVehicleTypes = [
         { label: t('cargoTruckOpen'), value: '3', image: TruckImages.cargoOpen },
-        { label: t('cargoTruckClosed'), value: '4', image: TruckImages.cargoClosed },
+        { label: t('containerTrucks'), value: '1', image: TruckImages.container },
         { label: t('tipperTrucks'), value: '11', image: TruckImages.tipper },
         { label: t('trailerTrucks'), value: '22', image: TruckImages.trailer },
         { label: t('tankers'), value: '10', image: TruckImages.tanker },
         { label: t('carCarriers'), value: '9', image: TruckImages.carCarrier },
-        { label: t('containerTrucks'), value: '1', image: TruckImages.container },
+        { label: t('pickUp'), value: '20', image: TruckImages.pickUp },
         { label: t('reeferTrucks'), value: '8', image: TruckImages.reefer },
     ];
 
