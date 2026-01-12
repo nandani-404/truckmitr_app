@@ -2154,10 +2154,10 @@
   "planAmount": "प्लान राशि",
   "planType": "प्लान प्रकार",
   "purchaseDate": "खरीद तिथि",
-  "invoiceNotAvailable": "चालान उपलब्ध नहीं है",
-  "invoiceOpened": "चालान ब्राउज़र में खोला गया",
+  "invoiceNotAvailable": "इनवॉइस उपलब्ध नहीं है",
+  "invoiceOpened": "इनवॉइस ब्राउज़र में खोला गया",
   "downloadFailed": "डाउनलोड असफल। कृपया पुनः प्रयास करें।",
   "expiryDate": "समाप्ति तिथि",
-  "downloadingInvoice": "चालान डाउनलोड हो रहा है",
-  "invoiceDownloadedSuccessfully": "चालान सफलतापूर्वक डाउनलोड हो गया"
+  "downloadingInvoice": "इनवॉइस डाउनलोड हो रहा है",
+  "invoiceDownloadedSuccessfully": "इनवॉइस सफलतापूर्वक डाउनलोड हो गया"
 }

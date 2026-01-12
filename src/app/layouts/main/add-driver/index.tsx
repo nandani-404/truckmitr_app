@@ -185,37 +185,51 @@ export default function AddDriver() {
     return (
         <View style={{ flex: 1, backgroundColor: colors.white, alignItems: 'center' }}>
             <Space height={safeAreaInsets.top} />
-            {/* Apple-style Header */}
+            {/* Header */}
             <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 12,
-                paddingHorizontal: responsiveFontSize(2),
+                backgroundColor: colors.white,
+                paddingHorizontal: responsiveWidth(4),
+                paddingVertical: responsiveHeight(2),
+                borderBottomWidth: 1,
+                borderBottomColor: colors.blackOpacity(0.06),
+                shadowColor: colors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 3,
                 width: '100%',
             }}>
-                <TouchableOpacity
-                    hitSlop={hitSlop(10)}
-                    onPress={_goback}
-                    style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 18,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: colors.blackOpacity(0.05)
-                    }}
-                >
-                    <Ionicons name={'chevron-back'} size={22} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={{
-                    fontSize: responsiveFontSize(2.2),
-                    color: colors.black,
-                    fontWeight: '700'
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                 }}>
-                    {t('addDriver')}
-                </Text>
-                <View style={{ width: responsiveFontSize(4) }} />
+                    <TouchableOpacity
+                        hitSlop={hitSlop(10)}
+                        onPress={_goback}
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            height: responsiveFontSize(5),
+                            width: responsiveFontSize(5),
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.royalBlue + '12',
+                            borderRadius: responsiveFontSize(2.5),
+                        }}
+                    >
+                        <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
+                    </TouchableOpacity>
+
+                    <Text style={{
+                        fontSize: responsiveFontSize(2.4),
+                        color: colors.black,
+                        fontWeight: '700',
+                        letterSpacing: -0.3
+                    }}>
+                        {t('addDriver')}
+                    </Text>
+                </View>
             </View>
             <KeyboardAwareScrollView
                 contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.white, alignItems: 'center' }}
