@@ -64,6 +64,7 @@ const TruckImages = {
     carCarrier: require('@truckmitr/src/assets/trucks/car_carrier.png'),
     container: require('@truckmitr/src/assets/trucks/container.png'),
     reefer: require('@truckmitr/src/assets/trucks/refregerator.png'),
+    pickUp: require('@truckmitr/src/assets/trucks/pickup_truck.png'),
 };
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
@@ -94,12 +95,12 @@ const JOB_STEPS = [
 // Data Arrays
 const vehicleTypes = [
     { label: 'Cargo Truck (Open)', value: 'Cargo Truck (Open)', image: TruckImages.cargoOpen },
-    { label: 'Cargo Truck (Closed)', value: 'Cargo Truck (Closed)', image: TruckImages.cargoClosed },
+    { label: 'Container Trucks', value: 'Container Trucks', image: TruckImages.container },
     { label: 'Tipper Trucks', value: 'Tipper Trucks', image: TruckImages.tipper },
     { label: 'Trailer / Semi-Trailer', value: 'Trailer / Semi-Trailer Trucks', image: TruckImages.trailer },
     { label: 'Tankers', value: 'Tankers', image: TruckImages.tanker },
     { label: 'Car Carriers', value: 'Car Carriers', image: TruckImages.carCarrier },
-    { label: 'Container Trucks', value: 'Container Trucks', image: TruckImages.container },
+    { label: 'Pick up', value: 'Pick up', image: TruckImages.pickUp },
     { label: 'Reefer Trucks', value: 'Refrigerator (Reefer) Trucks', image: TruckImages.reefer },
 ];
 

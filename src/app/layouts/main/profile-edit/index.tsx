@@ -1234,14 +1234,17 @@ export default function ProfileEdit() {
 
             case 'vehicle':
                 // Use only 8 predefined trucks with images (matching profile-completion)
+                // IDs match the database vehicle_type table:
+                // 1=Container Trucks, 3=Heavy Open Body Trucks, 4=Light Commercial Vehicles,
+                // 8=Refrigerated Trucks, 9=Special Purpose Trucks, 10=Tankers, 11=Tippers, 22=Trailer Trucks
                 const VEHICLE_TYPES_WITH_IMAGES = [
-                    { id: '1', name: t('cargoTruckOpen') || 'Cargo Truck (Open)', imgKey: 'cargoOpen' },
-                    { id: '2', name: t('cargoTruckClosed') || 'Cargo Truck (Closed)', imgKey: 'cargoClosed' },
-                    { id: '3', name: t('tipperTrucks') || 'Tipper Trucks', imgKey: 'tipper' },
-                    { id: '4', name: t('trailerTrucks') || 'Trailer Trucks', imgKey: 'trailer' },
-                    { id: '5', name: t('tankers') || 'Tankers', imgKey: 'tanker' },
-                    { id: '6', name: t('carCarriers') || 'Car Carriers', imgKey: 'carCarrier' },
-                    { id: '7', name: t('containerTrucks') || 'Container Trucks', imgKey: 'container' },
+                    { id: '3', name: t('cargoTruckOpen') || 'Cargo Truck (Open)', imgKey: 'cargoOpen' },
+                    { id: '4', name: t('cargoTruckClosed') || 'Cargo Truck (Closed)', imgKey: 'cargoClosed' },
+                    { id: '11', name: t('tipperTrucks') || 'Tipper Trucks', imgKey: 'tipper' },
+                    { id: '22', name: t('trailerTrucks') || 'Trailer Trucks', imgKey: 'trailer' },
+                    { id: '10', name: t('tankers') || 'Tankers', imgKey: 'tanker' },
+                    { id: '9', name: t('carCarriers') || 'Car Carriers', imgKey: 'carCarrier' },
+                    { id: '1', name: t('containerTrucks') || 'Container Trucks', imgKey: 'container' },
                     { id: '8', name: t('reeferTrucks') || 'Refrigerator Trucks', imgKey: 'reefer' },
                 ];
 

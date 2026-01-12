@@ -777,9 +777,10 @@
   "intermediate": "Intermediate \n(12th)",
   "graduate": "Graduate",
   "postGraduate": "Post Graduate",
-  "cargoTruckOpen": "Cargo Truck (Open)",
+  "cargoTruckOpen": "Heavy Open Body Trucks",
   "cargoTruckClosed": "Cargo Truck (Closed)",
   "tipperTrucks": "Tipper Trucks",
+  "pickUp":"Pick Up",
   "trailerTrucks": "Trailer / Semi-Trailer Trucks",
   "tankers": "Tankers",
   "carCarriers": "Car Carriers",
@@ -2213,6 +2214,7 @@
   "subAuthorizePayments": "and authorize recurring payments",
   "subNoPlansAvailable": "No plans available",
   "quarterly": "Quarterly",
+  "education": "Education",
   "personalInfo": "Personal Information",
   "workInfo": "Driving Details",
   "licenseDocumentsSection": "Documents",
@@ -2249,5 +2251,10 @@
   "davDescription": "Digital Address Verification (DAV) is a process where we verify your address digitally to ensure that you are the one who is posting the job. This helps us to prevent fraud and ensure that the job is posted by the right person.",
   "davAvailability": "Digital Address Verification is available for ₹499 plans.",
   "yourDetails": "Your Details",
-  "davIncludedWith": "Digital Address Verification is included with ₹499 plans."
+  "davIncludedWith": "Digital Address Verification is included with ₹499 plans.",
+  "noMatchFound": "No Match Found",
+  "noDriversYet": "No Drivers Yet",
+  "clearSearch": "Clear Search",
+  "driverFound": "driver found",
+  "driversFound": "drivers found"
 }

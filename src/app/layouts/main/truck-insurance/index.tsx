@@ -35,7 +35,7 @@ const TruckInsurance = () => {
     return (
         <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
             {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: responsiveWidth(4), paddingTop: responsiveHeight(4), backgroundColor: colors.white, elevation: 2 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: responsiveWidth(4), paddingTop: responsiveHeight(6), paddingBottom: responsiveHeight(2), backgroundColor: colors.white, elevation: 2 }}>
                 <TouchableOpacity onPress={_goBack} style={{ padding: 5 }}>
                     <Ionicons name="chevron-back" size={24} color={colors.royalBlue} />
                 </TouchableOpacity>

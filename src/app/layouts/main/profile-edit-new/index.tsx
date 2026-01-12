@@ -36,6 +36,7 @@ const TruckImages = {
     carCarrier: require('@truckmitr/src/assets/trucks/car_carrier.png'),
     container: require('@truckmitr/src/assets/trucks/container.png'),
     reefer: require('@truckmitr/src/assets/trucks/refregerator.png'),
+    pickUp: require('@truckmitr/src/assets/trucks/pickup_truck.png'),
 };
 
 // Driver Steps - Profile photo first
@@ -93,7 +94,7 @@ export default function ProfileEditNew() {
     const colors = useColor();
     const { shadow } = useShadow();
     const safeAreaInsets = useSafeAreaInsets();
-   const isDriverHydratedRef = useRef(false);
+    const isDriverHydratedRef = useRef(false);
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
     const route = useRoute<ProfileEditNewRouteProp>();
@@ -105,7 +106,7 @@ export default function ProfileEditNew() {
     // Get initial step from route params or default to 0
     const initialStepId = route.params?.stepId;
     const initialStepIndex = initialStepId ? STEPS.findIndex(step => step.id === initialStepId) : 0;
-    
+
     // Fixed step - no navigation between steps
     const currentStep = initialStepIndex >= 0 ? initialStepIndex : 0;
     const [imagePickerOpen, setImagePickerOpen] = useState(false);
@@ -719,7 +720,7 @@ export default function ProfileEditNew() {
         if (!validateCurrentStep()) {
             return;
         }
-        
+
         // Submit the profile update
         submitProfile();
     };
@@ -966,11 +967,11 @@ export default function ProfileEditNew() {
             console.log('=== OPERATIONAL SEGMENT UPDATE DEBUG ===');
             console.log('userEdit.industry_segment:', userEdit?.industry_segment);
             console.log('Sending to API as industry_segment:', userEdit?.industry_segment || '');
-            
+
             console.log('=======================formdata==================', formData);
 
             const response = await axiosInstance.post(END_POINTS.EDIT_PROFILE, formData);
-            
+
             console.log('=== API RESPONSE DEBUG ===');
             console.log('Response status:', response?.data?.status);
             console.log('Response message:', response?.data?.message);
@@ -978,10 +979,10 @@ export default function ProfileEditNew() {
 
             if (response?.data?.status) {
                 showToast(response.data.message || t('profileUpdated') || 'Profile updated');
-                
+
                 console.log('=== FETCHING UPDATED PROFILE ===');
                 const profile = await axiosInstance.get(END_POINTS.GET_PROFILE);
-                
+
                 console.log('=== PROFILE FETCH RESPONSE ===');
                 console.log('Profile fetch status:', profile?.data?.status);
                 console.log('Profile data keys:', profile?.data?.data ? Object.keys(profile.data.data) : 'No data');
@@ -990,7 +991,7 @@ export default function ProfileEditNew() {
                 console.log('Industry_Segment in response:', profile?.data?.data?.Industry_Segment);
                 console.log('industry_segment in response:', profile?.data?.data?.industry_segment);
                 console.log('Full profile data:', JSON.stringify(profile?.data?.data, null, 2));
-                
+
                 if (profile?.data?.status) {
                     console.log('=== DISPATCHING UPDATED USER DATA ===');
                     dispatch(userAction(profile.data));
@@ -1297,16 +1298,47 @@ export default function ProfileEditNew() {
 
             case 'vehicle':
                 // Use only 8 predefined trucks with images (matching profile-completion)
+                // IDs match the vehicle_type database table:
+                // 1=Container Trucks, 3=Heavy Open Body Trucks, 4=Light Commercial Vehicles,
+                // 8=Refrigerated Trucks, 9=Special Purpose Trucks, 10=Tankers, 11=Tippers, 22=Trailer Trucks
                 const VEHICLE_TYPES_WITH_IMAGES = [
-                    { id: '1', name: t('cargoTruckOpen') || 'Cargo Truck (Open)', imgKey: 'cargoOpen' },
-                    { id: '2', name: t('cargoTruckClosed') || 'Cargo Truck (Closed)', imgKey: 'cargoClosed' },
-                    { id: '3', name: t('tipperTrucks') || 'Tipper Trucks', imgKey: 'tipper' },
-                    { id: '4', name: t('trailerTrucks') || 'Trailer Trucks', imgKey: 'trailer' },
-                    { id: '5', name: t('tankers') || 'Tankers', imgKey: 'tanker' },
-                    { id: '6', name: t('carCarriers') || 'Car Carriers', imgKey: 'carCarrier' },
-                    { id: '7', name: t('containerTrucks') || 'Container Trucks', imgKey: 'container' },
+                    { id: '3', name: t('cargoTruckOpen') || 'Heavy Commercial Vehicles', imgKey: 'cargoOpen' },
+                    { id: '1', name: t('containerTrucks') || 'Container Trucks', imgKey: 'container' },
+                    { id: '11', name: t('tipperTrucks') || 'Tipper Trucks', imgKey: 'tipper' },
+                    { id: '22', name: t('trailerTrucks') || 'Trailer Trucks', imgKey: 'trailer' },
+                    { id: '10', name: t('tankers') || 'Tankers', imgKey: 'tanker' },
+                    { id: '26', name: t('carCarriers') || 'Car Carriers', imgKey: 'carCarrier' },
+                    { id: '20', name: t('pickUp') || 'Pick Up', imgKey: 'pickUp' },
                     { id: '8', name: t('reeferTrucks') || 'Refrigerator Trucks', imgKey: 'reefer' },
                 ];
+
+                const VEHICLE_TYPE_MAP: Record<string, string> = {
+                    '1': 'Container Trucks',
+                    '2': 'Heavy Commercial Vehicles',
+                    '3': 'Heavy Open Body Trucks',
+                    '4': 'Light Commercial Vehicles',
+                    '5': 'Light Open Body Trucks',
+                    '6': 'Medium Commercial Vehicles',
+                    '7': 'Multi-Axle Trucks',
+                    '8': 'Refrigerated Trucks',
+                    '9': 'Special Purpose Trucks',
+                    '10': 'Tankers',
+                    '11': 'Tippers',
+                    '13': 'Crane Mounted Lorries',
+                    '14': 'Curtainsiders',
+                    '15': 'Flatbeds',
+                    '16': 'Light Commercial Vehicles (LCVs)',
+                    '17': 'Medium and Heavy Commercial Vehicles (MHCVs)',
+                    '18': 'Mini Trucks',
+                    '19': 'Moffett Lorries',
+                    '20': 'Pickups',
+                    '21': 'Three-Wheelers',
+                    '22': 'Trailer Trucks',
+                    '23': 'Transporters',
+                    '24': 'Trucks',
+                    '25': 'Walking Floor Lorries',
+                    '26': 'Car Carrier',
+                }
 
                 // Get current selections using normalizeArrayField to handle corrupted data
                 const currentVehicleSelections = normalizeArrayField(userEdit?.vehicle_type);
@@ -1436,11 +1468,11 @@ export default function ProfileEditNew() {
                         <Text style={styles.inputLabel}>{t('expiryDateOfLicense')}</Text>
                         <TouchableOpacity style={styles.dateDisplay} onPress={() => setLicenseExpiryModal(true)}><Text style={styles.dateText}>{userEdit?.Expiry_date_of_License ? moment(licenseExpiry).format('DD-MM-YYYY') : 'DD-MM-YYYY'}</Text><Ionicons name="calendar" size={20} color={colors.royalBlue} /></TouchableOpacity>
                         <Space height={20} />
-                        <DocumentUpload 
-                            label={<Text>{t('uploadDrivingLicense')} <Text style={styles.requiredAsterisk}>*</Text></Text>} 
-                            imagePath={imageState.drivingLicensePath} 
-                            existingImage={userEdit?.Driving_License} 
-                            fieldName="drivingLicensePath" 
+                        <DocumentUpload
+                            label={<Text>{t('uploadDrivingLicense')} <Text style={styles.requiredAsterisk}>*</Text></Text>}
+                            imagePath={imageState.drivingLicensePath}
+                            existingImage={userEdit?.Driving_License}
+                            fieldName="drivingLicensePath"
                             existingImageKey="Driving_License"
                         />
                         <Modal visible={licenseExpiryModal} transparent animationType="fade"><View style={styles.modalOverlay}><View style={styles.datePickerBox}><Text style={styles.datePickerTitle}>{t('expiryDateOfLicense')}</Text><DatePicker mode="date" theme="light" date={licenseExpiry} minimumDate={new Date()} maximumDate={moment().add(30, 'years').toDate()} onDateChange={(date) => dispatch(userEditAction({ ...userEdit, Expiry_date_of_License: date }))} /><View style={styles.datePickerButtons}><TouchableOpacity style={styles.cancelBtn} onPress={() => setLicenseExpiryModal(false)}><Text style={styles.cancelBtnText}>{t('cancel')}</Text></TouchableOpacity><TouchableOpacity style={[styles.confirmBtn, { backgroundColor: colors.royalBlue }]} onPress={() => setLicenseExpiryModal(false)}><Text style={styles.confirmBtnText}>{t('confirm')}</Text></TouchableOpacity></View></View></View></Modal>
@@ -1453,11 +1485,11 @@ export default function ProfileEditNew() {
                         <Text style={styles.inputLabel}>{t('panNumber') || 'PAN Number'}</Text>
                         <TextInput style={styles.textInput} placeholder="ABCDE1234F" placeholderTextColor="#999" autoCapitalize="characters" maxLength={10} value={userEdit?.pan || userEdit?.PAN_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, pan: text.toUpperCase(), PAN_Number: text.toUpperCase() }))} />
                         <Space height={16} />
-                        <DocumentUpload 
-                            label={t('uploadPanDocument') || 'Upload PAN Document'} 
-                            imagePath={imageState.panImagePath} 
-                            existingImage={userEdit?.PAN_Image} 
-                            fieldName="panImagePath" 
+                        <DocumentUpload
+                            label={t('uploadPanDocument') || 'Upload PAN Document'}
+                            imagePath={imageState.panImagePath}
+                            existingImage={userEdit?.PAN_Image}
+                            fieldName="panImagePath"
                             existingImageKey="PAN_Image"
                         />
                     </View>
@@ -1509,22 +1541,22 @@ export default function ProfileEditNew() {
                         <Text style={styles.inputLabel}>{t('panNumber') || 'PAN Number'} <Text style={styles.requiredAsterisk}>*</Text></Text>
                         <TextInput style={styles.textInput} placeholder="ABCDE1234F" placeholderTextColor="#999" autoCapitalize="characters" maxLength={10} value={userEdit?.pan || userEdit?.PAN_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, pan: text.toUpperCase(), PAN_Number: text.toUpperCase() }))} />
                         <Space height={16} />
-                        <DocumentUpload 
-                            label={<Text>{t('uploadPanDocument')} <Text style={styles.requiredAsterisk}>*</Text></Text>} 
-                            imagePath={imageState.panImagePath} 
-                            existingImage={userEdit?.PAN_Image} 
-                            fieldName="panImagePath" 
+                        <DocumentUpload
+                            label={<Text>{t('uploadPanDocument')} <Text style={styles.requiredAsterisk}>*</Text></Text>}
+                            imagePath={imageState.panImagePath}
+                            existingImage={userEdit?.PAN_Image}
+                            fieldName="panImagePath"
                             existingImageKey="PAN_Image"
                         />
                         <Space height={20} />
                         <Text style={styles.inputLabel}>{t('gstNumber') || 'GST Number'}</Text>
                         <TextInput style={styles.textInput} placeholder="22AAAAA0000A1Z5" placeholderTextColor="#999" autoCapitalize="characters" maxLength={15} value={userEdit?.gst || userEdit?.GST_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, gst: text.toUpperCase(), GST_Number: text.toUpperCase() }))} />
                         <Space height={16} />
-                        <DocumentUpload 
-                            label={t('uploadGstCertificate')} 
-                            imagePath={imageState.gstCertificatePath} 
-                            existingImage={userEdit?.GST_Certificate} 
-                            fieldName="gstCertificatePath" 
+                        <DocumentUpload
+                            label={t('uploadGstCertificate')}
+                            imagePath={imageState.gstCertificatePath}
+                            existingImage={userEdit?.GST_Certificate}
+                            fieldName="gstCertificatePath"
                             existingImageKey="GST_Certificate"
                         />
                     </View>

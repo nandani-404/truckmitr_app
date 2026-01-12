@@ -439,13 +439,13 @@ const FilterModal = ({ visible, onClose, filters, setFilters, applyFilters, loca
     const dropdownTextStyle = {
         fontSize: responsiveFontSize(1.9),
         color: colors.blackOpacity(0.7),
-        fontWeight: '500',
+        fontWeight: '500' as const,
     };
 
     const selectedTextStyle = {
         color: colors.blackOpacity(1),
         fontSize: responsiveFontSize(1.8),
-        fontWeight: '500',
+        fontWeight: '500' as const,
     };
 
     const iconStyle = {
@@ -673,7 +673,7 @@ export default function AllDriverList({ route, job_id }: any) {
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
     const [loading, setloading] = useState(true)
-    const [driverList, setdriverList] = useState([])
+    const [driverList, setdriverList] = useState<any[]>([])
     const [search, setsearch] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
