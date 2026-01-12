@@ -256,6 +256,7 @@
   "jobLocationRequired": "Naukri ka location zaroori hai",
   "vihicleTypeRequired": "Vahan ka type zaroori hai",
   "experienceYearsRequired": "Anubhav (saalon mein) zaroori hai",
+  "pleaseSelectMileage": "Mileage ke liye haan ya naa chunein",
   "applicationDeadline": "Aavedan ki antim tareekh",
   "applicationDeadlineValidation": "Aap sirf 4 din baad ki tareekh chunh sakte hain",
   "numberOfDrivers": "Drivers ki sankhya",

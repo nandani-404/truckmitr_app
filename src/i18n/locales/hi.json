@@ -2012,6 +2012,7 @@
   "selectAccommodationHint": "चुनें कि क्या रहने की सुविधा प्रदान की जाएगी",
   "accommodationHintDetail": "क्या आप ड्राइवर को रहने की सुविधा प्रदान करेंगे?",
   "mileageRequired": "माइलेज आवश्यक",
+  "mileage":"माइलेज",
   "selectMileageHint": "चुनें कि क्या माइलेज ट्रैकिंग आवश्यक है",
   "mileageHintDetail": "क्या आप ड्राइवर से माइलेज ट्रैकिंग चाहते हैं?",
   "expectedMileage": "अपेक्षित माइलेज",

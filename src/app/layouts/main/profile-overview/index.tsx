@@ -1000,7 +1000,7 @@ export default function ProfileOverview() {
               onEdit={navigateToEdit}
             />
 
-            {/* PAN & GST Documents Section - Combined as in ProfileEdit */}
+            {/* PAN & GST Documents Section - Combined */}
             <FieldGroupCard
               title={t('panGstDocuments') || 'PAN & GST Documents'}
               icon="card"
@@ -1016,15 +1016,6 @@ export default function ProfileOverview() {
                   isImage: true,
                   imageUri: getImageUri(user?.PAN_Image),
                 },
-              ]}
-              onEdit={navigateToEdit}
-            />
-
-            <FieldGroupCard
-              title={t('gstDocuments') || 'GST Documents'}
-              icon="receipt"
-              stepId="pan_gst"
-              fields={[
                 {
                   label: t('gstNumber') || 'GST Number',
                   value: user?.GST_Number,

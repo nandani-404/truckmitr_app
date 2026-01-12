@@ -721,7 +721,7 @@ const Home = React.forwardRef((props, ref) => {
     }
     const _navigateAppliedJobsTransporter = () => {
         let hasPremium = false;
-        return navigation.navigate(STACKS.TRANSPORTER_APPLIED_JOB)
+        // return navigation.navigate(STACKS.TRANSPORTER_APPLIED_JOB)
         const checkAmt = (details: any) => {
             if (isSubscriptionActive(details)) {
                 const amt = details.amount ? parseFloat(details.amount) : 0;

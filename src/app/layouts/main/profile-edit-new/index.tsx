@@ -70,12 +70,30 @@ const TRANSPORTER_STEPS = [
     { id: 'vehicle', title: 'vehicleTypeStep', subtitle: 'vehicleTypeStepDescTransporter' },
     { id: 'pan_gst', title: 'panGstStep', subtitle: 'panGstStepDesc' },
 ];
+/**
+ * ProfileEditNew Component
+ * 
+ * IMPORTANT: Image Upload Bug Fix (Option 3 - Separate Image State Management)
+ * 
+ * Problem: Images were getting replaced after 1-2 seconds due to normalization useEffect
+ * overwriting local image state with API data.
+ * 
+ * Solution: Separated image upload state from main userEdit state to avoid conflicts:
+ * - imageState: Manages local image uploads (profilePath, panImagePath, etc.)
+ * - userEdit: Manages form data and existing images from API
+ * - Normalization effects no longer touch image paths
+ * - Image display uses imageState for new uploads, userEdit for existing images
+ * - Form submission uses imageState for file uploads
+ * 
+ * This prevents the Redux re-hydration bug where normalization overwrites local images.
+ */
 export default function ProfileEditNew() {
     const { t, i18n } = useTranslation();
     const dispatch = useDispatch();
     const colors = useColor();
     const { shadow } = useShadow();
     const safeAreaInsets = useSafeAreaInsets();
+   const isDriverHydratedRef = useRef(false);
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
     const route = useRoute<ProfileEditNewRouteProp>();
@@ -99,6 +117,15 @@ export default function ProfileEditNew() {
     const [loading, setLoading] = useState(false);
     const [calendarMonth, setCalendarMonth] = useState(moment().subtract(18, 'years').format('YYYY-MM-DD'));
     const [loadingPincode, setLoadingPincode] = useState(false);
+
+    // Separate image state management to avoid conflicts with normalization
+    const [imageState, setImageState] = useState<{
+        profilePath?: any;
+        panImagePath?: any;
+        gstCertificatePath?: any;
+        aadharImagePath?: any;
+        drivingLicensePath?: any;
+    }>({});
 
     const contentOpacity = useSharedValue(1);
     const contentTranslateX = useSharedValue(0);
@@ -177,6 +204,21 @@ export default function ProfileEditNew() {
         fetchData();
     }, []);
 
+    // Initialize image state from userEdit when component mounts or userEdit changes
+    useEffect(() => {
+        if (userEdit) {
+            setImageState(prev => ({
+                ...prev,
+                // Only update if we don't already have a local image for this field
+                profilePath: prev.profilePath || userEdit.profilePath,
+                panImagePath: prev.panImagePath || userEdit.panImagePath,
+                gstCertificatePath: prev.gstCertificatePath || userEdit.gstCertificatePath,
+                aadharImagePath: prev.aadharImagePath || userEdit.aadharImagePath,
+                drivingLicensePath: prev.drivingLicensePath || userEdit.drivingLicensePath,
+            }));
+        }
+    }, [userEdit?.profilePath, userEdit?.panImagePath, userEdit?.gstCertificatePath, userEdit?.aadharImagePath, userEdit?.drivingLicensePath]);
+
     // Sync ref for async access
     const userEditRef = useRef(userEdit);
     useEffect(() => { userEditRef.current = userEdit; }, [userEdit]);
@@ -206,9 +248,6 @@ export default function ProfileEditNew() {
 
     // Normalize transporter fields from API response (handle casing mismatches)
     useEffect(() => {
-        // Skip normalization if user is actively uploading images
-        if (imagePickerOpen) return;
-        
         // Debug logs to see what we're receiving
         console.log('=== Normalization Effect Triggered ===');
         console.log('User Role:', userRole);
@@ -419,28 +458,18 @@ export default function ProfileEditNew() {
 
             if (shouldUpdate) {
                 console.log('Normalizing transporter data with updates:', updates);
-                // We must spread userEdit to preserve other fields, but avoid infinite loops
-                // Preserve image paths that might have been recently updated
+                // We must spread userEdit to preserve other fields
+                // DO NOT touch image paths - they are managed separately now
                 const currentUserEdit = userEditRef.current || {};
-                const preservedImagePaths = {
-                    profilePath: currentUserEdit.profilePath,
-                    panImagePath: currentUserEdit.panImagePath,
-                    gstCertificatePath: currentUserEdit.gstCertificatePath,
-                    aadharImagePath: currentUserEdit.aadharImagePath,
-                    drivingLicensePath: currentUserEdit.drivingLicensePath,
-                };
-                dispatch(userEditAction({ ...currentUserEdit, ...preservedImagePaths, ...updates }));
+                dispatch(userEditAction({ ...currentUserEdit, ...updates }));
             } else {
                 console.log('No normalization updates needed');
             }
         }
-    }, [user, userRole, vehicleTypes, imagePickerOpen]);
+    }, [user, userRole, vehicleTypes]);
 
     // Driver Data Normalization
     useEffect(() => {
-        // Skip normalization if user is actively uploading images
-        if (imagePickerOpen) return;
-        
         if (userRole === 'driver' && user) {
             let shouldUpdate = false;
             const updates: any = {};
@@ -466,19 +495,12 @@ export default function ProfileEditNew() {
 
             if (shouldUpdate) {
                 console.log('Normalizing driver data:', updates);
-                // Preserve image paths that might have been recently updated
+                // DO NOT touch image paths - they are managed separately now
                 const currentUserEdit = userEditRef.current || {};
-                const preservedImagePaths = {
-                    profilePath: currentUserEdit.profilePath,
-                    panImagePath: currentUserEdit.panImagePath,
-                    gstCertificatePath: currentUserEdit.gstCertificatePath,
-                    aadharImagePath: currentUserEdit.aadharImagePath,
-                    drivingLicensePath: currentUserEdit.drivingLicensePath,
-                };
-                dispatch(userEditAction({ ...currentUserEdit, ...preservedImagePaths, ...updates }));
+                dispatch(userEditAction({ ...currentUserEdit, ...updates }));
             }
         }
-    }, [user, userRole, imagePickerOpen]);
+    }, [user, userRole]);
 
     // Initialize animation values
     useEffect(() => {
@@ -496,7 +518,7 @@ export default function ProfileEditNew() {
 
         switch (step.id) {
             case 'avatar':
-                if (!userEdit?.profilePath && !userEdit?.images) {
+                if (!imageState.profilePath && !userEdit?.images) {
                     showToast(t('pleaseUploadProfilePhoto') || 'Please upload your profile photo');
                     return false;
                 }
@@ -618,7 +640,7 @@ export default function ProfileEditNew() {
                     showToast(t('aadharNumberRequired') || 'Valid Aadhar number is required');
                     return false;
                 }
-                if (!userEdit?.aadharImagePath && !userEdit?.Aadhar_Photo) {
+                if (!imageState.aadharImagePath && !userEdit?.Aadhar_Photo) {
                     showToast(t('AadharPhotoRequired') || 'Aadhar photo is required');
                     return false;
                 }
@@ -629,7 +651,7 @@ export default function ProfileEditNew() {
                     showToast(t('licenseNumberRequired') || 'License number is required');
                     return false;
                 }
-                if (!userEdit?.drivingLicensePath && !userEdit?.Driving_License) {
+                if (!imageState.drivingLicensePath && !userEdit?.Driving_License) {
                     showToast(t('drivingLicenseRequired') || 'Driving license photo is required');
                     return false;
                 }
@@ -681,7 +703,7 @@ export default function ProfileEditNew() {
                     showToast(t('panNumberRequired') || 'PAN number is required');
                     return false;
                 }
-                if (!userEdit?.panImagePath && !userEdit?.PAN_Image) {
+                if (!imageState.panImagePath && !userEdit?.PAN_Image) {
                     showToast(t('panImageRequired') || 'PAN image is required');
                     return false;
                 }
@@ -832,80 +854,80 @@ export default function ProfileEditNew() {
             formData.append('Referral_Code', userEdit?.Referral_Code || '');
 
             // Profile photo
-            if (userEdit?.profilePath?.path && userEdit?.profilePath?.mime) {
+            if (imageState.profilePath?.path && imageState.profilePath?.mime) {
                 formData.append('images', {
-                    uri: userEdit.profilePath.path,
-                    type: userEdit.profilePath.mime,
-                    name: userEdit.profilePath.filename || 'profile.jpg'
+                    uri: imageState.profilePath.path,
+                    type: imageState.profilePath.mime,
+                    name: imageState.profilePath.filename || 'profile.jpg'
                 });
                 console.log('✅ PROFILE PHOTO - Added to FormData:', {
-                    uri: userEdit.profilePath.path,
-                    type: userEdit.profilePath.mime,
-                    name: userEdit.profilePath.filename || 'profile.jpg'
+                    uri: imageState.profilePath.path,
+                    type: imageState.profilePath.mime,
+                    name: imageState.profilePath.filename || 'profile.jpg'
                 });
             } else {
                 console.log('❌ PROFILE PHOTO - Not added (missing path or mime)');
             }
 
             // PAN image
-            if (userEdit?.panImagePath?.path && userEdit?.panImagePath?.mime) {
+            if (imageState.panImagePath?.path && imageState.panImagePath?.mime) {
                 formData.append('pan_image', {
-                    uri: userEdit.panImagePath.path,
-                    type: userEdit.panImagePath.mime,
-                    name: userEdit.panImagePath.filename || 'pan.jpg'
+                    uri: imageState.panImagePath.path,
+                    type: imageState.panImagePath.mime,
+                    name: imageState.panImagePath.filename || 'pan.jpg'
                 });
                 console.log('✅ PAN IMAGE - Added to FormData:', {
-                    uri: userEdit.panImagePath.path,
-                    type: userEdit.panImagePath.mime,
-                    name: userEdit.panImagePath.filename || 'pan.jpg'
+                    uri: imageState.panImagePath.path,
+                    type: imageState.panImagePath.mime,
+                    name: imageState.panImagePath.filename || 'pan.jpg'
                 });
             } else {
                 console.log('❌ PAN IMAGE - Not added (missing path or mime)');
             }
 
             // GST Certificate
-            if (userEdit?.gstCertificatePath?.path && userEdit?.gstCertificatePath?.mime) {
-                formData.append('gst_certificate', {
-                    uri: userEdit.gstCertificatePath.path,
-                    type: userEdit.gstCertificatePath.mime,
-                    name: userEdit.gstCertificatePath.filename || 'gst.jpg'
+            if (imageState.gstCertificatePath?.path && imageState.gstCertificatePath?.mime) {
+                formData.append('GST_Certificate', {
+                    uri: imageState.gstCertificatePath.path,
+                    type: imageState.gstCertificatePath.mime,
+                    name: imageState.gstCertificatePath.filename || 'gst.jpg'
                 });
                 console.log('✅ GST CERTIFICATE - Added to FormData:', {
-                    uri: userEdit.gstCertificatePath.path,
-                    type: userEdit.gstCertificatePath.mime,
-                    name: userEdit.gstCertificatePath.filename || 'gst.jpg'
+                    uri: imageState.gstCertificatePath.path,
+                    type: imageState.gstCertificatePath.mime,
+                    name: imageState.gstCertificatePath.filename || 'gst.jpg'
                 });
             } else {
                 console.log('❌ GST CERTIFICATE - Not added (missing path or mime)');
             }
 
             // Aadhar photo
-            if (userEdit?.aadharImagePath?.path && userEdit?.aadharImagePath?.mime) {
+            if (imageState.aadharImagePath?.path && imageState.aadharImagePath?.mime) {
                 formData.append('aadhar_photo', {
-                    uri: userEdit.aadharImagePath.path,
-                    type: userEdit.aadharImagePath.mime,
-                    name: userEdit.aadharImagePath.filename || 'aadhar.jpg'
+                    uri: imageState.aadharImagePath.path,
+                    type: imageState.aadharImagePath.mime,
+                    name: imageState.aadharImagePath.filename || 'aadhar.jpg'
                 });
                 console.log('✅ AADHAR PHOTO - Added to FormData:', {
-                    uri: userEdit.aadharImagePath.path,
-                    type: userEdit.aadharImagePath.mime,
-                    name: userEdit.aadharImagePath.filename || 'aadhar.jpg'
+                    uri: imageState.aadharImagePath.path,
+                    type: imageState.aadharImagePath.mime,
+                    name: imageState.aadharImagePath.filename || 'aadhar.jpg'
                 });
             } else {
                 console.log('❌ AADHAR PHOTO - Not added (missing path or mime)');
             }
 
             // Driving license photo
-            if (userEdit?.drivingLicensePath?.path && userEdit?.drivingLicensePath?.mime) {
+            if (imageState.drivingLicensePath?.path && imageState.drivingLicensePath?.mime) {
                 formData.append('Driving_License', {
-                    uri: userEdit.drivingLicensePath.path,
-                    type: userEdit.drivingLicensePath.mime,
-                    name: userEdit.drivingLicensePath.filename || 'license.jpg'
+                    uri: imageState.drivingLicensePath.path,
+                    type: imageState.drivingLicensePath.mime,
+                    name: imageState.drivingLicensePath.filename || 'license.jpg'
                 });
                 console.log('✅ DRIVING LICENSE - Added to FormData:', {
-                    uri: userEdit.drivingLicensePath.path,
-                    type: userEdit.drivingLicensePath.mime,
-                    name: userEdit.drivingLicensePath.filename || 'license.jpg'
+                    uri: imageState.drivingLicensePath.path,
+                    type: imageState.drivingLicensePath.mime,
+                    name: imageState.drivingLicensePath.filename || 'license.jpg'
                 });
             } else {
                 console.log('❌ DRIVING LICENSE - Not added (missing path or mime)');
@@ -919,11 +941,11 @@ export default function ProfileEditNew() {
 
             // Summary of images being uploaded
             const imagesSummary = {
-                profilePhoto: !!(userEdit?.profilePath?.path && userEdit?.profilePath?.mime),
-                aadharPhoto: !!(userEdit?.aadharImagePath?.path && userEdit?.aadharImagePath?.mime),
-                panImage: !!(userEdit?.panImagePath?.path && userEdit?.panImagePath?.mime),
-                drivingLicense: !!(userEdit?.drivingLicensePath?.path && userEdit?.drivingLicensePath?.mime),
-                gstCertificate: !!(userEdit?.gstCertificatePath?.path && userEdit?.gstCertificatePath?.mime)
+                profilePhoto: !!(imageState.profilePath?.path && imageState.profilePath?.mime),
+                aadharPhoto: !!(imageState.aadharImagePath?.path && imageState.aadharImagePath?.mime),
+                panImage: !!(imageState.panImagePath?.path && imageState.panImagePath?.mime),
+                drivingLicense: !!(imageState.drivingLicensePath?.path && imageState.drivingLicensePath?.mime),
+                gstCertificate: !!(imageState.gstCertificatePath?.path && imageState.gstCertificatePath?.mime)
             };
             console.log('📸 IMAGES SUMMARY:', imagesSummary);
             console.log('📸 Total images being uploaded:', Object.values(imagesSummary).filter(Boolean).length);
@@ -1024,9 +1046,10 @@ export default function ProfileEditNew() {
             if (!hasPermission) { showToast(t('photoPermissionRequired')); return; }
             const image = await ImagePicker.openPicker({ mediaType: 'photo', compressImageQuality: 0.8 });
             if (image?.path) {
-                const updates: any = { [field]: image };
+                // Update separate image state
+                setImageState(prev => ({ ...prev, [field]: image }));
 
-                // Clear existing image key to ensure new image is displayed and uploaded
+                // Clear existing image key in userEdit to ensure new image is uploaded
                 const fieldMap: { [key: string]: string } = {
                     'profilePath': 'images',
                     'aadharImagePath': 'Aadhar_Photo',
@@ -1036,10 +1059,9 @@ export default function ProfileEditNew() {
                 };
 
                 if (fieldMap[field]) {
-                    updates[fieldMap[field]] = null;
+                    dispatch(userEditAction({ ...(userEditRef.current || {}), [fieldMap[field]]: null }));
                 }
 
-                dispatch(userEditAction({ ...(userEditRef.current || {}), ...updates }));
                 setImagePickerOpen(false);
             }
         } catch (error: any) {
@@ -1053,9 +1075,10 @@ export default function ProfileEditNew() {
             if (!hasPermission) { showToast(t('cameraPermissionRequired')); return; }
             const image = await ImagePicker.openCamera({ mediaType: 'photo', compressImageQuality: 0.8 });
             if (image?.path) {
-                const updates: any = { [field]: image };
+                // Update separate image state
+                setImageState(prev => ({ ...prev, [field]: image }));
 
-                // Clear existing image key to ensure new image is displayed and uploaded
+                // Clear existing image key in userEdit to ensure new image is uploaded
                 const fieldMap: { [key: string]: string } = {
                     'profilePath': 'images',
                     'aadharImagePath': 'Aadhar_Photo',
@@ -1065,10 +1088,9 @@ export default function ProfileEditNew() {
                 };
 
                 if (fieldMap[field]) {
-                    updates[fieldMap[field]] = null;
+                    dispatch(userEditAction({ ...(userEditRef.current || {}), [fieldMap[field]]: null }));
                 }
 
-                dispatch(userEditAction({ ...(userEditRef.current || {}), ...updates }));
                 setImagePickerOpen(false);
             }
         } catch (error: any) {
@@ -1084,7 +1106,7 @@ export default function ProfileEditNew() {
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
     };
 
-    const profileImageUri = userEdit?.profilePath?.path || (userEdit?.images ? `${BASE_URL}public/${userEdit.images}` : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png');
+    const profileImageUri = imageState.profilePath?.path || (userEdit?.images ? `${BASE_URL}public/${userEdit.images}` : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png');
     const dateOfBirth = userEdit?.DOB ? new Date(userEdit.DOB) : moment().subtract(18, 'years').toDate();
     const licenseExpiry = userEdit?.Expiry_date_of_License ? new Date(userEdit.Expiry_date_of_License) : new Date();
 
@@ -1105,7 +1127,10 @@ export default function ProfileEditNew() {
                     <View style={styles.documentPreview}>
                         <Image source={{ uri: imageUri }} style={styles.documentImage} />
                         <TouchableOpacity style={styles.documentDelete} onPress={() => {
-                            const updates: any = { [fieldName]: null };
+                            // Clear from separate image state
+                            setImageState(prev => ({ ...prev, [fieldName]: null }));
+                            // Clear from userEdit as well
+                            const updates: any = {};
                             if (existingImageKey) updates[existingImageKey] = null;
                             dispatch(userEditAction({ ...(userEditRef.current || {}), ...updates }));
                         }}>
@@ -1122,8 +1147,6 @@ export default function ProfileEditNew() {
             </View>
         );
     };
-
-
 
     const renderStepContent = () => {
         const step = STEPS[currentStep];
@@ -1387,7 +1410,7 @@ export default function ProfileEditNew() {
                 return (
                     <View style={[styles.stepContent, { alignItems: 'center' }]}>
                         <TouchableOpacity onPress={() => { setActiveField('profilePath'); setImagePickerOpen(true); }} style={styles.avatarBox}>
-                            {userEdit?.profilePath?.path || userEdit?.images ? <Image source={{ uri: profileImageUri }} style={styles.avatarImage} /> : <Ionicons name="camera-outline" size={50} color="#ccc" />}
+                            {imageState.profilePath?.path || userEdit?.images ? <Image source={{ uri: profileImageUri }} style={styles.avatarImage} /> : <Ionicons name="camera-outline" size={50} color="#ccc" />}
                             <View style={styles.avatarBadge}><Ionicons name="pencil" size={14} color="white" /></View>
                         </TouchableOpacity>
                         <Text style={styles.helperText}>{t('tapToChangePhoto') || 'Tap to change photo'}</Text>
@@ -1400,7 +1423,7 @@ export default function ProfileEditNew() {
                         <Text style={styles.inputLabel}>{t('aadharNumber')} <Text style={styles.requiredAsterisk}>*</Text></Text>
                         <TextInput style={styles.textInput} placeholder="0000 0000 0000" placeholderTextColor="#999" keyboardType="number-pad" maxLength={12} value={userEdit?.Aadhar_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, Aadhar_Number: text }))} />
                         <Space height={20} />
-                        <DocumentUpload label={<Text>{t('uploadAadharPhoto')} <Text style={styles.requiredAsterisk}>*</Text></Text>} imagePath={userEdit?.aadharImagePath} existingImage={userEdit?.Aadhar_Photo} fieldName="aadharImagePath" existingImageKey="Aadhar_Photo" />
+                        <DocumentUpload label={<Text>{t('uploadAadharPhoto')} <Text style={styles.requiredAsterisk}>*</Text></Text>} imagePath={imageState.aadharImagePath} existingImage={userEdit?.Aadhar_Photo} fieldName="aadharImagePath" existingImageKey="Aadhar_Photo" />
                     </View>
                 );
 
@@ -1413,7 +1436,13 @@ export default function ProfileEditNew() {
                         <Text style={styles.inputLabel}>{t('expiryDateOfLicense')}</Text>
                         <TouchableOpacity style={styles.dateDisplay} onPress={() => setLicenseExpiryModal(true)}><Text style={styles.dateText}>{userEdit?.Expiry_date_of_License ? moment(licenseExpiry).format('DD-MM-YYYY') : 'DD-MM-YYYY'}</Text><Ionicons name="calendar" size={20} color={colors.royalBlue} /></TouchableOpacity>
                         <Space height={20} />
-                        <DocumentUpload label={<Text>{t('uploadDrivingLicense')} <Text style={styles.requiredAsterisk}>*</Text></Text>} imagePath={userEdit?.drivingLicensePath} existingImage={userEdit?.Driving_License} fieldName="drivingLicensePath" existingImageKey="Driving_License" />
+                        <DocumentUpload 
+                            label={<Text>{t('uploadDrivingLicense')} <Text style={styles.requiredAsterisk}>*</Text></Text>} 
+                            imagePath={imageState.drivingLicensePath} 
+                            existingImage={userEdit?.Driving_License} 
+                            fieldName="drivingLicensePath" 
+                            existingImageKey="Driving_License"
+                        />
                         <Modal visible={licenseExpiryModal} transparent animationType="fade"><View style={styles.modalOverlay}><View style={styles.datePickerBox}><Text style={styles.datePickerTitle}>{t('expiryDateOfLicense')}</Text><DatePicker mode="date" theme="light" date={licenseExpiry} minimumDate={new Date()} maximumDate={moment().add(30, 'years').toDate()} onDateChange={(date) => dispatch(userEditAction({ ...userEdit, Expiry_date_of_License: date }))} /><View style={styles.datePickerButtons}><TouchableOpacity style={styles.cancelBtn} onPress={() => setLicenseExpiryModal(false)}><Text style={styles.cancelBtnText}>{t('cancel')}</Text></TouchableOpacity><TouchableOpacity style={[styles.confirmBtn, { backgroundColor: colors.royalBlue }]} onPress={() => setLicenseExpiryModal(false)}><Text style={styles.confirmBtnText}>{t('confirm')}</Text></TouchableOpacity></View></View></View></Modal>
                     </View>
                 );
@@ -1424,7 +1453,13 @@ export default function ProfileEditNew() {
                         <Text style={styles.inputLabel}>{t('panNumber') || 'PAN Number'}</Text>
                         <TextInput style={styles.textInput} placeholder="ABCDE1234F" placeholderTextColor="#999" autoCapitalize="characters" maxLength={10} value={userEdit?.pan || userEdit?.PAN_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, pan: text.toUpperCase(), PAN_Number: text.toUpperCase() }))} />
                         <Space height={16} />
-                        <DocumentUpload label={t('uploadPanDocument') || 'Upload PAN Document'} imagePath={userEdit?.panImagePath} existingImage={userEdit?.PAN_Image} fieldName="panImagePath" existingImageKey="PAN_Image" />
+                        <DocumentUpload 
+                            label={t('uploadPanDocument') || 'Upload PAN Document'} 
+                            imagePath={imageState.panImagePath} 
+                            existingImage={userEdit?.PAN_Image} 
+                            fieldName="panImagePath" 
+                            existingImageKey="PAN_Image"
+                        />
                     </View>
                 );
 
@@ -1474,12 +1509,24 @@ export default function ProfileEditNew() {
                         <Text style={styles.inputLabel}>{t('panNumber') || 'PAN Number'} <Text style={styles.requiredAsterisk}>*</Text></Text>
                         <TextInput style={styles.textInput} placeholder="ABCDE1234F" placeholderTextColor="#999" autoCapitalize="characters" maxLength={10} value={userEdit?.pan || userEdit?.PAN_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, pan: text.toUpperCase(), PAN_Number: text.toUpperCase() }))} />
                         <Space height={16} />
-                        <DocumentUpload label={<Text>{t('uploadPanDocument')} <Text style={styles.requiredAsterisk}>*</Text></Text>} imagePath={userEdit?.panImagePath} existingImage={userEdit?.PAN_Image} fieldName="panImagePath" existingImageKey="PAN_Image" />
+                        <DocumentUpload 
+                            label={<Text>{t('uploadPanDocument')} <Text style={styles.requiredAsterisk}>*</Text></Text>} 
+                            imagePath={imageState.panImagePath} 
+                            existingImage={userEdit?.PAN_Image} 
+                            fieldName="panImagePath" 
+                            existingImageKey="PAN_Image"
+                        />
                         <Space height={20} />
                         <Text style={styles.inputLabel}>{t('gstNumber') || 'GST Number'}</Text>
                         <TextInput style={styles.textInput} placeholder="22AAAAA0000A1Z5" placeholderTextColor="#999" autoCapitalize="characters" maxLength={15} value={userEdit?.gst || userEdit?.GST_Number || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, gst: text.toUpperCase(), GST_Number: text.toUpperCase() }))} />
                         <Space height={16} />
-                        <DocumentUpload label={t('uploadGstCertificate')} imagePath={userEdit?.gstCertificatePath} existingImage={userEdit?.GST_Certificate} fieldName="gstCertificatePath" existingImageKey="GST_Certificate" />
+                        <DocumentUpload 
+                            label={t('uploadGstCertificate')} 
+                            imagePath={imageState.gstCertificatePath} 
+                            existingImage={userEdit?.GST_Certificate} 
+                            fieldName="gstCertificatePath" 
+                            existingImageKey="GST_Certificate"
+                        />
                     </View>
                 );
 
