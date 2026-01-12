@@ -2277,5 +2277,10 @@
   "downloadFailed": "Download failed. Please try again.",
   "expiryDate": "Expiry Date",
   "downloadingInvoice": "Downloading Invoice",
-  "invoiceDownloadedSuccessfully": "Invoice downloaded successfully"
+  "invoiceDownloadedSuccessfully": "Invoice downloaded successfully",
+  "Jobs Management": "Jobs Management",
+  "totalAddedDriver": "Total Added Driver",
+  "Communication": "Communication",
+  "foremanDashboard": "Foreman Dashboard",
+  "manageWorkforce": "Manage your workforce"
 }

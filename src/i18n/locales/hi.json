@@ -2166,5 +2166,9 @@
   "downloadFailed": "डाउनलोड असफल। कृपया पुनः प्रयास करें।",
   "expiryDate": "समाप्ति तिथि",
   "downloadingInvoice": "इनवॉइस डाउनलोड हो रहा है",
-  "invoiceDownloadedSuccessfully": "इनवॉइस सफलतापूर्वक डाउनलोड हो गया"
+  "invoiceDownloadedSuccessfully": "इनवॉइस सफलतापूर्वक डाउनलोड हो गया",
+  "Jobs Management": "नौकरी प्रबंधन",
+  "totalAddedDriver": "कुल जोड़े गए ड्राइवर",
+  "foremanDashboard": "फोरमैन डैशबोर्ड",
+  "manageWorkforce": "अपने कार्यबल का प्रबंधन करें"
 }
