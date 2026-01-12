@@ -2282,5 +2282,7 @@
   "totalAddedDriver": "Total Added Driver",
   "Communication": "Communication",
   "foremanDashboard": "Foreman Dashboard",
-  "manageWorkforce": "Manage your workforce"
+  "manageWorkforce": "Manage your workforce",
+  "fillDriverDetails": "Please fill in the details below to add a new driver to your network.",
+  "noStatesFound": "No states found"
 }

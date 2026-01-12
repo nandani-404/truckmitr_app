@@ -6,6 +6,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Space } from '@truckmitr/src/app/components';
+
 import { hitSlop, isIOS } from '@truckmitr/src/app/functions';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
@@ -18,6 +19,8 @@ import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
 import { driverProfileEditAction, subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import { useDispatch, useSelector } from 'react-redux';
+
+
 import { useTranslation } from 'react-i18next';
 import { AnimatedFAB } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
@@ -26,7 +29,8 @@ type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorP
 
 const RenderDriverList = ({ item, fetchDriverList }: any) => {
     const { t } = useTranslation();
-    const dispatch = useDispatch()
+    // const dispatch = useDispatch()
+
     const colors = useColor();
     const { shadow } = useShadow()
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
@@ -63,10 +67,12 @@ const RenderDriverList = ({ item, fetchDriverList }: any) => {
         )
     }
 
-    const _navigateEditDriver = () => {
-        dispatch(driverProfileEditAction({ ...item }));
-        navigation.navigate(STACKS?.DRIVER_PROFILE_EDIT_BY_TRANSPORTER)
-    }
+
+
+    // const _navigateEditDriver = () => {
+    //     dispatch(driverProfileEditAction({ ...item }));
+    //     navigation.navigate(STACKS?.DRIVER_PROFILE_EDIT_BY_TRANSPORTER)
+    // }
 
     const getDriverImage = () => {
         if (item?.images) {
@@ -104,7 +110,7 @@ const RenderDriverList = ({ item, fetchDriverList }: any) => {
                     </View>
                 </View>
                 <View style={{ flexDirection: 'row' }}>
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         onPress={_navigateEditDriver}
                         style={{
                             height: responsiveFontSize(3.5),
@@ -117,7 +123,7 @@ const RenderDriverList = ({ item, fetchDriverList }: any) => {
                     >
                         <Feather name="edit-2" size={responsiveFontSize(1.6)} color={colors.white} />
                     </TouchableOpacity>
-                    <Space width={responsiveFontSize(1)} />
+                    <Space width={responsiveFontSize(1)} /> */}
                     <TouchableOpacity
                         onPress={_onPressDeleteDriver}
                         style={{
@@ -253,7 +259,8 @@ const RenderDriverList = ({ item, fetchDriverList }: any) => {
 }
 
 export default function DriverList() {
-    const dispatch = useDispatch()
+    // const dispatch = useDispatch()
+
     const { t } = useTranslation();
     useStatusBarStyle('dark-content')
     const colors = useColor();

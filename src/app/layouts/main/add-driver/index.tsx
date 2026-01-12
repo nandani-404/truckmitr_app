@@ -1,4 +1,4 @@
-import { ActivityIndicator, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, FlatList, StatusBar } from 'react-native'
+import { ActivityIndicator, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, FlatList, StatusBar, Platform } from 'react-native'
 import React, { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next';
 import { useColor, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
@@ -9,14 +9,15 @@ import { CommonActions, useNavigation } from '@react-navigation/native';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import { Space } from '@truckmitr/src/app/components';
 import Ionicons from 'react-native-vector-icons/Ionicons'
+import Feather from 'react-native-vector-icons/Feather'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import { AnimatedFAB } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
-import { useDispatch, useSelector } from 'react-redux';
-import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
+import { useDispatch } from 'react-redux';
+
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 export default function AddDriver() {
@@ -28,6 +29,8 @@ export default function AddDriver() {
     const { shadow } = useShadow()
     const { responsiveWidth, responsiveFontSize, responsiveHeight } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
+
+    // Form State
     const [fullName, setfullName] = useState<string>('');
     const [email, setemail] = useState<string>('');
     const [mobile, setmobile] = useState<string>('');
@@ -39,9 +42,12 @@ export default function AddDriver() {
     const [stateModalVisible, setStateModalVisible] = useState(false);
     const [stateSearchQuery, setStateSearchQuery] = useState('');
 
-    // Inside your component
+    // FAB State
     const [isExtended, setIsExtended] = useState(false);
     const [isVisible, setIsVisible] = useState(true);
+
+    // Focused input state for UI polish
+    const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
     // Filtered locations based on search query
     const filteredLocations = useMemo(() => {
@@ -59,8 +65,8 @@ export default function AddDriver() {
 
     useEffect(() => {
         const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
-            setIsExtended(false); // Optional: shrink FAB
-            setIsVisible(false);  // Hide FAB
+            setIsExtended(false);
+            setIsVisible(false);
         });
 
         const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
@@ -79,7 +85,6 @@ export default function AddDriver() {
             setIsExtended(true)
         }, 500);
     }, [])
-
 
     const [errors, setErrors] = useState<{
         fullName?: string;
@@ -123,7 +128,6 @@ export default function AddDriver() {
             if (response?.data?.status) {
                 setLocations(response?.data?.data);
             }
-            console.log('Fetched locations:', JSON.stringify(response));
         } catch (error: any) {
             console.log('Error fetching locations:', error);
             showToast(error);
@@ -182,12 +186,13 @@ export default function AddDriver() {
     const _goback = () => {
         navigation.goBack()
     }
+
     return (
-        <View style={{ flex: 1, backgroundColor: colors.white, alignItems: 'center' }}>
-            <Space height={safeAreaInsets.top} />
+        <View style={{ flex: 1, backgroundColor: colors.white }}>
             {/* Header */}
             <View style={{
                 backgroundColor: colors.white,
+                paddingTop: safeAreaInsets.top + responsiveHeight(1),
                 paddingHorizontal: responsiveWidth(4),
                 paddingVertical: responsiveHeight(2),
                 borderBottomWidth: 1,
@@ -197,7 +202,7 @@ export default function AddDriver() {
                 shadowOpacity: 0.05,
                 shadowRadius: 8,
                 elevation: 3,
-                width: '100%',
+                zIndex: 10
             }}>
                 <View style={{
                     flexDirection: 'row',
@@ -231,201 +236,220 @@ export default function AddDriver() {
                     </Text>
                 </View>
             </View>
+
             <KeyboardAwareScrollView
-                contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.white, alignItems: 'center' }}
+                contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.white, paddingBottom: responsiveHeight(12) }}
                 keyboardShouldPersistTaps="handled"
                 enableOnAndroid={true}
-                extraScrollHeight={responsiveHeight(30)}>
-                <View style={{ flex: 1, width: responsiveWidth(100), paddingHorizontal: responsiveWidth(5) }}>
-                    <Space height={responsiveFontSize(4)} />
-                    <View>
-                        {/*  */}
-                        <Text style={{ color: colors.blackOpacity(0.9), fontSize: responsiveFontSize(1.7), fontWeight: '600' }}>{t('fullName')} <Text style={{ color: colors.roseRed, fontWeight: 'bold' }}>*</Text>
-                        </Text>
-                        <TextInput
-                            value={fullName}
-                            onChangeText={(text) => {
-                                setfullName(text)
-                                setErrors((prevData) => ({
-                                    ...prevData,
-                                    fullName: undefined,
-                                }));
-                            }}
-                            placeholder={t('enterFullName')}
-                            placeholderTextColor={colors.blackOpacity(0.4)}
-                            style={{
-                                color: colors.black,
-                                fontSize: responsiveFontSize(2),
-                                fontWeight: '500',
-                                height: responsiveHeight(5.5),
-                                borderColor: colors.blackOpacity(0.2),
-                                borderWidth: 1,
-                                borderRadius: 10,
-                                marginTop: responsiveFontSize(0.5),
-                                paddingHorizontal: responsiveFontSize(2),
-                            }}
-                        />
-                        {errors?.fullName && (
-                            <Text style={{ color: 'red', fontSize: responsiveFontSize(1.6), marginTop: responsiveFontSize(.5), }}>{errors?.fullName}</Text>
-                        )}
-                    </View>
-                    <Space height={responsiveFontSize(2.5)} />
+                extraScrollHeight={responsiveHeight(10)}>
 
-                    {/* E-mail */}
-                    <View>
-                        <Text style={{ color: colors.blackOpacity(0.9), fontSize: responsiveFontSize(1.7), fontWeight: '600' }}>{t('e-mail')}</Text>
-                        <TextInput
-                            value={email}
-                            onChangeText={(text) => {
-                                const lower = text.toLowerCase(); // lowercase all
-                                setemail(lower)
-                                setErrors((prevData) => ({
-                                    ...prevData,
-                                    email: undefined,
-                                }));
-                            }}
-                            placeholder={t('enterE-mail')}
-                            placeholderTextColor={colors.blackOpacity(0.4)}
-                            keyboardType={'email-address'}
-                            style={{
-                                color: colors.black,
-                                fontSize: responsiveFontSize(2),
-                                fontWeight: '500',
-                                height: responsiveHeight(5.5),
-                                borderColor: colors.blackOpacity(0.2),
-                                borderWidth: 1,
-                                borderRadius: 10,
-                                marginTop: responsiveFontSize(0.5),
-                                paddingHorizontal: responsiveFontSize(2),
-                            }}
-                        />
-                        {errors?.email && (
-                            <Text style={{ color: 'red', fontSize: responsiveFontSize(1.6), marginTop: responsiveFontSize(.5), }}>{errors?.email}</Text>
-                        )}
-                    </View>
-                    <Space height={responsiveFontSize(2.5)} />
+                <View style={{ paddingHorizontal: responsiveWidth(5), paddingTop: responsiveHeight(3) }}>
 
-                    {/* Mobile */}
-                    <View>
-                        <Text style={{ color: colors.blackOpacity(0.9), fontSize: responsiveFontSize(1.7), fontWeight: '600' }}>{t(`mobile`)} <Text style={{ color: colors.roseRed, fontWeight: 'bold' }}>*</Text>
+                    {/* Header Info */}
+                    <View style={{ marginBottom: responsiveHeight(3) }}>
+                        <Text style={{
+                            fontSize: responsiveFontSize(2.2),
+                            fontWeight: '700',
+                            color: colors.black,
+                            marginBottom: 4
+                        }}>
+                            {t('driverDetails') || 'Driver Details'}
                         </Text>
-                        <TextInput
-                            value={mobile}
-                            placeholder={t('enterMobile')}
-                            placeholderTextColor={colors.blackOpacity(0.4)}
-                            keyboardType='number-pad'
-                            maxLength={10}
-                            onChangeText={(text) => {
-                                // Only allow numeric characters
-                                const numericText = text.replace(/[^0-9]/g, '');
-                                setmobile(numericText)
-                                setErrors((prevData) => ({
-                                    ...prevData,
-                                    mobile: undefined,
-                                }));
-                            }}
-                            style={{
-                                color: colors.black,
-                                fontSize: responsiveFontSize(2),
-                                fontWeight: '500',
-                                height: responsiveHeight(5.5),
-                                borderColor: colors.blackOpacity(0.2),
-                                borderWidth: 1,
-                                borderRadius: 10,
-                                marginTop: responsiveFontSize(0.5),
-                                paddingHorizontal: responsiveFontSize(2),
-                            }}
-                        />
-                        {errors?.mobile && (
-                            <Text style={{ color: 'red', fontSize: responsiveFontSize(1.6), marginTop: responsiveFontSize(.5), }}>{errors?.mobile}</Text>
-                        )}
+                        <Text style={{
+                            fontSize: responsiveFontSize(1.7),
+                            color: colors.blackOpacity(0.5),
+                            lineHeight: responsiveFontSize(2.2)
+                        }}>
+                            {t('fillDriverDetails') || 'Please fill in the details below to add a new driver to your network.'}
+                        </Text>
                     </View>
-                    <Space height={responsiveFontSize(2.5)} />
+
+                    <InputField
+                        id="name"
+                        label={t('fullName')}
+                        value={fullName}
+                        onChangeText={(text: string) => {
+                            setfullName(text)
+                            setErrors((prevData) => ({ ...prevData, fullName: undefined }));
+                        }}
+                        placeholder={t('enterFullName')}
+                        icon="user"
+                        error={errors?.fullName}
+                        required
+                        colors={colors}
+                        responsiveFontSize={responsiveFontSize}
+                        responsiveHeight={responsiveHeight}
+                        focusedInput={focusedInput}
+                        setFocusedInput={setFocusedInput}
+                    />
+
+                    <InputField
+                        id="mobile"
+                        label={t('mobile')}
+                        value={mobile}
+                        onChangeText={(text: string) => {
+                            const numericText = text.replace(/[^0-9]/g, '');
+                            setmobile(numericText)
+                            setErrors((prevData) => ({ ...prevData, mobile: undefined }));
+                        }}
+                        placeholder={t('enterMobile')}
+                        icon="phone"
+                        keyboardType="number-pad"
+                        maxLength={10}
+                        error={errors?.mobile}
+                        required
+                        colors={colors}
+                        responsiveFontSize={responsiveFontSize}
+                        responsiveHeight={responsiveHeight}
+                        focusedInput={focusedInput}
+                        setFocusedInput={setFocusedInput}
+                    />
+
+                    <InputField
+                        id="email"
+                        label={t('e-mail')}
+                        value={email}
+                        onChangeText={(text: string) => {
+                            setemail(text.toLowerCase())
+                            setErrors((prevData) => ({ ...prevData, email: undefined }));
+                        }}
+                        placeholder={t('enterE-mail')}
+                        icon="mail"
+                        keyboardType="email-address"
+                        error={errors?.email}
+                        colors={colors}
+                        responsiveFontSize={responsiveFontSize}
+                        responsiveHeight={responsiveHeight}
+                        focusedInput={focusedInput}
+                        setFocusedInput={setFocusedInput}
+                    />
 
                     {/* State Selector */}
-                    <View>
-                        <Text style={{ fontSize: responsiveFontSize(1.8), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(0.5) }}>{t(`state`)} <Text style={{ color: 'red' }}>*</Text></Text>
+                    <View style={{ marginBottom: responsiveFontSize(2) }}>
+                        <View style={{ flexDirection: 'row', marginBottom: 6 }}>
+                            <Text style={{
+                                color: colors.blackOpacity(0.7),
+                                fontSize: responsiveFontSize(1.7),
+                                fontWeight: '600'
+                            }}>
+                                {t('state')}
+                            </Text>
+                            <Text style={{ color: colors.roseRed, fontWeight: 'bold', marginLeft: 2 }}>*</Text>
+                        </View>
+
                         <TouchableOpacity
                             activeOpacity={0.8}
                             onPress={() => setStateModalVisible(true)}
                             style={{
-                                height: responsiveHeight(5.5),
-                                paddingHorizontal: responsiveFontSize(2),
-                                borderRadius: 10,
-                                borderColor: errors.state ? colors.roseRed : colors.blackOpacity(0.2),
-                                borderWidth: 1,
-                                backgroundColor: colors.white,
+                                backgroundColor: colors.blackOpacity(0.02),
+                                borderRadius: 12,
+                                borderWidth: 1.5,
+                                borderColor: errors.state ? colors.roseRed : colors.blackOpacity(0.08),
                                 flexDirection: 'row',
                                 alignItems: 'center',
-                                justifyContent: 'space-between',
-                                marginTop: responsiveFontSize(0.5),
+                                height: responsiveHeight(6.5),
+                                paddingHorizontal: responsiveFontSize(1.5),
                             }}>
+                            <View style={{
+                                width: responsiveFontSize(4.5),
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRightWidth: 1,
+                                borderRightColor: colors.blackOpacity(0.05),
+                                paddingRight: responsiveFontSize(1),
+                                marginRight: responsiveFontSize(1)
+                            }}>
+                                <Feather
+                                    name="map-pin"
+                                    size={20}
+                                    color={errors.state ? colors.roseRed : colors.blackOpacity(0.4)}
+                                />
+                            </View>
+
                             <Text style={{
-                                fontSize: responsiveFontSize(1.9),
+                                flex: 1,
+                                fontSize: responsiveFontSize(2),
                                 color: selectedStateName ? colors.black : colors.blackOpacity(0.4),
-                                fontWeight: '500',
+                                fontWeight: selectedStateName ? '500' : '400',
                             }}>
                                 {selectedStateName || t("selectState")}
                             </Text>
-                            <Ionicons name="chevron-down" size={20} color={colors.blackOpacity(0.5)} />
+
+                            <Feather name="chevron-down" size={20} color={colors.blackOpacity(0.5)} />
                         </TouchableOpacity>
+
                         {errors.state && (
-                            <Text style={{ color: 'red', fontSize: responsiveFontSize(1.6), marginTop: 4 }}>{errors.state}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, paddingLeft: 4 }}>
+                                <Feather name="alert-circle" size={12} color={colors.roseRed} />
+                                <Text style={{ color: colors.roseRed, fontSize: responsiveFontSize(1.5), marginLeft: 4 }}>{errors.state}</Text>
+                            </View>
                         )}
                     </View>
-                    {/*  */}
-                    <Space height={responsiveFontSize(6)} />
+
+                    <Space height={responsiveFontSize(4)} />
+
                     <TouchableOpacity
                         onPress={_onPressAddDriver}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                         style={{
-                            height: responsiveHeight(5.8),
-                            width: responsiveWidth(90),
+                            height: responsiveHeight(6.5),
+                            width: '100%',
                             backgroundColor: colors.royalBlue,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            alignSelf: 'center',
-                            borderRadius: 8,
+                            borderRadius: 14,
+                            ...shadow,
+                            shadowColor: colors.royalBlue,
+                            shadowOpacity: 0.3,
                         }}>
                         {loading ? (
                             <ActivityIndicator color={colors.white} size="small" />
                         ) : (
-                            <Text style={{ color: colors.white, fontSize: responsiveFontSize(2), fontWeight: '500' }}>{t(`addDriver`)}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Feather name="plus-circle" size={20} color={colors.white} style={{ marginRight: 8 }} />
+                                <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.1), fontWeight: '600' }}>
+                                    {t('addDriver')}
+                                </Text>
+                            </View>
                         )}
                     </TouchableOpacity>
-                    <Space height={responsiveFontSize(10)} />
-                    <AnimatedFAB
-                        icon={({ size, color }) => (
-                            <MaterialCommunityIcons name="microsoft-excel" size={size} color={color} />
-                        )}
-                        extended={isExtended}
-                        label={t('uploadExcel')}
-                        color={colors.white}
-                        onPress={() => navigation.navigate(STACKS.EXCEL_IMPORT)}
-                        visible={isVisible}
-                        iconMode={'dynamic'}
-                        style={{
-                            position: 'absolute',
-                            bottom: responsiveHeight(10),
-                            right: responsiveWidth(5),
-                            backgroundColor: colors.royalBlue
-                        }}
-                    />
+
                 </View>
+
+                {/* Excel Import FAB */}
+                <AnimatedFAB
+                    icon={({ size, color }) => (
+                        <MaterialCommunityIcons name="microsoft-excel" size={24} color={color} />
+                    )}
+                    extended={isExtended}
+                    label={t('uploadExcel')}
+                    color={colors.white}
+                    onPress={() => navigation.navigate(STACKS.EXCEL_IMPORT)}
+                    visible={isVisible}
+                    animateFrom={'right'}
+                    iconMode={'dynamic'}
+                    style={{
+                        position: 'absolute',
+                        bottom: responsiveHeight(4),
+                        right: responsiveWidth(5),
+                        backgroundColor: '#1D6F42', // Excel green color
+                        borderRadius: 30,
+                    }}
+                />
             </KeyboardAwareScrollView>
 
             {/* Fullscreen State Picker Modal */}
             <Modal
                 visible={stateModalVisible}
                 animationType="slide"
-                presentationStyle="fullScreen"
+                presentationStyle="pageSheet" // Better on iOS
                 onRequestClose={() => setStateModalVisible(false)}
             >
                 <View style={{ flex: 1, backgroundColor: colors.white }}>
-                    <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
+
                     {/* Modal Header */}
                     <View style={{
-                        paddingTop: safeAreaInsets.top,
+                        paddingTop: Platform.OS === 'ios' ? responsiveHeight(2) : 0,
                         backgroundColor: colors.white,
                         borderBottomWidth: 1,
                         borderBottomColor: colors.blackOpacity(0.08),
@@ -434,7 +458,7 @@ export default function AddDriver() {
                             flexDirection: 'row',
                             alignItems: 'center',
                             paddingHorizontal: responsiveWidth(4),
-                            paddingVertical: responsiveHeight(1),
+                            paddingVertical: responsiveHeight(2),
                         }}>
                             <TouchableOpacity
                                 hitSlop={hitSlop(10)}
@@ -450,7 +474,7 @@ export default function AddDriver() {
                                     backgroundColor: colors.blackOpacity(0.05),
                                     borderRadius: 12,
                                 }}>
-                                <Ionicons name="close" size={24} color={colors.royalBlue} />
+                                <Feather name="x" size={24} color={colors.black} />
                             </TouchableOpacity>
                             <Text style={{
                                 flex: 1,
@@ -458,31 +482,33 @@ export default function AddDriver() {
                                 fontSize: responsiveFontSize(2.2),
                                 fontWeight: '700',
                                 color: colors.black,
-                                marginRight: 40, // Balance the close button
+                                marginRight: 40,
                             }}>
                                 {t('selectState')}
                             </Text>
                         </View>
 
-                        {/* Search Bar */}
+                        {/* Modern Search Bar */}
                         <View style={{
                             marginHorizontal: responsiveWidth(4),
-                            marginBottom: responsiveHeight(1),
+                            marginBottom: responsiveHeight(1.5),
                             backgroundColor: colors.blackOpacity(0.04),
-                            borderRadius: 12,
+                            borderRadius: 16,
                             flexDirection: 'row',
                             alignItems: 'center',
-                            paddingHorizontal: 14,
-                            height: 48,
+                            paddingHorizontal: 16,
+                            height: 54,
+                            borderWidth: 1,
+                            borderColor: colors.blackOpacity(0.04)
                         }}>
-                            <Ionicons name="search" size={20} color={colors.blackOpacity(0.4)} />
+                            <Feather name="search" size={20} color={colors.blackOpacity(0.4)} />
                             <TextInput
                                 style={{
                                     flex: 1,
-                                    marginLeft: 10,
-                                    fontSize: responsiveFontSize(1.8),
+                                    marginLeft: 12,
+                                    fontSize: responsiveFontSize(2),
                                     color: colors.black,
-                                    padding: 0,
+                                    height: '100%',
                                 }}
                                 placeholder={t('searchState') || 'Search state...'}
                                 placeholderTextColor={colors.blackOpacity(0.4)}
@@ -492,7 +518,7 @@ export default function AddDriver() {
                             />
                             {stateSearchQuery.length > 0 && (
                                 <TouchableOpacity onPress={() => setStateSearchQuery('')}>
-                                    <Ionicons name="close-circle" size={20} color={colors.blackOpacity(0.4)} />
+                                    <Feather name="x-circle" size={20} color={colors.blackOpacity(0.4)} />
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -505,8 +531,8 @@ export default function AddDriver() {
                         keyboardShouldPersistTaps="handled"
                         contentContainerStyle={{
                             paddingHorizontal: responsiveWidth(4),
-                            paddingTop: 10,
-                            paddingBottom: safeAreaInsets.bottom + 20,
+                            paddingTop: 16,
+                            paddingBottom: safeAreaInsets.bottom + 40,
                         }}
                         ListEmptyComponent={() => (
                             <View style={{
@@ -514,11 +540,21 @@ export default function AddDriver() {
                                 justifyContent: 'center',
                                 paddingVertical: responsiveHeight(10),
                             }}>
-                                <Ionicons name="location-outline" size={48} color={colors.blackOpacity(0.2)} />
+                                <View style={{
+                                    width: 80,
+                                    height: 80,
+                                    borderRadius: 40,
+                                    backgroundColor: colors.blackOpacity(0.03),
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: 16
+                                }}>
+                                    <Feather name="map-pin" size={40} color={colors.blackOpacity(0.2)} />
+                                </View>
                                 <Text style={{
-                                    marginTop: 12,
                                     fontSize: responsiveFontSize(1.8),
                                     color: colors.blackOpacity(0.4),
+                                    fontWeight: '500'
                                 }}>
                                     {t('noStatesFound') || 'No states found'}
                                 </Text>
@@ -538,35 +574,46 @@ export default function AddDriver() {
                                     style={{
                                         flexDirection: 'row',
                                         alignItems: 'center',
-                                        paddingVertical: responsiveHeight(1.8),
-                                        paddingHorizontal: 16,
-                                        marginBottom: 8,
-                                        backgroundColor: isSelected ? colors.royalBlue + '10' : colors.white,
-                                        borderRadius: 12,
+                                        paddingVertical: responsiveHeight(2),
+                                        paddingHorizontal: 20,
+                                        marginBottom: 10,
+                                        backgroundColor: isSelected ? colors.royalBlue + '08' : colors.white,
+                                        borderRadius: 16,
                                         borderWidth: 1,
-                                        borderColor: isSelected ? colors.royalBlue : colors.blackOpacity(0.08),
+                                        borderColor: isSelected ? colors.royalBlue : colors.blackOpacity(0.06),
                                     }}>
                                     <View style={{
-                                        width: 24,
-                                        height: 24,
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 20,
+                                        backgroundColor: isSelected ? colors.royalBlue : colors.blackOpacity(0.05),
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        marginRight: 14,
+                                        marginRight: 16,
                                     }}>
-                                        <MaterialCommunityIcons
-                                            name={isSelected ? 'radiobox-marked' : 'radiobox-blank'}
-                                            size={24}
-                                            color={isSelected ? colors.royalBlue : colors.blackOpacity(0.3)}
-                                        />
+                                        {isSelected ? (
+                                            <Feather name="check" size={20} color={colors.white} />
+                                        ) : (
+                                            <Text style={{
+                                                color: colors.blackOpacity(0.4),
+                                                fontSize: responsiveFontSize(2),
+                                                fontWeight: '600'
+                                            }}>
+                                                {item.name.charAt(0)}
+                                            </Text>
+                                        )}
                                     </View>
-                                    <Text style={{
-                                        flex: 1,
-                                        fontSize: responsiveFontSize(1.9),
-                                        fontWeight: isSelected ? '600' : '500',
-                                        color: isSelected ? colors.royalBlue : colors.black,
-                                    }}>
-                                        {item.name}
-                                    </Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{
+                                            fontSize: responsiveFontSize(2),
+                                            fontWeight: isSelected ? '700' : '600',
+                                            color: isSelected ? colors.royalBlue : colors.black,
+                                        }}>
+                                            {item.name}
+                                        </Text>
+                                    </View>
+
+                                    {isSelected && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.royalBlue }} />}
                                 </TouchableOpacity>
                             );
                         }}
@@ -576,3 +623,90 @@ export default function AddDriver() {
         </View>
     )
 }
+
+// Custom Input Component
+const InputField = ({
+    label,
+    value,
+    onChangeText,
+    placeholder,
+    error,
+    keyboardType = 'default',
+    maxLength,
+    icon,
+    id,
+    required = false,
+    colors,
+    responsiveFontSize,
+    responsiveHeight,
+    focusedInput,
+    setFocusedInput
+}: any) => {
+    const isFocused = focusedInput === id;
+
+    return (
+        <View style={{ marginBottom: responsiveFontSize(2) }}>
+            <View style={{ flexDirection: 'row', marginBottom: 6 }}>
+                <Text style={{
+                    color: colors.blackOpacity(0.7),
+                    fontSize: responsiveFontSize(1.7),
+                    fontWeight: '600'
+                }}>
+                    {label}
+                </Text>
+                {required && <Text style={{ color: colors.roseRed, fontWeight: 'bold', marginLeft: 2 }}>*</Text>}
+            </View>
+
+            <View style={{
+                backgroundColor: isFocused ? colors.royalBlue + '08' : colors.blackOpacity(0.02),
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: error ? colors.roseRed : (isFocused ? colors.royalBlue : colors.blackOpacity(0.08)),
+                flexDirection: 'row',
+                alignItems: 'center',
+                height: responsiveHeight(6.5),
+                paddingHorizontal: responsiveFontSize(1.5),
+            }}>
+                <View style={{
+                    width: responsiveFontSize(4.5),
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRightWidth: 1,
+                    borderRightColor: colors.blackOpacity(0.05),
+                    paddingRight: responsiveFontSize(1),
+                    marginRight: responsiveFontSize(1)
+                }}>
+                    <Feather
+                        name={icon}
+                        size={20}
+                        color={error ? colors.roseRed : (isFocused ? colors.royalBlue : colors.blackOpacity(0.4))}
+                    />
+                </View>
+
+                <TextInput
+                    value={value}
+                    onChangeText={onChangeText}
+                    placeholder={placeholder}
+                    placeholderTextColor={colors.blackOpacity(0.4)}
+                    keyboardType={keyboardType}
+                    maxLength={maxLength}
+                    style={{
+                        flex: 1,
+                        color: colors.black,
+                        fontSize: responsiveFontSize(2),
+                        fontWeight: '500',
+                        height: '100%',
+                    }}
+                    onFocus={() => setFocusedInput(id)}
+                    onBlur={() => setFocusedInput(null)}
+                />
+            </View>
+            {error && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, paddingLeft: 4 }}>
+                    <Feather name="alert-circle" size={12} color={colors.roseRed} />
+                    <Text style={{ color: colors.roseRed, fontSize: responsiveFontSize(1.5), marginLeft: 4 }}>{error}</Text>
+                </View>
+            )}
+        </View>
+    );
+};

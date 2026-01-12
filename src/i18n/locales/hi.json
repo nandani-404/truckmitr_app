@@ -2170,5 +2170,7 @@
   "Jobs Management": "नौकरी प्रबंधन",
   "totalAddedDriver": "कुल जोड़े गए ड्राइवर",
   "foremanDashboard": "फोरमैन डैशबोर्ड",
-  "manageWorkforce": "अपने कार्यबल का प्रबंधन करें"
+  "manageWorkforce": "अपने कार्यबल का प्रबंधन करें",
+  "fillDriverDetails": "अपने नेटवर्क में एक नया ड्राइवर जोड़ने के लिए कृपया नीचे दिए गए विवरण भरें।",
+  "noStatesFound": "कोई राज्य नहीं मिला"
 }
