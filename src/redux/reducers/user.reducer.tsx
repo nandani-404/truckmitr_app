@@ -16,6 +16,7 @@ const initialState = {
     subscriptionModal: false,
     subscriptionModalOptions: {
         upgradeOnly: false,
+        minPrice: 0,
     },
     paymentVerificationModal: false,
     referral: null,
@@ -37,7 +38,7 @@ const userReducer = (state = initialState, action: any) => {
                 console.log('Original Operational_Segment:', editData.Operational_Segment);
                 console.log('Operational_Segment type:', typeof editData.Operational_Segment);
                 console.log('Starts with [ or {?', editData.Operational_Segment.trim().startsWith('[') || editData.Operational_Segment.trim().startsWith('{'));
-                
+
                 try {
                     // Only try to parse if it looks like JSON (starts with [ or {)
                     if (editData.Operational_Segment.trim().startsWith('[') || editData.Operational_Segment.trim().startsWith('{')) {

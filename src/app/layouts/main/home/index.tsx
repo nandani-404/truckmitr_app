@@ -621,12 +621,7 @@ const Home = React.forwardRef((props, ref) => {
         navigation.navigate(STACKS.BOTTOM_TAB, { screen: STACKS.JOB })
     }
     const _navigateSuitsJobs = () => {
-        if (subscriptionDetails?.showSubscriptionModel && isDriver) {
-            dispatch(subscriptionModalAction(true))
-        } else {
-            navigation.navigate(STACKS.SUITS_JOB)
-
-        }
+        navigation.navigate(STACKS.SUITS_JOB)
     }
     const _navigateAppliedJobs = () => {
         navigation.navigate(STACKS.APPLIED_JOB)
@@ -1693,7 +1688,7 @@ const Home = React.forwardRef((props, ref) => {
             </ScrollView>
 
             {/* Draggable Floating Reel-Style Video Player */}
-            {isDriver && !isMinimized && <Animated.View
+            {(isDriver || isTransporter) && !isMinimized && <Animated.View
                 {...panResponder.panHandlers}
                 style={isFullScreen ? {
                     position: 'absolute',
@@ -1913,7 +1908,7 @@ const Home = React.forwardRef((props, ref) => {
             </Animated.View>}
 
             {/* Minimized Floating Icon */}
-            {isDriver && isMinimized && (
+            {(isDriver || isTransporter) && isMinimized && (
                 <Animated.View
                     {...panResponder.panHandlers}
                     style={{

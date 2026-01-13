@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Space } from '@truckmitr/src/app/components';
+import { Space, AppleConfirmDialog } from '@truckmitr/src/app/components';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from "react-native-svg";
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Feather from 'react-native-vector-icons/Feather'
@@ -241,188 +241,6 @@ const getStateName = (stateValue: string | number | undefined): string => {
   return stateStr;
 };
 
-// Apple-style Confirmation Dialog Component
-interface ConfirmDialogProps {
-  visible: boolean;
-  title: string;
-  message: string;
-  confirmText: string;
-  cancelText: string;
-  isDestructive?: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-  loading?: boolean;
-}
-
-const AppleConfirmDialog: React.FC<ConfirmDialogProps> = ({
-  visible,
-  title,
-  message,
-  confirmText,
-  cancelText,
-  isDestructive = false,
-  onConfirm,
-  onCancel,
-  loading = false,
-}) => {
-  const colors = useColor();
-  const { responsiveFontSize, responsiveWidth, responsiveHeight } = useResponsiveScale();
-  const scaleValue = useRef(new Animated.Value(0)).current;
-  const opacityValue = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.spring(scaleValue, {
-          toValue: 1,
-          tension: 100,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityValue, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(scaleValue, {
-          toValue: 0.8,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityValue, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible]);
-
-  if (!visible) return null;
-
-  return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={onCancel}
-    >
-      <Animated.View
-        style={[
-          styles.dialogOverlay,
-          { opacity: opacityValue }
-        ]}
-      >
-        <Animated.View
-          style={[
-            styles.dialogContainer,
-            {
-              transform: [{ scale: scaleValue }],
-              backgroundColor: colors.white,
-              width: responsiveWidth(75),
-            }
-          ]}
-        >
-          {/* Icon */}
-          <View style={[
-            styles.dialogIconContainer,
-            { backgroundColor: isDestructive ? 'rgba(255, 59, 48, 0.1)' : 'rgba(8, 68, 137, 0.1)' }
-          ]}>
-            {isDestructive ? (
-              <MaterialCommunityIcons
-                name="alert-circle-outline"
-                size={32}
-                color="#FF3B30"
-              />
-            ) : (
-              <MaterialCommunityIcons
-                name="logout"
-                size={32}
-                color={colors.royalBlue}
-              />
-            )}
-          </View>
-
-          {/* Title */}
-          <Text style={[
-            styles.dialogTitle,
-            {
-              color: colors.black,
-              fontSize: responsiveFontSize(2.2),
-            }
-          ]}>
-            {title}
-          </Text>
-
-          {/* Message */}
-          <Text style={[
-            styles.dialogMessage,
-            {
-              color: colors.blackOpacity(0.6),
-              fontSize: responsiveFontSize(1.7),
-            }
-          ]}>
-            {message}
-          </Text>
-
-          {/* Buttons */}
-          <View style={styles.dialogButtonContainer}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={onCancel}
-              disabled={loading}
-              style={[
-                styles.dialogButton,
-                styles.dialogCancelButton,
-                { backgroundColor: colors.blackOpacity(0.05) }
-              ]}
-            >
-              <Text style={[
-                styles.dialogButtonText,
-                {
-                  color: colors.blackOpacity(0.8),
-                  fontSize: responsiveFontSize(1.8),
-                }
-              ]}>
-                {cancelText}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={onConfirm}
-              disabled={loading}
-              style={[
-                styles.dialogButton,
-                styles.dialogConfirmButton,
-                { backgroundColor: isDestructive ? '#FF3B30' : colors.royalBlue }
-              ]}
-            >
-              {loading ? (
-                <ActivityIndicator color={colors.white} size="small" />
-              ) : (
-                <Text style={[
-                  styles.dialogButtonText,
-                  {
-                    color: colors.white,
-                    fontSize: responsiveFontSize(1.8),
-                  }
-                ]}>
-                  {confirmText}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </Animated.View>
-    </Modal>
-  );
-};
-
 // Menu Item Component for Apple-style list
 interface MenuItemProps {
   icon: React.ReactNode;
@@ -559,8 +377,7 @@ export default function Profile() {
 
   // Dialog States
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+
 
   useFocusEffect(
     useCallback(() => {
@@ -698,45 +515,7 @@ export default function Profile() {
     dispatch(subscriptionModalAction(true));
   }
 
-  const deleteAccount = async () => {
-    setIsDeleting(true);
-    const userinfo = {
-      id: user?.id ?? '',
-      unique_id: user?.unique_id ?? '',
-      name: user?.name ?? '',
-      mobile: user?.mobile ?? '',
-      email: user?.email ?? '',
-      role: user?.role ?? '',
-    };
 
-    const eventParams = {
-      user_id: String(userinfo.id),
-      user_unique_id: userinfo.unique_id,
-      user_name: userinfo.name,
-      user_email: userinfo.email,
-      user_role: userinfo.role,
-      method: 'user_requested',
-    };
-
-    try {
-      await onUserLogout()
-      const response: any = await axiosInstance.post(END_POINTS?.DELETE_ACCOUNT);
-
-      if (response?.data?.status) {
-        await analytics().logEvent('delete_account', eventParams);
-        AppEventsLogger.logEvent('delete_account', eventParams);
-        await new Promise<void>(res => setTimeout(() => res(), 500));
-        dispatch(userAuthenticatedAction(false));
-        deleteUserData();
-        showToast(response?.data?.message);
-      }
-    } catch (error) {
-      console.warn('Delete account error:', error);
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-    }
-  };
 
   const _onPressShareApp = async () => {
     try {
@@ -781,9 +560,7 @@ export default function Profile() {
     }
   };
 
-  const _onPressDeleteAccount = () => {
-    setShowDeleteDialog(true);
-  }
+
 
   const _onPressLogout = async () => {
     setShowLogoutDialog(true);
@@ -941,17 +718,7 @@ export default function Profile() {
         onCancel={() => setShowLogoutDialog(false)}
       />
 
-      <AppleConfirmDialog
-        visible={showDeleteDialog}
-        title={t('deleteAccount')}
-        message={t('areYouSureDeleteAccount') || 'This action cannot be undone. All your data will be permanently deleted.'}
-        confirmText={t('delete') || 'Delete'}
-        cancelText={t('cancel')}
-        isDestructive={true}
-        onConfirm={deleteAccount}
-        onCancel={() => setShowDeleteDialog(false)}
-        loading={isDeleting}
-      />
+
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -1672,13 +1439,7 @@ onPress={()=>{
             title={t('logout')}
             onPress={_onPressLogout}
           />
-          <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
-          <MenuItem
-            icon={<MaterialCommunityIcons name="delete-outline" size={20} color="#FF3B30" />}
-            title={t('deleteAccount')}
-            onPress={_onPressDeleteAccount}
-            textColor="#FF3B30"
-          />
+
         </CardContainer>
 
         <Space height={responsiveHeight(8)} />

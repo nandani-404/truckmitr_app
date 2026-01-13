@@ -7,4 +7,6 @@ import TransporterVerificationStatusModal from '@truckmitr/src/app/components/tr
 import TransporterPaymentModal from '@truckmitr/src/app/components/transporter-payment-modal'
 import ScreenHeader from '@truckmitr/src/app/components/screen-header'
 
-export { Space, Switch, ConfirmationModal, MediaSwiper, TrainingCompletionModal, TransporterVerificationStatusModal, TransporterPaymentModal, ScreenHeader }
+import { AppleConfirmDialog } from "@truckmitr/src/app/components/apple-confirm-dialog"
+
+export { Space, Switch, ConfirmationModal, MediaSwiper, TrainingCompletionModal, TransporterVerificationStatusModal, TransporterPaymentModal, ScreenHeader, AppleConfirmDialog }
