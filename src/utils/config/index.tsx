@@ -125,6 +125,7 @@ export const END_POINTS = {
     VERIFICATION_VIDEO: `api/driver-verification/verification-video`,
     LOG_USER_EVENT: `api/user-logs`,
     COURT_CHECK_CASE_STATUS: `api/kyc/courtcheck/addcase`,
+    COURT_CHECK_AND_REPORT: `api/kyc/courtcheck/case-results-with-reports`,
 
     // Driving License Verification
     DL_VERIFY: `api/kyc/dl`,
