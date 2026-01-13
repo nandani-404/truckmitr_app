@@ -224,7 +224,7 @@ export default function DocumentVerification() {
 
     const { user, isDriver, subscriptionDetails } = useSelector((state: any) => state?.user);
 
-    // Check if user has 499 (Trusted) subscription for ID verification access
+    // Check if user has 199+ subscription for ID verification access
     const canAccessIdVerification = React.useMemo(() => {
         if (!subscriptionDetails) return false;
 
@@ -237,12 +237,12 @@ export default function DocumentVerification() {
             // Check amount (handle string or number)
             const amount = parseFloat(sub.amount) || 0;
 
-            // Only allow 499+ plan for ID verification
-            if (Math.floor(amount) >= 499) return true;
+            // Allow 199+ plans for ID verification
+            if (Math.floor(amount) >= 199) return true;
 
-            // Also check plan name for trusted tier
+            // Also check plan name for verified/trusted tier
             const planName = String(sub.payment_type || sub.plan_name || sub.name || '').toLowerCase();
-            if (planName.includes('trusted') || planName.includes('premium')) return true;
+            if (planName.includes('verified') || planName.includes('trusted') || planName.includes('premium')) return true;
         }
 
         return false;
@@ -1134,42 +1134,128 @@ export default function DocumentVerification() {
                     ) : (
                         <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.formCard}>
                             {activeTab === 'DL' && (
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}><Ionicons name="card" size={14} color={COLORS.textMuted} />  {t('drivingLicenseNumber') || 'Driving License Number'}</Text>
-                                    <View style={[styles.inputContainer, inputError ? styles.inputError : null]}>
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Enter DL Number"
-                                            placeholderTextColor={COLORS.textLight}
-                                            value={dlNumber}
-                                            onChangeText={handleDLChange}
-                                            maxLength={20}
-                                            autoCapitalize="characters"
-                                            editable={!isFetchingProfile}
-                                        />
-                                        {isFetchingProfile && <ActivityIndicator size="small" color={COLORS.primary} style={styles.inputLoader} />}
+                                canAccessIdVerification ? (
+                                    <View style={styles.inputGroup}>
+                                        <Text style={styles.inputLabel}><Ionicons name="card" size={14} color={COLORS.textMuted} />  {t('drivingLicenseNumber') || 'Driving License Number'}</Text>
+                                        <View style={[styles.inputContainer, inputError ? styles.inputError : null]}>
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="Enter DL Number"
+                                                placeholderTextColor={COLORS.textLight}
+                                                value={dlNumber}
+                                                onChangeText={handleDLChange}
+                                                maxLength={20}
+                                                autoCapitalize="characters"
+                                                editable={!isFetchingProfile}
+                                            />
+                                            {isFetchingProfile && <ActivityIndicator size="small" color={COLORS.primary} style={styles.inputLoader} />}
+                                        </View>
+                                        <Text style={styles.inputHint}>Format: 10-20 alphanumeric characters</Text>
                                     </View>
-                                    <Text style={styles.inputHint}>Format: 10-20 alphanumeric characters</Text>
-                                </View>
+                                ) : (
+                                    // Upgrade Prompt for users without 199 subscription
+                                    <Animated.View entering={FadeInDown.duration(500).springify()} style={{ alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
+                                        <Animated.View
+                                            entering={ZoomIn.delay(200).duration(400).springify()}
+                                            style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#1E3A8A', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, elevation: 8 }}
+                                        >
+                                            <Ionicons name="card" size={50} color="#1E3A8A" />
+                                        </Animated.View>
+                                        <Animated.Text entering={FadeInDown.delay(300).duration(400)} style={{ fontSize: 22, fontWeight: '700', color: COLORS.text, textAlign: 'center', marginBottom: 12 }}>
+                                            {t('dlVerificationLocked') || 'DL Verification Locked'}
+                                        </Animated.Text>
+                                        <Animated.Text entering={FadeInDown.delay(400).duration(400)} style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 10 }}>
+                                            {t('dlVerificationUpgradeMessage') || 'Upgrade to the Verified Driver plan (₹199/year) or higher to unlock DL Verification.'}
+                                        </Animated.Text>
+                                        <Animated.View entering={FadeInUp.delay(500).duration(400).springify()} style={{ width: '100%' }}>
+                                            <TouchableOpacity
+                                                onPress={() => dispatch(subscriptionModalAction({ visible: true, minPrice: 199 }))}
+                                                activeOpacity={0.9}
+                                                style={{ width: '100%', borderRadius: 16, overflow: 'hidden', shadowColor: '#2563EB', shadowOpacity: 0.4, shadowOffset: { width: 0, height: 6 }, shadowRadius: 12, elevation: 6 }}
+                                            >
+                                                <LinearGradient
+                                                    colors={['#1E3A8A', '#3B82F6', '#60A5FA']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 0 }}
+                                                    style={{ paddingVertical: 16, paddingHorizontal: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+                                                >
+                                                    <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.white} />
+                                                    <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '700', flexShrink: 1 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                                                        {t('upgradeToVerified') || 'Upgrade to Verified Driver @ ₹199'}
+                                                    </Text>
+                                                </LinearGradient>
+                                            </TouchableOpacity>
+                                        </Animated.View>
+                                        <Animated.View entering={FadeIn.delay(600).duration(400)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, backgroundColor: '#EFF6FF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 }}>
+                                            <Ionicons name="shield-checkmark" size={18} color={COLORS.primary} />
+                                            <Text style={{ marginLeft: 8, fontSize: 13, color: COLORS.primary, fontWeight: '500' }}>
+                                                {t('verifiedBenefits') || 'Includes DL Check, PAN Check & Face Match'}
+                                            </Text>
+                                        </Animated.View>
+                                    </Animated.View>
+                                )
                             )}
 
                             {activeTab === 'PAN' && (
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}><Ionicons name="card" size={14} color={COLORS.textMuted} />  {t('panNumber') || 'PAN Number'}</Text>
-                                    <View style={[styles.inputContainer, inputError ? styles.inputError : null]}>
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Enter PAN Number (e.g. ABCDE1234F)"
-                                            placeholderTextColor={COLORS.textLight}
-                                            value={panNumber}
-                                            onChangeText={handlePanChange}
-                                            maxLength={10}
-                                            autoCapitalize="characters"
-                                            editable={!isFetchingProfile}
-                                        />
+                                canAccessIdVerification ? (
+                                    <View style={styles.inputGroup}>
+                                        <Text style={styles.inputLabel}><Ionicons name="card" size={14} color={COLORS.textMuted} />  {t('panNumber') || 'PAN Number'}</Text>
+                                        <View style={[styles.inputContainer, inputError ? styles.inputError : null]}>
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="Enter PAN Number (e.g. ABCDE1234F)"
+                                                placeholderTextColor={COLORS.textLight}
+                                                value={panNumber}
+                                                onChangeText={handlePanChange}
+                                                maxLength={10}
+                                                autoCapitalize="characters"
+                                                editable={!isFetchingProfile}
+                                            />
+                                        </View>
+                                        <Text style={styles.inputHint}>Format: 5 Letters, 4 Digits, 1 Letter</Text>
                                     </View>
-                                    <Text style={styles.inputHint}>Format: 5 Letters, 4 Digits, 1 Letter</Text>
-                                </View>
+                                ) : (
+                                    // Upgrade Prompt for users without 199 subscription
+                                    <Animated.View entering={FadeInDown.duration(500).springify()} style={{ alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
+                                        <Animated.View
+                                            entering={ZoomIn.delay(200).duration(400).springify()}
+                                            style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#1E3A8A', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, elevation: 8 }}
+                                        >
+                                            <Ionicons name="card" size={50} color="#1E3A8A" />
+                                        </Animated.View>
+                                        <Animated.Text entering={FadeInDown.delay(300).duration(400)} style={{ fontSize: 22, fontWeight: '700', color: COLORS.text, textAlign: 'center', marginBottom: 12 }}>
+                                            {t('panVerificationLocked') || 'PAN Verification Locked'}
+                                        </Animated.Text>
+                                        <Animated.Text entering={FadeInDown.delay(400).duration(400)} style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 10 }}>
+                                            {t('panVerificationUpgradeMessage') || 'Upgrade to the Verified Driver plan (₹199/year) or higher to unlock PAN Verification.'}
+                                        </Animated.Text>
+                                        <Animated.View entering={FadeInUp.delay(500).duration(400).springify()} style={{ width: '100%' }}>
+                                            <TouchableOpacity
+                                                onPress={() => dispatch(subscriptionModalAction({ visible: true, minPrice: 199 }))}
+                                                activeOpacity={0.9}
+                                                style={{ width: '100%', borderRadius: 16, overflow: 'hidden', shadowColor: '#2563EB', shadowOpacity: 0.4, shadowOffset: { width: 0, height: 6 }, shadowRadius: 12, elevation: 6 }}
+                                            >
+                                                <LinearGradient
+                                                    colors={['#1E3A8A', '#3B82F6', '#60A5FA']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 0 }}
+                                                    style={{ paddingVertical: 16, paddingHorizontal: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+                                                >
+                                                    <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.white} />
+                                                    <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '700', flexShrink: 1 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                                                        {t('upgradeToVerified') || 'Upgrade to Verified Driver @ ₹199'}
+                                                    </Text>
+                                                </LinearGradient>
+                                            </TouchableOpacity>
+                                        </Animated.View>
+                                        <Animated.View entering={FadeIn.delay(600).duration(400)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, backgroundColor: '#EFF6FF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 }}>
+                                            <Ionicons name="shield-checkmark" size={18} color={COLORS.primary} />
+                                            <Text style={{ marginLeft: 8, fontSize: 13, color: COLORS.primary, fontWeight: '500' }}>
+                                                {t('verifiedBenefits') || 'Includes DL Check, PAN Check & Face Match'}
+                                            </Text>
+                                        </Animated.View>
+                                    </Animated.View>
+                                )
                             )}
 
 
@@ -1255,23 +1341,23 @@ export default function DocumentVerification() {
                                         </View>
                                     </View>
                                 ) : (
-                                    // Upgrade Prompt for users without 499 subscription
+                                    // Upgrade Prompt for users without 199 subscription
                                     <Animated.View entering={FadeInDown.duration(500).springify()} style={{ alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
                                         <Animated.View
                                             entering={ZoomIn.delay(200).duration(400).springify()}
-                                            style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#D97706', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, elevation: 8 }}
+                                            style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#1E3A8A', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, elevation: 8 }}
                                         >
-                                            <MaterialCommunityIcons name="face-recognition" size={50} color="#D97706" />
+                                            <MaterialCommunityIcons name="face-recognition" size={50} color="#1E3A8A" />
                                         </Animated.View>
                                         <Animated.Text entering={FadeInDown.delay(300).duration(400)} style={{ fontSize: 22, fontWeight: '700', color: COLORS.text, textAlign: 'center', marginBottom: 12 }}>
                                             {t('faceVerificationLocked') || 'Face Verification Locked'}
                                         </Animated.Text>
                                         <Animated.Text entering={FadeInDown.delay(400).duration(400)} style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 10 }}>
-                                            {t('faceVerificationUpgradeMessage') || 'Upgrade to the Trusted Driver plan (₹499/year) to unlock Face Verification and compare your selfie with your driving license photo.'}
+                                            {t('faceVerificationUpgradeMessage199') || 'Upgrade to the Verified Driver plan (₹199/year) or higher to unlock Face Verification.'}
                                         </Animated.Text>
                                         <Animated.View entering={FadeInUp.delay(500).duration(400).springify()} style={{ width: '100%' }}>
                                             <TouchableOpacity
-                                                onPress={() => dispatch(subscriptionModalAction({ visible: true, minPrice: 499 }))}
+                                                onPress={() => dispatch(subscriptionModalAction({ visible: true, minPrice: 199 }))}
                                                 activeOpacity={0.9}
                                                 style={{ width: '100%', borderRadius: 16, overflow: 'hidden', shadowColor: '#2563EB', shadowOpacity: 0.4, shadowOffset: { width: 0, height: 6 }, shadowRadius: 12, elevation: 6 }}
                                             >
@@ -1279,11 +1365,11 @@ export default function DocumentVerification() {
                                                     colors={['#1E3A8A', '#3B82F6', '#60A5FA']}
                                                     start={{ x: 0, y: 0 }}
                                                     end={{ x: 1, y: 0 }}
-                                                    style={{ paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 10 }}
+                                                    style={{ paddingVertical: 16, paddingHorizontal: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
                                                 >
-                                                    <MaterialCommunityIcons name="crown" size={22} color={COLORS.white} />
-                                                    <Text style={{ color: COLORS.white, fontSize: 17, fontWeight: '700' }}>
-                                                        {t('upgradeToTrusted') || 'Upgrade to Trusted Driver @ ₹499'}
+                                                    <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.white} />
+                                                    <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '700', flexShrink: 1 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                                                        {t('upgradeToVerified') || 'Upgrade to Verified Driver @ ₹199'}
                                                     </Text>
                                                 </LinearGradient>
                                             </TouchableOpacity>
@@ -1291,7 +1377,7 @@ export default function DocumentVerification() {
                                         <Animated.View entering={FadeIn.delay(600).duration(400)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, backgroundColor: '#EFF6FF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 }}>
                                             <Ionicons name="shield-checkmark" size={18} color={COLORS.primary} />
                                             <Text style={{ marginLeft: 8, fontSize: 13, color: COLORS.primary, fontWeight: '500' }}>
-                                                {t('trustedBenefits') || 'Includes Face Match, ID Check & Court Records'}
+                                                {t('verifiedBenefits') || 'Includes DL Check, PAN Check & Face Match'}
                                             </Text>
                                         </Animated.View>
                                     </Animated.View>
@@ -1300,7 +1386,7 @@ export default function DocumentVerification() {
 
                             {inputError && <Text style={styles.errorText}>{inputError}</Text>}
 
-                            {activeTab === 'DL' && (
+                            {activeTab === 'DL' && canAccessIdVerification && (
                                 <TouchableOpacity onPress={() => setConsentChecked(!consentChecked)} activeOpacity={0.7} style={styles.consentRow}>
                                     <View style={[styles.checkbox, consentChecked && styles.checkboxChecked]}>
                                         {consentChecked && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
@@ -1316,42 +1402,44 @@ export default function DocumentVerification() {
                                 </Animated.View>
                             )}
 
-                            {/* Button Section - Show Upgrade or Verify based on error */}
-                            {isUpgradeError ? (
-                                <TouchableOpacity
-                                    onPress={handleOpenUpgradeModal}
-                                    activeOpacity={0.9}
-                                    style={styles.verifyButtonContainer}
-                                >
-                                    <LinearGradient colors={['#F59E0B', '#FBBF24']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.verifyButton}>
+                            {/* Button Section - Show Upgrade or Verify based on error - Only show when user has access */}
+                            {canAccessIdVerification && (
+                                isUpgradeError ? (
+                                    <TouchableOpacity
+                                        onPress={handleOpenUpgradeModal}
+                                        activeOpacity={0.9}
+                                        style={styles.verifyButtonContainer}
+                                    >
+                                        <LinearGradient colors={['#F59E0B', '#FBBF24']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.verifyButton}>
 
-                                        <Text style={styles.verifyButtonText}>{t('upgradeSubscription') || 'Upgrade Subscription'} </Text>
-                                    </LinearGradient>
-                                </TouchableOpacity>
-                            ) : (
-                                <TouchableOpacity
-                                    onPress={handleVerify}
-                                    activeOpacity={0.9}
-                                    disabled={isLoading || (activeTab === 'DL' && !consentChecked)}
-                                    style={[
-                                        styles.verifyButtonContainer,
-                                        (isLoading || (activeTab === 'DL' && !consentChecked)) && styles.verifyButtonDisabled
-                                    ]}
-                                >
-                                    <LinearGradient colors={['#1E3A8A', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.verifyButton}>
-                                        {isLoading ? (
-                                            <>
-                                                <ActivityIndicator size="small" color={COLORS.white} />
-                                                <Text style={styles.verifyButtonText}>{t('verifying') || 'Verifying...'}</Text>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.white} />
-                                                <Text style={styles.verifyButtonText}>{t('verifyNow') || 'Verify Now'}</Text>
-                                            </>
-                                        )}
-                                    </LinearGradient>
-                                </TouchableOpacity>
+                                            <Text style={styles.verifyButtonText}>{t('upgradeSubscription') || 'Upgrade Subscription'} </Text>
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <TouchableOpacity
+                                        onPress={handleVerify}
+                                        activeOpacity={0.9}
+                                        disabled={isLoading || (activeTab === 'DL' && !consentChecked)}
+                                        style={[
+                                            styles.verifyButtonContainer,
+                                            (isLoading || (activeTab === 'DL' && !consentChecked)) && styles.verifyButtonDisabled
+                                        ]}
+                                    >
+                                        <LinearGradient colors={['#1E3A8A', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.verifyButton}>
+                                            {isLoading ? (
+                                                <>
+                                                    <ActivityIndicator size="small" color={COLORS.white} />
+                                                    <Text style={styles.verifyButtonText}>{t('verifying') || 'Verifying...'}</Text>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.white} />
+                                                    <Text style={styles.verifyButtonText}>{t('verifyNow') || 'Verify Now'}</Text>
+                                                </>
+                                            )}
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                )
                             )}
                         </Animated.View>
                     )}

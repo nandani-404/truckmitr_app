@@ -1,14 +1,13 @@
 import { DeviceEventEmitter, FlatList, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useColor, useImage, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CommonActions, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Space, TrainingCompletionModal } from '@truckmitr/src/app/components';
+import { Space, TrainingCompletionModal, ScreenHeader } from '@truckmitr/src/app/components';
 import { Image } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons'
-import { hitSlop, isIOS } from '@truckmitr/src/app/functions';
+import { isIOS } from '@truckmitr/src/app/functions';
 import { AnimatedFAB } from 'react-native-paper';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import FastImage from 'react-native-fast-image'
@@ -79,7 +78,6 @@ export default function Training() {
     const dispatch = useDispatch()
     useStatusBarStyle('dark-content')
     const colors = useColor();
-    const safeAreaInsets = useSafeAreaInsets();
     const images = useImage()
     const { shadow } = useShadow()
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
@@ -315,39 +313,9 @@ export default function Training() {
     }
     return (
         <View style={{ flex: 1, backgroundColor: colors.white }}>
-            <Space height={safeAreaInsets.top} />
-            {/* Header */}
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 12,
-                paddingHorizontal: responsiveFontSize(2),
-                backgroundColor: colors.white
-            }}>
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    hitSlop={hitSlop(10)}
-                    style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 18,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: colors.blackOpacity(0.05)
-                    }}
-                >
-                    <Ionicons name={'chevron-back'} size={22} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={{
-                    fontSize: responsiveFontSize(2.2),
-                    color: colors.black,
-                    fontWeight: '700'
-                }}>
-                    {t('training', 'Training')}
-                </Text>
-                <View style={{ width: 36 }} />
-            </View>
+            <ScreenHeader
+                title={t('training', 'Training')}
+            />
             <Space height={responsiveFontSize(1)} />
             {loading ?
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>

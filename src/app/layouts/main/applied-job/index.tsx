@@ -1,12 +1,11 @@
 import { Image, Text, TouchableOpacity, View, Linking, Animated, Pressable, ActivityIndicator } from 'react-native'
 import React, { useCallback, useState, useRef, useEffect } from 'react'
 import { useColor, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Space } from '@truckmitr/src/app/components';
-import { hitSlop, isIOS } from '@truckmitr/src/app/functions';
+import { Space, ScreenHeader } from '@truckmitr/src/app/components';
+import { isIOS } from '@truckmitr/src/app/functions';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Feather from 'react-native-vector-icons/Feather'
@@ -384,7 +383,6 @@ export default function AppliedJob() {
     const { t } = useTranslation();
     useStatusBarStyle('dark-content')
     const colors = useColor();
-    const safeAreaInsets = useSafeAreaInsets();
     const { shadow } = useShadow()
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
@@ -460,42 +458,10 @@ export default function AppliedJob() {
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.white }}>
-            <Space height={safeAreaInsets.top} />
-
-            {/* Standard Header */}
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 12,
-                paddingHorizontal: responsiveFontSize(2),
-                backgroundColor: colors.white,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.blackOpacity(0.05)
-            }}>
-                <TouchableOpacity
-                    onPress={_goback}
-                    hitSlop={hitSlop(10)}
-                    style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 18,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: colors.blackOpacity(0.05)
-                    }}
-                >
-                    <Ionicons name={'chevron-back'} size={22} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={{
-                    fontSize: responsiveFontSize(2.2),
-                    color: colors.black,
-                    fontWeight: '700'
-                }}>
-                    {t('appliedJobs', 'Applied Jobs')} ({appliedJobsList?.length || 0})
-                </Text>
-                <View style={{ width: 36 }} />
-            </View>
+            <ScreenHeader
+                title={t('appliedJobs', 'Applied Jobs')}
+                titleCount={appliedJobsList?.length || 0}
+            />
 
             {/* Content */}
             {loading ? (

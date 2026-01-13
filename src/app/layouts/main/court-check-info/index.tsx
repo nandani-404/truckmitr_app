@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView, TouchableOpacity, Linking, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, TextInput, ActivityIndicator, Pressable } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import { useNavigation } from '@react-navigation/native';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
@@ -11,6 +11,7 @@ import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.actio
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
+import { ScreenHeader } from '@truckmitr/src/app/components';
 
 const CourtCheckInfo = () => {
     const navigation = useNavigation<any>();
@@ -202,17 +203,25 @@ const CourtCheckInfo = () => {
     return (
         <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
             {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: responsiveWidth(4), paddingTop: responsiveHeight(6), paddingBottom: responsiveHeight(2), backgroundColor: colors.white, elevation: 2 }}>
-                <TouchableOpacity onPress={_goBack} style={{ padding: 8 }}>
-                    <Ionicons name="chevron-back" size={28} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={{ fontSize: responsiveFontSize(2.6), fontWeight: 'bold', color: colors.royalBlue, textAlign: 'center' }}>
-                    {t('courtCheckTitle')}
-                </Text>
-                <TouchableOpacity onPress={_refreshPage} style={{ padding: 8 }}>
-                    <Ionicons name="refresh" size={26} color={colors.royalBlue} />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title={t('courtCheckTitle')}
+                rightComponent={
+                    <Pressable
+                        onPress={_refreshPage}
+                        style={({ pressed }) => [{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 18,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.blackOpacity(0.05),
+                            opacity: pressed ? 0.6 : 1
+                        }]}
+                    >
+                        <Ionicons name="refresh" size={20} color={colors.royalBlue} />
+                    </Pressable>
+                }
+            />
 
             <ScrollView contentContainerStyle={{ padding: responsiveWidth(4), paddingBottom: responsiveHeight(14) }} showsVerticalScrollIndicator={false}>
 

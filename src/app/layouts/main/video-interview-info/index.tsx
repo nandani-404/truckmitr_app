@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView, TouchableOpacity, Linking, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, Image, Pressable } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -8,6 +8,7 @@ import { STACKS } from '@truckmitr/src/stacks/stacks';
 import { useDispatch } from 'react-redux';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
+import { ScreenHeader } from '@truckmitr/src/app/components';
 
 const VideoInterviewInfo = () => {
     const navigation = useNavigation<any>();
@@ -69,17 +70,25 @@ const VideoInterviewInfo = () => {
     return (
         <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
             {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: responsiveWidth(4), paddingTop: responsiveHeight(7), paddingBottom: responsiveHeight(2), backgroundColor: colors.white, elevation: 2 }}>
-                <TouchableOpacity onPress={_goBack} style={{ position: 'absolute', left: responsiveWidth(4), top: responsiveHeight(6), padding: 5, zIndex: 1 }}>
-                    <Ionicons name="chevron-back" size={28} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={{ fontSize: responsiveFontSize(2.5), fontWeight: 'bold', color: colors.royalBlue, textAlign: 'center' }}>
-                    {t('videoInterviewTitle')}
-                </Text>
-                <TouchableOpacity onPress={_refreshPage} style={{ position: 'absolute', right: responsiveWidth(4), top: responsiveHeight(6), padding: 5, zIndex: 1 }}>
-                    <Ionicons name="refresh" size={22} color={colors.royalBlue} />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title={t('videoInterviewTitle')}
+                rightComponent={
+                    <Pressable
+                        onPress={_refreshPage}
+                        style={({ pressed }) => [{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 18,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.blackOpacity(0.05),
+                            opacity: pressed ? 0.6 : 1
+                        }]}
+                    >
+                        <Ionicons name="refresh" size={20} color={colors.royalBlue} />
+                    </Pressable>
+                }
+            />
 
             <ScrollView contentContainerStyle={{ padding: responsiveWidth(4), paddingBottom: responsiveHeight(14) }} showsVerticalScrollIndicator={false}>
 
