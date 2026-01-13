@@ -75,9 +75,8 @@ const ChallanCheckInfo = () => {
 
             console.log(`[ChallanCheck] Sub Amount: ${amount}, EndDate: ${endDate}`);
 
-            // Allow 199, 499 (and handle potential variations like 199.00)
-            // also checking payment_status if available
-            const isAmountValid = Math.floor(amount) === 199 || Math.floor(amount) === 499;
+            // Allow 499 only
+            const isAmountValid = Math.floor(amount) === 499;
 
             return isAmountValid;
         });
@@ -215,8 +214,8 @@ const ChallanCheckInfo = () => {
         } else {
             setInputModalVisible(false);
             setTimeout(() => {
-                // Open global subscription modal with only ₹199 and ₹499 plans
-                dispatch(subscriptionModalAction({ visible: true, upgradeOnly: true }));
+                // Open global subscription modal with only ₹499 plans
+                dispatch(subscriptionModalAction({ visible: true, upgradeOnly: true, minPrice: 499 }));
             }, 300);
         }
     };
@@ -523,12 +522,7 @@ const ChallanCheckInfo = () => {
                         <Text style={{ fontSize: responsiveFontSize(1.8), color: '#475569', marginBottom: 10, lineHeight: responsiveFontSize(2.4), textAlign: 'left' }}>
                             {t('challanIncludedWith', 'Challan Check is included with:')}
                         </Text>
-                        {!isTransporter && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                                <Ionicons name="checkmark-circle" size={20} color="#16A34A" style={{ marginRight: 8 }} />
-                                <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', fontWeight: '600' }}>{t('plan199', '₹199 Plan')}</Text>
-                            </View>
-                        )}
+
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
                             <Ionicons name="checkmark-circle" size={20} color="#16A34A" style={{ marginRight: 8 }} />
                             <Text style={{ fontSize: responsiveFontSize(1.7), color: '#334155', fontWeight: '600' }}>{t('plan499', '₹499 Plan')}</Text>
