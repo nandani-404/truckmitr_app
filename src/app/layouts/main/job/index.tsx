@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Space } from '@truckmitr/src/app/components';
+import { Space, ScreenHeader } from '@truckmitr/src/app/components';
 import { hitSlop, isIOS } from '@truckmitr/src/app/functions';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
@@ -14,7 +14,6 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { FlatList } from 'react-native';
 import moment from 'moment';
 import Feather from 'react-native-vector-icons/Feather'
-import Foundation from 'react-native-vector-icons/Foundation'
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import { useDispatch, useSelector } from 'react-redux';
@@ -458,155 +457,155 @@ const JobCard = ({
         opacity: fadeAnim,
       }}
     >
-      
-        {/* Gradient Accent */}
-        <LinearGradient
-          colors={[colors.royalBlue + '12', colors.royalBlue + '04', 'transparent']}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: responsiveHeight(12) }}
-        />
 
-        <View style={{ padding: responsiveFontSize(2.2) }}>
-          {/* Subscription Badge */}
-          {item?.subscription_plan_name === 'super_premium_job' ? (
-            <View style={{
-              alignSelf: 'flex-end',
-              marginBottom: responsiveFontSize(1.5),
-              shadowColor: '#B8860B',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.4,
-              shadowRadius: 8,
-              elevation: 8,
-            }}>
-              <LinearGradient
-                colors={['#fbbf24', '#f59e0b', '#d97706', '#b45309']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: responsiveFontSize(1.6),
-                  paddingVertical: responsiveFontSize(0.8),
-                  borderRadius: responsiveFontSize(2.5),
-                  overflow: 'hidden',
-                }}>
-                {/* Shimmer Effect */}
-                <Animated.View
-                  style={{
-                    position: 'absolute',
-                    top: -5,
-                    bottom: -5,
-                    width: responsiveFontSize(8),
-                    backgroundColor: 'rgba(255, 255, 255, 0.45)',
-                    transform: [{
-                      translateX: shimmerAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-responsiveFontSize(15), responsiveFontSize(25)]
-                      })
-                    }, {
-                      skewX: '-25deg'
-                    }]
-                  }}
-                />
-                <MaterialCommunityIcons name="crown" size={15} color="#fff" style={{ marginRight: responsiveFontSize(0.6) }} />
-                <Text style={{
-                  fontSize: responsiveFontSize(1.35),
-                  fontWeight: '700',
-                  color: '#fff',
-                  letterSpacing: 0.5,
-                  textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}>
-                  SUPER PREMIUM JOB
-                </Text>
-              </LinearGradient>
-            </View>
-          ) : item?.subscription_plan_name === 'premium_job' ? (
-            <View style={{
-              alignSelf: 'flex-end',
-              marginBottom: responsiveFontSize(1.5),
-              shadowColor: '#1e3a8a',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.4,
-              shadowRadius: 8,
-              elevation: 8,
-            }}>
-              <LinearGradient
-                colors={['#3b82f6', '#2563eb', '#1d4ed8', '#1e3a8a']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: responsiveFontSize(1.6),
-                  paddingVertical: responsiveFontSize(0.8),
-                  borderRadius: responsiveFontSize(2.5),
-                  overflow: 'hidden',
-                }}>
-                {/* Shimmer Effect */}
-                <Animated.View
-                  style={{
-                    position: 'absolute',
-                    top: -5,
-                    bottom: -5,
-                    width: responsiveFontSize(8),
-                    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-                    transform: [{
-                      translateX: shimmerAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-responsiveFontSize(15), responsiveFontSize(25)]
-                      })
-                    }, {
-                      skewX: '-25deg'
-                    }]
-                  }}
-                />
-                <MaterialCommunityIcons name="crown" size={15} color="#fbbf24" style={{ marginRight: responsiveFontSize(0.6) }} />
-                <Text style={{
-                  fontSize: responsiveFontSize(1.35),
-                  fontWeight: '700',
-                  color: '#fff',
-                  letterSpacing: 0.5,
-                }}>
-                  PREMIUM JOB
-                </Text>
-              </LinearGradient>
-            </View>
-          ) : (
-            <View style={{
-              alignSelf: 'flex-end',
-              marginBottom: responsiveFontSize(1.5),
-            }}>
-              <View style={{
-                backgroundColor: '#374151',
+      {/* Gradient Accent */}
+      <LinearGradient
+        colors={[colors.royalBlue + '12', colors.royalBlue + '04', 'transparent']}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: responsiveHeight(12) }}
+      />
+
+      <View style={{ padding: responsiveFontSize(2.2) }}>
+        {/* Subscription Badge */}
+        {item?.subscription_plan_name === 'super_premium_job' ? (
+          <View style={{
+            alignSelf: 'flex-end',
+            marginBottom: responsiveFontSize(1.5),
+            shadowColor: '#B8860B',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+            elevation: 8,
+          }}>
+            <LinearGradient
+              colors={['#fbbf24', '#f59e0b', '#d97706', '#b45309']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: responsiveFontSize(1.6),
-                paddingVertical: responsiveFontSize(0.7),
+                paddingVertical: responsiveFontSize(0.8),
                 borderRadius: responsiveFontSize(2.5),
+                overflow: 'hidden',
               }}>
-                <Text style={{
-                  fontSize: responsiveFontSize(1.3),
-                  fontWeight: '600',
-                  color: '#fff',
-                  letterSpacing: 0.4,
-                }}>
-                  STANDARD JOB
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* Header: Title + Job ID Badge */}
-          <View style={{ marginBottom: responsiveFontSize(1.5) }}>
-            <Text style={{
-              fontSize: responsiveFontSize(2.4),
-              color: colors.black,
-              fontWeight: '700',
-              letterSpacing: -0.4,
-              lineHeight: responsiveFontSize(3.2),
+              {/* Shimmer Effect */}
+              <Animated.View
+                style={{
+                  position: 'absolute',
+                  top: -5,
+                  bottom: -5,
+                  width: responsiveFontSize(8),
+                  backgroundColor: 'rgba(255, 255, 255, 0.45)',
+                  transform: [{
+                    translateX: shimmerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-responsiveFontSize(15), responsiveFontSize(25)]
+                    })
+                  }, {
+                    skewX: '-25deg'
+                  }]
+                }}
+              />
+              <MaterialCommunityIcons name="crown" size={15} color="#fff" style={{ marginRight: responsiveFontSize(0.6) }} />
+              <Text style={{
+                fontSize: responsiveFontSize(1.35),
+                fontWeight: '700',
+                color: '#fff',
+                letterSpacing: 0.5,
+                textShadowColor: 'rgba(0, 0, 0, 0.2)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+              }}>
+                SUPER PREMIUM JOB
+              </Text>
+            </LinearGradient>
+          </View>
+        ) : item?.subscription_plan_name === 'premium_job' ? (
+          <View style={{
+            alignSelf: 'flex-end',
+            marginBottom: responsiveFontSize(1.5),
+            shadowColor: '#1e3a8a',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+            elevation: 8,
+          }}>
+            <LinearGradient
+              colors={['#3b82f6', '#2563eb', '#1d4ed8', '#1e3a8a']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: responsiveFontSize(1.6),
+                paddingVertical: responsiveFontSize(0.8),
+                borderRadius: responsiveFontSize(2.5),
+                overflow: 'hidden',
+              }}>
+              {/* Shimmer Effect */}
+              <Animated.View
+                style={{
+                  position: 'absolute',
+                  top: -5,
+                  bottom: -5,
+                  width: responsiveFontSize(8),
+                  backgroundColor: 'rgba(255, 255, 255, 0.4)',
+                  transform: [{
+                    translateX: shimmerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-responsiveFontSize(15), responsiveFontSize(25)]
+                    })
+                  }, {
+                    skewX: '-25deg'
+                  }]
+                }}
+              />
+              <MaterialCommunityIcons name="crown" size={15} color="#fbbf24" style={{ marginRight: responsiveFontSize(0.6) }} />
+              <Text style={{
+                fontSize: responsiveFontSize(1.35),
+                fontWeight: '700',
+                color: '#fff',
+                letterSpacing: 0.5,
+              }}>
+                PREMIUM JOB
+              </Text>
+            </LinearGradient>
+          </View>
+        ) : (
+          <View style={{
+            alignSelf: 'flex-end',
+            marginBottom: responsiveFontSize(1.5),
+          }}>
+            <View style={{
+              backgroundColor: '#374151',
+              paddingHorizontal: responsiveFontSize(1.6),
+              paddingVertical: responsiveFontSize(0.7),
+              borderRadius: responsiveFontSize(2.5),
             }}>
-              {item?.job_title}
-            </Text>
-            
+              <Text style={{
+                fontSize: responsiveFontSize(1.3),
+                fontWeight: '600',
+                color: '#fff',
+                letterSpacing: 0.4,
+              }}>
+                STANDARD JOB
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Header: Title + Job ID Badge */}
+        <View style={{ marginBottom: responsiveFontSize(1.5) }}>
+          <Text style={{
+            fontSize: responsiveFontSize(2.4),
+            color: colors.black,
+            fontWeight: '700',
+            letterSpacing: -0.4,
+            lineHeight: responsiveFontSize(3.2),
+          }}>
+            {item?.job_title}
+          </Text>
+
 
           {/* Description */}
           <View style={{ marginBottom: responsiveFontSize(2) }}>
@@ -903,15 +902,7 @@ export default function AvailableJob() {
   const [checkBoxSelect, setCheckBoxSelect] = useState<{ [jobId: number]: boolean }>({});
   const [errors, setErrors] = useState<{ [jobId: number]: { checkBox?: string } }>({});
 
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
-    Animated.timing(headerOpacity, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-
     setTimeout(() => {
       setIsExtended(true)
     }, 500);
@@ -1018,78 +1009,14 @@ export default function AvailableJob() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.white }}>
-      <Space height={safeAreaInsets.top} />
-
       {/* Premium Header */}
-      <Animated.View style={{
-        opacity: headerOpacity,
-        backgroundColor: colors.white,
-        paddingHorizontal: responsiveWidth(4),
-        paddingVertical: responsiveHeight(1.5),
-        borderBottomWidth: 1,
-        borderBottomColor: colors.blackOpacity(0.05),
-        shadowColor: colors.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
-      }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Back Button */}
-          <Pressable
-            hitSlop={hitSlop(10)}
-            onPress={() => navigation.goBack()}
-            style={({ pressed }) => [{
-              height: responsiveFontSize(4.5),
-              width: responsiveFontSize(4.5),
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: colors.royalBlue + '12',
-              borderRadius: responsiveFontSize(2.25),
-              opacity: pressed ? 0.6 : 1
-            }]}
-          >
-            <Ionicons name={'chevron-back'} size={22} color={colors.royalBlue} />
-          </Pressable>
-
-          {/* Centered Title */}
-          <Text style={{
-            fontSize: responsiveFontSize(2.2),
-            color: colors.black,
-            fontWeight: '700',
-            letterSpacing: -0.3,
-            flex: 1,
-            textAlign: 'center',
-          }}>
-            {t('availableJobs', 'Available Jobs')} ({availableJobsList?.length || 0})
-          </Text>
-
-          {/* Filter Button */}
-          <Pressable
-            onPress={() => setfilterModel(true)}
-            hitSlop={hitSlop(15)}
-            style={({ pressed }) => [{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: colors.royalBlue + '10',
-              paddingHorizontal: responsiveFontSize(1.5),
-              paddingVertical: responsiveFontSize(0.8),
-              borderRadius: responsiveFontSize(1),
-              opacity: pressed ? 0.7 : 1
-            }]}
-          >
-            <Foundation name={'filter'} size={18} color={colors.royalBlue} />
-            <Text style={{
-              color: colors.royalBlue,
-              fontSize: responsiveFontSize(1.6),
-              fontWeight: '600',
-              marginLeft: responsiveFontSize(0.5),
-            }}>
-              {t('filter')}
-            </Text>
-          </Pressable>
-        </View>
-      </Animated.View>
+      <ScreenHeader
+        title={t('availableJobs', 'Available Jobs')}
+        titleCount={availableJobsList?.length || 0}
+        showFilterButton
+        filterLabel={t('filter')}
+        onFilterPress={() => setfilterModel(true)}
+      />
 
       {/* Content */}
       {loading ? (

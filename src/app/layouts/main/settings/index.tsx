@@ -10,6 +10,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
+import { deleteUserData } from '@truckmitr/src/utils/config/token';
+import { userAuthenticatedAction } from '@truckmitr/src/redux/actions/user.action';
+import { END_POINTS } from '@truckmitr/src/utils/config';
+import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
+import { showToast } from '@truckmitr/src/app/hooks/toast';
+import analytics from '@react-native-firebase/analytics';
+import { AppEventsLogger } from 'react-native-fbsdk-next';
+import { onUserLogout } from '@truckmitr/src/utils/zegoService';
+import { AppleConfirmDialog } from '@truckmitr/src/app/components';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 export default function Settings() {
@@ -18,6 +29,50 @@ export default function Settings() {
   const safeAreaInsets = useSafeAreaInsets();
   const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
   const navigation = useNavigation<NavigatorProp>();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: any) => state.user);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const deleteAccount = async () => {
+    setIsDeleting(true);
+    const userinfo = {
+      id: user?.id ?? '',
+      unique_id: user?.unique_id ?? '',
+      name: user?.name ?? '',
+      mobile: user?.mobile ?? '',
+      email: user?.email ?? '',
+      role: user?.role ?? '',
+    };
+
+    const eventParams = {
+      user_id: String(userinfo.id),
+      user_unique_id: userinfo.unique_id,
+      user_name: userinfo.name,
+      user_email: userinfo.email,
+      user_role: userinfo.role,
+      method: 'user_requested',
+    };
+
+    try {
+      await onUserLogout()
+      const response: any = await axiosInstance.post(END_POINTS?.DELETE_ACCOUNT);
+
+      if (response?.data?.status) {
+        await analytics().logEvent('delete_account', eventParams);
+        AppEventsLogger.logEvent('delete_account', eventParams);
+        await new Promise<void>(res => setTimeout(() => res(), 500));
+        dispatch(userAuthenticatedAction(false));
+        deleteUserData();
+        showToast(response?.data?.message);
+      }
+    } catch (error) {
+      console.warn('Delete account error:', error);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
 
   const _goback = () => {
     navigation.goBack()
@@ -49,6 +104,25 @@ export default function Settings() {
         <Text style={{ flex: 1, color: colors.black, fontSize: responsiveFontSize(2), fontWeight: '400', marginHorizontal: responsiveFontSize(2.5) }}>{t('preferredColour')}</Text>
         <MaterialIcons name={'keyboard-arrow-right'} size={24} color={colors.blackOpacity(.3)} />
       </TouchableOpacity> */}
+
+
+      <AppleConfirmDialog
+        visible={showDeleteDialog}
+        title={t('deleteAccount')}
+        message={t('areYouSureDeleteAccount') || 'This action cannot be undone. All your data will be permanently deleted.'}
+        confirmText={t('delete') || 'Delete'}
+        cancelText={t('cancel')}
+        isDestructive={true}
+        onConfirm={deleteAccount}
+        onCancel={() => setShowDeleteDialog(false)}
+        loading={isDeleting}
+      />
+
+      <TouchableOpacity onPress={() => setShowDeleteDialog(true)} style={{ width: responsiveWidth(100), flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(5), paddingVertical: responsiveFontSize(2), marginTop: responsiveFontSize(2) }}>
+        <MaterialCommunityIcons name={'delete-outline'} size={22} color={'#FF3B30'} />
+        <Text style={{ flex: 1, color: '#FF3B30', fontSize: responsiveFontSize(2), fontWeight: '400', marginHorizontal: responsiveFontSize(2.5) }}>{t('deleteAccount')}</Text>
+        <MaterialIcons name={'keyboard-arrow-right'} size={24} color={colors.blackOpacity(.3)} />
+      </TouchableOpacity>
 
       <Space style={{ flex: 1 }} />
       <View style={{ backgroundColor: colors.royalBlue }}>

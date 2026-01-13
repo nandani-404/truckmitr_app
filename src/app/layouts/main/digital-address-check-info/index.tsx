@@ -1,17 +1,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView, TouchableOpacity, Linking, TextInput, ActivityIndicator, Modal, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, TextInput, ActivityIndicator, Modal, Platform, KeyboardAvoidingView, Pressable } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Feather from 'react-native-vector-icons/Feather';
 import { useDispatch, useSelector } from 'react-redux';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { hitSlop } from '@truckmitr/src/app/functions';
+import { ScreenHeader } from '@truckmitr/src/app/components';
+import { STACKS } from '@truckmitr/src/stacks/stacks';
 
 // State ID to Name Mapping
 const STATE_ID_MAP: Record<string, string> = {
@@ -50,10 +52,10 @@ const DigitalAddressCheckInfo = () => {
     const { responsiveWidth, responsiveFontSize, responsiveHeight } = useResponsiveScale();
     const { shadow } = useShadow();
     const { t } = useTranslation();
-    const safeAreaInsets = useSafeAreaInsets();
 
     // Get subscription details and user from Redux
-    const { subscriptionDetails, user } = useSelector((state: any) => state?.user) || {};
+    // Get subscription details and user from Redux
+    const { subscriptionDetails, user, profileCompletion } = useSelector((state: any) => state?.user) || {};
     const isTransporter = user?.role?.toLowerCase() === 'transporter';
 
     // Form State - Auto-filled from profile
@@ -141,6 +143,10 @@ const DigitalAddressCheckInfo = () => {
     const _goBack = () => navigation.goBack();
 
     const _handleStartCheck = () => {
+        if (profileCompletion !== undefined && profileCompletion !== null && Number(profileCompletion) < 100) {
+            setProfileModalVisible(true);
+            return;
+        }
         setInputModalVisible(true);
     };
 
@@ -294,56 +300,45 @@ const DigitalAddressCheckInfo = () => {
         </View>
     );
 
+
+    // State
+    const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+
+
+    const _handleCompleteProfile = () => {
+        setProfileModalVisible(false);
+        navigation.navigate(STACKS.PROFILE_OVERVIEW);
+    };
+
+    const _handleGoBackFromProfileModal = () => {
+        setProfileModalVisible(false);
+        navigation.goBack();
+    };
+
     return (
         <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
             {/* Header */}
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 12,
-                marginTop: safeAreaInsets.top,
-                paddingHorizontal: responsiveFontSize(2),
-                backgroundColor: colors.white,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.blackOpacity(0.05)
-            }}>
-                <TouchableOpacity
-                    onPress={_goBack}
-                    hitSlop={hitSlop(10)}
-                    style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 18,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: colors.blackOpacity(0.05)
-                    }}
-                >
-                    <Ionicons name="chevron-back" size={22} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={{
-                    fontSize: responsiveFontSize(2.2),
-                    color: colors.black,
-                    fontWeight: '700'
-                }}>
-                    {t('digitalAddressCheckTitle') || 'Digital Address Check'}
-                </Text>
-                <TouchableOpacity
-                    onPress={_refreshPage}
-                    hitSlop={hitSlop(10)}
-                    style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 18,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: colors.blackOpacity(0.05)
-                    }}
-                >
-                    <Ionicons name="refresh" size={20} color={colors.royalBlue} />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title={t('digitalAddressCheckTitle') || 'Digital Address Check'}
+                rightComponent={
+                    <Pressable
+                        onPress={_refreshPage}
+                        hitSlop={hitSlop(10)}
+                        style={({ pressed }) => [{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 18,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.blackOpacity(0.05),
+                            opacity: pressed ? 0.6 : 1
+                        }]}
+                    >
+                        <Ionicons name="refresh" size={20} color={colors.royalBlue} />
+                    </Pressable>
+                }
+            />
 
             {profileLoading ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -385,9 +380,14 @@ const DigitalAddressCheckInfo = () => {
 
                     {/* 📝 Pre-filled Information Preview */}
                     <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                        <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155', marginBottom: 14 }}>
-                            {t('yourDetails') || 'Your Details'}
-                        </Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                            <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155' }}>
+                                {t('yourDetails') || 'Your Details'}
+                            </Text>
+                            <TouchableOpacity onPress={() => navigation.navigate(STACKS.PROFILE_OVERVIEW)}>
+                                <Feather name="edit-2" size={18} color={colors.royalBlue} />
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
                             <Ionicons name="phone-portrait-outline" size={20} color="#2563EB" style={{ marginRight: 12 }} />
@@ -737,6 +737,42 @@ const DigitalAddressCheckInfo = () => {
                             style={{ paddingVertical: 10 }}
                         >
                             <Text style={{ color: '#64748B', fontSize: responsiveFontSize(1.8), fontWeight: '600' }}>{t('cancel') || 'Cancel'}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* ⚠️ Profile Completion Required Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={profileModalVisible}
+                onRequestClose={_handleGoBackFromProfileModal}
+            >
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', padding: 20 }}>
+                    <View style={{ backgroundColor: 'white', borderRadius: 20, padding: 24, width: '100%', alignItems: 'center' }}>
+                        <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                            <MaterialCommunityIcons name="account-alert-outline" size={32} color="#2563EB" />
+                        </View>
+                        <Text style={{ fontSize: responsiveFontSize(2.4), fontWeight: 'bold', color: '#001F3F', marginBottom: 8, textAlign: 'center' }}>
+                            {t('completeProfileTitle') || 'Complete Your Profile'}
+                        </Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', textAlign: 'center', marginBottom: 24 }}>
+                            {t('completeProfileDescDav') || 'Please complete your profile details (100%) to access the Digital Address Check feature.'}
+                        </Text>
+
+                        <TouchableOpacity
+                            onPress={_handleCompleteProfile}
+                            style={{ backgroundColor: colors.royalBlue, width: '100%', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginBottom: 12 }}
+                        >
+                            <Text style={{ color: 'white', fontSize: responsiveFontSize(1.8), fontWeight: 'bold' }}>{t('completeProfile') || 'Complete Profile'}</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={_handleGoBackFromProfileModal}
+                            style={{ paddingVertical: 10 }}
+                        >
+                            <Text style={{ color: '#64748B', fontSize: responsiveFontSize(1.8), fontWeight: '600' }}>{t('goBack') || 'Go Back'}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -6,7 +6,7 @@ import { Animated, Image, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SystemNavigationBar from 'react-native-system-navigation-bar';
 import { STACKS } from '@truckmitr/stacks/stacks';
-import { DriverList, HealthHygiene, Home, Job, Profile, Training, TransporterAppliedJob, TransporterVerificationScreen, ViewJobs } from '@truckmitr/layouts/index';
+import { DriverList, HealthHygiene, Home, Job, Profile, Training, TransporterAppliedJob, TransporterVerificationScreen, ViewJobs, DLVerification } from '@truckmitr/layouts/index';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { TourGuideZone, useTourGuideController, Tooltip } from 'rn-tourguide';
@@ -259,8 +259,8 @@ function TabBarDriver({ state, descriptors, navigation, homeRef }: { state: any,
                 return <Image style={trainingProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/171/171322.png' }} />
             case STACKS.JOB:
                 return <Image style={jobProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4121/4121106.png' }} />
-            case STACKS.HEALTH_HYGIENE:
-                return <Image style={healthProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/10424/10424699.png' }} />
+            case STACKS.DL_VERIFICATION:
+                return <Image style={healthProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/11831/11831511.png' }} />
             case STACKS.VERIFICATION:
                 return <Image style={healthProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/11831/11831511.png' }} />
             case STACKS.PROFILE:
@@ -380,8 +380,8 @@ function TabBarDriver({ state, descriptors, navigation, homeRef }: { state: any,
                             return t('training');
                         case STACKS.JOB:
                             return t('job');
-                        case STACKS.HEALTH_HYGIENE:
-                            return t('healthHygiene');
+                        case STACKS.DL_VERIFICATION:
+                            return t('idCheck');
                         case STACKS.PROFILE:
                             return t('profile');
                         default:
@@ -462,7 +462,7 @@ export default function Bottom() {
                     </Tab.Screen>
                     <Tab.Screen name={STACKS.TRAINING} component={Training} />
                     <Tab.Screen name={STACKS.JOB} component={Job} />
-                    <Tab.Screen name={STACKS.HEALTH_HYGIENE} component={HealthHygiene} />
+                    <Tab.Screen name={STACKS.DL_VERIFICATION} component={DLVerification} />
                     {/* <Tab.Screen name={STACKS.VERIFICATION} component={Verification} /> */}
                     <Tab.Screen name={STACKS.PROFILE} component={Profile} />
                 </Tab.Navigator>}

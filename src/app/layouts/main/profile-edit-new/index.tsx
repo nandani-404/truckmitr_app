@@ -118,6 +118,8 @@ export default function ProfileEditNew() {
     const [loading, setLoading] = useState(false);
     const [calendarMonth, setCalendarMonth] = useState(moment().subtract(18, 'years').format('YYYY-MM-DD'));
     const [loadingPincode, setLoadingPincode] = useState(false);
+    const [postOffices, setPostOffices] = useState<any[]>([]);
+    const [selectedPostOffice, setSelectedPostOffice] = useState<string>('');
 
     // Separate image state management to avoid conflicts with normalization
     const [imageState, setImageState] = useState<{
@@ -233,19 +235,69 @@ export default function ProfileEditNew() {
                 try {
                     const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
                     const data = await response.json();
-                    if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice?.[0]?.District) {
-                        const city = data[0].PostOffice[0].District;
-                        dispatch(userEditAction({ ...(userEditRef.current || {}), city: city }));
+                    if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice) {
+                        const postOfficeList = data[0].PostOffice;
+                        setPostOffices(postOfficeList);
+                        
+                        // If user doesn't have a city selected, auto-select first post office
+                        if (!userEdit?.city && postOfficeList.length > 0) {
+                            const firstPostOffice = postOfficeList[0].Name;
+                            setSelectedPostOffice(firstPostOffice);
+                            dispatch(userEditAction({ ...(userEditRef.current || {}), city: firstPostOffice }));
+                        } else if (userEdit?.city) {
+                            // Check if current city matches any post office
+                            const matchingPostOffice = postOfficeList.find((po: any) => 
+                                po.Name.toLowerCase() === userEdit.city.toLowerCase()
+                            );
+                            if (matchingPostOffice) {
+                                setSelectedPostOffice(matchingPostOffice.Name);
+                            } else {
+                                // Current city doesn't match any post office, clear selection and let user choose
+                                setSelectedPostOffice('');
+                                dispatch(userEditAction({ ...(userEditRef.current || {}), city: '' }));
+                            }
+                        }
+                    } else {
+                        // Clear post offices and city if API fails or no data
+                        setPostOffices([]);
+                        setSelectedPostOffice('');
+                        dispatch(userEditAction({ ...(userEditRef.current || {}), city: '' }));
                     }
                 } catch (error) {
-                    console.log('Error fetching city from pincode:', error);
+                    console.log('Error fetching post offices from pincode:', error);
+                    setPostOffices([]);
+                    setSelectedPostOffice('');
+                    dispatch(userEditAction({ ...(userEditRef.current || {}), city: '' }));
                 } finally {
                     setLoadingPincode(false);
                 }
             }, 500);
             return () => clearTimeout(timer);
+        } else {
+            // Clear post offices when pincode is invalid or empty
+            setPostOffices([]);
+            setSelectedPostOffice('');
+            // Don't clear city if pincode is being typed (less than 6 digits)
+            if (pincode?.length === 0) {
+                dispatch(userEditAction({ ...(userEditRef.current || {}), city: '' }));
+            }
         }
     }, [userEdit?.pincode]);
+
+    // Sync selectedPostOffice with userEdit.city when component loads or city changes
+    useEffect(() => {
+        if (userEdit?.city && postOffices.length > 0) {
+            const matchingPostOffice = postOffices.find((po: any) => 
+                po.Name.toLowerCase() === userEdit.city.toLowerCase()
+            );
+            if (matchingPostOffice) {
+                setSelectedPostOffice(matchingPostOffice.Name);
+            }
+        } else if (userEdit?.city && postOffices.length === 0) {
+            // If user has a city but no post offices loaded, keep the city as is
+            setSelectedPostOffice(userEdit.city);
+        }
+    }, [userEdit?.city, postOffices]);
 
     // Normalize transporter fields from API response (handle casing mismatches)
     useEffect(() => {
@@ -572,7 +624,8 @@ export default function ProfileEditNew() {
                     showToast(t('pincodeRequired') || 'Valid Pincode is required');
                     return false;
                 }
-                if (!userEdit?.city?.trim()) {
+                // Only require city if post offices are available (meaning pincode API returned data)
+                if (postOffices.length > 0 && !userEdit?.city?.trim()) {
                     showToast(t('cityRequired') || 'City is required');
                     return false;
                 }
@@ -1269,9 +1322,31 @@ export default function ProfileEditNew() {
                             )}
                         </View>
                         <Space height={16} />
-                        <Text style={styles.inputLabel}>{t('city')} <Text style={styles.requiredAsterisk}>*</Text></Text>
-                        <TextInput style={styles.textInput} placeholder={t('enterCity')} placeholderTextColor="#999" value={userEdit?.city || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, city: text }))} />
-                        <Space height={16} />
+                        {postOffices.length > 0 && (
+                            <>
+                                <Text style={styles.inputLabel}>{t('city')} <Text style={styles.requiredAsterisk}>*</Text></Text>
+                                <Text style={{ fontSize: 12, color: colors.blackOpacity(0.6), marginBottom: 8 }}>
+                                    {postOffices.length} post office{postOffices.length > 1 ? 's' : ''} found for this pincode
+                                </Text>
+                                <Dropdown
+                                    style={styles.dropdown}
+                                    placeholderStyle={{ color: '#999', fontSize: 15 }}
+                                    selectedTextStyle={{ color: '#333', fontSize: 15 }}
+                                    data={postOffices.map(po => ({ label: po.Name, value: po.Name }))}
+                                    labelField="label"
+                                    valueField="value"
+                                    placeholder={t('selectPostOffice') || 'Select Post Office'}
+                                    search
+                                    searchPlaceholder={t('search') || 'Search...'}
+                                    value={selectedPostOffice}
+                                    onChange={item => {
+                                        setSelectedPostOffice(item.value);
+                                        dispatch(userEditAction({ ...userEdit, city: item.value }));
+                                    }}
+                                />
+                                <Space height={16} />
+                            </>
+                        )}
                         <Text style={styles.inputLabel}>{t('state')} <Text style={styles.requiredAsterisk}>*</Text></Text>
                         {hasState ? (
                             <View style={[styles.textInput, { justifyContent: 'center', backgroundColor: '#F5F5F5' }]}>

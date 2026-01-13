@@ -57,11 +57,8 @@ const RcCheckInfo = () => {
 
         if (activeSub) {
             const amt = activeSub.amount ? parseFloat(activeSub.amount) : 0;
-            // RC Check is available for ₹199 and ₹499 plans
-            if (isTransporter) {
-                return amt >= 499;
-            }
-            return amt >= 199;
+            // RC Check is available only for ₹499 plan
+            return amt >= 499;
         }
         return false;
     };
@@ -148,7 +145,7 @@ const RcCheckInfo = () => {
 
     const _handleViewPlans = () => {
         setSubscriptionModalVisible(false);
-        dispatch(subscriptionModalAction(true));
+        dispatch(subscriptionModalAction({ visible: true, minPrice: 499 }));
     };
 
     const _viewHistoryItem = (item: RcHistoryItem) => {
@@ -310,10 +307,6 @@ const RcCheckInfo = () => {
                 <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
                     <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155', marginBottom: 14 }}>{t('subscriptionRequirement') || 'Subscription Requirement'}</Text>
                     <Text style={{ fontSize: responsiveFontSize(1.8), color: '#475569', marginBottom: 12 }}>{t('rcCheckIncludedWith') || 'RC Check is included with:'}</Text>
-                    {!isTransporter && <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                        <Ionicons name="checkmark-circle" size={22} color="#16A34A" style={{ marginRight: 10 }} />
-                        <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', fontWeight: '600' }}>₹199 {t('plan') || 'Plan'}</Text>
-                    </View>}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
                         <Ionicons name="checkmark-circle" size={22} color="#16A34A" style={{ marginRight: 10 }} />
                         <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', fontWeight: '600' }}>₹499 {t('plan') || 'Plan'}</Text>
@@ -457,9 +450,7 @@ const RcCheckInfo = () => {
                         </View>
                         <Text style={{ fontSize: responsiveFontSize(2.4), fontWeight: 'bold', color: '#001F3F', marginBottom: 8, textAlign: 'center' }}>{t('subscriptionRequired') || 'Subscription Required'}</Text>
                         <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', textAlign: 'center', marginBottom: 24 }}>
-                            {isTransporter
-                                ? (t('rcCheckAvailableForTransporterPro') || 'RC Check is available only for ₹499 plan.')
-                                : (t('rcCheckAvailableForPlans') || 'RC Check is available only for ₹199 and ₹499 plans.')}
+                            {t('rcCheckAvailableForPlans') || 'RC Check is available only for ₹499 plan.'}
                         </Text>
 
                         <TouchableOpacity

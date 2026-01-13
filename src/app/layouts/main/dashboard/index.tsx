@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { getUserBadgeText } from '@truckmitr/src/utils/global';
+import MiniVideoPlayer from '@truckmitr/src/app/components/mini-video-player';
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 type TierType = 'TRUSTED' | 'VERIFIED' | 'JOB READY' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO';
@@ -370,72 +371,126 @@ export default function Dashboard() {
 
 
     return (
-        <ScrollView style={{ flex: 1, backgroundColor: colors.white }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
-            {/* Header */}
-            <View style={{
-                backgroundColor: colors.white,
-                paddingTop: safeAreaInsets.top + responsiveHeight(2),
-                paddingHorizontal: responsiveWidth(4),
-                paddingVertical: responsiveHeight(2),
-                borderBottomWidth: 1,
-                borderBottomColor: colors.blackOpacity(0.06),
-                shadowColor: colors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 3,
-            }}>
+        <View style={{ flex: 1 }}>
+            <ScrollView style={{ flex: 1, backgroundColor: colors.white }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
+                {/* Header */}
                 <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    backgroundColor: colors.white,
+                    paddingTop: safeAreaInsets.top + responsiveHeight(2),
+                    paddingHorizontal: responsiveWidth(4),
+                    paddingVertical: responsiveHeight(2),
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.blackOpacity(0.06),
+                    shadowColor: colors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 8,
+                    elevation: 3,
                 }}>
-                    <TouchableOpacity
-                        hitSlop={hitSlop(10)}
-                        onPress={_goback}
-                        style={{
-                            position: 'absolute',
-                            left: 0,
-                            height: responsiveFontSize(5),
-                            width: responsiveFontSize(5),
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: colors.royalBlue + '12',
-                            borderRadius: responsiveFontSize(2.5),
-                        }}
-                    >
-                        <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
-                    </TouchableOpacity>
-
-                    <Text style={{
-                        fontSize: responsiveFontSize(2.4),
-                        color: colors.black,
-                        fontWeight: '700',
-                        letterSpacing: -0.3
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     }}>
-                        {t(`dashboard`)}
-                    </Text>
-                </View>
-            </View>
+                        <TouchableOpacity
+                            hitSlop={hitSlop(10)}
+                            onPress={_goback}
+                            style={{
+                                position: 'absolute',
+                                left: 0,
+                                height: responsiveFontSize(5),
+                                width: responsiveFontSize(5),
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: colors.royalBlue + '12',
+                                borderRadius: responsiveFontSize(2.5),
+                            }}
+                        >
+                            <Ionicons name={'chevron-back'} size={24} color={colors.royalBlue} />
+                        </TouchableOpacity>
 
-            {/* Simple Header - Profile Left, Info Right */}
-            {isDriver ? (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: responsiveWidth(5), paddingBottom: responsiveWidth(8), paddingTop: 0, alignItems: 'flex-start', marginTop: responsiveHeight(4) }}>
-                    {/* Left: Hi, Name, TM ID, Driver Badge */}
-                    <View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={{ fontSize: responsiveFontSize(2.3), color: colors.royalBlue, fontFamily: 'Inter-Bold', fontWeight: 'bold' }}>{t(`hi`)}</Text>
-                            <Text style={{ fontSize: responsiveFontSize(2.3), color: colors.royalBlue, fontFamily: 'Inter-Bold', fontWeight: 'bold' }}>{`, ${user?.name || ''} 👋`}</Text>
-                        </View>
-                        <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontFamily: 'Inter-Bold', fontWeight: 'bold', marginTop: 2 }}>{`${user?.unique_id || ''}`}</Text>
-                        <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontFamily: 'Inter-Bold', fontWeight: 'bold', marginTop: 2 }}>{getUserBadgeText({ user, subscriptionDetails, isDriver })}</Text>
+                        <Text style={{
+                            fontSize: responsiveFontSize(2.4),
+                            color: colors.black,
+                            fontWeight: '700',
+                            letterSpacing: -0.3
+                        }}>
+                            {t(`dashboard`)}
+                        </Text>
                     </View>
+                </View>
 
-                    {/* Right: Profile Avatar with Progress Ring */}
-                    <View style={{ alignItems: 'center' }}>
-                        <TouchableOpacity onPress={() => navigation.navigate(STACKS.PROFILE)} activeOpacity={.7} style={{ alignItems: 'center', justifyContent: 'center' }}>
-                            <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-                                <Svg width={size} height={size} style={{ position: "absolute", top: 0, left: 0 }}>
+                {/* Simple Header - Profile Left, Info Right */}
+                {isDriver ? (
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: responsiveWidth(5), paddingBottom: responsiveWidth(8), paddingTop: 0, alignItems: 'flex-start', marginTop: responsiveHeight(4) }}>
+                        {/* Left: Hi, Name, TM ID, Driver Badge */}
+                        <View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={{ fontSize: responsiveFontSize(2.3), color: colors.royalBlue, fontFamily: 'Inter-Bold', fontWeight: 'bold' }}>{t(`hi`)}</Text>
+                                <Text style={{ fontSize: responsiveFontSize(2.3), color: colors.royalBlue, fontFamily: 'Inter-Bold', fontWeight: 'bold' }}>{`, ${user?.name || ''} 👋`}</Text>
+                            </View>
+                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontFamily: 'Inter-Bold', fontWeight: 'bold', marginTop: 2 }}>{`${user?.unique_id || ''}`}</Text>
+                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontFamily: 'Inter-Bold', fontWeight: 'bold', marginTop: 2 }}>{getUserBadgeText({ user, subscriptionDetails, isDriver })}</Text>
+                        </View>
+
+                        {/* Right: Profile Avatar with Progress Ring */}
+                        <View style={{ alignItems: 'center' }}>
+                            <TouchableOpacity onPress={() => navigation.navigate(STACKS.PROFILE)} activeOpacity={.7} style={{ alignItems: 'center', justifyContent: 'center' }}>
+                                <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+                                    <Svg width={size} height={size} style={{ position: "absolute", top: 0, left: 0 }}>
+                                        {/* Background Circle */}
+                                        <Circle
+                                            cx={size / 2}
+                                            cy={size / 2}
+                                            r={radius}
+                                            stroke={colors.blackOpacity(.07)}
+                                            strokeWidth={strokeWidth}
+                                            fill="none"
+                                        />
+                                        {/* Progress Circle */}
+                                        <Circle
+                                            cx={size / 2}
+                                            cy={size / 2}
+                                            r={radius}
+                                            stroke="#FFD700"
+                                            strokeWidth={strokeWidth}
+                                            fill="none"
+                                            strokeDasharray={circumference}
+                                            strokeDashoffset={progressOffset}
+                                            strokeLinecap="round"
+                                            rotation="90"
+                                            origin={`${size / 2}, ${size / 2}`}
+                                        />
+                                    </Svg>
+                                    <Image style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }} source={{ uri: user?.images ? `${BASE_URL}public/${user?.images}` : `https://cdn-icons-png.flaticon.com/512/3177/3177440.png` }} />
+                                    <View style={{ backgroundColor: colors.whiteOpacity(1), paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${profileCompletion}%`}</Text>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Stars & Rank */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: responsiveFontSize(1.5), gap: 2 }}>
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <FontAwesome
+                                        key={i}
+                                        name={i < (star_rating || 0) ? "star" : "star-o"}
+                                        size={responsiveFontSize(1.6)}
+                                        color={i < (star_rating || 0) ? "#FFD700" : "#D3D3D3"}
+                                    />
+                                ))}
+                            </View>
+                            <View style={{ marginTop: 2, backgroundColor: colors.white, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.2), color: colors.royalBlue, fontFamily: 'Inter-Bold', textAlign: 'center' }}>{rank || 'N/A'} 🏆</Text>
+                            </View>
+                        </View>
+                    </View>
+                ) : (
+                    <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(5), paddingBottom: responsiveWidth(8), paddingTop: 0, alignItems: 'center', marginTop: responsiveHeight(4) }}>
+                        {/* Left: Profile Avatar with Progress Ring */}
+                        <View style={{ alignItems: 'center' }}>
+                            <TouchableOpacity onPress={() => navigation.navigate(STACKS.PROFILE)} activeOpacity={1} style={{ alignItems: 'center', justifyContent: 'center' }}>
+                                <Svg width={size} height={size} style={{ position: "absolute" }}>
                                     {/* Background Circle */}
                                     <Circle
                                         cx={size / 2}
@@ -462,152 +517,99 @@ export default function Dashboard() {
                                 </Svg>
                                 <Image style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }} source={{ uri: user?.images ? `${BASE_URL}public/${user?.images}` : `https://cdn-icons-png.flaticon.com/512/3177/3177440.png` }} />
                                 <View style={{ backgroundColor: colors.whiteOpacity(1), paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
-                                    <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${profileCompletion}%`}</Text>
+                                    <Text style={{ fontSize: responsiveFontSize(1.4), color: 'green', fontWeight: '700' }}>{`${profileCompletion}%`}</Text>
                                 </View>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Right: Info */}
+                        <View style={{ flex: 1, marginLeft: responsiveWidth(4) }}>
+                            <Text style={{ color: colors.black, fontSize: responsiveFontSize(2.2), fontWeight: '600' }}>{user?.name || 'Transporter'}</Text>
+                            <Text style={{ color: colors.blackOpacity(0.6), fontSize: responsiveFontSize(1.6), fontWeight: '400', marginTop: 2 }}>{`${user?.unique_id || 'N/A'}`}</Text>
+                            <View style={{ backgroundColor: colors.royalBlueOpacity(0.1), alignSelf: 'flex-start', paddingVertical: responsiveFontSize(.3), paddingHorizontal: responsiveFontSize(1.5), borderRadius: 100, marginTop: responsiveFontSize(.5) }}>
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.5), fontWeight: '500' }}>{capitalizeFirst(user?.role) || 'Transporter'}</Text>
                             </View>
-                        </TouchableOpacity>
-
-                        {/* Stars & Rank */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: responsiveFontSize(1.5), gap: 2 }}>
-                            {Array.from({ length: 5 }).map((_, i) => (
-                                <FontAwesome
-                                    key={i}
-                                    name={i < (star_rating || 0) ? "star" : "star-o"}
-                                    size={responsiveFontSize(1.6)}
-                                    color={i < (star_rating || 0) ? "#FFD700" : "#D3D3D3"}
-                                />
-                            ))}
-                        </View>
-                        <View style={{ marginTop: 2, backgroundColor: colors.white, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.2), color: colors.royalBlue, fontFamily: 'Inter-Bold', textAlign: 'center' }}>{rank || 'N/A'} 🏆</Text>
                         </View>
                     </View>
-                </View>
-            ) : (
-                <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(5), paddingBottom: responsiveWidth(8), paddingTop: 0, alignItems: 'center', marginTop: responsiveHeight(4) }}>
-                    {/* Left: Profile Avatar with Progress Ring */}
-                    <View style={{ alignItems: 'center' }}>
-                        <TouchableOpacity onPress={() => navigation.navigate(STACKS.PROFILE)} activeOpacity={1} style={{ alignItems: 'center', justifyContent: 'center' }}>
-                            <Svg width={size} height={size} style={{ position: "absolute" }}>
-                                {/* Background Circle */}
-                                <Circle
-                                    cx={size / 2}
-                                    cy={size / 2}
-                                    r={radius}
-                                    stroke={colors.blackOpacity(.07)}
-                                    strokeWidth={strokeWidth}
-                                    fill="none"
-                                />
-                                {/* Progress Circle */}
-                                <Circle
-                                    cx={size / 2}
-                                    cy={size / 2}
-                                    r={radius}
-                                    stroke="#FFD700"
-                                    strokeWidth={strokeWidth}
-                                    fill="none"
-                                    strokeDasharray={circumference}
-                                    strokeDashoffset={progressOffset}
-                                    strokeLinecap="round"
-                                    rotation="90"
-                                    origin={`${size / 2}, ${size / 2}`}
-                                />
-                            </Svg>
-                            <Image style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }} source={{ uri: user?.images ? `${BASE_URL}public/${user?.images}` : `https://cdn-icons-png.flaticon.com/512/3177/3177440.png` }} />
-                            <View style={{ backgroundColor: colors.whiteOpacity(1), paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.4), color: 'green', fontWeight: '700' }}>{`${profileCompletion}%`}</Text>
-                            </View>
-                        </TouchableOpacity>
+                )}
+                {/*  */}
+                {isTransporter ? <>
+                    {/* SECTION: JOBS MANAGEMENT */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>
+                        <Ionicons name="briefcase-outline" size={20} color={colors.royalBlue} />
+                        <Text style={{ marginLeft: 8, fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('Jobs Management') || 'Jobs Management'}</Text>
                     </View>
 
-                    {/* Right: Info */}
-                    <View style={{ flex: 1, marginLeft: responsiveWidth(4) }}>
-                        <Text style={{ color: colors.black, fontSize: responsiveFontSize(2.2), fontWeight: '600' }}>{user?.name || 'Transporter'}</Text>
-                        <Text style={{ color: colors.blackOpacity(0.6), fontSize: responsiveFontSize(1.6), fontWeight: '400', marginTop: 2 }}>{`${user?.unique_id || 'N/A'}`}</Text>
-                        <View style={{ backgroundColor: colors.royalBlueOpacity(0.1), alignSelf: 'flex-start', paddingVertical: responsiveFontSize(.3), paddingHorizontal: responsiveFontSize(1.5), borderRadius: 100, marginTop: responsiveFontSize(.5) }}>
-                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.5), fontWeight: '500' }}>{capitalizeFirst(user?.role) || 'Transporter'}</Text>
-                        </View>
+                    {/* Row 1: Total Job Posted, Total Applicants & Total Added Driver */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 14 }}>
+                        <CenteredDashboardCard
+                            title={t(`totalJobPosted`)}
+                            count={dashboard?.total_jobs_posted}
+                            icon="https://cdn-icons-png.flaticon.com/512/3281/3281289.png"
+                            onPress={() => _navigateBottomScreen(STACKS.VIEW_JOBS)}
+                            colors={colors}
+                            shadow={shadow}
+                            responsiveFontSize={responsiveFontSize}
+                        />
+                        <CenteredDashboardCard
+                            title={t(`totalApplicants`)}
+                            count={dashboard?.total_applications}
+                            icon="https://cdn-icons-png.flaticon.com/512/6003/6003724.png"
+                            onPress={() => _navigateBottomScreen(STACKS.TRANSPORTER_APPLIED_JOB)}
+                            colors={colors}
+                            shadow={shadow}
+                            responsiveFontSize={responsiveFontSize}
+                        />
+                        <CenteredDashboardCard
+                            title={t('totalAddedDriver', 'Total Added Driver')}
+                            count={addedDriversCount !== null ? addedDriversCount : (dashboard?.total_added_drivers || 0)}
+                            icon="https://cdn-icons-png.flaticon.com/512/6012/6012282.png"
+                            onPress={() => navigation.navigate(STACKS.DRIVER_LIST)}
+                            colors={colors}
+                            shadow={shadow}
+                            responsiveFontSize={responsiveFontSize}
+                        />
                     </View>
-                </View>
-            )}
-            {/*  */}
-            {isTransporter ? <>
-                {/* SECTION: JOBS MANAGEMENT */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>
-                    <Ionicons name="briefcase-outline" size={20} color={colors.royalBlue} />
-                    <Text style={{ marginLeft: 8, fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('Jobs Management') || 'Jobs Management'}</Text>
-                </View>
 
-                {/* Row 1: Total Job Posted, Total Applicants & Total Added Driver */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 14 }}>
-                    <CenteredDashboardCard
-                        title={t(`totalJobPosted`)}
-                        count={dashboard?.total_jobs_posted}
-                        icon="https://cdn-icons-png.flaticon.com/512/3281/3281289.png"
-                        onPress={() => _navigateBottomScreen(STACKS.VIEW_JOBS)}
-                        colors={colors}
-                        shadow={shadow}
-                        responsiveFontSize={responsiveFontSize}
-                    />
-                    <CenteredDashboardCard
-                        title={t(`totalApplicants`)}
-                        count={dashboard?.total_applications}
-                        icon="https://cdn-icons-png.flaticon.com/512/6003/6003724.png"
-                        onPress={() => _navigateBottomScreen(STACKS.TRANSPORTER_APPLIED_JOB)}
-                        colors={colors}
-                        shadow={shadow}
-                        responsiveFontSize={responsiveFontSize}
-                    />
-                    <CenteredDashboardCard
-                        title={t('totalAddedDriver', 'Total Added Driver')}
-                        count={addedDriversCount !== null ? addedDriversCount : (dashboard?.total_added_drivers || 0)}
-                        icon="https://cdn-icons-png.flaticon.com/512/6012/6012282.png"
-                        onPress={() => navigation.navigate(STACKS.DRIVER_LIST)}
-                        colors={colors}
-                        shadow={shadow}
-                        responsiveFontSize={responsiveFontSize}
-                    />
-                </View>
+                    {/* SECTION: COMMUNICATION */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>
+                        <Ionicons name="chatbubbles-outline" size={20} color={colors.royalBlue} />
+                        <Text style={{ marginLeft: 8, fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('Communication') || 'Communication'}</Text>
+                    </View>
 
-                {/* SECTION: COMMUNICATION */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>
-                    <Ionicons name="chatbubbles-outline" size={20} color={colors.royalBlue} />
-                    <Text style={{ marginLeft: 8, fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('Communication') || 'Communication'}</Text>
-                </View>
+                    {/* Row: Invite Driver, Video Interview & Call Job Manager */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 24 }}>
+                        <CenteredDashboardCard
+                            title={t('inviteDriverForJob', 'Invite Driver for a Job')}
+                            count={invitationsCount !== null ? invitationsCount : (dashboard?.total_invites || 0)}
+                            icon="https://cdn-icons-png.flaticon.com/512/6003/6003724.png"
+                            onPress={() => navigation.navigate(STACKS.ALLDRIVER_LIST_WITH_TABS, { initialTab: 'myInvites' })}
+                            colors={colors}
+                            shadow={shadow}
+                            responsiveFontSize={responsiveFontSize}
+                        />
+                        <CenteredDashboardCard
+                            title={t('videoInterviewInvitation', 'Video Interview Invitation')}
+                            count={dashboard?.total_video_interviews || 0}
+                            icon="https://cdn-icons-png.flaticon.com/512/1256/1256650.png"
+                            onPress={() => navigation.navigate(STACKS.VIDEO_INTERVIEW_INFO)}
+                            colors={colors}
+                            shadow={shadow}
+                            responsiveFontSize={responsiveFontSize}
+                        />
+                        <CenteredDashboardCard
+                            title={t('callJobManager', 'Call Job Manager')}
+                            count={dashboard?.total_job_managers || 0}
+                            icon="https://cdn-icons-png.flaticon.com/512/724/724664.png"
+                            onPress={() => navigation.navigate(STACKS.CALL_JOB_MANAGER_INFO)}
+                            colors={colors}
+                            shadow={shadow}
+                            responsiveFontSize={responsiveFontSize}
+                        />
+                    </View>
 
-                {/* Row: Invite Driver, Video Interview & Call Job Manager */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 24 }}>
-                    <CenteredDashboardCard
-                        title={t('inviteDriverForJob', 'Invite Driver for a Job')}
-                        count={invitationsCount !== null ? invitationsCount : (dashboard?.total_invites || 0)}
-                        icon="https://cdn-icons-png.flaticon.com/512/6003/6003724.png"
-                        onPress={() => navigation.navigate(STACKS.ALLDRIVER_LIST_WITH_TABS, { initialTab: 'myInvites' })}
-                        colors={colors}
-                        shadow={shadow}
-                        responsiveFontSize={responsiveFontSize}
-                    />
-                    <CenteredDashboardCard
-                        title={t('videoInterviewInvitation', 'Video Interview Invitation')}
-                        count={dashboard?.total_video_interviews || 0}
-                        icon="https://cdn-icons-png.flaticon.com/512/1256/1256650.png"
-                        onPress={() => navigation.navigate(STACKS.VIDEO_INTERVIEW_INFO)}
-                        colors={colors}
-                        shadow={shadow}
-                        responsiveFontSize={responsiveFontSize}
-                    />
-                    <CenteredDashboardCard
-                        title={t('callJobManager', 'Call Job Manager')}
-                        count={dashboard?.total_job_managers || 0}
-                        icon="https://cdn-icons-png.flaticon.com/512/724/724664.png"
-                        onPress={() => navigation.navigate(STACKS.CALL_JOB_MANAGER_INFO)}
-                        colors={colors}
-                        shadow={shadow}
-                        responsiveFontSize={responsiveFontSize}
-                    />
-                </View>
-
-                {/* TODO: Uncomment Foreman section when STACKS.FOREMAN_HOME is added to stacks.tsx */}
-                {/* SECTION: FOREMAN (TEST) - Commented until FOREMAN_HOME stack is defined
+                    {/* TODO: Uncomment Foreman section when STACKS.FOREMAN_HOME is added to stacks.tsx */}
+                    {/* SECTION: FOREMAN (TEST) - Commented until FOREMAN_HOME stack is defined
                 <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>
                     <Ionicons name="construct-outline" size={20} color={colors.royalBlue} />
                     <Text style={{ marginLeft: 8, fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>Foreman</Text>
@@ -641,149 +643,151 @@ export default function Dashboard() {
                     </TouchableOpacity>
                 </View>
                 */}
-            </> :
-                <>
-                    {/* SECTION: JOBS */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 24, marginBottom: 12 }}>
-                        <Ionicons name="briefcase-outline" size={20} color={colors.royalBlue} style={{ marginRight: 8 }} />
-                        <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('sectionJobs')}</Text>
-                    </View>
+                </> :
+                    <>
+                        {/* SECTION: JOBS */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 24, marginBottom: 12 }}>
+                            <Ionicons name="briefcase-outline" size={20} color={colors.royalBlue} style={{ marginRight: 8 }} />
+                            <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('sectionJobs')}</Text>
+                        </View>
 
-                    {/* Row 1: Jobs Section - 3 Items */}
-                    <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 14 }}>
-                        <DashboardCard
-                            title={t('allAvailableJobs')}
-                            subtitle=""
-                            count={dashboard?.total_availablejobs}
-                            icon="https://cdn-icons-png.flaticon.com/512/3281/3281289.png"
-                            onPress={() => _navigateBottomScreen(STACKS.JOB)}
-                            // badge="New"
-                            // badgeColor="#22C55E"
-                            colors={colors}
-                            shadow={shadow}
-                            responsiveFontSize={responsiveFontSize}
-                        />
-                        <Space width={responsiveFontSize(1.5)} />
-                        <DashboardCard
-                            title={t(`appliedJobs`)}
-                            subtitle=""
-                            count={dashboard?.total_applyjobs}
-                            icon="https://cdn-icons-png.flaticon.com/512/11651/11651437.png"
-                            onPress={() => navigation.navigate(STACKS.APPLIED_JOB)}
-                            colors={colors}
-                            shadow={shadow}
-                            responsiveFontSize={responsiveFontSize}
-                        />
-                        <Space width={responsiveFontSize(1.5)} />
-                        <DashboardCard
-                            title={t(`jobsThatSuitsYou`)}
-                            subtitle=""
-                            count={suitsJobCount !== null ? suitsJobCount : dashboard?.jobs_that_suit_you}
-                            icon="https://cdn-icons-png.flaticon.com/512/2966/2966773.png"
-                            onPress={() => {
-                                if (subscriptionDetails?.showSubscriptionModel && isDriver) {
-                                    dispatch(subscriptionModalAction(true))
-                                } else {
-                                    if (dashboard?.jobs_that_suit_you === 0) {
-                                        showToast(t(`youNeedToUpdateYourProfileFirstToSeeJobs`))
+                        {/* Row 1: Jobs Section - 3 Items */}
+                        <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 14 }}>
+                            <DashboardCard
+                                title={t('allAvailableJobs')}
+                                subtitle=""
+                                count={dashboard?.total_availablejobs}
+                                icon="https://cdn-icons-png.flaticon.com/512/3281/3281289.png"
+                                onPress={() => _navigateBottomScreen(STACKS.JOB)}
+                                // badge="New"
+                                // badgeColor="#22C55E"
+                                colors={colors}
+                                shadow={shadow}
+                                responsiveFontSize={responsiveFontSize}
+                            />
+                            <Space width={responsiveFontSize(1.5)} />
+                            <DashboardCard
+                                title={t(`appliedJobs`)}
+                                subtitle=""
+                                count={dashboard?.total_applyjobs}
+                                icon="https://cdn-icons-png.flaticon.com/512/11651/11651437.png"
+                                onPress={() => navigation.navigate(STACKS.APPLIED_JOB)}
+                                colors={colors}
+                                shadow={shadow}
+                                responsiveFontSize={responsiveFontSize}
+                            />
+                            <Space width={responsiveFontSize(1.5)} />
+                            <DashboardCard
+                                title={t(`jobsThatSuitsYou`)}
+                                subtitle=""
+                                count={suitsJobCount !== null ? suitsJobCount : dashboard?.jobs_that_suit_you}
+                                icon="https://cdn-icons-png.flaticon.com/512/2966/2966773.png"
+                                onPress={() => {
+                                    if (subscriptionDetails?.showSubscriptionModel && isDriver) {
+                                        dispatch(subscriptionModalAction(true))
                                     } else {
-                                        navigation.navigate(STACKS.SUITS_JOB)
+                                        if (dashboard?.jobs_that_suit_you === 0) {
+                                            showToast(t(`youNeedToUpdateYourProfileFirstToSeeJobs`))
+                                        } else {
+                                            navigation.navigate(STACKS.SUITS_JOB)
+                                        }
                                     }
-                                }
-                            }}
-                            colors={colors}
-                            shadow={shadow}
-                            responsiveFontSize={responsiveFontSize}
-                        />
-                    </View>
+                                }}
+                                colors={colors}
+                                shadow={shadow}
+                                responsiveFontSize={responsiveFontSize}
+                            />
+                        </View>
 
-                    {/* SECTION: TRAINING & CERTIFICATE */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 24, marginBottom: 12 }}>
-                        <Ionicons name="school-outline" size={20} color={colors.royalBlue} style={{ marginRight: 8 }} />
-                        <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('sectionTrainingCertificate')}</Text>
-                    </View>
+                        {/* SECTION: TRAINING & CERTIFICATE */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 24, marginBottom: 12 }}>
+                            <Ionicons name="school-outline" size={20} color={colors.royalBlue} style={{ marginRight: 8 }} />
+                            <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('sectionTrainingCertificate')}</Text>
+                        </View>
 
-                    {/* Row 1: Training Section - 3 Items */}
-                    <View style={{ flexDirection: 'row', paddingHorizontal: 16 }}>
-                        <DashboardCard
-                            title={t(`trainingVideos`)}
-                            subtitle=""
-                            count={dashboard?.total_videos}
-                            icon="https://cdn-icons-png.flaticon.com/512/11825/11825158.png"
-                            onPress={() => _navigateBottomScreen(STACKS.TRAINING)}
-                            colors={colors}
-                            shadow={shadow}
-                            responsiveFontSize={responsiveFontSize}
-                        />
-                        <Space width={responsiveFontSize(1.5)} />
-                        <DashboardCard
-                            title={t('healthHygieneVideoCard')}
-                            subtitle=""
-                            count={dashboard?.total_health_hygiene}
-                            icon="https://cdn-icons-png.flaticon.com/512/2382/2382461.png"
-                            onPress={() => _navigateBottomScreen(STACKS.HEALTH_HYGIENE)}
-                            // badge="Pending"
-                            // badgeColor="#EAB308"
-                            colors={colors}
-                            shadow={shadow}
-                            responsiveFontSize={responsiveFontSize}
-                        />
-                        <Space width={responsiveFontSize(1.5)} />
-                        <DashboardCard
-                            title={t(`quizzes`)}
-                            subtitle=""
-                            count={dashboard?.total_quizzes}
-                            icon="https://cdn-icons-png.flaticon.com/512/9913/9913576.png"
-                            onPress={_navigateToQuizTrainingScreen}
-                            colors={colors}
-                            shadow={shadow}
-                            responsiveFontSize={responsiveFontSize}
-                        />
-                    </View>
+                        {/* Row 1: Training Section - 3 Items */}
+                        <View style={{ flexDirection: 'row', paddingHorizontal: 16 }}>
+                            <DashboardCard
+                                title={t(`trainingVideos`)}
+                                subtitle=""
+                                count={dashboard?.total_videos}
+                                icon="https://cdn-icons-png.flaticon.com/512/11825/11825158.png"
+                                onPress={() => _navigateBottomScreen(STACKS.TRAINING)}
+                                colors={colors}
+                                shadow={shadow}
+                                responsiveFontSize={responsiveFontSize}
+                            />
+                            <Space width={responsiveFontSize(1.5)} />
+                            <DashboardCard
+                                title={t('healthHygieneVideoCard')}
+                                subtitle=""
+                                count={dashboard?.total_health_hygiene}
+                                icon="https://cdn-icons-png.flaticon.com/512/2382/2382461.png"
+                                onPress={() => navigation.navigate(STACKS.HEALTH_HYGIENE)}
+                                // badge="Pending"
+                                // badgeColor="#EAB308"
+                                colors={colors}
+                                shadow={shadow}
+                                responsiveFontSize={responsiveFontSize}
+                            />
+                            <Space width={responsiveFontSize(1.5)} />
+                            <DashboardCard
+                                title={t(`quizzes`)}
+                                subtitle=""
+                                count={dashboard?.total_quizzes}
+                                icon="https://cdn-icons-png.flaticon.com/512/9913/9913576.png"
+                                onPress={_navigateToQuizTrainingScreen}
+                                colors={colors}
+                                shadow={shadow}
+                                responsiveFontSize={responsiveFontSize}
+                            />
+                        </View>
 
-                    {/* SECTION: COMMUNICATION */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 24, marginBottom: 12 }}>
-                        <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.royalBlue} style={{ marginRight: 8 }} />
-                        <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('sectionCommunication')}</Text>
-                    </View>
+                        {/* SECTION: COMMUNICATION */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 24, marginBottom: 12 }}>
+                            <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.royalBlue} style={{ marginRight: 8 }} />
+                            <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '700', color: colors.royalBlue }}>{t('sectionCommunication')}</Text>
+                        </View>
 
-                    {/* Row 1: Communication Section - 3 Items */}
-                    <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 24 }}>
-                        <DashboardCard
-                            title={t('transporterInvitationsCard')}
-                            subtitle=""
-                            count={dashboard?.total_invites ?? 0}
-                            icon="https://cdn-icons-png.flaticon.com/512/6003/6003724.png"
-                            onPress={() => navigation.navigate(STACKS.JOB_INVITATIONS_LIST)}
-                            colors={colors}
-                            shadow={shadow}
-                            responsiveFontSize={responsiveFontSize}
-                        />
-                        <Space width={responsiveFontSize(1.5)} />
-                        <DashboardCard
-                            title={t('videoInterviewInvitationCard')}
-                            subtitle=""
-                            count={interviewsCount ?? 0}
-                            icon="https://cdn-icons-png.flaticon.com/512/1256/1256650.png"
-                            onPress={() => navigation.navigate(STACKS.SCHEDULED_INTERVIEWS)}
-                            colors={colors}
-                            shadow={shadow}
-                            responsiveFontSize={responsiveFontSize}
-                        />
-                        <Space width={responsiveFontSize(1.5)} />
-                        <DashboardCard
-                            title={t('callJobManager')}
-                            subtitle=""
-                            count={0}
-                            icon="https://cdn-icons-png.flaticon.com/512/724/724664.png"
-                            onPress={() => navigation.navigate(STACKS.CALL_JOB_MANAGER_INFO)}
-                            colors={colors}
-                            shadow={shadow}
-                            responsiveFontSize={responsiveFontSize}
-                        />
-                    </View>
-                    <Space height={responsiveFontSize(3)} />
-                </>}
-        </ScrollView>
+                        {/* Row 1: Communication Section - 3 Items */}
+                        <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 24 }}>
+                            <DashboardCard
+                                title={t('transporterInvitationsCard')}
+                                subtitle=""
+                                count={dashboard?.total_invites ?? 0}
+                                icon="https://cdn-icons-png.flaticon.com/512/6003/6003724.png"
+                                onPress={() => navigation.navigate(STACKS.JOB_INVITATIONS_LIST)}
+                                colors={colors}
+                                shadow={shadow}
+                                responsiveFontSize={responsiveFontSize}
+                            />
+                            <Space width={responsiveFontSize(1.5)} />
+                            <DashboardCard
+                                title={t('videoInterviewInvitationCard')}
+                                subtitle=""
+                                count={interviewsCount ?? 0}
+                                icon="https://cdn-icons-png.flaticon.com/512/1256/1256650.png"
+                                onPress={() => navigation.navigate(STACKS.SCHEDULED_INTERVIEWS)}
+                                colors={colors}
+                                shadow={shadow}
+                                responsiveFontSize={responsiveFontSize}
+                            />
+                            <Space width={responsiveFontSize(1.5)} />
+                            <DashboardCard
+                                title={t('callJobManager')}
+                                subtitle=""
+                                count={0}
+                                icon="https://cdn-icons-png.flaticon.com/512/724/724664.png"
+                                onPress={() => navigation.navigate(STACKS.CALL_JOB_MANAGER_INFO)}
+                                colors={colors}
+                                shadow={shadow}
+                                responsiveFontSize={responsiveFontSize}
+                            />
+                        </View>
+                        <Space height={responsiveFontSize(3)} />
+                    </>}
+            </ScrollView>
+            <MiniVideoPlayer isVisible={isDriver || isTransporter} />
+        </View>
     )
 }

@@ -723,7 +723,7 @@ export default function SuitsJob() {
     const safeAreaInsets = useSafeAreaInsets();
     const { shadow } = useShadow()
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
-    const { profileCompletion } = useSelector((state: any) => { return state?.user }) || { profileCompletion: 0 };
+    const { profileCompletion, subscriptionDetails, subscriptionModal, isDriver } = useSelector((state: any) => { return state?.user }) || { profileCompletion: 0 };
     const navigation = useNavigation<NavigatorProp>();
     const dispatch = useDispatch();
     const [recommendedJobsList, setrecommendedJobsList] = useState([])
@@ -830,6 +830,12 @@ export default function SuitsJob() {
 
     const _applyJob = async (id: any) => {
         if (!validate(id)) return;
+
+        if (subscriptionDetails?.showSubscriptionModel && isDriver) {
+            !subscriptionModal && dispatch(subscriptionModalAction(true));
+            return;
+        }
+
         try {
             setloadingApplyJob(id)
             const FormData = require('form-data');
