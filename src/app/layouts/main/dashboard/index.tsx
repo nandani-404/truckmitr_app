@@ -721,7 +721,7 @@ export default function Dashboard() {
                             subtitle=""
                             count={dashboard?.total_health_hygiene}
                             icon="https://cdn-icons-png.flaticon.com/512/2382/2382461.png"
-                            onPress={() => _navigateBottomScreen(STACKS.HEALTH_HYGIENE)}
+                            onPress={() => navigation.navigate(STACKS.HEALTH_HYGIENE)}
                             // badge="Pending"
                             // badgeColor="#EAB308"
                             colors={colors}

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import Bottom from './tabs/bottom';
-import { AddDriver, AddJob, AddLoad, AppliedJob, AvailableJob, ContactUs, Dashboard, DriverDrivingDetailsByTransporter, DriverList, DriverProfileEditByTransporter, DriverUploadDocumentsByTransporter, DrivingDetails, DrivingDetailsTransporter, ExcelImport, JobStep2, JobStep3, LanguageMain, LocationSearch, LocationMap, Modules, Notification, PaymentSuccess, Player, PreferredColor, Privacy, ProfileEdit, ProfileEditNew, ProfileEditTransporter, Quiz, QuizResult, Rating, Search, Settings, SuitsJob, TransporterAppliedJob, TransporterVerificationScreen, UploadDocuments, UploadDocumentsTransporter, ViewJobs, DLVerification, DriverKiAwazInfo, CallJobManagerList, CallJobManagerInfo, ChallanCheckInfo, ChallanCheckResult, CourtCheckInfo, DigitalAddressCheckInfo, DriverInvites, RcCheckInfo, IdCheckInfo, Convoy } from '@truckmitr/layouts/index';
+import { AddDriver, AddJob, AddLoad, AppliedJob, AvailableJob, ContactUs, Dashboard, DriverDrivingDetailsByTransporter, DriverList, DriverProfileEditByTransporter, DriverUploadDocumentsByTransporter, DrivingDetails, DrivingDetailsTransporter, ExcelImport, HealthHygiene, JobStep2, JobStep3, LanguageMain, LocationSearch, LocationMap, Modules, Notification, PaymentSuccess, Player, PreferredColor, Privacy, ProfileEdit, ProfileEditNew, ProfileEditTransporter, Quiz, QuizResult, Rating, Search, Settings, SuitsJob, TransporterAppliedJob, TransporterVerificationScreen, UploadDocuments, UploadDocumentsTransporter, ViewJobs, DLVerification, DriverKiAwazInfo, CallJobManagerList, CallJobManagerInfo, ChallanCheckInfo, ChallanCheckResult, CourtCheckInfo, DigitalAddressCheckInfo, DriverInvites, RcCheckInfo, IdCheckInfo, Convoy } from '@truckmitr/layouts/index';
 import { setupFirebaseNotifications, initializeNotificationChannel } from '@truckmitr/src/utils/notification';
 import { DocumentUploadScreen, JobSummary, VerificationStatusScreen, } from '../app/layouts/main';
 import EditJob from '../app/layouts/main/edit-job';
@@ -214,6 +214,7 @@ export default function Main() {
       <Stack.Screen name={STACKS.FLEET_MANAGEMENT_SOLUTION} component={FleetManagementSolution} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.FUEL_DISCOUNT} component={FuelDiscount} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.TRUCK_INSURANCE} component={TruckInsurance} options={{ animation: 'fade' }} />
+      <Stack.Screen name={STACKS.HEALTH_HYGIENE} component={HealthHygiene} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.CONVOY} component={Convoy} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.ADD_SINGLE_DRIVER_INFO} component={AddSingleDriverInfo} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.JOB_SUMMARY} component={JobSummary} options={{ animation: 'fade' }} />
