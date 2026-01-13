@@ -109,35 +109,22 @@ export default function Main() {
       return;
     }
 
-    // const initZego = async () => {
-    //   try {
-    //     console.log('🚀 Initializing Zego Call Service for:', user.unique_id);
-    //     await initializeZeegoService({
-    //       userID: user.unique_id,
-    //       userName: user.name ?? 'User',
-    //     });
-
-    //     hasInitZego.current = true;
-    //   } catch (e) {
-    //     console.error('❌ Zego init error:', e);
-    //   }
-    // };
-
-    // initZego();
-  }, [isAuthenticated, user?.unique_id]);
-
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', state => {
-      if (state === 'active' && user?.unique_id) {
-        initializeZeegoService({
+    const initZego = async () => {
+      try {
+        console.log('🚀 Initializing Zego Call Service for:', user.unique_id);
+        await initializeZeegoService({
           userID: user.unique_id,
           userName: user.name ?? 'User',
         });
-      }
-    });
 
-    return () => sub.remove();
-  }, [user?.unique_id]);
+        hasInitZego.current = true;
+      } catch (e) {
+        console.error('❌ Zego init error:', e);
+      }
+    };
+
+    initZego();
+  }, [isAuthenticated, user?.unique_id]);
 
 
   return (

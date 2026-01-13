@@ -428,6 +428,8 @@
   "transporterInvitationCardDescription": "Transporter Invitation",
   "videoInterviewInvitationCard": "Video Interview Invitation",
   "videoInterviewInvitationCardDescription": "Video Interview Invitation",
+  "cannotStartVideoCall": "Cannot start video call",
+  "driverDataMissing": "Driver information is incomplete",
   "shareCertificateDescription": "Share certificate with others",
   "publicSharingInfo": "Share your achievements publicly to showcase your skills",
   "congratulations": "Congratulations",
@@ -2286,5 +2288,6 @@
   "foremanDashboard": "Foreman Dashboard",
   "manageWorkforce": "Manage your workforce",
   "fillDriverDetails": "Please fill in the details below to add a new driver to your network.",
-  "noStatesFound": "No states found"
+  "noStatesFound": "No states found",
+  "fetchingJobsForYou": "Fetching jobs for you..."
 }

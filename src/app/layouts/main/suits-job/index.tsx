@@ -859,7 +859,7 @@ export default function SuitsJob() {
     }
 
     const _navigateProfileEdit = () => {
-        navigation.navigate(STACKS.PROFILE_EDIT);
+        navigation.navigate(STACKS.PROFILE_OVERVIEW);
     };
 
     // Filter jobs based on search query
