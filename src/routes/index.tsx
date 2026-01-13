@@ -43,7 +43,12 @@ export default function Routes() {
   const { isAuthenticated, subscriptionModal, user, profileRequiredFieldsStatus } = useSelector((state: any) => state?.user);
   const [isAppReady, setIsAppReady] = useState(false);
 
-  console.log('🛡️ AUTH GATE STATUS:', { isAuthenticated, profileRequiredFieldsStatus });
+  console.log('🛡️ AUTH GATE STATUS:', { 
+    isAuthenticated, 
+    profileRequiredFieldsStatus,
+    hasUser: !!user,
+    userRole: user?.role || user?.data?.role
+  });
   const [isInitializing, setIsInitializing] = useState(true);
 
   const routeNameRef = useRef<string | undefined>(undefined);
@@ -99,6 +104,11 @@ export default function Routes() {
   const logUserEventBackend = async (screenName: string) => {
     try {
       const token = await getUserData();
+      console.log('🔑 EVENT LOG TOKEN:', { 
+        hasToken: !!token, 
+        tokenLength: token ? token.length : 0,
+        screenName 
+      });
       if (!token) {
         console.log("⚠️ No token found, skipping event log for:", screenName);
         return;
@@ -264,6 +274,11 @@ export default function Routes() {
 
         setIsInitializing(true);
         const token = await getUserData();
+        console.log('🔑 TOKEN STATUS:', { 
+          hasToken: !!token, 
+          tokenLength: token ? token.length : 0,
+          tokenPreview: token 
+        });
         if (token) {
           // Validate token before setting authenticated
           const isTokenValid = await validateToken();

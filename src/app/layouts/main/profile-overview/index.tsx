@@ -504,6 +504,46 @@ export default function ProfileOverview() {
     return String(segment)
   }
 
+  const formatRoutes = (routes: any): string => {
+    console.log('=== FORMAT ROUTES ===');
+    console.log('Input routes value:', routes);
+    console.log('Input routes type:', typeof routes);
+
+    if (!routes) {
+      console.log('No routes value, returning "Not Provided"');
+      return 'Not Provided'
+    }
+
+    // Handle comma-separated values
+    if (typeof routes === 'string') {
+      const routesList = routes.split(',').map(r => r.trim()).filter(Boolean)
+      console.log('Parsed routes array:', routesList);
+
+      // Map internal values to display names
+      const routesMap: Record<string, string> = {
+        'local': 'Local',
+        'intracity': 'Intracity',
+        'intercity': 'Intercity',
+        'interstate': 'Interstate',
+        'national': 'National',
+        'international': 'International'
+      }
+
+      const displayNames = routesList.map(route => {
+        const mapped = routesMap[route] || route;
+        console.log(`Mapping "${route}" -> "${mapped}"`);
+        return mapped;
+      });
+
+      const result = displayNames.join(', ');
+      console.log('Final formatted routes result:', result);
+      return result;
+    }
+
+    console.log('Non-string routes, returning as string:', String(routes));
+    return String(routes)
+  }
+
   const formatAverageKm = (avgKm: any): string => {
     if (!avgKm) return 'Not Provided'
 
@@ -1002,6 +1042,20 @@ export default function ProfileOverview() {
               ]}
               onEdit={navigateToEdit}
             />
+
+            {/* Routes Section */}
+            {/* <FieldGroupCard
+              title={t('routes') || 'Routes'}
+              icon="map"
+              stepId="operational_segment"
+              fields={[
+                {
+                  label: t('routes') || 'Routes',
+                  value: formatRoutes(user?.routes || user?.operational_segment),
+                },
+              ]}
+              onEdit={navigateToEdit}
+            /> */}
 
             {/* Average Km Run Section */}
             <FieldGroupCard

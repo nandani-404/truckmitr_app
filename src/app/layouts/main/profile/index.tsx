@@ -585,7 +585,7 @@ export default function Profile() {
         user_email: userinfo.email,
         user_role: userinfo.role,
       };
-      await onUserLogout()
+      await onUserLogout(); // 🔥 VERY IMPORTANT
       await analytics().logEvent('user_logout', eventParams);
       AppEventsLogger.logEvent('user_logout', eventParams);
       await new Promise<void>(res => setTimeout(() => res(), 500));

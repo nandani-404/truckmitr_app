@@ -106,6 +106,8 @@
   "enterRegisteredId": "Enter Registered Id",
   "fleetSize": "Fleet Size",
   "operationalSegment": "Operational Segment",
+  "routes": "Routes",
+  "routesRequired": "Routes selection is required",
   "averageKmRunOfFleet": "Average KM Run of fleet (Monthly)",
   "transportNameRequired": "Transport Name is required",
   "registeredIdRequired": "Registered ID is required",

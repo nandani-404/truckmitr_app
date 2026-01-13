@@ -2251,9 +2251,9 @@ export default function TransporterAppliedJob() {
                                 isVideoCall={true}
                                 resourceID={"TruckMitr"}
                                 onPressed={(code: any, message: any, invitees: any) => {
-                                    // console.log('🎥 ZegoCloud onPressed callback triggered');
-                                    // console.log('🎥 Code:', code, 'Message:', message, 'Invitees:', invitees);
-                                    // console.log('🎥 Selected driver for API call:', selectedDriver?.driver_details?.driver_name);
+                                    console.log('🎥 ZegoCloud onPressed callback triggered');
+                                    console.log('🎥 Code:', code, 'Message:', message, 'Invitees:', invitees);
+                                    console.log('🎥 Selected driver for API call:', selectedDriver?.driver_details?.driver_name);
 
                                     // Log the video call when ZegoCloud button is actually pressed
                                     if (selectedDriver) {
