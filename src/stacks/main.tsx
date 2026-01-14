@@ -20,7 +20,7 @@ import PaymentHistoryScreen from '../app/layouts/main/transporter-verification/p
 import MembershipCard from '../app/layouts/main/membership-card';
 import { ZegoUIKitPrebuiltCallInCallScreen, ZegoUIKitPrebuiltCallWaitingScreen } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 import { useSelector } from 'react-redux';
-import { initializeZeegoService } from '../utils/zegoService';
+// import { initializeZeegoService } from '../utils/zegoService';
 import DriverTripWallet from '../app/layouts/main/driver-trip-wallet';
 import DriverWelfare from '../app/layouts/main/driver-welfare';
 import DriverLoan from '../app/layouts/main/driver-loan';
@@ -102,29 +102,29 @@ export default function Main() {
     return () => clearTimeout(timeoutId);
   }, [isMounted]);
 
-  useEffect(() => {
-    if (!isAuthenticated || !user?.unique_id) return;
+  // useEffect(() => {
+  //   if (!isAuthenticated || !user?.unique_id) return;
 
-    if (hasInitZego.current) {
-      return;
-    }
+  //   if (hasInitZego.current) {
+  //     return;
+  //   }
 
-    const initZego = async () => {
-      try {
-        console.log('🚀 Initializing Zego Call Service for:', user.unique_id);
-        await initializeZeegoService({
-          userID: user.unique_id,
-          userName: user.name ?? 'User',
-        });
+  //   const initZego = async () => {
+  //     try {
+  //       console.log('🚀 Initializing Zego Call Service for:', user.unique_id);
+  //       await initializeZeegoService({
+  //         userID: user.unique_id,
+  //         userName: user.name ?? 'User',
+  //       });
 
-        hasInitZego.current = true;
-      } catch (e) {
-        console.error('❌ Zego init error:', e);
-      }
-    };
+  //       hasInitZego.current = true;
+  //     } catch (e) {
+  //       console.error('❌ Zego init error:', e);
+  //     }
+  //   };
 
-    initZego();
-  }, [isAuthenticated, user?.unique_id]);
+  //   initZego();
+  // }, [isAuthenticated, user?.unique_id]);
 
 
   return (
