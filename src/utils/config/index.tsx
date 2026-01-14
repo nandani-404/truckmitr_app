@@ -43,7 +43,6 @@ export const END_POINTS = {
     ATTEMPT_QUIZ: `api/quiz/attempt`,
     QUIZ_RESULT: `api/quiz/result`,
     REATE_US: `api/rate-us`,
-
     DELETE_ACCOUNT: `api/delete-account`,
     PRIVACY_POLICY: `api/privacy-policy`,
     TERMS_AND_CONDITIONS: `api/terms-and-conditions`,
@@ -69,6 +68,7 @@ export const END_POINTS = {
     PAYMENT_SUBSCRIPTION_DETAILS: `api/payment/subscription/details`,
     PAYMENT_SUBSCRIPTION_CREATE: `api/subscription/create`,
     PAYMENT_SUBSCRIPTION_UPDATE: (role: any) => `api/subscription/plansByUser?role=${role}`,
+    CANCEL_SUBSCRIPTION: `api/subscription/cancel`,
 
     SUBSCRIPTION_PLANS: (role: string) => `api/subscription/plans?role=${role}`,
     PUBLIC_SAVE_FCM_TOKEN: `api/public/save-fcm-token`,

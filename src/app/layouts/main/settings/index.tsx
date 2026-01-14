@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React, { useState } from 'react'
 import { useColor, useResponsiveScale } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteUserData } from '@truckmitr/src/utils/config/token';
-import { userAuthenticatedAction } from '@truckmitr/src/redux/actions/user.action';
+import { subscriptionDetailsAction, userAuthenticatedAction } from '@truckmitr/src/redux/actions/user.action';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
@@ -30,9 +30,11 @@ export default function Settings() {
   const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
   const navigation = useNavigation<NavigatorProp>();
   const dispatch = useDispatch();
-  const { user } = useSelector((state: any) => state.user);
+  const { user, isDriver, isTransporter, subscriptionDetails } = useSelector((state: any) => state.user);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
+  const [showCancelMembershipDialog, setShowCancelMembershipDialog] = useState(false);
 
   const deleteAccount = async () => {
     setIsDeleting(true);
@@ -74,6 +76,62 @@ export default function Settings() {
     }
   };
 
+  const getPaidAmount = (): number => {
+    // If no subscription details valid-like object, return 0
+    if (!subscriptionDetails || Object.keys(subscriptionDetails).length === 0) {
+      return 0;
+    }
+
+    // Amount is stored directly on subscription object as string (e.g., "99.00")
+    if (subscriptionDetails?.amount) {
+      return parseFloat(subscriptionDetails.amount);
+    }
+    // Fallback to payment_details.amount (in paise, needs /100)
+    if (subscriptionDetails?.payment_details?.amount) {
+      return subscriptionDetails.payment_details.amount / 100;
+    }
+    // Default fallback
+    return 0;
+  };
+
+  const handleCancelMembership = async () => {
+    try {
+      setCancellingSubscription(true);
+      setShowCancelMembershipDialog(false);
+
+      const subscriptionId = subscriptionDetails?.subscription_id || subscriptionDetails?.id;
+
+      if (!subscriptionId) {
+        showToast(t('subscriptionIdNotFound') || 'Subscription ID not found');
+        return;
+      }
+
+      const response: any = await axiosInstance.post(END_POINTS.CANCEL_SUBSCRIPTION, {
+        subscription_id: subscriptionId
+      });
+
+      if (response?.data?.status) {
+        showToast(t('membershipCancelledSuccessfully') || 'Membership cancelled successfully');
+
+        // Refresh subscription details
+        const subscriptionResponse: any = await axiosInstance.get(END_POINTS?.PAYMENT_SUBSCRIPTION_DETAILS);
+        if (subscriptionResponse?.data?.status) {
+          const subscriptionData = subscriptionResponse?.data?.data || [];
+          dispatch(subscriptionDetailsAction(subscriptionData));
+        } else {
+          dispatch(subscriptionDetailsAction([]));
+        }
+      } else {
+        showToast(response?.data?.message || t('failedToCancelMembership') || 'Failed to cancel membership');
+      }
+    } catch (error: any) {
+      console.error('Cancel membership error:', error);
+      showToast(error?.message || t('failedToCancelMembership') || 'Failed to cancel membership');
+    } finally {
+      setCancellingSubscription(false);
+    }
+  };
+
   const _goback = () => {
     navigation.goBack()
   }
@@ -99,12 +157,34 @@ export default function Settings() {
         <Text style={{ flex: 1, color: colors.black, fontSize: responsiveFontSize(2), fontWeight: '400', marginHorizontal: responsiveFontSize(2.5) }}>{t('language')}</Text>
         <MaterialIcons name={'keyboard-arrow-right'} size={24} color={colors.blackOpacity(.3)} />
       </TouchableOpacity>
+
+      {(isDriver || isTransporter) && getPaidAmount() > 0 && (
+        <TouchableOpacity onPress={() => setShowCancelMembershipDialog(true)} style={{ width: responsiveWidth(100), flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(5), paddingVertical: responsiveFontSize(2) }}>
+          {cancellingSubscription
+            ? <ActivityIndicator size="small" color="#FF3B30" />
+            : <MaterialCommunityIcons name="card-remove-outline" size={22} color="#FF3B30" />
+          }
+          <Text style={{ flex: 1, color: '#FF3B30', fontSize: responsiveFontSize(2), fontWeight: '400', marginHorizontal: responsiveFontSize(2.5) }}>{t('cancelMembership') || 'Cancel Membership'}</Text>
+          <MaterialIcons name={'keyboard-arrow-right'} size={24} color={colors.blackOpacity(.3)} />
+        </TouchableOpacity>
+      )}
       {/* <TouchableOpacity onPress={_navigatePreferredColour} style={{ width: responsiveWidth(100), flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(5), paddingVertical: responsiveFontSize(2) }}>
         <Ionicons name={'color-palette-outline'} size={22} color={colors.black} />
         <Text style={{ flex: 1, color: colors.black, fontSize: responsiveFontSize(2), fontWeight: '400', marginHorizontal: responsiveFontSize(2.5) }}>{t('preferredColour')}</Text>
         <MaterialIcons name={'keyboard-arrow-right'} size={24} color={colors.blackOpacity(.3)} />
       </TouchableOpacity> */}
 
+
+      <AppleConfirmDialog
+        visible={showCancelMembershipDialog}
+        title={t('cancelMembership') || 'Cancel Membership'}
+        message={t('areYouSureCancelMembership') || 'Are you sure you want to cancel your membership? You will lose access to premium features.'}
+        confirmText={t('cancelMembership') || 'Cancel Membership'}
+        cancelText={t('keepMembership') || 'Keep Membership'}
+        isDestructive={true}
+        onConfirm={handleCancelMembership}
+        onCancel={() => setShowCancelMembershipDialog(false)}
+      />
 
       <AppleConfirmDialog
         visible={showDeleteDialog}
