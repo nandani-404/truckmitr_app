@@ -97,10 +97,11 @@ const Home = React.forwardRef((props, ref) => {
 
     const fetchBanners = async () => {
         try {
-            const response: any = await axiosInstance.get(END_POINTS.MOBILE_BANNERS);
+            // Use TRUCKMITRBANNERS endpoint which has the image banners
+            const response: any = await axiosInstance.get(END_POINTS.TRUCKMITRBANNERS);
             console.log('Banner Response:', response.data);
-            // API returns status: true (boolean), not status: 'success' (string)
-            if (response?.data?.status === true && Array.isArray(response?.data?.data)) {
+            // API returns status: true (boolean)
+            if (response?.data?.status && Array.isArray(response?.data?.data)) {
                 const validBanners = response.data.data.filter((item: any) => {
                     // Only show images, not videos
                     if (item.media_type !== 'image') return false;
