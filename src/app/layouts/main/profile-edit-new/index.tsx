@@ -908,7 +908,9 @@ export default function ProfileEditNew() {
             formData.append('fleet_size', userEdit?.fleet_size || '');
             formData.append('operational_segment', userEdit?.industry_segment || '');
             // Routes - send as array format like profile-completion
-            const routeSegments = userEdit?.routes?.split(',').filter(Boolean) || [];
+            const routeSegments = Array.isArray(userEdit?.routes) 
+                ? userEdit.routes 
+                : userEdit?.routes?.split(',').filter(Boolean) || [];
             if (routeSegments.length > 0) {
                 routeSegments.forEach((seg: string) => {
                     formData.append('routes[]', seg.trim());

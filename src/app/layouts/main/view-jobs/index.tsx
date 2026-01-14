@@ -323,6 +323,7 @@ export default function AvailableJob() {
     const safeAreaInsets = useSafeAreaInsets();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
+    const { subscriptionDetails, isTransporter } = useSelector((state: any) => state?.user);
 
     const [loading, setloading] = useState(true);
     const [jobList, setjobList] = useState([]);
@@ -390,7 +391,12 @@ export default function AvailableJob() {
     const _navigateAddJob = () => {
         // Clear any existing job data from Redux
         dispatch(jobAddAction({}));
-        navigation.navigate(STACKS?.ADD_JOB);
+        // Check subscription for transporter
+        if (subscriptionDetails?.showSubscriptionModel && isTransporter) {
+            dispatch(subscriptionModalAction(true));
+        } else {
+            navigation.navigate(STACKS?.ADD_JOB);
+        }
     };
 
     // Empty State Component
