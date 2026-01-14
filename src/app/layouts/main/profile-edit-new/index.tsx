@@ -1604,17 +1604,22 @@ export default function ProfileEditNew() {
                 return (<View style={styles.stepContent}><View style={styles.gridContainer}>{translatedFleetSizes.map(f => (<TouchableOpacity key={f.value} style={[styles.gridTile, userEdit?.fleet_size === f.value && styles.gridTileSelected]} onPress={() => dispatch(userEditAction({ ...userEdit, fleet_size: f.value }))}><Text style={[styles.gridTileText, userEdit?.fleet_size === f.value && styles.gridTileTextSelected]}>{f.label}</Text></TouchableOpacity>))}</View></View>);
 
             case 'industry_segment':
-                return (<View style={styles.stepContent}><View style={styles.chipContainer}>{translatedIndustrySegments.map(s => { const selected = userEdit?.industry_segment?.split(',')?.includes(s.value); return <Chip key={s.value} label={s.label} selected={selected} onPress={() => toggleMultiSelect('industry_segment', s.value)} />; })}</View></View>);
+                const industrySegmentArray = Array.isArray(userEdit?.industry_segment) 
+                    ? userEdit.industry_segment 
+                    : userEdit?.industry_segment?.split(',')?.filter(Boolean) || [];
+                return (<View style={styles.stepContent}><View style={styles.chipContainer}>{translatedIndustrySegments.map(s => { const selected = industrySegmentArray.includes(s.value) || industrySegmentArray.includes(s.label); return <Chip key={s.value} label={s.label} selected={selected} onPress={() => toggleMultiSelect('industry_segment', s.value)} />; })}</View></View>);
 
             case 'operational_segment':
                 // Routes selection (local, intracity, intercity, etc.) - Same UI as profile-completion
-                const currentRoutes = userEdit?.routes?.split(',')?.filter(Boolean) || [];
+                const currentRoutes = Array.isArray(userEdit?.routes) 
+                    ? userEdit.routes 
+                    : userEdit?.routes?.split(',')?.filter(Boolean) || [];
                 return (
                     <View style={styles.stepContent}>
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
                         <View>
                             {translatedOperationalSegments.map((segment) => {
-                                const isSelected = currentRoutes.includes(segment.label);
+                                const isSelected = currentRoutes.includes(segment.label) || currentRoutes.includes(segment.value);
                                 return (
                                     <TouchableOpacity
                                         key={segment.value}
@@ -1625,7 +1630,7 @@ export default function ProfileEditNew() {
                                         onPress={() => {
                                             let newSegments = [...currentRoutes];
                                             if (isSelected) {
-                                                newSegments = newSegments.filter((s: string) => s !== segment.label);
+                                                newSegments = newSegments.filter((s: string) => s !== segment.label && s !== segment.value);
                                             } else {
                                                 newSegments.push(segment.label);
                                             }

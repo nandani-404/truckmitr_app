@@ -164,7 +164,7 @@ export const handleNotificationNavigation = async (data?: NotificationData) => {
 
     switch (data.screen) {
         case 'profileEdit':
-            navigationRef.current.navigate(STACKS.PROFILE_EDIT);
+            navigationRef.current.navigate(STACKS.PROFILE_OVERVIEW);
             break;
 
         case 'jobs':

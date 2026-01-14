@@ -168,6 +168,8 @@ export default function TransporterAppliedJob() {
                 setLoadingMore(true);
             }
             const response: any = await axiosInstance.get(`${END_POINTS?.TRANSPORTER_APPLIED_JOBS_LIST}?page=${page}`);
+            console.log('login view application-----------------',response);
+            
             if (response?.data?.status) {
                 const newData = response?.data?.data || [];
                 const pagination = response?.data?.pagination;
@@ -2307,51 +2309,6 @@ export default function TransporterAppliedJob() {
 
                         {/* ACTION BUTTONS */}
                         <View style={{ width: '100%', alignItems: 'center', gap: 24 }}>
-                            {/* <ZegoSendCallInvitationButton
-                                invitees={[{
-                                    userID: selectedDriver?.driver_details?.unique_id || selectedDriver?.driver_details?.driver_id?.toString(),
-                                    userName: selectedDriver?.driver_details?.driver_name || 'Driver'
-                                }]}
-                                isVideoCall={true}
-                                resourceID={"TruckMitr"}
-                                renderNormal={(onPress: any) => (
-                                    <TouchableOpacity
-                                        onPress={() => initiateVideoCall(selectedDriver, onPress)}
-                                        style={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: 40,
-                                            ...shadow,
-                                            elevation: 5
-                                        }}
-                                        disabled={videoCallLoading}
-                                    >
-                                        <LinearGradient
-                                            colors={videoCallLoading ? ['#9CA3AF', '#6B7280'] : ['#8B5CF6', '#6D28D9']}
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 1 }}
-                                            style={{
-                                                flex: 1,
-                                                borderRadius: 40,
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            }}
-                                        >
-                                            {videoCallLoading ? (
-                                                <ActivityIndicator size="large" color={colors.white} />
-                                            ) : (
-                                                <Ionicons name="videocam" size={36} color={colors.white} />
-                                            )}
-                                        </LinearGradient>
-                                    </TouchableOpacity>
-                                )}
-                            /> */}
-                            <ZegoSendCallInvitationButton
-                                invitees={[{ userID: "TM2601DLDR25027", userName: "SOURAV" }]}
-                                isVideoCall={true}
-                                resourceID={"TruckMitr"} // Please fill in the resource ID name that has been configured in the ZEGOCLOUD's console here.
-                            />
-
                             {/* Show error if no valid invitees */}
                             {invitees.length === 0 ? (
                                 <View style={{
