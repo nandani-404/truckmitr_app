@@ -609,7 +609,7 @@ export default function Signup() {
                             <Text style={{ color: colors.blackOpacity(0.7), marginStart: responsiveFontSize(1), fontSize: responsiveFontSize(1.6), lineHeight: 20, flex: 1 }}>
                                 {t(`iAgreeToTruckMitr`)}
                                 <Text onPress={() => navigation.navigate(STACKS?.TERMS)} style={{ color: colors.royalBlue, fontWeight: '600' }}> {t(`termsOfUse`)}</Text> {'\n'}
-                                <Text onPress={() => navigation.navigate(STACKS?.PRIVACY)} style={{ color: colors.royalBlue, fontWeight: '600' }}></Text>.
+                                <Text onPress={() => navigation.navigate(STACKS?.PRIVACY)} style={{ color: colors.royalBlue, fontWeight: '600' }}></Text>
                             </Text>
                         </View>
                         {errors.checkBox && (

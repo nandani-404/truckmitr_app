@@ -67,6 +67,7 @@ const TRANSPORTER_STEPS = [
     { id: 'year_of_exp', title: 'selectYearsOfOperation', subtitle: 'selectYearsOfOperationDesc' },
     { id: 'fleet_size', title: 'fleetSizeStep', subtitle: 'fleetSizeStepDesc' },
     { id: 'industry_segment', title: 'selectOperationalSegment', subtitle: 'selectOperationalSegmentDesc' },
+    { id: 'operational_segment', title: 'routes', subtitle: 'selectRoutesDesc' },
     { id: 'avg_km_run', title: 'avgKmStep', subtitle: 'avgKmStepDesc' },
     { id: 'vehicle', title: 'vehicleTypeStep', subtitle: 'vehicleTypeStepDescTransporter' },
     { id: 'pan_gst', title: 'panGstStep', subtitle: 'panGstStepDesc' },
@@ -118,6 +119,8 @@ export default function ProfileEditNew() {
     const [loading, setLoading] = useState(false);
     const [calendarMonth, setCalendarMonth] = useState(moment().subtract(18, 'years').format('YYYY-MM-DD'));
     const [loadingPincode, setLoadingPincode] = useState(false);
+    const [postOffices, setPostOffices] = useState<any[]>([]);
+    const [selectedPostOffice, setSelectedPostOffice] = useState<string>('');
 
     // Separate image state management to avoid conflicts with normalization
     const [imageState, setImageState] = useState<{
@@ -233,19 +236,67 @@ export default function ProfileEditNew() {
                 try {
                     const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
                     const data = await response.json();
-                    if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice?.[0]?.District) {
-                        const city = data[0].PostOffice[0].District;
-                        dispatch(userEditAction({ ...(userEditRef.current || {}), city: city }));
+                    if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice) {
+                        const postOfficeList = data[0].PostOffice;
+                        setPostOffices(postOfficeList);
+                        
+                        // Check if current city matches any post office, but don't auto-select
+                        if (userEdit?.city) {
+                            const matchingPostOffice = postOfficeList.find((po: any) => 
+                                po.Name.toLowerCase() === userEdit.city.toLowerCase()
+                            );
+                            if (matchingPostOffice) {
+                                setSelectedPostOffice(matchingPostOffice.Name);
+                            } else {
+                                // Current city doesn't match any post office, clear selection and let user choose
+                                setSelectedPostOffice('');
+                                dispatch(userEditAction({ ...(userEditRef.current || {}), city: '' }));
+                            }
+                        } else {
+                            // No city selected, don't auto-select anything
+                            setSelectedPostOffice('');
+                        }
+                    } else {
+                        // Clear post offices and city if API fails or no data
+                        setPostOffices([]);
+                        setSelectedPostOffice('');
+                        dispatch(userEditAction({ ...(userEditRef.current || {}), city: '' }));
                     }
                 } catch (error) {
-                    console.log('Error fetching city from pincode:', error);
+                    console.log('Error fetching post offices from pincode:', error);
+                    setPostOffices([]);
+                    setSelectedPostOffice('');
+                    dispatch(userEditAction({ ...(userEditRef.current || {}), city: '' }));
                 } finally {
                     setLoadingPincode(false);
                 }
             }, 500);
             return () => clearTimeout(timer);
+        } else {
+            // Clear post offices when pincode is invalid or empty
+            setPostOffices([]);
+            setSelectedPostOffice('');
+            // Don't clear city if pincode is being typed (less than 6 digits)
+            if (pincode?.length === 0) {
+                dispatch(userEditAction({ ...(userEditRef.current || {}), city: '' }));
+            }
         }
     }, [userEdit?.pincode]);
+
+    // Sync selectedPostOffice with userEdit.city when component loads or city changes
+    useEffect(() => {
+        if (userEdit?.city && postOffices.length > 0) {
+            const matchingPostOffice = postOffices.find((po: any) => 
+                po.Name.toLowerCase() === userEdit.city.toLowerCase()
+            );
+            if (matchingPostOffice) {
+                setSelectedPostOffice(matchingPostOffice.Name);
+            }
+        } else if (userEdit?.city && postOffices.length === 0) {
+            // If user has a city but no post offices loaded, keep the city as is
+            setSelectedPostOffice(userEdit.city);
+        }
+    }, [userEdit?.city, postOffices]);
 
     // Normalize transporter fields from API response (handle casing mismatches)
     useEffect(() => {
@@ -333,6 +384,7 @@ export default function ProfileEditNew() {
             // Map API fields (PascalCase/snake_case) to UI fields (snake_case)
             checkAndSet('fleet_size', [user.Fleet_Size, user.fleet_size], fleetMapping);
             checkAndSet('industry_segment', [user.Operational_Segment, user.Industry_Segment, user.industry_segment, user.operational_segment]);
+            checkAndSet('routes', [user.routes, user.Routes]);
             checkAndSet('avg_km_run', [user.Average_KM, user.Average_Km, user.average_km, user.avg_km_run, user.average_run], avgKmMapping);
             checkAndSet('transport_name', [user.Transport_Name, user.transport_name]);
 
@@ -572,8 +624,9 @@ export default function ProfileEditNew() {
                     showToast(t('pincodeRequired') || 'Valid Pincode is required');
                     return false;
                 }
-                if (!userEdit?.city?.trim()) {
-                    showToast(t('cityRequired') || 'City is required');
+                // District/city is required when pincode is entered (6 digits)
+                if (userEdit?.pincode?.length === 6 && !userEdit?.city?.trim()) {
+                    showToast(t('cityRequired') || 'District is required');
                     return false;
                 }
                 if (!userEdit?.states && !userEdit?.state_id) {
@@ -688,6 +741,13 @@ export default function ProfileEditNew() {
             case 'industry_segment':
                 if (!userEdit?.industry_segment) {
                     showToast(t('industrySegmentRequired') || 'Industry segment is required');
+                    return false;
+                }
+                break;
+
+            case 'operational_segment':
+                if (!userEdit?.routes) {
+                    showToast(t('routesRequired') || 'Routes is required');
                     return false;
                 }
                 break;
@@ -847,6 +907,13 @@ export default function ProfileEditNew() {
             formData.append('year_of_exp', userEdit?.year_of_exp || '');
             formData.append('fleet_size', userEdit?.fleet_size || '');
             formData.append('operational_segment', userEdit?.industry_segment || '');
+            // Routes - send as array format like profile-completion
+            const routeSegments = userEdit?.routes?.split(',').filter(Boolean) || [];
+            if (routeSegments.length > 0) {
+                routeSegments.forEach((seg: string) => {
+                    formData.append('routes[]', seg.trim());
+                });
+            }
             formData.append('average_km', userEdit?.avg_km_run || '');
             formData.append('pan_number', userEdit?.pan || userEdit?.PAN_Number || '');
             formData.append('gst_number', userEdit?.gst || userEdit?.GST_Number || '');
@@ -888,7 +955,7 @@ export default function ProfileEditNew() {
 
             // GST Certificate
             if (imageState.gstCertificatePath?.path && imageState.gstCertificatePath?.mime) {
-                formData.append('GST_Certificate', {
+                formData.append('gst_certificate', {
                     uri: imageState.gstCertificatePath.path,
                     type: imageState.gstCertificatePath.mime,
                     name: imageState.gstCertificatePath.filename || 'gst.jpg'
@@ -1269,15 +1336,33 @@ export default function ProfileEditNew() {
                             )}
                         </View>
                         <Space height={16} />
-                        <Text style={styles.inputLabel}>{t('city')} <Text style={styles.requiredAsterisk}>*</Text></Text>
-                        <TextInput style={styles.textInput} placeholder={t('enterCity')} placeholderTextColor="#999" value={userEdit?.city || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, city: text }))} />
-                        <Space height={16} />
+                        {postOffices.length > 0 && (
+                            <>
+                                <Text style={styles.inputLabel}>{t('city')} <Text style={styles.requiredAsterisk}>*</Text></Text>
+                                <Dropdown
+                                    style={styles.dropdown}
+                                    placeholderStyle={{ color: '#999', fontSize: 15 }}
+                                    selectedTextStyle={{ color: '#333', fontSize: 15 }}
+                                    data={postOffices.map(po => ({ label: po.Name, value: po.Name }))}
+                                    labelField="label"
+                                    valueField="value"
+                                    placeholder={t('selectPostOffice') || 'Select Post Office'}
+                                    value={selectedPostOffice}
+                                    onChange={item => {
+                                        setSelectedPostOffice(item.value);
+                                        dispatch(userEditAction({ ...userEdit, city: item.value }));
+                                    }}
+                                />
+                                <Space height={16} />
+                            </>
+                        )}
                         <Text style={styles.inputLabel}>{t('state')} <Text style={styles.requiredAsterisk}>*</Text></Text>
                         {hasState ? (
                             <View style={[styles.textInput, { justifyContent: 'center', backgroundColor: '#F5F5F5' }]}>
                                 <Text style={{ color: '#333', fontSize: 15 }}>{stateDisplayName || t('stateSelected') || 'State Selected'}</Text>
                             </View>
                         ) : (
+                            
                             <Dropdown
                                 style={styles.dropdown}
                                 placeholderStyle={{ color: '#999', fontSize: 15 }}
@@ -1519,7 +1604,57 @@ export default function ProfileEditNew() {
                 return (<View style={styles.stepContent}><View style={styles.gridContainer}>{translatedFleetSizes.map(f => (<TouchableOpacity key={f.value} style={[styles.gridTile, userEdit?.fleet_size === f.value && styles.gridTileSelected]} onPress={() => dispatch(userEditAction({ ...userEdit, fleet_size: f.value }))}><Text style={[styles.gridTileText, userEdit?.fleet_size === f.value && styles.gridTileTextSelected]}>{f.label}</Text></TouchableOpacity>))}</View></View>);
 
             case 'industry_segment':
-                return (<View style={styles.stepContent}><View style={styles.chipContainer}>{translatedIndustrySegments.map(s => { const selected = userEdit?.industry_segment?.split(',')?.includes(s.value); return <Chip key={s.value} label={s.label} selected={selected} onPress={() => toggleMultiSelect('industry_segment', s.value)} />; })}</View></View>);
+                const industrySegmentArray = Array.isArray(userEdit?.industry_segment) 
+                    ? userEdit.industry_segment 
+                    : userEdit?.industry_segment?.split(',')?.filter(Boolean) || [];
+                return (<View style={styles.stepContent}><View style={styles.chipContainer}>{translatedIndustrySegments.map(s => { const selected = industrySegmentArray.includes(s.value) || industrySegmentArray.includes(s.label); return <Chip key={s.value} label={s.label} selected={selected} onPress={() => toggleMultiSelect('industry_segment', s.value)} />; })}</View></View>);
+
+            case 'operational_segment':
+                // Routes selection (local, intracity, intercity, etc.) - Same UI as profile-completion
+                const currentRoutes = Array.isArray(userEdit?.routes) 
+                    ? userEdit.routes 
+                    : userEdit?.routes?.split(',')?.filter(Boolean) || [];
+                return (
+                    <View style={styles.stepContent}>
+                        <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
+                        <View>
+                            {translatedOperationalSegments.map((segment) => {
+                                const isSelected = currentRoutes.includes(segment.label) || currentRoutes.includes(segment.value);
+                                return (
+                                    <TouchableOpacity
+                                        key={segment.value}
+                                        style={[
+                                            styles.endorsementTile,
+                                            isSelected && styles.endorsementTileSelected
+                                        ]}
+                                        onPress={() => {
+                                            let newSegments = [...currentRoutes];
+                                            if (isSelected) {
+                                                newSegments = newSegments.filter((s: string) => s !== segment.label && s !== segment.value);
+                                            } else {
+                                                newSegments.push(segment.label);
+                                            }
+                                            dispatch(userEditAction({ ...userEdit, routes: newSegments.filter(Boolean).join(',') }));
+                                        }}
+                                    >
+                                        <View style={styles.endorsementContent}>
+                                            <Text style={{ fontSize: 24, marginRight: 12 }}>🚚</Text>
+                                            <Text style={[
+                                                styles.endorsementLabel,
+                                                isSelected && styles.endorsementLabelSelected
+                                            ]}>
+                                                {segment.label}
+                                            </Text>
+                                        </View>
+                                        {isSelected && (
+                                            <Ionicons name="checkmark-circle" size={24} color="#246BFD" />
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
+                );
 
             case 'avg_km_run':
                 return (<View style={styles.stepContent}><View style={styles.gridContainer}>{translatedAvgKmRanges.map(k => (<TouchableOpacity key={k.value} style={[styles.gridTile, userEdit?.avg_km_run === k.value && styles.gridTileSelected]} onPress={() => dispatch(userEditAction({ ...userEdit, avg_km_run: k.value }))}><Text style={[styles.gridTileText, userEdit?.avg_km_run === k.value && styles.gridTileTextSelected]}>{k.label}</Text></TouchableOpacity>))}</View></View>);
@@ -1682,6 +1817,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#333',
+    },
+    endorsementLabelSelected: {
+        color: '#246BFD',
+    },
+    endorsementContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
     },
     gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
     gridTile: { width: '48%', backgroundColor: 'white', borderRadius: 8, borderWidth: 1.5, borderColor: '#DEE2E6', paddingVertical: 14, paddingHorizontal: 10, marginBottom: 10, alignItems: 'center' },

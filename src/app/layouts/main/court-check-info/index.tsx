@@ -456,6 +456,8 @@ const CourtCheckInfo = () => {
                 onCancel={() => {
                     setShowDobPicker(false);
                 }}
+                theme='light'
+                
             />
 
             <DatePicker

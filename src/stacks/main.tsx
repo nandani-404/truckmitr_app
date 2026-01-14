@@ -18,9 +18,9 @@ import Verification from '../app/layouts/main/verification/verification-screen';
 import DriverDocumentUploadScreen from '../app/layouts/main/transporter-verification/drivers-document-upload-screen';
 import PaymentHistoryScreen from '../app/layouts/main/transporter-verification/payment-history-screen';
 import MembershipCard from '../app/layouts/main/membership-card';
-import { ZegoUIKitPrebuiltCallInCallScreen, ZegoUIKitPrebuiltCallWaitingScreen } from '@zegocloud/zego-uikit-prebuilt-call-rn';
+// import { ZegoUIKitPrebuiltCallInCallScreen, ZegoUIKitPrebuiltCallWaitingScreen } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 import { useSelector } from 'react-redux';
-import { initializeZeegoService } from '../utils/zegoService';
+// import { initializeZeegoService } from '../utils/zegoService';
 import DriverTripWallet from '../app/layouts/main/driver-trip-wallet';
 import DriverWelfare from '../app/layouts/main/driver-welfare';
 import DriverLoan from '../app/layouts/main/driver-loan';
@@ -102,42 +102,29 @@ export default function Main() {
     return () => clearTimeout(timeoutId);
   }, [isMounted]);
 
-  useEffect(() => {
-    if (!isAuthenticated || !user?.unique_id) return;
+  // useEffect(() => {
+  //   if (!isAuthenticated || !user?.unique_id) return;
 
-    if (hasInitZego.current) {
-      return;
-    }
+  //   if (hasInitZego.current) {
+  //     return;
+  //   }
 
-    // const initZego = async () => {
-    //   try {
-    //     console.log('🚀 Initializing Zego Call Service for:', user.unique_id);
-    //     await initializeZeegoService({
-    //       userID: user.unique_id,
-    //       userName: user.name ?? 'User',
-    //     });
+  //   const initZego = async () => {
+  //     try {
+  //       console.log('🚀 Initializing Zego Call Service for:', user.unique_id);
+  //       await initializeZeegoService({
+  //         userID: user.unique_id,
+  //         userName: user.name ?? 'User',
+  //       });
 
-    //     hasInitZego.current = true;
-    //   } catch (e) {
-    //     console.error('❌ Zego init error:', e);
-    //   }
-    // };
+  //       hasInitZego.current = true;
+  //     } catch (e) {
+  //       console.error('❌ Zego init error:', e);
+  //     }
+  //   };
 
-    // initZego();
-  }, [isAuthenticated, user?.unique_id]);
-
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', state => {
-      if (state === 'active' && user?.unique_id) {
-        initializeZeegoService({
-          userID: user.unique_id,
-          userName: user.name ?? 'User',
-        });
-      }
-    });
-
-    return () => sub.remove();
-  }, [user?.unique_id]);
+  //   initZego();
+  // }, [isAuthenticated, user?.unique_id]);
 
 
   return (
@@ -238,7 +225,7 @@ export default function Main() {
       {/* DriverInvites usually mapped to STACKS.DRIVERINVITES, but checking stacks definition: invites */}
       {/* already there at line 165 as invites? No line 165 is DriverInvites component from local import. */}
       {/* I will remove the specific DriverInvites import if I am importing from layouts index now, to avoid duplication or confusion, but keep using it if it works. NO, I should use the one from layouts/index for consistency. */}
-      <Stack.Screen
+      {/* <Stack.Screen
         options={{ headerShown: false }}
         // DO NOT change the name 
         name="ZegoUIKitPrebuiltCallWaitingScreen"
@@ -249,7 +236,7 @@ export default function Main() {
         // DO NOT change the name
         name="ZegoUIKitPrebuiltCallInCallScreen"
         component={ZegoUIKitPrebuiltCallInCallScreen}
-      />
+      /> */}
     </Stack.Navigator>
   )
 }

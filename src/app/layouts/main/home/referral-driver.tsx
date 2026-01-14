@@ -8,7 +8,11 @@ import { useTranslation } from 'react-i18next';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import { Space } from '@truckmitr/src/app/components';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { NavigatorParams } from '@truckmitr/stacks/stacks';
+
+type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
@@ -87,36 +91,36 @@ export const Referral = () => {
   };
 
   const toggleContact = (id: string, phone: any) => {
-      setSelectedContacts(prev =>
-        prev.some(contact => contact.id === id)
-          ? prev.filter(contact => contact.id !== id)
-          : [...prev, { id, phone }]
-      );
-    };
+    setSelectedContacts(prev =>
+      prev.some(contact => contact.id === id)
+        ? prev.filter(contact => contact.id !== id)
+        : [...prev, { id, phone }]
+    );
+  };
 
   const sendRefer = async () => {
     const contacts = selectedContacts.map(item => item.phone);
-        setLoading(true);
-        try {
-            const response: any = await axiosInstance.post(END_POINTS.REFERRAL, {contacts});
-            if (response?.data) {
-                showToast(response?.data.message || t('referralSent'))
-                setSelectedContacts([]);
-                _goback()            
-            }
-        } catch (error: any) {
-            console.log(error);
-        }
-        finally {
-            setLoading(false);
-        }
+    setLoading(true);
+    try {
+      const response: any = await axiosInstance.post(END_POINTS.REFERRAL, { contacts });
+      if (response?.data) {
+        showToast(response?.data.message || t('referralSent'))
+        setSelectedContacts([]);
+        _goback()
+      }
+    } catch (error: any) {
+      console.log(error);
+    }
+    finally {
+      setLoading(false);
+    }
   }
 
   const renderContact = ({ item }: { item: any }) => {
     const isSelected = selectedContacts.some(e => e.id === item.id);
     const initials = item.name
       .split(' ')
-      .map(n => n[0])
+      .map((n: string) => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
@@ -200,8 +204,8 @@ export const Referral = () => {
   if (subscriptionDetails?.showSubscriptionModel && isDriver) {
     rewardMessage = referredDriversCount === referral.referral_bonus
       ? t('referralMessageCongs', { referral_bonus: referral.referral_bonus })
-      : t('referralMessage', { referralsNeeded})
-  } 
+      : t('referralMessage', { referralsNeeded })
+  }
   // else {
   //   rewardMessage = referral.referral_success === 5
   //     ? "Thank you for your support! You will receive a reward or coupon for referring 5 drivers."
@@ -210,7 +214,7 @@ export const Referral = () => {
 
   const gotoSetting = () => {
     _goback()
-     Linking.openSettings()
+    Linking.openSettings()
   }
 
   return (
@@ -304,26 +308,26 @@ export const Referral = () => {
         </Text>
       </View>
       {permissionStatus === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN && (
-  <View style={{ alignItems: 'center', marginVertical: 24 }}>
-    <Text style={{ color: colors.roseRed, fontSize: responsiveFontSize(1.8), marginBottom: 12, textAlign: 'center' }}>
-    {t('contactPermission')}
-    </Text>
-    <TouchableOpacity
-      style={{
-        backgroundColor: colors.royalBlue,
-        borderRadius: 100,
-        paddingVertical: responsiveHeight(1.2),
-        paddingHorizontal: responsiveWidth(8),
-        alignItems: 'center',
-      }}
-      onPress={gotoSetting}
-    >
-      <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: responsiveFontSize(1.9) }}>
-        {t('goToSettings')}
-      </Text>
-    </TouchableOpacity>
-  </View>
-)}
+        <View style={{ alignItems: 'center', marginVertical: 24 }}>
+          <Text style={{ color: colors.roseRed, fontSize: responsiveFontSize(1.8), marginBottom: 12, textAlign: 'center' }}>
+            {t('contactPermission')}
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: colors.royalBlue,
+              borderRadius: 100,
+              paddingVertical: responsiveHeight(1.2),
+              paddingHorizontal: responsiveWidth(8),
+              alignItems: 'center',
+            }}
+            onPress={gotoSetting}
+          >
+            <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: responsiveFontSize(1.9) }}>
+              {t('goToSettings')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {/* Contact List */}
       <FlatList
         data={filteredContacts}
@@ -348,7 +352,7 @@ export const Referral = () => {
         onPress={sendRefer}
         disabled={selectedContacts.length === 0 || loading}
       >
-       {loading ? <ActivityIndicator color={colors.white} size="small" /> : <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: responsiveFontSize(2.1) }}>
+        {loading ? <ActivityIndicator color={colors.white} size="small" /> : <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: responsiveFontSize(2.1) }}>
           {t('sendInvite')}
         </Text>}
       </TouchableOpacity>

@@ -1044,7 +1044,7 @@ export default function ProfileOverview() {
             />
 
             {/* Routes Section */}
-            {/* <FieldGroupCard
+            <FieldGroupCard
               title={t('routes') || 'Routes'}
               icon="map"
               stepId="operational_segment"
@@ -1055,7 +1055,7 @@ export default function ProfileOverview() {
                 },
               ]}
               onEdit={navigateToEdit}
-            /> */}
+            />
 
             {/* Average Km Run Section */}
             <FieldGroupCard

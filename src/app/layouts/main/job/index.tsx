@@ -675,7 +675,7 @@ const JobCard = ({
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <MaterialCommunityIcons name="card-account-details-outline" size={16} color={colors.royalBlue} />
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                    Job ID
+                    {t('jobId') || 'Job ID'}
                   </Text>
                 </View>
                 <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
@@ -686,7 +686,7 @@ const JobCard = ({
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <FontAwesome name="calendar" size={14} color={colors.royalBlue} />
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                    Posted On
+                    {t('postedOn') || 'Posted On'}
                   </Text>
                 </View>
                 <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
@@ -712,7 +712,7 @@ const JobCard = ({
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <FontAwesome6 name="users" size={14} color={colors.royalBlue} />
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                    Open Positions
+                    {t('openPositions') || 'Open Positions'}
                   </Text>
                 </View>
                 <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
@@ -727,7 +727,7 @@ const JobCard = ({
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <FontAwesome name="star" size={14} color={colors.royalBlue} />
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                    Experience Required
+                    {t('experienceRequired') || 'Experience Required'}
                   </Text>
                 </View>
                 <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
@@ -738,7 +738,7 @@ const JobCard = ({
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <MaterialCommunityIcons name="license" size={16} color={colors.royalBlue} />
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                    License Type
+                    {t('licenseType') || 'License Type'}
                   </Text>
                 </View>
                 <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
@@ -764,7 +764,7 @@ const JobCard = ({
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <FontAwesome name="calendar" size={14} color={colors.royalBlue} />
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                    Application Deadline
+                    {t('applicationDeadline') || 'Application Deadline'}
                   </Text>
                 </View>
                 <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>

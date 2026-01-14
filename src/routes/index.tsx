@@ -26,7 +26,7 @@ import analytics from '@react-native-firebase/analytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppEventsLogger } from 'react-native-fbsdk-next';
 import { consumePendingNotificationNavigation, resetNotificationFlag } from '../utils/notification';
-import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
+// import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 
 export let isNavigationReady = false;
 
@@ -594,7 +594,7 @@ export default function Routes() {
       }}
     >
       <StatusBar translucent backgroundColor="transparent" />
-      <ZegoCallInvitationDialog />
+      {/* <ZegoCallInvitationDialog /> */}
       {!isAuthenticated ? (
         <Auth />
         // ) : profileRequiredFieldsStatus === false ? (
