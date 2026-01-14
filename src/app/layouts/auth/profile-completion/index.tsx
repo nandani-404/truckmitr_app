@@ -1895,7 +1895,7 @@ export default function ProfileCompletion() {
                         <View>
                             {translatedOperationalSegments.map((segment) => {
                                 const selectedSegments = formData?.operational_segment?.split(',') || [];
-                                const isSelected = selectedSegments.includes(segment.value);
+                                const isSelected = selectedSegments.includes(segment.label);
                                 return (
                                     //sourabh
                                     <TouchableOpacity
@@ -1907,9 +1907,9 @@ export default function ProfileCompletion() {
                                         onPress={() => {
                                             let newSegments = [...selectedSegments];
                                             if (isSelected) {
-                                                newSegments = newSegments.filter(s => s !== segment.value);
+                                                newSegments = newSegments.filter(s => s !== segment.label);
                                             } else {
-                                                newSegments.push(segment.value);
+                                                newSegments.push(segment.label);
                                             }
                                             updateFormData({ operational_segment: newSegments.filter(Boolean).join(',') });
                                         }}

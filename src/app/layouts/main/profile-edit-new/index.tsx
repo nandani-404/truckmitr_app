@@ -67,6 +67,7 @@ const TRANSPORTER_STEPS = [
     { id: 'year_of_exp', title: 'selectYearsOfOperation', subtitle: 'selectYearsOfOperationDesc' },
     { id: 'fleet_size', title: 'fleetSizeStep', subtitle: 'fleetSizeStepDesc' },
     { id: 'industry_segment', title: 'selectOperationalSegment', subtitle: 'selectOperationalSegmentDesc' },
+    { id: 'operational_segment', title: 'routes', subtitle: 'selectRoutesDesc' },
     { id: 'avg_km_run', title: 'avgKmStep', subtitle: 'avgKmStepDesc' },
     { id: 'vehicle', title: 'vehicleTypeStep', subtitle: 'vehicleTypeStepDescTransporter' },
     { id: 'pan_gst', title: 'panGstStep', subtitle: 'panGstStepDesc' },
@@ -239,13 +240,8 @@ export default function ProfileEditNew() {
                         const postOfficeList = data[0].PostOffice;
                         setPostOffices(postOfficeList);
                         
-                        // If user doesn't have a city selected, auto-select first post office
-                        if (!userEdit?.city && postOfficeList.length > 0) {
-                            const firstPostOffice = postOfficeList[0].Name;
-                            setSelectedPostOffice(firstPostOffice);
-                            dispatch(userEditAction({ ...(userEditRef.current || {}), city: firstPostOffice }));
-                        } else if (userEdit?.city) {
-                            // Check if current city matches any post office
+                        // Check if current city matches any post office, but don't auto-select
+                        if (userEdit?.city) {
                             const matchingPostOffice = postOfficeList.find((po: any) => 
                                 po.Name.toLowerCase() === userEdit.city.toLowerCase()
                             );
@@ -256,6 +252,9 @@ export default function ProfileEditNew() {
                                 setSelectedPostOffice('');
                                 dispatch(userEditAction({ ...(userEditRef.current || {}), city: '' }));
                             }
+                        } else {
+                            // No city selected, don't auto-select anything
+                            setSelectedPostOffice('');
                         }
                     } else {
                         // Clear post offices and city if API fails or no data
@@ -385,6 +384,7 @@ export default function ProfileEditNew() {
             // Map API fields (PascalCase/snake_case) to UI fields (snake_case)
             checkAndSet('fleet_size', [user.Fleet_Size, user.fleet_size], fleetMapping);
             checkAndSet('industry_segment', [user.Operational_Segment, user.Industry_Segment, user.industry_segment, user.operational_segment]);
+            checkAndSet('routes', [user.routes, user.Routes]);
             checkAndSet('avg_km_run', [user.Average_KM, user.Average_Km, user.average_km, user.avg_km_run, user.average_run], avgKmMapping);
             checkAndSet('transport_name', [user.Transport_Name, user.transport_name]);
 
@@ -624,9 +624,9 @@ export default function ProfileEditNew() {
                     showToast(t('pincodeRequired') || 'Valid Pincode is required');
                     return false;
                 }
-                // Only require city if post offices are available (meaning pincode API returned data)
-                if (postOffices.length > 0 && !userEdit?.city?.trim()) {
-                    showToast(t('cityRequired') || 'City is required');
+                // District/city is required when pincode is entered (6 digits)
+                if (userEdit?.pincode?.length === 6 && !userEdit?.city?.trim()) {
+                    showToast(t('cityRequired') || 'District is required');
                     return false;
                 }
                 if (!userEdit?.states && !userEdit?.state_id) {
@@ -741,6 +741,13 @@ export default function ProfileEditNew() {
             case 'industry_segment':
                 if (!userEdit?.industry_segment) {
                     showToast(t('industrySegmentRequired') || 'Industry segment is required');
+                    return false;
+                }
+                break;
+
+            case 'operational_segment':
+                if (!userEdit?.routes) {
+                    showToast(t('routesRequired') || 'Routes is required');
                     return false;
                 }
                 break;
@@ -900,6 +907,13 @@ export default function ProfileEditNew() {
             formData.append('year_of_exp', userEdit?.year_of_exp || '');
             formData.append('fleet_size', userEdit?.fleet_size || '');
             formData.append('operational_segment', userEdit?.industry_segment || '');
+            // Routes - send as array format like profile-completion
+            const routeSegments = userEdit?.routes?.split(',').filter(Boolean) || [];
+            if (routeSegments.length > 0) {
+                routeSegments.forEach((seg: string) => {
+                    formData.append('routes[]', seg.trim());
+                });
+            }
             formData.append('average_km', userEdit?.avg_km_run || '');
             formData.append('pan_number', userEdit?.pan || userEdit?.PAN_Number || '');
             formData.append('gst_number', userEdit?.gst || userEdit?.GST_Number || '');
@@ -941,7 +955,7 @@ export default function ProfileEditNew() {
 
             // GST Certificate
             if (imageState.gstCertificatePath?.path && imageState.gstCertificatePath?.mime) {
-                formData.append('GST_Certificate', {
+                formData.append('gst_certificate', {
                     uri: imageState.gstCertificatePath.path,
                     type: imageState.gstCertificatePath.mime,
                     name: imageState.gstCertificatePath.filename || 'gst.jpg'
@@ -1325,9 +1339,6 @@ export default function ProfileEditNew() {
                         {postOffices.length > 0 && (
                             <>
                                 <Text style={styles.inputLabel}>{t('city')} <Text style={styles.requiredAsterisk}>*</Text></Text>
-                                <Text style={{ fontSize: 12, color: colors.blackOpacity(0.6), marginBottom: 8 }}>
-                                    {postOffices.length} post office{postOffices.length > 1 ? 's' : ''} found for this pincode
-                                </Text>
                                 <Dropdown
                                     style={styles.dropdown}
                                     placeholderStyle={{ color: '#999', fontSize: 15 }}
@@ -1336,8 +1347,6 @@ export default function ProfileEditNew() {
                                     labelField="label"
                                     valueField="value"
                                     placeholder={t('selectPostOffice') || 'Select Post Office'}
-                                    search
-                                    searchPlaceholder={t('search') || 'Search...'}
                                     value={selectedPostOffice}
                                     onChange={item => {
                                         setSelectedPostOffice(item.value);
@@ -1353,6 +1362,7 @@ export default function ProfileEditNew() {
                                 <Text style={{ color: '#333', fontSize: 15 }}>{stateDisplayName || t('stateSelected') || 'State Selected'}</Text>
                             </View>
                         ) : (
+                            
                             <Dropdown
                                 style={styles.dropdown}
                                 placeholderStyle={{ color: '#999', fontSize: 15 }}
@@ -1596,6 +1606,51 @@ export default function ProfileEditNew() {
             case 'industry_segment':
                 return (<View style={styles.stepContent}><View style={styles.chipContainer}>{translatedIndustrySegments.map(s => { const selected = userEdit?.industry_segment?.split(',')?.includes(s.value); return <Chip key={s.value} label={s.label} selected={selected} onPress={() => toggleMultiSelect('industry_segment', s.value)} />; })}</View></View>);
 
+            case 'operational_segment':
+                // Routes selection (local, intracity, intercity, etc.) - Same UI as profile-completion
+                const currentRoutes = userEdit?.routes?.split(',')?.filter(Boolean) || [];
+                return (
+                    <View style={styles.stepContent}>
+                        <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
+                        <View>
+                            {translatedOperationalSegments.map((segment) => {
+                                const isSelected = currentRoutes.includes(segment.label);
+                                return (
+                                    <TouchableOpacity
+                                        key={segment.value}
+                                        style={[
+                                            styles.endorsementTile,
+                                            isSelected && styles.endorsementTileSelected
+                                        ]}
+                                        onPress={() => {
+                                            let newSegments = [...currentRoutes];
+                                            if (isSelected) {
+                                                newSegments = newSegments.filter((s: string) => s !== segment.label);
+                                            } else {
+                                                newSegments.push(segment.label);
+                                            }
+                                            dispatch(userEditAction({ ...userEdit, routes: newSegments.filter(Boolean).join(',') }));
+                                        }}
+                                    >
+                                        <View style={styles.endorsementContent}>
+                                            <Text style={{ fontSize: 24, marginRight: 12 }}>🚚</Text>
+                                            <Text style={[
+                                                styles.endorsementLabel,
+                                                isSelected && styles.endorsementLabelSelected
+                                            ]}>
+                                                {segment.label}
+                                            </Text>
+                                        </View>
+                                        {isSelected && (
+                                            <Ionicons name="checkmark-circle" size={24} color="#246BFD" />
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
+                );
+
             case 'avg_km_run':
                 return (<View style={styles.stepContent}><View style={styles.gridContainer}>{translatedAvgKmRanges.map(k => (<TouchableOpacity key={k.value} style={[styles.gridTile, userEdit?.avg_km_run === k.value && styles.gridTileSelected]} onPress={() => dispatch(userEditAction({ ...userEdit, avg_km_run: k.value }))}><Text style={[styles.gridTileText, userEdit?.avg_km_run === k.value && styles.gridTileTextSelected]}>{k.label}</Text></TouchableOpacity>))}</View></View>);
 
@@ -1757,6 +1812,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#333',
+    },
+    endorsementLabelSelected: {
+        color: '#246BFD',
+    },
+    endorsementContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
     },
     gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
     gridTile: { width: '48%', backgroundColor: 'white', borderRadius: 8, borderWidth: 1.5, borderColor: '#DEE2E6', paddingVertical: 14, paddingHorizontal: 10, marginBottom: 10, alignItems: 'center' },

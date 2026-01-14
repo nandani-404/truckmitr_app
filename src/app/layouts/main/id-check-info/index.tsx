@@ -43,8 +43,8 @@ const IdCheckInfo = () => {
 
     const _goBack = () => navigation.goBack();
     const _navigateToSubscription = () => {
-        // Navigate to DL Verification screen, ID tab
-        navigation.navigate(STACKS.DL_VERIFICATION, { initialTab: 'ID' });
+        // Navigate to DL Verification screen, DL tab
+        navigation.navigate(STACKS.DL_VERIFICATION, { initialTab: 'DL' });
     };
     const _contactSupport = () => {
         Linking.openURL('tel:18001024558');
