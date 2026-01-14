@@ -101,7 +101,7 @@ const DigitalAddressCheckInfo = () => {
             if (isTransporter) {
                 return amt >= 499;
             }
-            return amt >= 199;
+            return amt >= 499;
         }
         return false;
     };
@@ -203,7 +203,7 @@ const DigitalAddressCheckInfo = () => {
 
     const _handleViewPlans = () => {
         setSubscriptionModalVisible(false);
-        dispatch(subscriptionModalAction(true));
+        dispatch(subscriptionModalAction({ visible: true, upgradeOnly: true, minPrice: 499 }));
     };
 
     const _contactSupport = () => {
@@ -374,7 +374,7 @@ const DigitalAddressCheckInfo = () => {
                         <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', fontStyle: 'italic', lineHeight: 23 }}>
                             {isTransporter
                                 ? (t('davAvailabilityTransporter') || 'This feature is available for transporters with an active ₹499 TruckMitr subscription.')
-                                : (t('davAvailability') || 'This feature is available for drivers with an active ₹199 or ₹499 TruckMitr subscription.')}
+                                : (t('davAvailability') || 'This feature is available for drivers with an active ₹499 TruckMitr subscription.')}
                         </Text>
                     </View>
 
@@ -722,7 +722,7 @@ const DigitalAddressCheckInfo = () => {
                         <Text style={{ fontSize: responsiveFontSize(1.7), color: '#64748B', textAlign: 'center', marginBottom: 24 }}>
                             {isTransporter
                                 ? (t('davAvailableForTransporterPro') || 'Digital Address Check is available only for ₹499 plan.')
-                                : (t('davAvailableForPlans') || 'Digital Address Check is available only for ₹199 and ₹499 plans.')}
+                                : (t('davAvailableForTransporterPro') || 'Digital Address Check is available only for the ₹499 plan.')}
                         </Text>
 
                         <TouchableOpacity

@@ -18,7 +18,7 @@ import Verification from '../app/layouts/main/verification/verification-screen';
 import DriverDocumentUploadScreen from '../app/layouts/main/transporter-verification/drivers-document-upload-screen';
 import PaymentHistoryScreen from '../app/layouts/main/transporter-verification/payment-history-screen';
 import MembershipCard from '../app/layouts/main/membership-card';
-import { ZegoUIKitPrebuiltCallInCallScreen, ZegoUIKitPrebuiltCallWaitingScreen } from '@zegocloud/zego-uikit-prebuilt-call-rn';
+// import { ZegoUIKitPrebuiltCallInCallScreen, ZegoUIKitPrebuiltCallWaitingScreen } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 import { useSelector } from 'react-redux';
 // import { initializeZeegoService } from '../utils/zegoService';
 import DriverTripWallet from '../app/layouts/main/driver-trip-wallet';
@@ -225,7 +225,7 @@ export default function Main() {
       {/* DriverInvites usually mapped to STACKS.DRIVERINVITES, but checking stacks definition: invites */}
       {/* already there at line 165 as invites? No line 165 is DriverInvites component from local import. */}
       {/* I will remove the specific DriverInvites import if I am importing from layouts index now, to avoid duplication or confusion, but keep using it if it works. NO, I should use the one from layouts/index for consistency. */}
-      <Stack.Screen
+      {/* <Stack.Screen
         options={{ headerShown: false }}
         // DO NOT change the name 
         name="ZegoUIKitPrebuiltCallWaitingScreen"
@@ -236,7 +236,7 @@ export default function Main() {
         // DO NOT change the name
         name="ZegoUIKitPrebuiltCallInCallScreen"
         component={ZegoUIKitPrebuiltCallInCallScreen}
-      />
+      /> */}
     </Stack.Navigator>
   )
 }

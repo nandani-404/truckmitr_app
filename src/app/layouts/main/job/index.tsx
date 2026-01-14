@@ -671,32 +671,52 @@ const JobCard = ({
 
             {/* Row 1: Job ID & Posted On */}
             <View style={styles.infoRow}>
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                <MaterialCommunityIcons name="card-account-details-outline" size={16} color={colors.royalBlue} />
-                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                  Job ID: <Text style={{ color: colors.black, fontWeight: '500' }}>{item?.job_id}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="card-account-details-outline" size={16} color={colors.royalBlue} />
+                  <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
+                    Job ID
+                  </Text>
+                </View>
+                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
+                  {item?.job_id}
                 </Text>
               </View>
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                <FontAwesome name="calendar" size={14} color={colors.royalBlue} />
-                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                  Posted On: <Text style={{ color: colors.black, fontWeight: '500' }}>{moment(item?.Created_at).format("DD MMM YYYY")}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <FontAwesome name="calendar" size={14} color={colors.royalBlue} />
+                  <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
+                    Posted On
+                  </Text>
+                </View>
+                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
+                  {moment(item?.Created_at).format("DD MMM YYYY")}
                 </Text>
               </View>
             </View>
 
             {/* Row 2: Location & Open Positions */}
             <View style={[styles.infoRow, { marginTop: responsiveFontSize(1.8) }]}>
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                <FontAwesome6 name="location-dot" size={14} color={colors.royalBlue} />
-                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                  {t('location') || 'Location'}: <Text style={{ color: colors.black, fontWeight: '500' }}>{item?.job_location}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <FontAwesome6 name="location-dot" size={14} color={colors.royalBlue} />
+                  <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
+                    {t('location') || 'Location'}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
+                  {item?.job_location}
                 </Text>
               </View>
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                <FontAwesome6 name="users" size={14} color={colors.royalBlue} />
-                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                  Open Positions: <Text style={{ color: colors.black, fontWeight: '500' }}>{item?.number_of_drivers_required || '-'}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <FontAwesome6 name="users" size={14} color={colors.royalBlue} />
+                  <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
+                    Open Positions
+                  </Text>
+                </View>
+                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
+                  {item?.number_of_drivers_required || '-'}
                 </Text>
               </View>
             </View>
@@ -714,10 +734,15 @@ const JobCard = ({
                   {item?.Required_Experience} Years
                 </Text>
               </View>
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                <MaterialCommunityIcons name="license" size={16} color={colors.royalBlue} />
-                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                  License Type: <Text style={{ color: colors.black, fontWeight: '500' }}>{item?.Type_of_License}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="license" size={16} color={colors.royalBlue} />
+                  <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
+                    License Type
+                  </Text>
+                </View>
+                <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
+                  {item?.Type_of_License}
                 </Text>
               </View>
             </View>
@@ -939,6 +964,7 @@ export default function AvailableJob() {
   const _fetchAllAvailableJobs = async () => {
     try {
       const allAvailableJobs: any = await axiosInstance.get(END_POINTS?.ALL_JOBS_AND_SEARCH(''));
+      console.log("allAvailableJobs", allAvailableJobs);
       if (allAvailableJobs?.data?.status) {
         setavailableJobsList(allAvailableJobs?.data?.data);
       }

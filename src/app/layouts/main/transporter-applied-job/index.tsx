@@ -20,7 +20,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
-import { ZegoSendCallInvitationButton } from '@zegocloud/zego-uikit-prebuilt-call-rn';
+// import { ZegoSendCallInvitationButton } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
@@ -2036,7 +2036,7 @@ export default function TransporterAppliedJob() {
                                             </TouchableOpacity>
 
                                             {/* Interview Section - Conditional */}
-                                            {isInterviewScheduled ? (
+                                            {/* {isInterviewScheduled ? (
                                                 // Interview is scheduled - Show info or Start button
                                                 isTimeForInterview ? (
                                                     <TouchableOpacity
@@ -2147,7 +2147,7 @@ export default function TransporterAppliedJob() {
                                                         </Text>
                                                     </LinearGradient>
                                                 </TouchableOpacity>
-                                            )}
+                                            )} */}
                                         </>
                                     );
                                 })()}
@@ -2310,7 +2310,7 @@ export default function TransporterAppliedJob() {
                         {/* ACTION BUTTONS */}
                         <View style={{ width: '100%', alignItems: 'center', gap: 24 }}>
                             {/* Show error if no valid invitees */}
-                            {invitees.length === 0 ? (
+                            {/* {invitees.length === 0 ? (
                                 <View style={{
                                     width: '100%',
                                     backgroundColor: '#FEF2F2',
@@ -2390,7 +2390,7 @@ export default function TransporterAppliedJob() {
                                         }
                                     }}
                                 />
-                            )}
+                            )} */}
 
 
                             <TouchableOpacity

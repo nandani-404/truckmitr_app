@@ -210,6 +210,12 @@ interface FaceMatchResponse {
     verified?: boolean;
 }
 
+interface FaceMatchStatusResponse {
+    status: number;
+    user_id: string;
+    verification_status: string;
+}
+
 type TabType = 'DL' | 'PAN' | 'FACE';
 
 export default function DocumentVerification() {
@@ -584,14 +590,52 @@ export default function DocumentVerification() {
         }
     }, [user]);
 
+    // Check if Face Match is already verified on screen load
+    useEffect(() => {
+        const checkFaceMatchStatus = async () => {
+            if (!user) return;
+
+            try {
+                // Determine if we need to show loading (only if DL/PAN are not loading)
+                if (!isFetchingProfile) setIsFetchingProfile(true);
+
+                const response = await axiosInstance.get('/api/kyc/face-match/status');
+                const data: FaceMatchStatusResponse = response?.data;
+
+                if (data?.status === 1 && data?.verification_status === 'verified') {
+                    console.log('Face Match is verified! Showing success screen...');
+                    const transformedResult: FaceMatchResponse = {
+                        status: 1,
+                        message: 'Face match already verified',
+                        verified: true,
+                        similarity: 100, // Default to 100% since it's already verified
+                        threshold: 80
+                    };
+                    setFaceResult(transformedResult);
+                }
+            } catch (err: any) {
+                console.log('Face Match Status Check Error:', err?.response?.data || err?.message || err);
+                // Silently fail
+            } finally {
+                setIsFetchingProfile(false);
+            }
+        };
+
+        checkFaceMatchStatus();
+    }, [user]);
+
+    // Animate success card
     // Animate success card
     useEffect(() => {
-        const isSuccess = activeTab === 'DL' ? !!(dlResult?.status === 1) : !!(panResult?.status === 1);
+        const isSuccess = activeTab === 'DL' ? !!(dlResult?.status === 1) :
+            activeTab === 'PAN' ? !!(panResult?.status === 1) :
+                activeTab === 'FACE' ? !!(faceResult?.status === 1) : false;
+
         if (isSuccess) {
             setError(null);
             cardScale.value = withDelay(200, withSpring(1, { damping: 12 }));
         }
-    }, [dlResult, panResult, activeTab]);
+    }, [dlResult, panResult, faceResult, activeTab]);
 
     // Reset error when tab changes
     useEffect(() => {
@@ -1110,26 +1154,28 @@ export default function DocumentVerification() {
 
                             {renderSuccessView()}
 
-                            <TouchableOpacity
-                                onPress={() => {
-                                    // Reset to allow verify other doc or update
-                                    if (activeTab === 'DL') setDlResult(null);
-                                    else if (activeTab === 'PAN') setPanResult(null);
-                                    else if (activeTab === 'FACE') {
-                                        setFaceResult(null);
-                                        setFaceImage1(null);
-                                        setFaceImage2(null);
-                                    }
-                                    setConsentChecked(false);
-                                }}
-                                style={styles.secondaryButton}
-                            >
-                                <Text style={styles.secondaryButtonText}>
-                                    {activeTab === 'FACE'
-                                        ? (t('verifyAnotherFace') || 'Verify Another Face')
-                                        : (t('verifyAnother') || 'Verify Another Document')}
-                                </Text>
-                            </TouchableOpacity>
+                            {(activeTab !== 'FACE' || (activeTab === 'FACE' && !faceResult?.verified)) && (
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        // Reset to allow verify other doc or update
+                                        if (activeTab === 'DL') setDlResult(null);
+                                        else if (activeTab === 'PAN') setPanResult(null);
+                                        else if (activeTab === 'FACE') {
+                                            setFaceResult(null);
+                                            setFaceImage1(null);
+                                            setFaceImage2(null);
+                                        }
+                                        setConsentChecked(false);
+                                    }}
+                                    style={styles.secondaryButton}
+                                >
+                                    <Text style={styles.secondaryButtonText}>
+                                        {activeTab === 'FACE'
+                                            ? (t('verifyAnotherFace') || 'Verify Another Face')
+                                            : (t('verifyAnother') || 'Verify Another Document')}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     ) : (
                         <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.formCard}>

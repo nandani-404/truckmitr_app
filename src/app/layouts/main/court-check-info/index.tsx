@@ -44,8 +44,8 @@ const CourtCheckInfo = () => {
         const getCourtCheckStatus = async () => {
             if (!user?.id) return;
             try {
-                const res: any = await axiosInstance.get(END_POINTS.COURT_CASE(user.id));
-                if (res?.data?.status === 1) {
+                const res: any = await axiosInstance.get(END_POINTS.COURT_CHECK_AND_REPORT);
+                if (res?.data?.statusCode === 201) {
                     setCourtCheckData(res.data);
                 }
             } catch (err) {
@@ -258,24 +258,40 @@ const CourtCheckInfo = () => {
                         <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: '700', color: '#001F3F', marginBottom: 12 }}>{t('caseDetails') || 'Case Details'}</Text>
 
                         <View style={{ marginBottom: 16 }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', marginBottom: 4 }}>{t('verificationStatus') || 'Verification Status'}</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', marginBottom: 4 }}>{t('status') || 'Status'}</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: courtCheckData.verified ? '#10B981' : '#F59E0B', marginRight: 8 }} />
-                                <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '600', color: courtCheckData.verified ? '#059669' : '#D97706' }}>
-                                    {courtCheckData.verified ? (t('verified') || 'Verified') : (t('pending') || 'Pending')}
+                                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: courtCheckData.report ? '#10B981' : '#F59E0B', marginRight: 8 }} />
+                                <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '600', color: courtCheckData.report ? '#059669' : '#D97706' }}>
+                                    {courtCheckData.statusMsg || (courtCheckData.report ? (t('verified') || 'Verified') : (t('pending') || 'Pending'))}
                                 </Text>
                             </View>
                         </View>
 
                         <View style={{ marginBottom: 16 }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', marginBottom: 4 }}>{t('reportStatus') || 'Report'}</Text>
-                            <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '600', color: '#0F172A' }}>{courtCheckData.report}</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', marginBottom: 4 }}>{t('applicantName') || 'Applicant Name'}</Text>
+                            <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '600', color: '#0F172A' }}>{courtCheckData.name}</Text>
                         </View>
 
-                        <View style={{ marginBottom: 4 }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', marginBottom: 4 }}>{t('verifyId') || 'Verify ID'}</Text>
-                            <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '600', color: '#0F172A' }}>{courtCheckData.verify_id}</Text>
-                        </View>
+                        {courtCheckData.report && (
+                            <View style={{ marginBottom: 16 }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.6), color: '#64748B', marginBottom: 4 }}>{t('reportStatus') || 'Report Result'}</Text>
+                                <Text style={{ fontSize: responsiveFontSize(1.8), fontWeight: '600', color: courtCheckData.report === 'Green' ? '#16A34A' : '#DC2626' }}>
+                                    {courtCheckData.report}
+                                </Text>
+                            </View>
+                        )}
+
+                        {courtCheckData.reportUrl && (
+                            <TouchableOpacity
+                                onPress={() => Linking.openURL(courtCheckData.reportUrl)}
+                                style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', padding: 12, borderRadius: 8 }}
+                            >
+                                <Ionicons name="document-text-outline" size={20} color={colors.royalBlue} style={{ marginRight: 8 }} />
+                                <Text style={{ fontSize: responsiveFontSize(1.7), color: colors.royalBlue, fontWeight: '600' }}>
+                                    {t('downloadReport') || 'Download Report'}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 ) : (
                     <>

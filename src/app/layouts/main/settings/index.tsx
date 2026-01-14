@@ -18,7 +18,7 @@ import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import analytics from '@react-native-firebase/analytics';
 import { AppEventsLogger } from 'react-native-fbsdk-next';
-import { onUserLogout } from '@truckmitr/src/utils/zegoService';
+// import { onUserLogout } from '@truckmitr/src/utils/zegoService';
 import { AppleConfirmDialog } from '@truckmitr/src/app/components';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
@@ -55,7 +55,7 @@ export default function Settings() {
     };
 
     try {
-      await onUserLogout()
+      // await onUserLogout()
       const response: any = await axiosInstance.post(END_POINTS?.DELETE_ACCOUNT);
 
       if (response?.data?.status) {

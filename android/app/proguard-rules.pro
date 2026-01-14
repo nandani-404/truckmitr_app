@@ -54,18 +54,3 @@
 # Preserve line numbers for debugging
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
-
--keep class **.zego.**  { *; }
--keep class **.**.zego_zpns.** { *; }
-
--keep class com.hiennv.flutter_callkit_incoming.SharedPreferencesUtils* {*;}
--keep class com.fasterxml.jackson.** {*;}
-
--dontwarn com.google.firebase.messaging.TopicOperation$TopicOperations
--dontwarn com.heytap.msp.push.**
--dontwarn com.huawei.hms.**
--dontwarn com.vivo.push.**
--dontwarn com.xiaomi.mipush.sdk.**
--dontwarn java.beans.ConstructorProperties
--dontwarn java.beans.Transient
--dontwarn org.w3c.dom.bootstrap.DOMImplementationRegistry

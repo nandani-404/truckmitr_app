@@ -3073,16 +3073,6 @@
   resolved "https://registry.npmjs.org/@xmldom/xmldom/-/xmldom-0.8.11.tgz"
   integrity sha512-cQzWCtO6C8TQiYl1ruKNn2U6Ao4o4WBBcbL61yJl84x+j5sOWWFU9X7DpND8XZG3daDppSsigMdfAIl2upQBRw==
 
-"@zegocloud/zego-uikit-prebuilt-call-rn@^6.6.8":
-  version "6.6.8"
-  resolved "https://registry.npmjs.org/@zegocloud/zego-uikit-prebuilt-call-rn/-/zego-uikit-prebuilt-call-rn-6.6.8.tgz"
-  integrity sha512-1lVRUhnRcFTxDAaRWodB7H4pQkYqNBDY9PyKCtpCXVFILxjeAdfEp2/3ncLzs/foeharkVJOGt1hSbXBi9Oxlg==
-
-"@zegocloud/zego-uikit-rn@^2.19.1":
-  version "2.19.1"
-  resolved "https://registry.npmjs.org/@zegocloud/zego-uikit-rn/-/zego-uikit-rn-2.19.1.tgz"
-  integrity sha512-QMI8BEkXB3YQ5edEECBLWu8HdPeOfSeQEnzyhmdBBIQgWRmOwNNcpXCiHoQcRmgKj4W3BHRQh8XucdQ7q6DqMQ==
-
 abort-controller@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/abort-controller/-/abort-controller-3.0.0.tgz"
@@ -9579,23 +9569,3 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
-
-zego-callkit-react-native@^1.0.6:
-  version "1.0.6"
-  resolved "https://registry.npmjs.org/zego-callkit-react-native/-/zego-callkit-react-native-1.0.6.tgz"
-  integrity sha512-a3RD/xfQRW4lgWyK3xr2/rb1x4Aiw+ypq22xw6Xz/JwmTCQFLCj/GwgUCucO3rXculxD72HmcH8R3G6SjWbYfg==
-
-zego-express-engine-reactnative@^3.22.0:
-  version "3.22.0"
-  resolved "https://registry.npmjs.org/zego-express-engine-reactnative/-/zego-express-engine-reactnative-3.22.0.tgz"
-  integrity sha512-7jzfyVuTP/nUBfF4bLaQ80juWsIkBvW57ooBxqMEpmarcZs9hdWTNQszsYJcjWrKdhCU7iVKtuCX3vmbjT6nRQ==
-
-zego-zim-react-native@^2.24.0:
-  version "2.24.0"
-  resolved "https://registry.npmjs.org/zego-zim-react-native/-/zego-zim-react-native-2.24.0.tgz"
-  integrity sha512-xYNV9uAuut6k4j8f+PMXlW2FwpIp0sqwIZwdHi/0+Upex1Rdl4KnmTmpL/ks7QvN2KARyvK7e89zBeMFgd8ayQ==
-
-zego-zpns-react-native@^2.8.0-alpha:
-  version "2.8.0-alpha"
-  resolved "https://registry.npmjs.org/zego-zpns-react-native/-/zego-zpns-react-native-2.8.0-alpha.tgz"
-  integrity sha512-iXfjgOBOGfX398T/3JHLsY03vsHtbFsAf2gA/EUrO/rlylua5c8PaQ5uXGc3uyhkXAQZ6FxM+Ml0J+1kW9iwPw==

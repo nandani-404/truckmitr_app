@@ -26,7 +26,7 @@ import analytics from '@react-native-firebase/analytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppEventsLogger } from 'react-native-fbsdk-next';
 import { consumePendingNotificationNavigation, resetNotificationFlag } from '../utils/notification';
-import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
+// import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 
 export let isNavigationReady = false;
 
@@ -43,8 +43,8 @@ export default function Routes() {
   const { isAuthenticated, subscriptionModal, user, profileRequiredFieldsStatus } = useSelector((state: any) => state?.user);
   const [isAppReady, setIsAppReady] = useState(false);
 
-  console.log('🛡️ AUTH GATE STATUS:', { 
-    isAuthenticated, 
+  console.log('🛡️ AUTH GATE STATUS:', {
+    isAuthenticated,
     profileRequiredFieldsStatus,
     hasUser: !!user,
     userRole: user?.role || user?.data?.role
@@ -104,10 +104,10 @@ export default function Routes() {
   const logUserEventBackend = async (screenName: string) => {
     try {
       const token = await getUserData();
-      console.log('🔑 EVENT LOG TOKEN:', { 
-        hasToken: !!token, 
+      console.log('🔑 EVENT LOG TOKEN:', {
+        hasToken: !!token,
         tokenLength: token ? token.length : 0,
-        screenName 
+        screenName
       });
       if (!token) {
         console.log("⚠️ No token found, skipping event log for:", screenName);
@@ -274,10 +274,10 @@ export default function Routes() {
 
         setIsInitializing(true);
         const token = await getUserData();
-        console.log('🔑 TOKEN STATUS:', { 
-          hasToken: !!token, 
+        console.log('🔑 TOKEN STATUS:', {
+          hasToken: !!token,
           tokenLength: token ? token.length : 0,
-          tokenPreview: token 
+          tokenPreview: token
         });
         if (token) {
           // Validate token before setting authenticated
@@ -594,11 +594,11 @@ export default function Routes() {
       }}
     >
       <StatusBar translucent backgroundColor="transparent" />
-      <ZegoCallInvitationDialog />
+      {/* <ZegoCallInvitationDialog /> */}
       {!isAuthenticated ? (
         <Auth />
-        ) : profileRequiredFieldsStatus === false ? (
-          <ProfileCompletionStack />
+        // ) : profileRequiredFieldsStatus === false ? (
+        //   <ProfileCompletionStack />
       ) : (
         <>
           <Main />
