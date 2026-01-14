@@ -98,12 +98,16 @@ const Home = React.forwardRef((props, ref) => {
     const fetchBanners = async () => {
         try {
             const response: any = await axiosInstance.get(END_POINTS.MOBILE_BANNERS);
-            if (response?.data?.status === 'success' && Array.isArray(response?.data?.data)) {
+            console.log('Banner Response:', response.data);
+            // API returns status: true (boolean), not status: 'success' (string)
+            if (response?.data?.status === true && Array.isArray(response?.data?.data)) {
                 const validBanners = response.data.data.filter((item: any) => {
+                    // Only show images, not videos
+                    if (item.media_type !== 'image') return false;
                     // Filter based on user type if needed
                     if (item.user_type === 'driver' && !isDriver) return false;
                     if (item.user_type === 'transporter' && !isTransporter) return false;
-                    return item.status === true; // Only show active banners
+                    return true;
                 });
 
                 if (validBanners.length > 0) {
@@ -902,7 +906,7 @@ const Home = React.forwardRef((props, ref) => {
                                             width: '100%',
                                             height: '100%'
                                         }}
-                                        source={item.bg ? item.bg : { uri: `${BASE_URL}public/${item.media_path}` }}
+                                        source={item.bg ? item.bg : { uri: `${BASE_URL}public${item.media_url}` }}
                                         resizeMode={(item.bgResize as any) || "cover"}
                                     />
 
@@ -1337,14 +1341,14 @@ const Home = React.forwardRef((props, ref) => {
                             </TouchableOpacity>
                         </View>
                         <Space width={responsiveFontSize(1.5)} />
-                        <TouchableOpacity onPress={_navigateVideoInterviewInfo} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
+                        {/* <TouchableOpacity onPress={_navigateVideoInterviewInfo} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
                             <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', padding: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
                                 <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5), marginBottom: 5 }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/1256/1256650.png' }} />
                                 <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('videoInterviewInvitation', 'Video Interview Invitation')}</Text>
                             </View>
-                        </TouchableOpacity>
-                        <Space width={responsiveFontSize(1.5)} />
-                        <View style={{ flex: 1 }} />
+                        </TouchableOpacity> */}
+                        {/* <Space width={responsiveFontSize(1.5)} /> */}
+                        <View style={{ flex: 2.2 }} />
                     </View>
                     <Space height={responsiveFontSize(1.5)} />
                     {/* <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(4), paddingVertical: responsiveWidth(3) }}>

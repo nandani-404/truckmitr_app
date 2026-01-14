@@ -163,7 +163,7 @@ const getTierFromPaymentType = (paymentType: string, amount?: number, role?: str
   }
 
   // Legacy transporter detection: Rs 99, 100, or 1 payment for TRANSPORTERS
-  if (isTransporter && (amount === 99 || amount === 99.00 || amount === 100 || amount === 100.00 || amount === 1 || amount === 1.00)) {
+  if (isTransporter && (amount === 99 || amount === 99.00 || amount === 1 || amount === 1.00 || amount === 1 || amount === 1.00)) {
     return 'LEGACY TRANSPORTER';
   }
 

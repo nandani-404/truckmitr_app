@@ -278,7 +278,7 @@ class SubscriptionService {
     }
 
     /**
-     * Check if user is a legacy driver (paid Rs 49 or Rs 100)
+     * Check if user is a legacy driver (paid Rs 1, Rs 49 or Rs 100)
      * Legacy drivers have empty subscription_id but payment_status is captured
      * They should be treated as having an active subscription (Legacy Driver)
      * 
@@ -292,17 +292,17 @@ class SubscriptionService {
         const amount = parseFloat(subscriptionData.amount) || 0;
 
         // Legacy driver criteria:
-        // - Amount is Rs 49 or Rs 100 (for DRIVERS)
+        // - Amount is Rs 1, Rs 49 or Rs 100 (for DRIVERS)
         // - Payment status is captured
         // - Subscription is not expired
-        const isLegacyAmount = amount === 49 || amount === 49.00 || amount === 100 || amount === 100.00;
+        const isLegacyAmount = amount === 49 || amount === 49.00 || amount === 100 || amount === 100.00 || amount === 1 || amount === 1.00;
         const isPaymentCaptured = subscriptionData.payment_status === 'captured';
         const isNotExpired = Date.now() / 1000 < subscriptionData.end_at;
 
         const isLegacy = isLegacyAmount && isPaymentCaptured && isNotExpired;
 
         if (isLegacy) {
-            console.log('[SubscriptionService] Legacy driver detected (Rs 49/100 subscription)');
+            console.log('[SubscriptionService] Legacy driver detected (Rs 1/49/100 subscription)');
         }
 
         return isLegacy;
@@ -369,7 +369,7 @@ class SubscriptionService {
 
     /**
      * Check if user has an active subscription from subscription details data
-     * Includes legacy driver support (Rs 49/100 payment with captured status)
+     * Includes legacy driver support (Rs 1/49/100 payment with captured status)
      * Includes legacy transporter support (Rs 99 payment with captured status)
      * Includes transporter pro support (Rs 499 payment with captured status)
      * 
@@ -379,7 +379,7 @@ class SubscriptionService {
     hasActiveSubscription(subscriptionData: any): boolean {
         if (!subscriptionData) return false;
 
-        // Check if this is a legacy driver (Rs 49 or Rs 100 payment)
+        // Check if this is a legacy driver (Rs 1, Rs 49 or Rs 100 payment)
         if (this.isLegacyDriverSubscription(subscriptionData)) {
             return true;
         }
