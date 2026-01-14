@@ -217,16 +217,18 @@ const STATE_ID_MAP: Record<string, string> = {
   '24': 'Mizoram',
   '25': 'Nagaland',
   '26': 'Odisha',
-  '27': 'Puducherry',
-  '28': 'Punjab',
-  '29': 'Rajasthan',
-  '30': 'Sikkim',
-  '31': 'Tamil Nadu',
-  '32': 'Telangana',
-  '33': 'Tripura',
-  '34': 'Uttar Pradesh',
-  '35': 'Uttarakhand',
-  '36': 'West Bengal',
+  '27': 'Others',
+  '28': 'Puducherry',
+  '29': 'Punjab',
+  '30': 'Rajasthan',
+  '31': 'Sikkim',
+  '32': 'Tamil Nadu',
+  '33': 'Telangana',
+  '34': 'Tripura',
+  '35': 'Uttar Pradesh',
+  '36': 'Uttarakhand',
+  '37': 'West Bengal',
+  '38': 'Daman and Diu'
 };
 
 // Helper function to get state name from ID or return the value as-is if it's already a name
@@ -700,6 +702,8 @@ export default function Profile() {
     }
   };
 
+
+
   console.log('-----------driver rank-------------', rank);
 
 
@@ -718,6 +722,7 @@ export default function Profile() {
         onConfirm={handleLogoutConfirm}
         onCancel={() => setShowLogoutDialog(false)}
       />
+
 
 
 
@@ -1414,6 +1419,7 @@ onPress={()=>{
             title={t('settings')}
             onPress={_navigateSetting}
           />
+
         </CardContainer>
 
         {/* Share Section */}

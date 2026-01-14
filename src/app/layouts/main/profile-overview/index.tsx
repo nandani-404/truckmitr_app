@@ -54,16 +54,18 @@ const STATE_ID_MAP: Record<string, string> = {
   '24': 'Mizoram',
   '25': 'Nagaland',
   '26': 'Odisha',
-  '27': 'Puducherry',
-  '28': 'Punjab',
-  '29': 'Rajasthan',
-  '30': 'Sikkim',
-  '31': 'Tamil Nadu',
-  '32': 'Telangana',
-  '33': 'Tripura',
-  '34': 'Uttar Pradesh',
-  '35': 'Uttarakhand',
-  '36': 'West Bengal',
+  '27': 'Others',
+  '28': 'Puducherry',
+  '29': 'Punjab',
+  '30': 'Rajasthan',
+  '31': 'Sikkim',
+  '32': 'Tamil Nadu',
+  '33': 'Telangana',
+  '34': 'Tripura',
+  '35': 'Uttar Pradesh',
+  '36': 'Uttarakhand',
+  '37': 'West Bengal',
+  '38': 'Daman and Diu'
 }
 
 // Vehicle Type ID to Name Mapping (from database vehicle_type table)
