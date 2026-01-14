@@ -996,7 +996,8 @@ export default function Profile() {
           const userLocation = (cityName && stateName ? `${cityName}, ${stateName}` : (cityName || stateName)).toUpperCase();
           const isTransporterRole = user?.role === 'transporter';
           const displayLabel = isTransporterRole ? 'TRANSPORT NAME' : (t('licenseType') || 'LICENSE TYPE');
-          const displayValue = isTransporterRole ? (user?.Transport_Name || user?.transport_name || '')?.toUpperCase() : (user?.Type_of_License || 'HMV')?.toUpperCase();
+          const rawTransportName = user?.Transport_Name || user?.transport_name || '';
+          const displayValue = isTransporterRole ? (rawTransportName.toUpperCase() === 'N/A' ? '' : rawTransportName).toUpperCase() : (user?.Type_of_License || 'HMV')?.toUpperCase();
           const licenseType = user?.Type_of_License || 'HMV'; // Keeping for backward compatibility if needed elsewhere
 
 

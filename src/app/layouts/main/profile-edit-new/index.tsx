@@ -1395,7 +1395,7 @@ export default function ProfileEditNew() {
                     { id: '22', name: t('trailerTrucks') || 'Trailer Trucks', imgKey: 'trailer' },
                     { id: '10', name: t('tankers') || 'Tankers', imgKey: 'tanker' },
                     { id: '26', name: t('carCarriers') || 'Car Carriers', imgKey: 'carCarrier' },
-                    { id: '20', name: t('pickUp') || 'Pick Up', imgKey: 'pickUp' },
+                    { id: '4', name: t('lightCommercialVehicle') || 'Light Commercial Vehicles', imgKey: 'pickUp' },
                     { id: '8', name: t('reeferTrucks') || 'Refrigerator Trucks', imgKey: 'reefer' },
                 ];
 

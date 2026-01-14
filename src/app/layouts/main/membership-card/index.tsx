@@ -114,6 +114,60 @@ const TIER_CONFIGS: Record<TierType, TierConfig> = {
     },
 };
 
+// State ID to Name Mapping (based on API states data)
+const STATE_ID_MAP: Record<string, string> = {
+    '1': 'Andaman and Nicobar Islands',
+    '2': 'Andhra Pradesh',
+    '3': 'Arunachal Pradesh',
+    '4': 'Assam',
+    '5': 'Bihar',
+    '6': 'Chandigarh',
+    '7': 'Chhattisgarh',
+    '8': 'Dadra and Nagar Haveli',
+    '9': 'Delhi',
+    '10': 'Goa',
+    '11': 'Gujarat',
+    '12': 'Haryana',
+    '13': 'Himachal Pradesh',
+    '14': 'Jammu and Kashmir',
+    '15': 'Jharkhand',
+    '16': 'Karnataka',
+    '17': 'Kerala',
+    '18': 'Ladakh',
+    '19': 'Lakshadweep',
+    '20': 'Madhya Pradesh',
+    '21': 'Maharashtra',
+    '22': 'Manipur',
+    '23': 'Meghalaya',
+    '24': 'Mizoram',
+    '25': 'Nagaland',
+    '26': 'Odisha',
+    '27': 'Others',
+    '28': 'Puducherry',
+    '29': 'Punjab',
+    '30': 'Rajasthan',
+    '31': 'Sikkim',
+    '32': 'Tamil Nadu',
+    '33': 'Telangana',
+    '34': 'Tripura',
+    '35': 'Uttar Pradesh',
+    '36': 'Uttarakhand',
+    '37': 'West Bengal',
+    '38': 'Daman and Diu'
+};
+
+// Helper function to get state name from ID or return the value as-is if it's already a name
+const getStateName = (stateValue: string | number | undefined): string => {
+    if (!stateValue) return '';
+    const stateStr = String(stateValue).trim();
+    // If it's a numeric ID, look up the name
+    if (STATE_ID_MAP[stateStr]) {
+        return STATE_ID_MAP[stateStr];
+    }
+    // If it's already a name (non-numeric), return as-is
+    return stateStr;
+};
+
 export default function MembershipCard() {
     const { t } = useTranslation();
     const colors = useColor();
@@ -139,11 +193,15 @@ export default function MembershipCard() {
     // Extract data from Redux
     const userName = user?.name?.toUpperCase() || 'MEMBER NAME';
     const uniqueId = user?.unique_id || 'TM0000000000000';
-    const userLocation = user?.city?.toUpperCase() || user?.state?.toUpperCase() || 'INDIA';
     const isTransporterRole = user?.role === 'transporter';
+    const stateName = user?.state_name || getStateName(user?.states) || getStateName(user?.state) || '';
+    const cityName = user?.city || '';
+    const userLocation = (cityName && stateName ? `${cityName}, ${stateName}` : (cityName || stateName)).toUpperCase();
+
     const displayLabel = isTransporterRole ? 'TRANSPORT NAME' : (t('licenseType') || 'LICENSE TYPE');
     // Assuming transport_name is available in user object, otherwise fallback to empty or handle accordingly
-    const displayValue = isTransporterRole ? (user?.Transport_Name || user?.transport_name || 'N/A')?.toUpperCase() : (user?.Type_of_License || 'HMV')?.toUpperCase();
+    const rawTransportName = user?.Transport_Name || user?.transport_name || '';
+    const displayValue = isTransporterRole ? (rawTransportName.toUpperCase() === 'N/A' ? '' : rawTransportName).toUpperCase() : (user?.Type_of_License || 'HMV')?.toUpperCase();
     const profileImage = user?.images ? { uri: `${BASE_URL}public/${user?.images}` } : PROFILE_PLACEHOLDER;
 
     // Subscription details - Using utility function for consistency

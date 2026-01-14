@@ -99,16 +99,19 @@ export default function Settings() {
       setCancellingSubscription(true);
       setShowCancelMembershipDialog(false);
 
-      const subscriptionId = subscriptionDetails?.subscription_id || subscriptionDetails?.id;
+      // Prioritize Razorpay ID ("sub_...") as verified by API testing
+      const targetId = subscriptionDetails?.subscription_id || subscriptionDetails?.id;
 
-      if (!subscriptionId) {
+      if (!targetId) {
         showToast(t('subscriptionIdNotFound') || 'Subscription ID not found');
         return;
       }
 
-      const response: any = await axiosInstance.post(END_POINTS.CANCEL_SUBSCRIPTION, {
-        subscription_id: subscriptionId
-      });
+      const payload = {
+        subscription_id: String(targetId)
+      };
+
+      const response: any = await axiosInstance.post(END_POINTS.CANCEL_SUBSCRIPTION, payload);
 
       if (response?.data?.status) {
         showToast(t('membershipCancelledSuccessfully') || 'Membership cancelled successfully');

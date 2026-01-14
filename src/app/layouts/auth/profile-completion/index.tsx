@@ -543,7 +543,7 @@ export default function ProfileCompletion() {
         { label: t('trailerTrucks'), value: '22', image: TruckImages.trailer },
         { label: t('tankers'), value: '10', image: TruckImages.tanker },
         { label: t('carCarriers'), value: '9', image: TruckImages.carCarrier },
-        { label: t('pickUp'), value: '20', image: TruckImages.pickUp },
+        { label: t('lightCommercialVehicle'), value: '4', image: TruckImages.pickUp },
         { label: t('reeferTrucks'), value: '8', image: TruckImages.reefer },
     ];
 
