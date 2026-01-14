@@ -449,6 +449,7 @@ export default function ProfileCompletion() {
     const [commonStatesList, setCommonStatesList] = useState<any[]>([]);
     const [savedSignupData, setSavedSignupData] = useState<any>(null);
     const [finishing, setFinishing] = useState(false);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     // Voice playback states
     const [currentAudioSource, setCurrentAudioSource] = useState<any>(null);
@@ -473,7 +474,10 @@ export default function ProfileCompletion() {
 
     // Dynamic steps based on user role
     const STEPS = userRole === 'transporter' ? TRANSPORTER_STEPS : DRIVER_STEPS;
-    const progressPercent = ((currentStep + 1) / STEPS.length) * 100;
+    // Ensure currentStep is always within valid bounds
+    const safeCurrentStep = Math.max(0, Math.min(currentStep, STEPS.length - 1));
+    const currentStepData = STEPS[safeCurrentStep];
+    const progressPercent = ((safeCurrentStep + 1) / STEPS.length) * 100;
 
     // Animated progress bar width
     const progressWidth = useSharedValue(progressPercent);
@@ -654,7 +658,7 @@ export default function ProfileCompletion() {
         if (isVoiceMuted) return;
 
         try {
-            const stepId = STEPS[currentStep].id;
+            const stepId = currentStepData.id;
             // userRole is guaranteed to be 'driver' here due to early return above
             const VOICE_FILES = DRIVER_VOICE_FILES;
             const voiceFile = VOICE_FILES[stepId];
@@ -684,7 +688,17 @@ export default function ProfileCompletion() {
     };
 
     const handleNext = async () => {
-        const step = STEPS[currentStep];
+        // Prevent rapid button presses during transition
+        if (isTransitioning) return;
+
+        // Use currentStepData which is already safely bounded
+        const step = currentStepData;
+
+        // Safety check - ensure step exists
+        if (!step) {
+            console.log('Step not found for currentStep:', currentStep);
+            return;
+        }
 
         console.log('=== HANDLE NEXT DEBUG ===');
         console.log('Current step:', step.id);
@@ -718,9 +732,15 @@ export default function ProfileCompletion() {
         }
 
         if (currentStep < STEPS.length - 1) {
+            setIsTransitioning(true);
             contentOpacity.value = withTiming(0, { duration: 200 });
             setTimeout(() => {
-                setCurrentStep(prev => prev + 1);
+                setCurrentStep(prev => {
+                    const newStep = prev + 1;
+                    // Ensure we don't exceed bounds
+                    return newStep < STEPS.length ? newStep : prev;
+                });
+                setIsTransitioning(false);
             }, 200);
         } else {
             submitProfile();
@@ -728,10 +748,19 @@ export default function ProfileCompletion() {
     };
 
     const handleBack = () => {
+        // Prevent rapid button presses during transition
+        if (isTransitioning) return;
+
         if (currentStep > 0) {
+            setIsTransitioning(true);
             contentOpacity.value = withTiming(0, { duration: 200 });
             setTimeout(() => {
-                setCurrentStep(prev => prev - 1);
+                setCurrentStep(prev => {
+                    const newStep = prev - 1;
+                    // Ensure we don't go below 0
+                    return newStep >= 0 ? newStep : prev;
+                });
+                setIsTransitioning(false);
             }, 200);
         }
     };
@@ -1270,7 +1299,7 @@ export default function ProfileCompletion() {
     };
 
     const renderStepContent = () => {
-        const step = STEPS[currentStep];
+        const step = currentStepData;
 
         switch (step.id) {
             case 'dob':
@@ -1991,7 +2020,7 @@ export default function ProfileCompletion() {
                 <View style={styles.headerCenterContent}>
                     <Text style={styles.headerTitle}>{t('profile')}</Text>
                     <Text style={styles.stepCounterText}>
-                        {t('step') || 'Step'} {currentStep + 1} {t('of') || 'of'} {STEPS.length}
+                        {t('step') || 'Step'} {safeCurrentStep + 1} {t('of') || 'of'} {STEPS.length}
                     </Text>
                 </View>
                 <View style={styles.navBtn} />
@@ -2013,10 +2042,10 @@ export default function ProfileCompletion() {
                 <Animated.View style={animatedContentStyle}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.stepTitle}>{t(STEPS[currentStep].title)} </Text>
-                            <Text style={styles.stepSubtitle}>{t(STEPS[currentStep].subtitle)}</Text>
+                            <Text style={styles.stepTitle}>{t(currentStepData.title)} </Text>
+                            <Text style={styles.stepSubtitle}>{t(currentStepData.subtitle)}</Text>
                         </View>
-                        {userRole === 'driver' && DRIVER_VOICE_FILES[STEPS[currentStep].id] && (
+                        {userRole === 'driver' && DRIVER_VOICE_FILES[currentStepData.id] && (
                             <TouchableOpacity
                                 onPress={toggleVoiceMute}
                                 style={{
@@ -2060,18 +2089,18 @@ export default function ProfileCompletion() {
             {/* --- Classic Footer --- */}
             <View style={[styles.footer, { paddingBottom: safeAreaInsets.bottom + 20 }]}>
                 <TouchableOpacity
-                    style={styles.classicButton}
+                    style={[styles.classicButton, (finishing || isTransitioning) && { opacity: 0.7 }]}
                     onPress={handleNext}
-                    disabled={finishing}
+                    disabled={finishing || isTransitioning}
                 >
                     {finishing ? (
                         <ActivityIndicator color="white" />
                     ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={styles.classicButtonText}>
-                                {currentStep === STEPS.length - 1 ? t('finish') : t('next')}
+                                {safeCurrentStep === STEPS.length - 1 ? t('finish') : t('next')}
                             </Text>
-                            {currentStep !== STEPS.length - 1 && <Ionicons name="arrow-forward" size={18} color="white" style={{ marginLeft: 8 }} />}
+                            {safeCurrentStep !== STEPS.length - 1 && <Ionicons name="arrow-forward" size={18} color="white" style={{ marginLeft: 8 }} />}
                         </View>
                     )}
                 </TouchableOpacity>

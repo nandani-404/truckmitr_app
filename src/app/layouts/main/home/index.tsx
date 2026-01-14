@@ -1344,14 +1344,7 @@ const Home = React.forwardRef((props, ref) => {
                             </View>
                         </TouchableOpacity>
                         <Space width={responsiveFontSize(1.5)} />
-                        <TouchableOpacity onPress={_navigateCallJobManager} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
-                            <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', padding: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
-                                <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5), marginBottom: 5 }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/724/724664.png' }} />
-                                <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>
-                                    {t('callJobManager', 'Call Job Manager')}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
+                        <View style={{ flex: 1 }} />
                     </View>
                     <Space height={responsiveFontSize(1.5)} />
                     {/* <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(4), paddingVertical: responsiveWidth(3) }}>
@@ -1474,7 +1467,7 @@ const Home = React.forwardRef((props, ref) => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Coming Soon Row: Convoy */}
+                    {/* Coming Soon Row: Convoy, Call Job Manager */}
                     <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(4), paddingVertical: responsiveWidth(3) }}>
                         <TouchableOpacity onPress={_navigateConvoy} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
                             <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'flex-start', paddingTop: responsiveFontSize(2), paddingHorizontal: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28), position: 'relative' }}>
@@ -1485,7 +1478,17 @@ const Home = React.forwardRef((props, ref) => {
                             </View>
                         </TouchableOpacity>
                         <Space width={responsiveFontSize(1.5)} />
-                        <View style={{ flex: 1 }} />
+                        <TouchableOpacity onPress={() => showToast(t('featureComingSoon', 'This feature is coming soon'))} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
+                            <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'flex-start', paddingTop: responsiveFontSize(2), paddingHorizontal: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28), position: 'relative' }}>
+                                <View style={{ position: 'absolute', top: 3, right: 3, backgroundColor: '#FF6B00', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6 }}>
+                                    <Text style={{ color: '#fff', fontSize: responsiveFontSize(0.7), fontWeight: '700' }}>{t('comingSoon', 'Coming Soon')}</Text>
+                                </View>
+                                <View style={{ height: responsiveFontSize(6), width: responsiveFontSize(6), justifyContent: 'center', alignItems: 'center', marginBottom: responsiveFontSize(0.5) }}>
+                                    <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5) }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/724/724664.png' }} />
+                                </View>
+                                <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('callJobManager', 'Call Job Manager')}</Text>
+                            </View>
+                        </TouchableOpacity>
                         <Space width={responsiveFontSize(1.5)} />
                         <View style={{ flex: 1 }} />
                     </View>
@@ -1610,12 +1613,7 @@ const Home = React.forwardRef((props, ref) => {
                             </View>
                         </TouchableOpacity>
                         <Space width={responsiveFontSize(1.5)} />
-                        <TouchableOpacity onPress={_navigateCallJobManager} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
-                            <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', padding: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
-                                <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5), marginBottom: 5 }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/724/724664.png' }} />
-                                <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('callJobManager', 'Call Job Manager')}</Text>
-                            </View>
-                        </TouchableOpacity>
+                        <View style={{ flex: 1 }} />
                     </View>
 
                     {/* Coming Soon Section */}
@@ -1670,6 +1668,23 @@ const Home = React.forwardRef((props, ref) => {
                                 <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('fleetManagementTitle')}</Text>
                             </View>
                         </TouchableOpacity>
+                    </View>
+
+                    {/* Row 3: Call Job Manager */}
+                    <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(4), paddingBottom: responsiveWidth(3) }}>
+                        <TouchableOpacity onPress={() => showToast(t('featureComingSoon', 'This feature is coming soon'))} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
+                            <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', padding: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28), position: 'relative' }}>
+                                <View style={{ position: 'absolute', top: 3, right: 3, backgroundColor: '#FF6B00', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6 }}>
+                                    <Text style={{ color: '#fff', fontSize: responsiveFontSize(0.7), fontWeight: '700' }}>{t('comingSoon', 'Coming Soon')}</Text>
+                                </View>
+                                <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5), marginBottom: 5 }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/724/724664.png' }} />
+                                <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('callJobManager', 'Call Job Manager')}</Text>
+                            </View>
+                        </TouchableOpacity>
+                        <Space width={responsiveFontSize(1.5)} />
+                        <View style={{ flex: 1 }} />
+                        <Space width={responsiveFontSize(1.5)} />
+                        <View style={{ flex: 1 }} />
                     </View>
                 </View>}
                 {showLottie && <View style={{ height: responsiveHeight(100), width: responsiveWidth(100), alignItems: 'center', justifyContent: 'center', position: 'absolute', pointerEvents: 'none' }}>

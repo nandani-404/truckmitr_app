@@ -21,7 +21,6 @@ import { useTranslation } from 'react-i18next';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { getUserBadgeText } from '@truckmitr/src/utils/global';
-import MiniVideoPlayer from '@truckmitr/src/app/components/mini-video-player';
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 type TierType = 'TRUSTED' | 'VERIFIED' | 'JOB READY' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO';
@@ -787,7 +786,7 @@ export default function Dashboard() {
                         <Space height={responsiveFontSize(3)} />
                     </>}
             </ScrollView>
-            <MiniVideoPlayer isVisible={isDriver || isTransporter} />
+
         </View>
     )
 }

@@ -1323,7 +1323,6 @@ export default function Subscription({ }: any) {
         const orderPayload = {
           amount: amount,
           currency: 'INR',
-          payment_type: 'subscription',
           notes: {
             plan_id: serverPlanId,
             role: user?.role || 'driver'
