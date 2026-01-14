@@ -22,26 +22,7 @@ const CallJobManagerList = () => {
     const _goBack = () => navigation.goBack();
 
     // Mock Data for "Applied Jobs" where the driver can call the manager
-    const [jobs, setJobs] = useState([
-        {
-            id: 1,
-            jobTitle: 'Long Haul Driver',
-            company: 'FastLogistics Pvt Ltd',
-            location: 'Mumbai, Maharashtra',
-            appliedDate: '12 Dec, 2024',
-            managerName: 'Rahul Sharma',
-            managerPhone: '9876543210'
-        },
-        {
-            id: 2,
-            jobTitle: 'City Delivery Driver',
-            company: 'SafeCargo Transports',
-            location: 'Delhi, NCR',
-            appliedDate: '10 Dec, 2024',
-            managerName: 'Amit Verma',
-            managerPhone: '9123456780'
-        }
-    ]);
+    const [jobs, setJobs] = useState<any[]>([]);
 
     const _handleCallManager = (phone: string, managerName: string) => {
         const date = new Date();
@@ -132,7 +113,7 @@ const CallJobManagerList = () => {
                     <View style={{ alignItems: 'center', marginTop: responsiveHeight(10) }}>
                         <Ionicons name="briefcase-outline" size={48} color="#94A3B8" />
                         <Text style={{ marginTop: 12, fontSize: responsiveFontSize(1.6), color: '#64748B', textAlign: 'center', lineHeight: responsiveFontSize(2.4), paddingHorizontal: 20 }}>
-                            {t('noJobsApplied', "You haven't applied to any jobs yet.")}
+                            {t('noJobManagerAssigned', "No Job Manager Assigned")}
                         </Text>
                     </View>
                 )}
