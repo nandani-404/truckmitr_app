@@ -100,7 +100,7 @@ const vehicleTypes = [
     { label: 'Trailer / Semi-Trailer', value: 'Trailer / Semi-Trailer Trucks', image: TruckImages.trailer },
     { label: 'Tankers', value: 'Tankers', image: TruckImages.tanker },
     { label: 'Car Carriers', value: 'Car Carriers', image: TruckImages.carCarrier },
-    { label: 'Pick up', value: 'Pick up', image: TruckImages.pickUp },
+    { label: 'Light Commercial Vehicle', value: 'Light Commercial Vehicle', image: TruckImages.pickUp },
     { label: 'Reefer Trucks', value: 'Refrigerator (Reefer) Trucks', image: TruckImages.reefer },
 ];
 

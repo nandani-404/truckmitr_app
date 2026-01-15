@@ -80,10 +80,10 @@ const VerificationStatusScreen = () => {
         const overallStatus = verificationData.overall_status;
 
         // Check if verification is completed (check multiple conditions)
-        const isCompleted = overallStatus === 'completed' || 
-                           overallStatus === 'verified' || 
-                           finalStatus === 'completed' || 
-                           finalStatus === 'verified';
+        const isCompleted = overallStatus === 'completed' ||
+            overallStatus === 'verified' ||
+            finalStatus === 'completed' ||
+            finalStatus === 'verified';
 
         // Determine current status and active steps
         let activeStepIndex = 0;
@@ -257,7 +257,7 @@ const VerificationStatusScreen = () => {
 
                         {/* ID Verification Status */}
                         <View style={styles.statusRow}>
-                            <Text style={styles.statusLabel}>{t('idVerification')}</Text>
+                            <Text style={styles.rowStatusLabel}>{t('idVerification')}</Text>
                             <View
                                 style={[
                                     styles.statusBadge,
@@ -286,7 +286,7 @@ const VerificationStatusScreen = () => {
 
                         {/* Address Verification Status */}
                         <View style={styles.statusRow}>
-                            <Text style={styles.statusLabel}>
+                            <Text style={styles.rowStatusLabel}>
                                 {t('addressVerification')}
                             </Text>
                             <View
@@ -317,7 +317,7 @@ const VerificationStatusScreen = () => {
 
                         {/* Court Check Status */}
                         <View style={styles.statusRow}>
-                            <Text style={styles.statusLabel}>{t('courtVerification')}</Text>
+                            <Text style={styles.rowStatusLabel}>{t('courtVerification')}</Text>
                             <View
                                 style={[
                                     styles.statusBadge,
@@ -385,7 +385,14 @@ const VerificationStatusScreen = () => {
     );
 };
 
-const StatusStep = ({ label, type, isActive, isLast }: any) => {
+interface StatusStepProps {
+    label: string;
+    type: 'clock' | 'check' | 'x';
+    isActive: boolean;
+    isLast: boolean;
+}
+
+const StatusStep = ({ label, type, isActive, isLast }: StatusStepProps) => {
     const icons = {
         clock: (
             <Path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z" />
@@ -415,7 +422,12 @@ const StatusStep = ({ label, type, isActive, isLast }: any) => {
     );
 };
 
-const TatRow = ({ title, value }) => (
+interface TatRowProps {
+    title: string;
+    value: string;
+}
+
+const TatRow = ({ title, value }: TatRowProps) => (
     <View style={styles.tatRow}>
         <Text style={styles.tatTitle}>{title}</Text>
         <Text style={styles.tatValue}>{value}</Text>
@@ -561,7 +573,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: "#f0f0f0",
     },
-    statusLabel: {
+    rowStatusLabel: {
         fontSize: 14,
         color: "#111418",
         fontWeight: "500",

@@ -755,7 +755,7 @@ export default function Dashboard() {
                                 subtitle=""
                                 count={dashboard?.total_invites ?? 0}
                                 icon="https://cdn-icons-png.flaticon.com/512/6003/6003724.png"
-                                onPress={() => navigation.navigate(STACKS.JOB_INVITATIONS_LIST)}
+                                onPress={() => navigation.navigate(STACKS.DRIVERINVITES)}
                                 colors={colors}
                                 shadow={shadow}
                                 responsiveFontSize={responsiveFontSize}
