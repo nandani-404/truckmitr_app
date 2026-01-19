@@ -35,7 +35,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
-import { getUserBadgeText, shouldShowMembershipCard, getMembershipCardConfig, getUserTier } from '@truckmitr/src/utils/global';
+import { getUserBadgeText, shouldShowMembershipCard, getMembershipCardConfig, getUserTier, getMembershipShareText } from '@truckmitr/src/utils/global';
 import { useTranslation } from 'react-i18next';
 import moment from 'moment';
 import analytics from '@react-native-firebase/analytics';
@@ -357,7 +357,7 @@ const CardContainer: React.FC<CardContainerProps> = ({ children }) => {
 };
 
 export default function Profile() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch()
   useStatusBarStyle('dark-content')
   const { user, isDriver, isTransporter, profileCompletion, subscriptionDetails, rank, star_rating, subscriptionModal, su } = useSelector((state: any) => { return state?.user }) || {};
@@ -669,10 +669,14 @@ export default function Profile() {
       }
 
       if (action === 'share') {
+        // Get dynamic share text based on user badge and language
+        const currentLang = i18n.language === 'hi' ? 'hi' : 'en';
+        const shareMessage = getMembershipShareText({ user, subscriptionDetails, isDriver }, currentLang);
+        
         // Share the membership card
         const shareOptions = {
           title: t('truckMitrMembershipCard'),
-          message: t('checkOutMyMembershipCard'),
+          message: shareMessage,
           url: Platform.OS === 'android' ? `file://${uri}` : uri,
           type: 'image/png',
         };

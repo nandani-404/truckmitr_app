@@ -138,6 +138,8 @@ export default function ProfileEditNew() {
     const drivingExperienceArray = Array.from({ length: 51 }, (_, i) => ({ label: i === 0 ? t('lessThan1Year') || 'Less than 1 year' : `${i} ${i === 1 ? 'year' : 'years'}`, value: i === 0 ? 'less_than_1' : `${i}` }));
 
     const salaryRanges = ['15000-20000', '20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000', '55000-60000'];
+    const currentSalaryRanges = ['15000-20000', '20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000',];
+    const expectedSalaryRanges = ['20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000', '55000-60000'];
 
     const translatedEducationList = [
         { label: t('noFormalEducation') || 'No Formal Education', value: 'No Formal Education' },
@@ -1507,10 +1509,10 @@ export default function ProfileEditNew() {
                 return (
                     <View style={styles.stepContent}>
                         <Text style={styles.inputLabel}>{t('currentMonthlyIncome')} <Text style={styles.requiredAsterisk}>*</Text></Text>
-                        <View style={styles.chipContainer}>{salaryRanges.map(s => (<Chip key={s} label={`₹${s}`} selected={userEdit?.Current_Monthly_Income === s} onPress={() => dispatch(userEditAction({ ...userEdit, Current_Monthly_Income: s }))} />))}</View>
+                        <View style={styles.chipContainer}>{currentSalaryRanges.map(s => (<Chip key={s} label={`₹${s}`} selected={userEdit?.Current_Monthly_Income === s} onPress={() => dispatch(userEditAction({ ...userEdit, Current_Monthly_Income: s }))} />))}</View>
                         <Space height={20} />
                         <Text style={styles.inputLabel}>{t('expectedMonthlyIncome')} <Text style={styles.requiredAsterisk}>*</Text></Text>
-                        <View style={styles.chipContainer}>{salaryRanges.map(s => (<Chip key={s} label={`₹${s}`} selected={userEdit?.Expected_Monthly_Income === s} onPress={() => dispatch(userEditAction({ ...userEdit, Expected_Monthly_Income: s }))} />))}</View>
+                        <View style={styles.chipContainer}>{expectedSalaryRanges.map(s => (<Chip key={s} label={`₹${s}`} selected={userEdit?.Expected_Monthly_Income === s} onPress={() => dispatch(userEditAction({ ...userEdit, Expected_Monthly_Income: s }))} />))}</View>
                     </View>
                 );
 

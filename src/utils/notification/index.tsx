@@ -8,7 +8,7 @@ import {
     RESULTS,
 } from 'react-native-permissions';
 import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { navigationRef } from '../global/global.ref';
 import { STACKS } from '@truckmitr/src/stacks/stacks';
 import { isNavigationReady } from '@truckmitr/src/routes';
@@ -34,6 +34,40 @@ type StackRoute =
     | typeof STACKS.HOME
     | typeof STACKS.PROFILE_EDIT
     | typeof STACKS.JOB;
+
+// ============================================
+// DEEP LINKING APPROACH - Convert screen name to deep link URL
+// ============================================
+const getDeepLinkFromScreen = (screen?: string): string => {
+    switch (screen) {
+        case 'profileEdit':
+            return 'truckmitr://profile';
+        case 'jobs':
+            return 'truckmitr://job';
+        case 'home':
+            return 'truckmitr://home';
+        case 'training':
+            return 'truckmitr://training';
+        default:
+            return 'truckmitr://home';
+    }
+};
+
+// Navigate using deep link - React Navigation handles the rest
+const navigateWithDeepLink = (data?: NotificationData) => {
+    if (!data?.screen) {
+        console.log('🔕 No screen in notification data');
+        return;
+    }
+    
+    const deepLink = getDeepLinkFromScreen(data.screen);
+    console.log('🔗 Navigating with deep link:', deepLink);
+    
+    // Use Linking to trigger deep link - React Navigation's linking config will handle it
+    Linking.openURL(deepLink).catch(err => {
+        console.error('❌ Error opening deep link:', err);
+    });
+};
 
 export const setupFirebaseNotifications = async () => {
     console.log('--- Setting up Firebase Notifications ---');
@@ -157,26 +191,45 @@ export const setupFirebaseNotifications = async () => {
 //     }, 150);
 // };
 
+// ============================================
+// OLD APPROACH - Using navigationRef (COMMENTED OUT)
+// ============================================
+// export const handleNotificationNavigation = async (data?: NotificationData) => {
+//     if (!data?.screen || !navigationRef.current) return;
+
+//     console.log('📍 Notification navigation:', data.screen);
+
+//     switch (data.screen) {
+//         case 'profileEdit':
+//             navigationRef.current.navigate(STACKS.PROFILE_OVERVIEW as never);
+//             break;
+//         case 'jobs':
+//             navigationRef.current.navigate(STACKS.JOB as never);
+//             break;
+//         default:
+//             navigationRef.current.navigate(STACKS.HOME as never);
+//     }
+
+//     // ✅ IMPORTANT: clear immediately after use
+//     await AsyncStorage.removeItem(PENDING_NOTIFICATION_KEY);
+// };
+
+// ============================================
+// NEW APPROACH - Using Deep Linking
+// ============================================
 export const handleNotificationNavigation = async (data?: NotificationData) => {
-    if (!data?.screen || !navigationRef.current) return;
-
-    console.log('📍 Notification navigation:', data.screen);
-
-    switch (data.screen) {
-        case 'profileEdit':
-            navigationRef.current.navigate(STACKS.PROFILE_OVERVIEW);
-            break;
-
-        case 'jobs':
-            navigationRef.current.navigate(STACKS.JOB);
-            break;
-
-        default:
-            navigationRef.current.navigate(STACKS.HOME);
+    if (!data?.screen) {
+        console.log('🔕 No screen in notification data');
+        return;
     }
 
-    // ✅ IMPORTANT: clear immediately after use
+    console.log('📍 Notification navigation (deep link):', data.screen);
+    
+    // Clear pending notification
     await AsyncStorage.removeItem(PENDING_NOTIFICATION_KEY);
+    
+    // Navigate using deep link
+    navigateWithDeepLink(data);
 };
 
 const requestFCMUserPermission = async () => {
@@ -326,32 +379,16 @@ const attachNotificationListeners = () => {
     //     console.log('----------------------------------------------------');
     // });
 
+    // BACKGROUND STATE: Now handled by linking.subscribe() in routes/index.tsx
+    // This is just for logging purposes
     messaging().onNotificationOpenedApp(async msg => {
         console.log('🟡 BG notification tap:', msg?.data);
-
-        if (msg?.data) {
-            await AsyncStorage.setItem(
-                PENDING_NOTIFICATION_KEY,
-                JSON.stringify(msg.data)
-            );
-        }
+        console.log('🟡 Background: Navigation will be handled by linking.subscribe()');
     });
 
-    messaging()
-        .getInitialNotification()
-        .then(async msg => {
-            if (msg) {
-                console.log('--- App launched from quit by tapping notification (getInitialNotification) ---');
-                console.log('Message:', JSON.stringify(msg, null, 2));
-                notificationShown = false;
-                handleNotificationNavigation(msg?.data);
-                // You can add navigation logic here based on msg.data
-                // handleNotificationNavigation(msg?.data);
-                console.log('---------------------------------------------------------------------');
-            } else {
-                console.log('No initial notification found (app launched normally).');
-            }
-        });
+    // KILL STATE: Handled by linking.getInitialURL() in routes/index.tsx
+    // DO NOT call getInitialNotification() here - it can only be consumed once!
+    // If we consume it here, linking.getInitialURL() won't get the notification data.
 
     // messaging()
     //     .getInitialNotification()

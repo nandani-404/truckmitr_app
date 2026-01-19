@@ -1,14 +1,14 @@
 
-export const BASE_URL = `https://development.truckmitr.com/`
+// export const BASE_URL = `https://development.truckmitr.com/`
 // export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.1.41:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
-// export const BASE_URL = 'https://devtruckmitr.in/'
+export const BASE_URL = 'https://devtruckmitr.in/'
 export const STATICS = {
-    RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
-    RAYZORPAY_SECRET: 'Jo14oUIoX75fb0WJejakbRvQ', // live
-    // RAYZORPAY_KEY_ID: 'rzp_test_bbrUGMV7qq3mYP',  // testing
-    // RAYZORPAY_SECRET: 'fU9jFstLp7qdUkNC3KNhuMnS'  // testing
+    // RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
+    // RAYZORPAY_SECRET: 'Jo14oUIoX75fb0WJejakbRvQ', // live
+    RAYZORPAY_KEY_ID: 'rzp_test_bbrUGMV7qq3mYP',  // testing
+    RAYZORPAY_SECRET: 'fU9jFstLp7qdUkNC3KNhuMnS'  // testing
 }
 interface FilterState {
     stateId: string;

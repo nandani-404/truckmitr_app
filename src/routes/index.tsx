@@ -26,6 +26,7 @@ import analytics from '@react-native-firebase/analytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppEventsLogger } from 'react-native-fbsdk-next';
 import { consumePendingNotificationNavigation, resetNotificationFlag } from '../utils/notification';
+import messaging from '@react-native-firebase/messaging';
 // import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 
 export let isNavigationReady = false;
@@ -343,6 +344,89 @@ export default function Routes() {
     init();
     SystemNavigationBar.setNavigationColor('translucent');
   }, []);
+
+  // -------------------------------
+  // 🔹 Handle Pending Notification Navigation (after auth)
+  // -------------------------------
+  useEffect(() => {
+    // Only run when user is authenticated and navigation is ready
+    if (isAuthenticated && isNavigationReady) {
+      // Small delay to ensure Main stack is fully mounted
+      const timer = setTimeout(async () => {
+        console.log('🔔 Checking for pending notification navigation...');
+        
+        // Check for kill state pending screen first
+        const pendingScreen = await AsyncStorage.getItem('PENDING_NOTIFICATION_SCREEN');
+        if (pendingScreen) {
+          console.log('🔴 Kill state: Processing pending screen:', pendingScreen);
+          await AsyncStorage.removeItem('PENDING_NOTIFICATION_SCREEN');
+          
+          // Navigate based on screen
+          if (navigationRef.current) {
+            switch (pendingScreen) {
+              case 'profileEdit':
+                (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
+                break;
+              case 'jobs':
+                (navigationRef.current as any)?.navigate('bottomTab', { screen: 'job' });
+                break;
+              case 'home':
+                (navigationRef.current as any)?.navigate('bottomTab', { screen: 'home' });
+                break;
+              case 'training':
+                (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
+                break;
+              default:
+                console.log('🔴 Unknown pending screen:', pendingScreen);
+            }
+            console.log('🔴 Kill state: Navigation completed for screen:', pendingScreen);
+          }
+          return;
+        }
+        
+        // Otherwise check for regular pending notification
+        consumePendingNotificationNavigation();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, isNavigationReady]);
+
+  // -------------------------------
+  // 🔹 Process Pending Deep Link (after auth)
+  // -------------------------------
+  useEffect(() => {
+    if (isAuthenticated && isNavigationReady && pendingDeepLink.current) {
+      console.log('🌐 Processing pending deep link:', pendingDeepLink.current);
+      const url = pendingDeepLink.current;
+      pendingDeepLink.current = null; // Clear it
+      
+      // Small delay to ensure Main stack is mounted
+      setTimeout(() => {
+        // Parse and navigate
+        const urlParts = url.replace('truckmitr://', '').split('/');
+        const path = urlParts[0];
+        
+        switch (path) {
+          case 'profile':
+            (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
+            break;
+          case 'job':
+          case 'jobs':
+            (navigationRef.current as any)?.navigate('bottomTab', { screen: 'job' });
+            break;
+          case 'home':
+            (navigationRef.current as any)?.navigate('bottomTab', { screen: 'home' });
+            break;
+          case 'training':
+            (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
+            break;
+          default:
+            console.log('🔍 Pending deep link path not recognized:', path);
+        }
+      }, 500);
+    }
+  }, [isAuthenticated, isNavigationReady]);
+
   useEffect(() => {
     // Handle initial URL (when app is opened from closed state)
     const getInitialURL = async () => {
@@ -386,49 +470,35 @@ export default function Routes() {
       const urlParts = url.replace('truckmitr://', '').split('/');
       console.log('🔍 URL parts:', urlParts);
 
-      // Manual navigation for testing
-      if (urlParts[0] === 'profile') {
-        console.log('🎯 Attempting to navigate to profile tab');
-        console.log('🎯 Navigation ref available:', !!navigationRef.current);
-        console.log('🎯 Is authenticated:', isAuthenticated);
+      if (!navigationRef.current) {
+        console.log('❌ Navigation ref not available');
+        return;
+      }
 
-        if (!navigationRef.current) {
-          console.log('❌ Navigation ref not available');
-          return;
-        }
+      if (!isAuthenticated) {
+        console.log('❌ User not authenticated, cannot navigate');
+        return;
+      }
 
-        if (!isAuthenticated) {
-          console.log('❌ User not authenticated, cannot navigate to profile');
-          return;
-        }
+      const path = urlParts[0];
 
-        // Wait a bit for navigation to be ready and try multiple times if needed
-        const attemptNavigation = (attempt = 1) => {
-          console.log(`🎯 Navigation attempt ${attempt}`);
-
-          try {
-            navigationRef.current?.navigate('bottomTab', {
-              screen: 'profile'
-            });
-            console.log('✅ Navigation command sent successfully');
-          } catch (error) {
-            console.log(`❌ Navigation attempt ${attempt} failed:`, error);
-
-            if (attempt < 3) {
-              setTimeout(() => attemptNavigation(attempt + 1), 1000);
-            }
-          }
-        };
-
-        // Start navigation attempts
-        if (isNavigationReady) {
-          attemptNavigation();
-        } else {
-          console.log('⏳ Navigation not ready, waiting...');
-          setTimeout(() => attemptNavigation(), 2000);
-        }
-      } else {
-        console.log('🔍 Deep link path not recognized:', urlParts[0]);
+      // Handle different deep link paths
+      switch (path) {
+        case 'profile':
+          (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
+          break;
+        case 'job':
+        case 'jobs':
+          (navigationRef.current as any)?.navigate('bottomTab', { screen: 'job' });
+          break;
+        case 'home':
+          (navigationRef.current as any)?.navigate('bottomTab', { screen: 'home' });
+          break;
+        case 'training':
+          (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
+          break;
+        default:
+          console.log('🔍 Deep link path not recognized:', path);
       }
     };
 
@@ -490,62 +560,123 @@ export default function Routes() {
 
   const linking = {
     prefixes: ['truckmitr://', 'https://truckmitr.com'],
+    
+    // Custom getInitialURL to handle notification deep links in kill state
+    async getInitialURL() {
+      // First, check if app was opened from a notification (kill state)
+      const initialNotification = await messaging().getInitialNotification();
+      
+      if (initialNotification?.data?.screen) {
+        const screen = initialNotification.data.screen as string;
+        console.log('🔴 Kill state: Got notification screen:', screen);
+        
+        // Store the screen for manual navigation after auth
+        await AsyncStorage.setItem('PENDING_NOTIFICATION_SCREEN', screen);
+        console.log('🔴 Kill state: Stored pending screen for manual navigation');
+        
+        // Return null - we'll handle navigation manually after Main stack mounts
+        return null;
+      }
+      
+      // Otherwise, check for regular deep link
+      const url = await Linking.getInitialURL();
+      console.log('🌐 Regular initial URL:', url);
+      return url;
+    },
+    
+    // Subscribe to incoming links (foreground/background)
+    subscribe(listener: (url: string) => void) {
+      // Listen for deep links
+      const linkingSubscription = Linking.addEventListener('url', ({ url }) => {
+        console.log('🌐 Deep link received:', url);
+        listener(url);
+      });
+      
+      // Listen for notification taps (background state)
+      const unsubscribeNotification = messaging().onNotificationOpenedApp(msg => {
+        if (msg?.data?.screen) {
+          const screen = msg.data.screen as string;
+          console.log('🟡 Background notification tap, screen:', screen);
+          
+          // Navigate directly using navigationRef instead of deep link
+          // This avoids the "Main" screen not found issue
+          setTimeout(() => {
+            if (navigationRef.current) {
+              switch (screen) {
+                case 'profileEdit':
+                  (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
+                  break;
+                case 'jobs':
+                  (navigationRef.current as any)?.navigate('bottomTab', { screen: 'job' });
+                  break;
+                case 'home':
+                  (navigationRef.current as any)?.navigate('bottomTab', { screen: 'home' });
+                  break;
+                case 'training':
+                  (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
+                  break;
+                default:
+                  console.log('🟡 Unknown screen:', screen);
+              }
+              console.log('🟡 Background: Navigation completed for screen:', screen);
+            } else {
+              console.log('🟡 Background: navigationRef not ready');
+            }
+          }, 500);
+        }
+      });
+      
+      return () => {
+        linkingSubscription.remove();
+        unsubscribeNotification();
+      };
+    },
+    
     config: {
       screens: {
-        Auth: {
+        // Bottom Tab Navigator (direct, no Main wrapper)
+        bottomTab: {
           screens: {
-            login: 'login',
+            // Driver tabs
+            home: 'home',
+            training: 'training',
+            job: 'job',
+            healthHygiene: 'health-hygiene',
+            profile: 'profile',
+            // Transporter tabs
+            transporterAppliedJob: 'applied-jobs',
+            viewJobs: 'view-jobs',
+            driverList: 'drivers',
           },
         },
-        ProfileCompletionStack: {
-          screens: {
-            profileCompletion: 'profile-completion',
-          },
-        },
-        Main: {
-          screens: {
-            // Bottom Tab Navigator
-            bottomTab: {
-              screens: {
-                // Driver tabs
-                home: 'home',
-                training: 'training',
-                job: 'job',
-                healthHygiene: 'health-hygiene',
-                profile: 'profile',
-                // Transporter tabs
-                transporterAppliedJob: 'applied-jobs',
-                viewJobs: 'view-jobs',
-                driverList: 'drivers',
-              },
-            },
-            // Main Stack Screens (outside bottom tabs)
-            dashboard: 'dashboard',
-            modules: 'modules',
-            quiz: 'quiz',
-            quizResult: 'quiz-result',
-            player: 'player',
-            availableJob: 'available-job',
-            suitsJob: 'suits-job',
-            appliedJob: 'applied-job',
-            search: 'search',
-            profileEdit: 'profile-edit',
-            profileEditNew: 'profile-edit-new',
-            drivingDetails: 'driving-details',
-            uploadDocuments: 'upload-documents',
-            settings: 'settings',
-            notification: 'notification',
-            rating: 'rating',
-            contactUs: 'contact-us',
-            privacy: 'privacy',
-            addJob: 'add-job',
-            jobStep2: 'job-step2',
-            jobStep3: 'job-step3',
-            addDriver: 'add-driver',
-            excelImport: 'excel-import',
-            // Add more screens as needed
-          },
-        },
+        // Main Stack Screens (outside bottom tabs)
+        dashboard: 'dashboard',
+        modules: 'modules',
+        quiz: 'quiz',
+        quizResult: 'quiz-result',
+        player: 'player',
+        availableJob: 'available-job',
+        suitsJob: 'suits-job',
+        appliedJob: 'applied-job',
+        search: 'search',
+        profileEdit: 'profile-edit',
+        profileEditNew: 'profile-edit-new',
+        drivingDetails: 'driving-details',
+        uploadDocuments: 'upload-documents',
+        settings: 'settings',
+        notification: 'notification',
+        rating: 'rating',
+        contactUs: 'contact-us',
+        privacy: 'privacy',
+        addJob: 'add-job',
+        jobStep2: 'job-step2',
+        jobStep3: 'job-step3',
+        addDriver: 'add-driver',
+        excelImport: 'excel-import',
+        // Auth screens
+        login: 'login',
+        // Profile completion
+        profileCompletion: 'profile-completion',
       },
     },
   };
@@ -563,7 +694,7 @@ export default function Routes() {
       onReady={async () => {
         setNavigationReady(true);
         console.log('🟢 NavigationContainer READY');
-        await consumePendingNotificationNavigation();
+        // Note: Pending notification navigation is handled by useEffect when isAuthenticated becomes true
         console.log(
           '🟢 Initial route:',
           navigationRef.current?.getCurrentRoute()?.name

@@ -186,6 +186,105 @@ export interface MembershipCardConfig {
   borderColor?: string;
 }
 
+/**
+ * Get membership card share text for sharing on social media
+ * Dynamically inserts the user's badge text into the message
+ */
+export const getMembershipShareText = (params: UserBadgeParams, language: 'en' | 'hi' = 'en'): string => {
+  const badgeText = getUserBadgeText(params);
+  const role = params.user?.role?.toLowerCase();
+  const isDriver = role === 'driver';
+
+  if (language === 'hi') {
+    if (isDriver) {
+      return `🚛 मुझे TruckMitr के साथ एक ${badgeText} होने पर गर्व है! 🇮🇳
+
+अब मेरी पहचान सिर्फ एक ड्राइवर की नहीं, बल्कि एक Verified और Trusted Driver की है।
+TruckMitr ने मुझे एक Digital Driver Card दिया है, जिससे ट्रांसपोर्टर मुझ पर आसानी से भरोसा कर सकते हैं।
+
+✅ ज्यादा नौकरी के मौके
+✅ पहचान और सम्मान
+✅ ट्रेनिंग और ग्रोथ
+✅ ट्रांसपोर्टर्स से सीधा संपर्क
+
+अगर आप भी एक ड्राइवर हैं और चाहते हैं
+👉 बेहतर नौकरी
+👉 पहचान
+👉 और भरोसा
+
+तो आज ही TruckMitr App डाउनलोड करें 👇
+📲 https://play.google.com/store/apps/details?id=com.truckmitr
+
+TruckMitr – ड्राइवर का साथी, हर सफर में भरोसा 🚚💪`;
+    } else {
+      // Transporter
+      return `🚛 मुझे TruckMitr के साथ एक ${badgeText} होने पर गर्व है! 🇮🇳
+
+अब मेरा बिज़नेस सिर्फ ट्रांसपोर्ट नहीं, बल्कि Trust और Reliability का प्रतीक है।
+TruckMitr ने मुझे एक Digital Business Card दिया है, जिससे ड्राइवर और क्लाइंट मुझ पर आसानी से भरोसा कर सकते हैं।
+
+✅ Verified ड्राइवरों तक पहुंच
+✅ बिज़नेस की विश्वसनीयता और पहचान
+✅ आसान ड्राइवर मैनेजमेंट
+✅ भरोसेमंद ड्राइवरों से सीधा संपर्क
+
+अगर आप भी एक ट्रांसपोर्टर हैं और चाहते हैं
+👉 Verified ड्राइवर
+👉 बिज़नेस ग्रोथ
+👉 और भरोसा
+
+तो आज ही TruckMitr App डाउनलोड करें 👇
+📲 https://play.google.com/store/apps/details?id=com.truckmitr
+
+TruckMitr – ट्रांसपोर्टर्स को भरोसेमंद ड्राइवरों से जोड़ता है 🚚💪`;
+    }
+  }
+
+  // English
+  if (isDriver) {
+    return `🚛 I am proud to be a ${badgeText} with TruckMitr! 🇮🇳
+
+Now my identity is not just that of a driver, but a Verified & Trusted Driver.
+TruckMitr has given me a Digital Driver Card, which helps transporters trust me easily.
+
+✅ More job opportunities
+✅ Identity and respect
+✅ Training and growth
+✅ Direct connection with transporters
+
+If you are also a driver and want
+👉 Better jobs
+👉 Recognition
+👉 And trust
+
+then download the TruckMitr App today 👇
+📲 https://play.google.com/store/apps/details?id=com.truckmitr
+
+TruckMitr – A Driver's Companion, Trust for Every Journey 🚚💪`;
+  } else {
+    // Transporter
+    return `🚛 I am proud to be a ${badgeText} with TruckMitr! 🇮🇳
+
+Now my business is not just about transport, but about Trust & Reliability.
+TruckMitr has given me a Digital Business Card, which helps drivers and clients trust me easily.
+
+✅ Access to verified drivers
+✅ Business credibility and recognition
+✅ Easy driver management
+✅ Direct connection with trusted drivers
+
+If you are also a transporter and want
+👉 Verified drivers
+👉 Business growth
+👉 And trust
+
+then download the TruckMitr App today 👇
+📲 https://play.google.com/store/apps/details?id=com.truckmitr
+
+TruckMitr – Connecting Transporters with Trusted Drivers 🚚💪`;
+  }
+};
+
 export const getMembershipCardConfig = (params: UserBadgeParams): MembershipCardConfig | null => {
   if (!shouldShowMembershipCard(params)) {
     return null;
