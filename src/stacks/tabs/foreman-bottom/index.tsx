@@ -19,17 +19,11 @@ import { AppleConfirmDialog } from '@truckmitr/src/app/components/apple-confirm-
 import { BASE_URL } from '@truckmitr/src/utils/config';
 import ForemanHome from '@truckmitr/src/app/layouts/foreman/foreman-home';
 import ForemanAddDriver from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-add-driver';
-import ForemanMyEarnings from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-earnings';
+import ForemanEarnings from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-earnings';
 
+import DriverKiAwazInfo from '@truckmitr/src/app/layouts/main/driver-ki-awaz-info';
 // Placeholder screens - will be replaced with actual screens
 
-const ForemanDriverKiAwaz = () => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-        <MaterialCommunityIcons name="microphone" size={80} color="#FF6B6B" />
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>Driver Ki Awaz</Text>
-        <Text style={{ color: '#666', marginTop: 8 }}>Coming Soon</Text>
-    </View>
-);
 
 const ForemanProfile = () => {
     const { t } = useTranslation();
@@ -397,8 +391,8 @@ export default function ForemanBottom() {
         >
             <Tab.Screen name={STACKS.FOREMAN_HOME} component={ForemanHome} />
             <Tab.Screen name={STACKS.FOREMAN_ADD_DRIVER} component={ForemanAddDriver} />
-            <Tab.Screen name={STACKS.FOREMAN_DRIVER_KI_AWAZ} component={ForemanDriverKiAwaz} />
-            <Tab.Screen name={STACKS.FOREMAN_MY_EARNINGS} component={ForemanMyEarnings} />
+            <Tab.Screen name={STACKS.FOREMAN_DRIVER_KI_AWAZ} component={DriverKiAwazInfo} />
+            <Tab.Screen name={STACKS.FOREMAN_MY_EARNINGS} component={ForemanEarnings} />
             <Tab.Screen name={STACKS.FOREMAN_PROFILE} component={ForemanProfile} />
         </Tab.Navigator>
     );

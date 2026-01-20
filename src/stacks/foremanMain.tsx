@@ -13,6 +13,7 @@ import ForemanPendingTraining from '@truckmitr/src/app/layouts/foreman/foreman-h
 import ForemanExpiringDocuments from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-expiring-documents';
 import ForemanVerifiedDrivers from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-verified-drivers';
 import ForemanTrustedDrivers from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-trusted-drivers';
+import ForemanJobsList from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-jobs-list';
 
 const Stack = createNativeStackNavigator();
 
@@ -72,14 +73,15 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.PREFERRED_COLOR} component={PreferredColor} options={{ animation: 'fade' }} />
 
             {/* Foreman-specific screens */}
-            <Stack.Screen name={STACKS.FOREMAN_DASHBOARD} component={ForemanDashboard} options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name={STACKS.FOREMAN_MY_PILOTS} component={ForemanMyPilots} options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name={STACKS.FOREMAN_PENDING_PROFILES} component={ForemanPendingProfiles} options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name={STACKS.FOREMAN_PENDING_SUBSCRIPTION} component={ForemanPendingSubscription} options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name={STACKS.FOREMAN_PENDING_TRAINING} component={ForemanPendingTraining} options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name={STACKS.FOREMAN_EXPIRING_DOCUMENTS} component={ForemanExpiringDocuments} options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name={STACKS.FOREMAN_VERIFIED_DRIVERS} component={ForemanVerifiedDrivers} options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name={STACKS.FOREMAN_TRUSTED_DRIVERS} component={ForemanTrustedDrivers} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.FOREMAN_DASHBOARD} component={ForemanDashboard} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_MY_PILOTS} component={ForemanMyPilots} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_PENDING_PROFILES} component={ForemanPendingProfiles} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_PENDING_SUBSCRIPTION} component={ForemanPendingSubscription} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_PENDING_TRAINING} component={ForemanPendingTraining} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_EXPIRING_DOCUMENTS} component={ForemanExpiringDocuments} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_VERIFIED_DRIVERS} component={ForemanVerifiedDrivers} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_TRUSTED_DRIVERS} component={ForemanTrustedDrivers} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_JOBS_LIST} component={ForemanJobsList} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     )
 }

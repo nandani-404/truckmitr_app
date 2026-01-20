@@ -559,11 +559,11 @@ export default function ForemanHome() {
                                 iconSize={36}
                                 titleStyle={{ fontSize: 10, textAlign: 'center', marginTop: 4, lineHeight: 14 }}
                                 onPress={() => {
-                                    // if (item.id === 4) {
-                                    //     navigation.navigate(STACKS.FOREMAN_JOBS_LIST as any);
-                                    // } else {
-                                    //     console.log(item.title);
-                                    // }
+                                    if (item.id === 4) {
+                                        navigation.navigate(STACKS.FOREMAN_JOBS_LIST as any);
+                                    } else {
+                                        console.log(item.title);
+                                    }
                                 }}
                             />
                         ))}
