@@ -272,10 +272,10 @@ export const STACKS = {
 
     // FOREMAN MODULE
     FOREMAN_BOTTOM_TAB: 'foremanBottomTab',
-    FOREMAN_DASHBOARD: 'foremanDashboard',
-    FOREMAN_MY_DRIVERS: 'foremanMyDrivers',
-    FOREMAN_DRIVER_ONBOARDING: 'foremanDriverOnboarding',
-    FOREMAN_EARNINGS: 'foremanEarnings',
+    FOREMAN_HOME: 'foremanHome',
+    FOREMAN_ADD_DRIVER: 'foremanAddDriver',
+    FOREMAN_DRIVER_KI_AWAZ: 'foremanDriverKiAwaz',
+    FOREMAN_MY_EARNINGS: 'foremanMyEarnings',
     FOREMAN_PROFILE: 'foremanProfile',
     FOREMAN_PROFILE_COMPLETION: 'foremanProfileCompletion',
 

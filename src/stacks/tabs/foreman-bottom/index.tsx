@@ -17,36 +17,30 @@ import { deleteUserData } from '@truckmitr/src/utils/config/token';
 import { userAuthenticatedAction } from '@truckmitr/redux/actions/user.action';
 import { AppleConfirmDialog } from '@truckmitr/src/app/components/apple-confirm-dialog';
 import { BASE_URL } from '@truckmitr/src/utils/config';
+import ForemanHome from '@truckmitr/src/app/layouts/foreman/foreman-home';
 
 // Placeholder screens - will be replaced with actual screens
-const ForemanDashboard = () => (
+
+const ForemanAddDriver = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-        <MaterialCommunityIcons name="view-dashboard" size={80} color="#3D5EE1" />
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>Foreman Dashboard</Text>
+        <MaterialCommunityIcons name="account-plus" size={80} color="#00C9A7" />
+        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>Add Driver</Text>
         <Text style={{ color: '#666', marginTop: 8 }}>Coming Soon</Text>
     </View>
 );
 
-const ForemanMyDrivers = () => (
+const ForemanDriverKiAwaz = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-        <MaterialCommunityIcons name="account-group" size={80} color="#00C9A7" />
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>My Drivers</Text>
+        <MaterialCommunityIcons name="microphone" size={80} color="#FF6B6B" />
+        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>Driver Ki Awaz</Text>
         <Text style={{ color: '#666', marginTop: 8 }}>Coming Soon</Text>
     </View>
 );
 
-const ForemanOnboarding = () => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-        <MaterialCommunityIcons name="account-plus" size={80} color="#FF6B6B" />
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>Driver Onboarding</Text>
-        <Text style={{ color: '#666', marginTop: 8 }}>Coming Soon</Text>
-    </View>
-);
-
-const ForemanEarnings = () => (
+const ForemanMyEarnings = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
         <MaterialCommunityIcons name="cash-multiple" size={80} color="#845EC2" />
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>Earnings</Text>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>My Earnings</Text>
         <Text style={{ color: '#666', marginTop: 8 }}>Coming Soon</Text>
     </View>
 );
@@ -350,15 +344,15 @@ function ForemanTabBar({ state, descriptors, navigation }: any) {
     const { responsiveFontSize } = useResponsiveScale();
 
     const tabs = [
-        { name: STACKS.FOREMAN_DASHBOARD, icon: 'view-dashboard', label: 'Dashboard' },
-        { name: STACKS.FOREMAN_MY_DRIVERS, icon: 'account-group', label: 'My Drivers' },
-        { name: STACKS.FOREMAN_DRIVER_ONBOARDING, icon: 'account-plus', label: 'Onboard' },
-        { name: STACKS.FOREMAN_EARNINGS, icon: 'cash-multiple', label: 'Earnings' },
+        { name: STACKS.FOREMAN_HOME, icon: 'home', label: 'Home' },
+        { name: STACKS.FOREMAN_ADD_DRIVER, icon: 'account-plus', label: 'Add Driver' },
+        { name: STACKS.FOREMAN_DRIVER_KI_AWAZ, icon: 'microphone', label: 'Driver Ki Awaz' },
+        { name: STACKS.FOREMAN_MY_EARNINGS, icon: 'cash-multiple', label: 'Earnings' },
         { name: STACKS.FOREMAN_PROFILE, icon: 'account-circle', label: 'Profile' },
     ];
 
     return (
-        <View style={[styles.tabBar, { paddingBottom: insets.bottom || 8 }]}>
+        <View style={[styles.tabBar, { paddingBottom: insets.bottom || 8, backgroundColor: colors.royalBlue }]}>
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
                 const isFocused = state.index === index;
@@ -385,20 +379,23 @@ function ForemanTabBar({ state, descriptors, navigation }: any) {
                     >
                         <MaterialCommunityIcons
                             name={tabConfig.icon}
-                            size={24}
-                            color={isFocused ? '#3D5EE1' : '#999'}
+                            size={30}
+                            color={isFocused ? colors.white : colors.whiteOpacity(0.5)}
                         />
-                        <Text
-                            style={[
-                                styles.tabLabel,
-                                {
-                                    color: isFocused ? '#3D5EE1' : '#999',
-                                    fontSize: responsiveFontSize(1.2)
-                                }
-                            ]}
-                        >
-                            {tabConfig.label}
-                        </Text>
+                        {isFocused && (
+                            <Text
+                                numberOfLines={1}
+                                style={[
+                                    styles.tabLabel,
+                                    {
+                                        color: isFocused ? colors.white : colors.whiteOpacity(0.5),
+                                        fontSize: responsiveFontSize(1.2)
+                                    }
+                                ]}
+                            >
+                                {tabConfig.label}
+                            </Text>
+                        )}
                     </TouchableOpacity>
                 );
             })}
@@ -412,10 +409,10 @@ export default function ForemanBottom() {
             tabBar={props => <ForemanTabBar {...props} />}
             screenOptions={{ headerShown: false }}
         >
-            <Tab.Screen name={STACKS.FOREMAN_DASHBOARD} component={ForemanDashboard} />
-            <Tab.Screen name={STACKS.FOREMAN_MY_DRIVERS} component={ForemanMyDrivers} />
-            <Tab.Screen name={STACKS.FOREMAN_DRIVER_ONBOARDING} component={ForemanOnboarding} />
-            <Tab.Screen name={STACKS.FOREMAN_EARNINGS} component={ForemanEarnings} />
+            <Tab.Screen name={STACKS.FOREMAN_HOME} component={ForemanHome} />
+            <Tab.Screen name={STACKS.FOREMAN_ADD_DRIVER} component={ForemanAddDriver} />
+            <Tab.Screen name={STACKS.FOREMAN_DRIVER_KI_AWAZ} component={ForemanDriverKiAwaz} />
+            <Tab.Screen name={STACKS.FOREMAN_MY_EARNINGS} component={ForemanMyEarnings} />
             <Tab.Screen name={STACKS.FOREMAN_PROFILE} component={ForemanProfile} />
         </Tab.Navigator>
     );
@@ -424,7 +421,7 @@ export default function ForemanBottom() {
 const styles = StyleSheet.create({
     tabBar: {
         flexDirection: 'row',
-        backgroundColor: '#fff',
+        // backgroundColor: colors.royalBlue,
         borderTopWidth: 1,
         borderTopColor: '#eee',
         paddingTop: 8,
