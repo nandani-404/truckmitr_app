@@ -18,16 +18,10 @@ import { userAuthenticatedAction } from '@truckmitr/redux/actions/user.action';
 import { AppleConfirmDialog } from '@truckmitr/src/app/components/apple-confirm-dialog';
 import { BASE_URL } from '@truckmitr/src/utils/config';
 import ForemanHome from '@truckmitr/src/app/layouts/foreman/foreman-home';
+import ForemanAddDriver from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-add-driver';
 
 // Placeholder screens - will be replaced with actual screens
 
-const ForemanAddDriver = () => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-        <MaterialCommunityIcons name="account-plus" size={80} color="#00C9A7" />
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>Add Driver</Text>
-        <Text style={{ color: '#666', marginTop: 8 }}>Coming Soon</Text>
-    </View>
-);
 
 const ForemanDriverKiAwaz = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>

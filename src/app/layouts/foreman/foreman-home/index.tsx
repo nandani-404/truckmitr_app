@@ -210,7 +210,76 @@ export default function ForemanHome() {
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
+            <View style={{ height: responsiveHeight(42), width: responsiveWidth(100), borderBottomLeftRadius: 60, borderBottomRightRadius: 60, marginBottom: responsiveHeight(1.5) }}>
+                {/* Banner Background */}
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderBottomLeftRadius: 60, borderBottomRightRadius: 60, overflow: 'hidden' }}>
+                    <Image
+                        style={{ width: '100%', height: '100%' }}
+                        source={require('../../../../assets/foreman_banner_1.jpeg')}
+                        resizeMode="cover"
+                    />
+                </View>
 
+                {/* Header Content */}
+                <View style={{ paddingTop: safeAreaInsets.top, paddingHorizontal: responsiveWidth(3) }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View>
+                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`Hello, ${foremanName} 👋`}</Text>
+                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>TM2503UPDR00003</Text>
+                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>Silver Foreman</Text>
+                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>Certified TruckMitr Partner</Text>
+                        </View>
+
+                        <TouchableOpacity style={{ alignItems: 'center' }}
+                        //  onPress={() => navigation.navigate(STACKS.PROFILE_EDIT_FOREMAN as any)}
+                        >
+                            <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+                                <Svg width={size} height={size} style={{ position: "absolute", top: 0, left: 0 }}>
+                                    <Defs>
+                                        <SvgGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <Stop offset="0" stopColor="#FFD700" stopOpacity="1" />
+                                            <Stop offset="1" stopColor="#FFA500" stopOpacity="1" />
+                                        </SvgGradient>
+                                    </Defs>
+                                    <Circle
+                                        cx={size / 2}
+                                        cy={size / 2}
+                                        r={radius}
+                                        stroke="url(#grad)"
+                                        strokeWidth={4}
+                                        fill="none"
+                                        strokeDasharray={circumference}
+                                        strokeDashoffset={progressOffset}
+                                        strokeLinecap="round"
+                                        rotation="90"
+                                        origin={`${size / 2}, ${size / 2}`}
+                                    />
+                                </Svg>
+                                <Image style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }} source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }} />
+                                <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${profileCompletion}%`}</Text>
+                                </View>
+                            </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: responsiveFontSize(1.5), gap: 2 }}>
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <FontAwesome
+                                        key={i}
+                                        name={i < star_rating ? 'star' : 'star-o'}
+                                        size={responsiveFontSize(1.6)}
+                                        color={i < star_rating ? '#FFD700' : 'rgba(0,0,0,0.2)'}
+                                    />
+                                ))}
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Search Bar */}
+                <TouchableOpacity activeOpacity={1} style={{ position: 'absolute', bottom: -responsiveHeight(1.5), width: responsiveWidth(92), flexDirection: 'row', height: responsiveHeight(6), alignSelf: 'center', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'space-between', borderColor: '#000', borderWidth: 1.5, borderRadius: 100, paddingHorizontal: responsiveWidth(3), ...shadow, zIndex: 100, elevation: 10 }}>
+                    <Text style={{ fontSize: responsiveFontSize(1.6), color: 'rgba(0,0,0,0.9)', fontWeight: '500' }}>Search Drivers</Text>
+                    <Feather name={'search'} size={18} color={colors.royalBlue} />
+                </TouchableOpacity>
+            </View>
 
             {/* Content Section */}
             <ScrollView
@@ -218,77 +287,6 @@ export default function ForemanHome() {
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
             >
-
-                <View style={{ height: responsiveHeight(42), width: responsiveWidth(100), borderBottomLeftRadius: 60, borderBottomRightRadius: 60, marginBottom: responsiveHeight(1.5) }}>
-                    {/* Banner Background */}
-                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderBottomLeftRadius: 60, borderBottomRightRadius: 60, overflow: 'hidden' }}>
-                        <Image
-                            style={{ width: '100%', height: '100%' }}
-                            source={require('../../../../assets/foreman_banner_1.jpeg')}
-                            resizeMode="cover"
-                        />
-                    </View>
-
-                    {/* Header Content */}
-                    <View style={{ paddingTop: safeAreaInsets.top, paddingHorizontal: responsiveWidth(3) }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <View>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`Hello, ${foremanName} 👋`}</Text>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>TM2503UPDR00003</Text>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>Silver Foreman</Text>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>Certified TruckMitr Partner</Text>
-                            </View>
-
-                            <TouchableOpacity style={{ alignItems: 'center' }}
-                            //  onPress={() => navigation.navigate(STACKS.PROFILE_EDIT_FOREMAN as any)}
-                            >
-                                <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-                                    <Svg width={size} height={size} style={{ position: "absolute", top: 0, left: 0 }}>
-                                        <Defs>
-                                            <SvgGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                <Stop offset="0" stopColor="#FFD700" stopOpacity="1" />
-                                                <Stop offset="1" stopColor="#FFA500" stopOpacity="1" />
-                                            </SvgGradient>
-                                        </Defs>
-                                        <Circle
-                                            cx={size / 2}
-                                            cy={size / 2}
-                                            r={radius}
-                                            stroke="url(#grad)"
-                                            strokeWidth={4}
-                                            fill="none"
-                                            strokeDasharray={circumference}
-                                            strokeDashoffset={progressOffset}
-                                            strokeLinecap="round"
-                                            rotation="90"
-                                            origin={`${size / 2}, ${size / 2}`}
-                                        />
-                                    </Svg>
-                                    <Image style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }} source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }} />
-                                    <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
-                                        <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${profileCompletion}%`}</Text>
-                                    </View>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: responsiveFontSize(1.5), gap: 2 }}>
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                        <FontAwesome
-                                            key={i}
-                                            name={i < star_rating ? 'star' : 'star-o'}
-                                            size={responsiveFontSize(1.6)}
-                                            color={i < star_rating ? '#FFD700' : 'rgba(0,0,0,0.2)'}
-                                        />
-                                    ))}
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* Search Bar */}
-                    <TouchableOpacity activeOpacity={1} style={{ position: 'absolute', bottom: -responsiveHeight(1.5), width: responsiveWidth(92), flexDirection: 'row', height: responsiveHeight(6), alignSelf: 'center', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'space-between', borderColor: '#000', borderWidth: 1.5, borderRadius: 100, paddingHorizontal: responsiveWidth(3), ...shadow, zIndex: 100, elevation: 10 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.6), color: 'rgba(0,0,0,0.9)', fontWeight: '500' }}>Search Drivers</Text>
-                        <Feather name={'search'} size={18} color={colors.royalBlue} />
-                    </TouchableOpacity>
-                </View>
                 {/* Quick Action Section */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, marginTop: 0 }}>
                     <Ionicons name="flash-outline" size={18} color="#1E293B" style={{ marginRight: 8 }} />

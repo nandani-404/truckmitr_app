@@ -70,17 +70,27 @@ const userReducer = (state = initialState, action: any) => {
                 isForeman: payload?.user?.role === 'foreman',
                 isAssociate: payload?.user?.role === 'associate',
                 profileCompletion: payload?.profile_completion,
-                // Foreman/Associate: Default to false (show profile completion) if null
-                // Driver/Transporter: Use existing backend logic
+                // Use role-specific required fields status from API
+                // foreman: foreman_required_fields_status (true = complete, false/null = incomplete)
+                // associate: associate_required_fields_status (true = complete, false/null = incomplete)
+                // transporter: transporter_required_fields_status
+                // driver: profile_required_fields_status
                 profileRequiredFieldsStatus:
-                    payload?.user?.role === 'foreman' || payload?.user?.role === 'associate'
-                        ? (payload?.profile_required_fields_status ?? false) // Foreman/Associate defaults to false
-                        : payload?.user?.role === 'transporter'
-                            ? (payload?.transporter_required_fields_status ?? true)
-                            : (payload?.profile_required_fields_status ?? true),
-                missingFields: (payload?.user?.role === 'transporter')
-                    ? (payload?.transporter_missing_fields || [])
-                    : (payload?.missing_required_fields || []),
+                    payload?.user?.role === 'foreman'
+                        ? (payload?.foreman_required_fields_status ?? false)
+                        : payload?.user?.role === 'associate'
+                            ? (payload?.associate_required_fields_status ?? false)
+                            : payload?.user?.role === 'transporter'
+                                ? (payload?.transporter_required_fields_status ?? true)
+                                : (payload?.profile_required_fields_status ?? true),
+                missingFields:
+                    payload?.user?.role === 'foreman'
+                        ? (payload?.foreman_missing_fields || [])
+                        : payload?.user?.role === 'associate'
+                            ? (payload?.associate_missing_fields || [])
+                            : payload?.user?.role === 'transporter'
+                                ? (payload?.transporter_missing_fields || [])
+                                : (payload?.missing_required_fields || []),
                 dashboard: payload?.dashboard_status,
                 rank: payload?.rank,
                 star_rating: payload?.star_rating,
