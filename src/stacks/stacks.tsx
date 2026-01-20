@@ -9,7 +9,8 @@ export type NavigatorParams = {
     languageMain: undefined
     preferredColor: undefined
     paymentSuccess: any
-    signup: undefined
+    signup: { preSelectedRole?: string } | undefined
+    moduleSelection: undefined
     congratulations: any
     profileCompletion: undefined
     phone: undefined;
@@ -142,6 +143,7 @@ export const STACKS = {
     PREFERRED_COLOR: 'preferredColor',
     PAYMENT_SUCCESS: 'paymentSuccess',
     SIGNUP: 'signup',
+    MODULE_SELECTION: 'moduleSelection',
     CONGRATULATIONS: 'congratulations',
     PROFILE_COMPLETION: 'profileCompletion',
     PHONE: 'phone',
@@ -267,5 +269,22 @@ export const STACKS = {
     JOB_SUMMARY: 'jobSummary',
     EDIT_JOB: 'editJob',
     PROFILE_OVERVIEW: 'profileOverview',
+
+    // FOREMAN MODULE
+    FOREMAN_BOTTOM_TAB: 'foremanBottomTab',
+    FOREMAN_DASHBOARD: 'foremanDashboard',
+    FOREMAN_MY_DRIVERS: 'foremanMyDrivers',
+    FOREMAN_DRIVER_ONBOARDING: 'foremanDriverOnboarding',
+    FOREMAN_EARNINGS: 'foremanEarnings',
+    FOREMAN_PROFILE: 'foremanProfile',
+    FOREMAN_PROFILE_COMPLETION: 'foremanProfileCompletion',
+
+    // ASSOCIATE MODULE
+    ASSOCIATE_BOTTOM_TAB: 'associateBottomTab',
+    ASSOCIATE_DASHBOARD: 'associateDashboard',
+    ASSOCIATE_REFERRALS: 'associateReferrals',
+    ASSOCIATE_EARNINGS: 'associateEarnings',
+    ASSOCIATE_PROFILE: 'associateProfile',
+    ASSOCIATE_PROFILE_COMPLETION: 'associateProfileCompletion',
 
 } as const;

@@ -15,7 +15,7 @@ const store = configureStore({
       serializableCheck: true,      // Ensure actions and state are serializable
       immutableCheck: false,         // Ensure state is immutable
     }).concat(sagaMiddleware),
-  devTools: process.env.NODE_ENV !== 'production', // Enable Redux DevTools in development mode
+  // devTools: process.env.NODE_ENV !== 'production', // Enable Redux DevTools in development mode
 });
 
 // Run the root saga with error handling

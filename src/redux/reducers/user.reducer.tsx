@@ -67,10 +67,17 @@ const userReducer = (state = initialState, action: any) => {
                 userEdit: preservedUserEdit,
                 isDriver: payload?.user?.role === 'driver',
                 isTransporter: payload?.user?.role === 'transporter',
+                isForeman: payload?.user?.role === 'foreman',
+                isAssociate: payload?.user?.role === 'associate',
                 profileCompletion: payload?.profile_completion,
-                profileRequiredFieldsStatus: (payload?.user?.role === 'transporter')
-                    ? (payload?.transporter_required_fields_status ?? true)
-                    : (payload?.profile_required_fields_status ?? true),
+                // Foreman/Associate: Default to false (show profile completion) if null
+                // Driver/Transporter: Use existing backend logic
+                profileRequiredFieldsStatus:
+                    payload?.user?.role === 'foreman' || payload?.user?.role === 'associate'
+                        ? (payload?.profile_required_fields_status ?? false) // Foreman/Associate defaults to false
+                        : payload?.user?.role === 'transporter'
+                            ? (payload?.transporter_required_fields_status ?? true)
+                            : (payload?.profile_required_fields_status ?? true),
                 missingFields: (payload?.user?.role === 'transporter')
                     ? (payload?.transporter_missing_fields || [])
                     : (payload?.missing_required_fields || []),

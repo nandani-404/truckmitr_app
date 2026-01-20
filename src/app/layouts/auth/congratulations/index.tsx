@@ -31,6 +31,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useDispatch } from 'react-redux';
+import { userAuthenticatedAction } from '@truckmitr/src/redux/actions/user.action';
 import { useTranslation } from 'react-i18next';
 import Video from 'react-native-video';
 import { Space } from '@truckmitr/src/app/components';
@@ -301,6 +303,7 @@ export default function Congratulations() {
     const colors = useColor();
     const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
+    const dispatch = useDispatch();
     const route = useRoute();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
 
@@ -365,7 +368,9 @@ export default function Congratulations() {
     };
 
     const handleCompleteProfile = () => {
-        navigation.navigate(STACKS.PROFILE_COMPLETION as any);
+        // Dispatch authentication - routes/index.tsx will automatically 
+        // render the correct profile completion stack based on selectedModule
+        dispatch(userAuthenticatedAction(true));
     };
 
     // Audio Playback State

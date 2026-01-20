@@ -2,7 +2,7 @@ import { StatusBar, useColorScheme, View, Image, AppState, Linking, TouchableOpa
 import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { darkTheme, lightTheme } from '@truckmitr/res/colors';
-import { Auth, Main, ProfileCompletionStack } from '@truckmitr/stacks/index';
+import { Auth, Main, ForemanMain, AssociateMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack } from '@truckmitr/stacks/index';
 import SystemNavigationBar from 'react-native-system-navigation-bar';
 import BootSplash from 'react-native-bootsplash';
 import { navigationRef } from '@truckmitr/utils/global/global.ref';
@@ -27,6 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppEventsLogger } from 'react-native-fbsdk-next';
 import { consumePendingNotificationNavigation, resetNotificationFlag } from '../utils/notification';
 import messaging from '@react-native-firebase/messaging';
+import * as TYPES from '@truckmitr/redux/actions/types';
 // import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 
 export let isNavigationReady = false;
@@ -42,6 +43,7 @@ export default function Routes() {
   const { responsiveWidth, responsiveHeight } = useResponsiveScale();
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
   const { isAuthenticated, subscriptionModal, user, profileRequiredFieldsStatus } = useSelector((state: any) => state?.user);
+  const { selectedModule } = useSelector((state: any) => state?.app);
   const [isAppReady, setIsAppReady] = useState(false);
 
   console.log('🛡️ AUTH GATE STATUS:', {
@@ -237,6 +239,24 @@ export default function Routes() {
   }, [isAuthenticated]);
 
   // -------------------------------
+  // 🔹 Load Module Selection from Storage
+  // -------------------------------
+  useEffect(() => {
+    const loadModule = async () => {
+      try {
+        const storedModule = await AsyncStorage.getItem('SELECTED_MODULE');
+        if (storedModule) {
+          dispatch({ type: TYPES.SET_MODULE, payload: storedModule });
+          console.log('📦 Module loaded from storage:', storedModule);
+        }
+      } catch (error) {
+        console.error('❌ Error loading module:', error);
+      }
+    };
+    loadModule();
+  }, []);
+
+  // -------------------------------
   // 🔹 Check incomplete signup
   // -------------------------------
   useEffect(() => {
@@ -290,8 +310,6 @@ export default function Routes() {
             await AsyncStorage.removeItem('app_session_active');
             dispatch(userAuthenticatedAction(false));
           } else {
-            dispatch(userAuthenticatedAction(true));
-
             const profile: any = await axiosInstance.get(END_POINTS?.GET_PROFILE, {
               headers: {
                 'X-Skip-Global-Logout': 'true' // Prevent auto-logout during init
@@ -300,6 +318,22 @@ export default function Routes() {
             if (profile?.data?.status) {
               dispatch(userAction(profile?.data));
               userIdRef.current = profile?.data?.data?.id?.toString();
+
+              // Determine and set module from user's role
+              // This ensures correct navigation for returning users
+              const userRole = profile?.data?.user?.role;
+              // console.log('USER ROLE:', profile);
+
+              let moduleFromRole = 'hiring'; // default for driver/transporter
+              if (userRole === 'foreman') {
+                moduleFromRole = 'foreman';
+              } else if (userRole === 'associate') {
+                moduleFromRole = 'associate';
+              }
+              // Update both AsyncStorage and Redux
+              await AsyncStorage.setItem('SELECTED_MODULE', moduleFromRole);
+              dispatch({ type: TYPES.SET_MODULE, payload: moduleFromRole });
+              console.log('📦 Module set from user role:', moduleFromRole);
 
               const sub: any = await axiosInstance.get(END_POINTS?.PAYMENT_SUBSCRIPTION_DETAILS, {
                 headers: {
@@ -312,6 +346,9 @@ export default function Routes() {
 
               // Mark session as active
               await AsyncStorage.setItem('app_session_active', 'true');
+
+              // Set authenticated AFTER module is set to prevent wrong stack flashing
+              dispatch(userAuthenticatedAction(true));
             } else if (profile?.status === 401 || profile?.status === 403) {
               // Token became invalid
               await deleteUserData();
@@ -354,13 +391,13 @@ export default function Routes() {
       // Small delay to ensure Main stack is fully mounted
       const timer = setTimeout(async () => {
         console.log('🔔 Checking for pending notification navigation...');
-        
+
         // Check for kill state pending screen first
         const pendingScreen = await AsyncStorage.getItem('PENDING_NOTIFICATION_SCREEN');
         if (pendingScreen) {
           console.log('🔴 Kill state: Processing pending screen:', pendingScreen);
           await AsyncStorage.removeItem('PENDING_NOTIFICATION_SCREEN');
-          
+
           // Navigate based on screen
           if (navigationRef.current) {
             switch (pendingScreen) {
@@ -383,7 +420,7 @@ export default function Routes() {
           }
           return;
         }
-        
+
         // Otherwise check for regular pending notification
         consumePendingNotificationNavigation();
       }, 500);
@@ -399,13 +436,13 @@ export default function Routes() {
       console.log('🌐 Processing pending deep link:', pendingDeepLink.current);
       const url = pendingDeepLink.current;
       pendingDeepLink.current = null; // Clear it
-      
+
       // Small delay to ensure Main stack is mounted
       setTimeout(() => {
         // Parse and navigate
         const urlParts = url.replace('truckmitr://', '').split('/');
         const path = urlParts[0];
-        
+
         switch (path) {
           case 'profile':
             (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
@@ -560,30 +597,30 @@ export default function Routes() {
 
   const linking = {
     prefixes: ['truckmitr://', 'https://truckmitr.com'],
-    
+
     // Custom getInitialURL to handle notification deep links in kill state
     async getInitialURL() {
       // First, check if app was opened from a notification (kill state)
       const initialNotification = await messaging().getInitialNotification();
-      
+
       if (initialNotification?.data?.screen) {
         const screen = initialNotification.data.screen as string;
         console.log('🔴 Kill state: Got notification screen:', screen);
-        
+
         // Store the screen for manual navigation after auth
         await AsyncStorage.setItem('PENDING_NOTIFICATION_SCREEN', screen);
         console.log('🔴 Kill state: Stored pending screen for manual navigation');
-        
+
         // Return null - we'll handle navigation manually after Main stack mounts
         return null;
       }
-      
+
       // Otherwise, check for regular deep link
       const url = await Linking.getInitialURL();
       console.log('🌐 Regular initial URL:', url);
       return url;
     },
-    
+
     // Subscribe to incoming links (foreground/background)
     subscribe(listener: (url: string) => void) {
       // Listen for deep links
@@ -591,13 +628,13 @@ export default function Routes() {
         console.log('🌐 Deep link received:', url);
         listener(url);
       });
-      
+
       // Listen for notification taps (background state)
       const unsubscribeNotification = messaging().onNotificationOpenedApp(msg => {
         if (msg?.data?.screen) {
           const screen = msg.data.screen as string;
           console.log('🟡 Background notification tap, screen:', screen);
-          
+
           // Navigate directly using navigationRef instead of deep link
           // This avoids the "Main" screen not found issue
           setTimeout(() => {
@@ -625,13 +662,13 @@ export default function Routes() {
           }, 500);
         }
       });
-      
+
       return () => {
         linkingSubscription.remove();
         unsubscribeNotification();
       };
     },
-    
+
     config: {
       screens: {
         // Bottom Tab Navigator (direct, no Main wrapper)
@@ -728,12 +765,21 @@ export default function Routes() {
       {/* <ZegoCallInvitationDialog /> */}
       {!isAuthenticated ? (
         <Auth />
-        ) : profileRequiredFieldsStatus === false ? (
+      ) : profileRequiredFieldsStatus === false || profileRequiredFieldsStatus === null ? (
+        // Module-specific profile completion
+        selectedModule === 'foreman' ? (
+          <ForemanProfileCompletionStack />
+        ) : selectedModule === 'associate' ? (
+          <AssociateProfileCompletionStack />
+        ) : (
           <ProfileCompletionStack />
+        )
+      ) : selectedModule === 'foreman' ? (
+        <ForemanMain />
+      ) : selectedModule === 'associate' ? (
+        <AssociateMain />
       ) : (
-        <>
-          <Main />
-        </>
+        <Main />
       )}
       {subscriptionModal && <Subscription />}
       <InAppUpdatePopup />

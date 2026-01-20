@@ -87,7 +87,7 @@ export default function Login() {
 
 
     const _navigateSignup = useCallback(() => {
-        navigation.navigate(STACKS.SIGNUP);
+        navigation.navigate(STACKS.MODULE_SELECTION);
     }, [navigation]);
 
     return (

@@ -395,6 +395,21 @@ const Otp = () => {
                     await saveUserData(token);
                     await AsyncStorage.setItem('app_session_active', 'true');
 
+                    // Save module based on role for module-based navigation
+                    // Backend roles: driver, transporter → hiring module
+                    // Backend roles: foreman, associate → their own modules
+                    const userRole = response?.data?.user?.role;
+                    let moduleToSave = 'hiring'; // default for driver/transporter
+                    if (userRole === 'foreman') {
+                        moduleToSave = 'foreman';
+                    } else if (userRole === 'associate') {
+                        moduleToSave = 'associate';
+                    }
+                    // driver and transporter both map to 'hiring'
+                    await AsyncStorage.setItem('SELECTED_MODULE', moduleToSave);
+                    dispatch({ type: 'SET_MODULE', payload: moduleToSave });
+                    console.log('💾 Module saved from OTP:', moduleToSave);
+
                     try {
                         await new Promise<void>(resolve => setTimeout(() => resolve(), 300));
 

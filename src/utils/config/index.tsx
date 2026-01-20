@@ -49,7 +49,9 @@ export const END_POINTS = {
     DRIVER_CONSENT: `api/driver-consent-for-job-application-data-sharing`,
     TRANSPORTER_CONSENT: `api/transporter-consent-for-job-posting-data-sharing`,
     SUBSCRIPTION_CONSENT: `api/subscription-consent-and-disclaimer`,
-
+    ACCEPTED_JOBS: `api/jobs/accepted-jobs`,
+    ACCEPTED_JOBS_DRIVERS: `api/jobs/accepted-jobs-drivers`,
+    CALL_LOGS_INITIATED: 'api/jobs/call-logs-initiated',
     TRANSPORTER_ADD_JOB: `api/transporter/add-job`,
     TRANSPORTER_EDIT_JOB: (id: any) => `api/transporter/edit-job/${id}`,
     TRANSPORTER_ALL_JOBS: (payload: any) => `api/all-jobs?search=${payload}`,

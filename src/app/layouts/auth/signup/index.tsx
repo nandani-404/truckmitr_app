@@ -5,7 +5,7 @@ import { ActivityIndicator, TextInput as PaperTextInput } from 'react-native-pap
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import { Space } from '@truckmitr/src/app/components';
@@ -25,6 +25,8 @@ export default function Signup() {
     const { t } = useTranslation();
     const colors = useColor();
     const { shadow } = useShadow();
+    const route = useRoute<RouteProp<NavigatorParams, typeof STACKS.SIGNUP>>();
+    const preSelectedRole = route.params?.preSelectedRole;
     const navigation = useNavigation<NavigatorProp>();
     const safeAreaInsets = useSafeAreaInsets();
     const { responsiveFontSize, responsiveWidth, responsiveHeight } = useResponsiveScale();
@@ -33,7 +35,7 @@ export default function Signup() {
     const [name, setName] = useState<string>('');
     const [email, setEmail] = useState<string>('');
     const [mobile, setMobile] = useState<string>('');
-    const [role, setRole] = useState<string>('driver'); // Default to driver
+    const [role, setRole] = useState<string>(preSelectedRole || 'driver'); // Default to driver
     const [state, setState] = useState<string>(''); // Selected state
     const [code, setCode] = useState<string>(''); // Selected state
     const [checkBoxSelect, setCheckBoxSelect] = useState<boolean>(false);
@@ -206,6 +208,7 @@ export default function Signup() {
                         </TouchableOpacity>
                     </View>
 
+                    <Space height={responsiveHeight(2)} />
                     {/* Title Section */}
                     <View style={{ width: '100%', alignItems: 'center', paddingHorizontal: responsiveWidth(5) }}>
                         <Text style={{
@@ -230,13 +233,13 @@ export default function Signup() {
                         </Text>
                     </View>
 
-                    <Space height={responsiveHeight(2)} />
+                    <Space height={responsiveHeight(5)} />
 
                     {/* Form Container */}
                     <View style={{ width: '100%', paddingHorizontal: responsiveWidth(6) }}>
 
                         {/* Role Selection Toggle */}
-                        <View style={{ marginBottom: responsiveHeight(1.5) }}>
+                        {/* <View style={{ marginBottom: responsiveHeight(1.5) }}>
                             <Text style={{
                                 fontSize: responsiveFontSize(1.6),
                                 color: colors.black,
@@ -315,7 +318,7 @@ export default function Signup() {
                             {errors.role && (
                                 <Text style={{ color: 'red', fontSize: responsiveFontSize(1.6), marginTop: 2, marginLeft: 4 }}>{errors.role}</Text>
                             )}
-                        </View>
+                        </View> */}
 
                         {/* Name Input */}
                         <View style={{ marginBottom: responsiveHeight(1.2) }}>
@@ -341,7 +344,7 @@ export default function Signup() {
                         {/* Mobile Input */}
                         <View style={{ marginBottom: responsiveHeight(1.2) }}>
                             <PaperTextInput
-                                left={<PaperTextInput.Affix text="+91" textStyle={{ color: colors.black ,}} />}
+                                left={<PaperTextInput.Affix text="+91" textStyle={{ color: colors.black, }} />}
                                 mode="outlined"
                                 label={<Text>{t(`mobile`)} <Text style={{ color: colors.error }}>*</Text></Text>}
                                 value={mobile}
