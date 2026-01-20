@@ -129,6 +129,10 @@ export type NavigatorParams = {
     jobSummary: undefined
     editJob: { stepId: string } | undefined
     profileOverview: undefined
+    foremanPendingProfiles: undefined
+    foremanPendingSubscription: undefined
+    foremanPendingTraining: undefined
+    foremanExpiringDocuments: undefined
 };
 
 export const STACKS = {
@@ -278,6 +282,12 @@ export const STACKS = {
     FOREMAN_MY_EARNINGS: 'foremanMyEarnings',
     FOREMAN_PROFILE: 'foremanProfile',
     FOREMAN_PROFILE_COMPLETION: 'foremanProfileCompletion',
+    FOREMAN_DASHBOARD: 'foremanDashboard',
+    FOREMAN_MY_PILOTS: 'foremanMyPilots',
+    FOREMAN_PENDING_PROFILES: 'foremanPendingProfiles',
+    FOREMAN_PENDING_SUBSCRIPTION: 'foremanPendingSubscription',
+    FOREMAN_PENDING_TRAINING: 'foremanPendingTraining',
+    FOREMAN_EXPIRING_DOCUMENTS: 'foremanExpiringDocuments',
 
     // ASSOCIATE MODULE
     ASSOCIATE_BOTTOM_TAB: 'associateBottomTab',

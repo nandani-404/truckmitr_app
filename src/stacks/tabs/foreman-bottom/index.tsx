@@ -19,10 +19,10 @@ import { AppleConfirmDialog } from '@truckmitr/src/app/components/apple-confirm-
 import { BASE_URL } from '@truckmitr/src/utils/config';
 import ForemanHome from '@truckmitr/src/app/layouts/foreman/foreman-home';
 import ForemanAddDriver from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-add-driver';
+
 import DriverKiAwazInfo from '@truckmitr/src/app/layouts/main/driver-ki-awaz-info';
 
 // Placeholder screens - will be replaced with actual screens
-
 
 
 
