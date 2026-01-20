@@ -11,6 +11,8 @@ import ForemanPendingProfiles from '@truckmitr/src/app/layouts/foreman/foreman-h
 import ForemanPendingSubscription from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-pending-subscription';
 import ForemanPendingTraining from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-pending-training';
 import ForemanExpiringDocuments from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-expiring-documents';
+import ForemanVerifiedDrivers from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-verified-drivers';
+import ForemanTrustedDrivers from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-trusted-drivers';
 
 const Stack = createNativeStackNavigator();
 
@@ -76,6 +78,8 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.FOREMAN_PENDING_SUBSCRIPTION} component={ForemanPendingSubscription} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name={STACKS.FOREMAN_PENDING_TRAINING} component={ForemanPendingTraining} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name={STACKS.FOREMAN_EXPIRING_DOCUMENTS} component={ForemanExpiringDocuments} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.FOREMAN_VERIFIED_DRIVERS} component={ForemanVerifiedDrivers} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.FOREMAN_TRUSTED_DRIVERS} component={ForemanTrustedDrivers} options={{ animation: 'slide_from_right' }} />
         </Stack.Navigator>
     )
 }

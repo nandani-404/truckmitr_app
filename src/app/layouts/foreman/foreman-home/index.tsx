@@ -531,14 +531,13 @@ export default function ForemanHome() {
                                 onPress={() => {
                                     if (item.id === 1) {
                                         navigation.navigate(STACKS.FOREMAN_MY_PILOTS as any);
+                                    } else if (item.id === 2) {
+                                        navigation.navigate(STACKS.FOREMAN_VERIFIED_DRIVERS as any);
+                                    } else if (item.id === 3) {
+                                        navigation.navigate(STACKS.FOREMAN_TRUSTED_DRIVERS as any);
+                                    } else {
+                                        console.log(item.title);
                                     }
-                                    // } else if (item.id === 2) {
-                                    //     navigation.navigate(STACKS.FOREMAN_VERIFIED_DRIVERS as any);
-                                    // } else if (item.id === 3) {
-                                    //     navigation.navigate(STACKS.FOREMAN_TRUSTED_DRIVERS as any);
-                                    // } else {
-                                    //     console.log(item.title);
-                                    // }
                                 }}
                             />
                         ))}
