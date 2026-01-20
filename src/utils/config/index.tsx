@@ -66,6 +66,7 @@ export const END_POINTS = {
     TRANSPORTER_DELETE_DRIVERS: (payload: any) => `api/transporter/driver/delete/${payload}`,
     MOBILE_BANNERS: `api/mobile-banners`,
     UPDATE_PROFILE_FOREMAN: `api/update-profile-foreman`,
+    FOREMAN_ADD_DRIVER: `api/foreman/add-driver`,
 
     PAYMENT_SUBSCRIPTION_CAPTURE: `api/payment/subscription/capture`,
     PAYMENT_SUBSCRIPTION_DETAILS: `api/payment/subscription/details`,
