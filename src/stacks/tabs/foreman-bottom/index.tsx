@@ -19,22 +19,14 @@ import { AppleConfirmDialog } from '@truckmitr/src/app/components/apple-confirm-
 import { BASE_URL } from '@truckmitr/src/utils/config';
 import ForemanHome from '@truckmitr/src/app/layouts/foreman/foreman-home';
 import ForemanAddDriver from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-add-driver';
+import ForemanMyEarnings from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-earnings';
 
 // Placeholder screens - will be replaced with actual screens
-
 
 const ForemanDriverKiAwaz = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
         <MaterialCommunityIcons name="microphone" size={80} color="#FF6B6B" />
         <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>Driver Ki Awaz</Text>
-        <Text style={{ color: '#666', marginTop: 8 }}>Coming Soon</Text>
-    </View>
-);
-
-const ForemanMyEarnings = () => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-        <MaterialCommunityIcons name="cash-multiple" size={80} color="#845EC2" />
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>My Earnings</Text>
         <Text style={{ color: '#666', marginTop: 8 }}>Coming Soon</Text>
     </View>
 );

@@ -296,7 +296,7 @@ export default function ForemanHome() {
                     {/* Dashboard Card */}
                     <TouchableOpacity
                         activeOpacity={0.8}
-                        // onPress={() => navigation.navigate(STACKS.FOREMAN_DASHBOARD as any)}
+                        onPress={() => navigation.navigate(STACKS.FOREMAN_DASHBOARD as any)}
                         style={{
                             width: '48%',
                             backgroundColor: '#F5A623',
@@ -368,7 +368,7 @@ export default function ForemanHome() {
                 <View style={{ marginBottom: 32 }}>
                     <TouchableOpacity
                         activeOpacity={0.7}
-                        // onPress={() => navigation.navigate(STACKS.FOREMAN_EARNINGS as any)}
+                        onPress={() => navigation.navigate(STACKS.FOREMAN_MY_EARNINGS as any)}
                         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
                     >
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -435,7 +435,7 @@ export default function ForemanHome() {
                         {/* Card 1: Pending Profile */}
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            // onPress={() => navigation.navigate(STACKS.FOREMAN_PENDING_PROFILES as any)}
+                            onPress={() => navigation.navigate(STACKS.FOREMAN_PENDING_PROFILES as any)}
                             style={{ width: '48%', backgroundColor: '#FFF7ED', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -454,7 +454,7 @@ export default function ForemanHome() {
                         {/* Card 2: Pending Subscription */}
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            // onPress={() => navigation.navigate(STACKS.FOREMAN_PENDING_SUBSCRIPTION as any)}
+                            onPress={() => navigation.navigate(STACKS.FOREMAN_PENDING_SUBSCRIPTION as any)}
                             style={{ width: '48%', backgroundColor: '#fff', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -476,7 +476,7 @@ export default function ForemanHome() {
                         {/* Card 3: Pending Training */}
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            // onPress={() => navigation.navigate(STACKS.FOREMAN_PENDING_TRAINING as any)}
+                            onPress={() => navigation.navigate(STACKS.FOREMAN_PENDING_TRAINING as any)}
                             style={{ width: '48%', backgroundColor: '#fff', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -495,7 +495,7 @@ export default function ForemanHome() {
                         {/* Card 4: Expiring Documents */}
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            // onPress={() => navigation.navigate(STACKS.FOREMAN_EXPIRING_DOCUMENTS as any)}
+                            onPress={() => navigation.navigate(STACKS.FOREMAN_EXPIRING_DOCUMENTS as any)}
                             style={{ width: '48%', backgroundColor: '#FEF2F2', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -529,8 +529,9 @@ export default function ForemanHome() {
                                 iconSize={36}
                                 titleStyle={{ fontSize: 10, textAlign: 'center', marginTop: 0, lineHeight: 14 }}
                                 onPress={() => {
-                                    // if (item.id === 1) {
-                                    //     navigation.navigate(STACKS.FOREMAN_MY_PILOTS);
+                                    if (item.id === 1) {
+                                        navigation.navigate(STACKS.FOREMAN_MY_PILOTS as any);
+                                    }
                                     // } else if (item.id === 2) {
                                     //     navigation.navigate(STACKS.FOREMAN_VERIFIED_DRIVERS as any);
                                     // } else if (item.id === 3) {

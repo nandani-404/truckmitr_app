@@ -5,6 +5,12 @@ import ForemanBottom from './tabs/foreman-bottom';
 import { Settings, Notification, ContactUs, Privacy, LanguageMain, PreferredColor } from '@truckmitr/layouts/index';
 import { setupFirebaseNotifications, initializeNotificationChannel } from '@truckmitr/src/utils/notification';
 import { useSelector } from 'react-redux';
+import ForemanDashboard from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-dashboard';
+import ForemanMyPilots from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-my-pilots';
+import ForemanPendingProfiles from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-pending-profiles';
+import ForemanPendingSubscription from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-pending-subscription';
+import ForemanPendingTraining from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-pending-training';
+import ForemanExpiringDocuments from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-expiring-documents';
 
 const Stack = createNativeStackNavigator();
 
@@ -63,10 +69,13 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.LANGUAGE_MAIN} component={LanguageMain} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.PREFERRED_COLOR} component={PreferredColor} options={{ animation: 'fade' }} />
 
-            {/* TODO: Add Foreman-specific screens here when created */}
-            {/* <Stack.Screen name={STACKS.DRIVER_ONBOARDING} component={DriverOnboarding} /> */}
-            {/* <Stack.Screen name={STACKS.MY_DRIVERS} component={MyDrivers} /> */}
-            {/* <Stack.Screen name={STACKS.FOREMAN_EARNINGS} component={ForemanEarnings} /> */}
+            {/* Foreman-specific screens */}
+            <Stack.Screen name={STACKS.FOREMAN_DASHBOARD} component={ForemanDashboard} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.FOREMAN_MY_PILOTS} component={ForemanMyPilots} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.FOREMAN_PENDING_PROFILES} component={ForemanPendingProfiles} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.FOREMAN_PENDING_SUBSCRIPTION} component={ForemanPendingSubscription} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.FOREMAN_PENDING_TRAINING} component={ForemanPendingTraining} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.FOREMAN_EXPIRING_DOCUMENTS} component={ForemanExpiringDocuments} options={{ animation: 'slide_from_right' }} />
         </Stack.Navigator>
     )
 }
