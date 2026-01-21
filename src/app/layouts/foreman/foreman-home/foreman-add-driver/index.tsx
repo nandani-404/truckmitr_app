@@ -269,15 +269,65 @@ export default function ForemanAddDriver() {
         setSelectedContactIds([]);
         setContactSearchText('');
 
+        // Use getAllWithoutPhotos if available for better performance, else getAll
         Contacts.getAll()
             .then((contacts) => {
-                const contactsWithPhones = contacts
-                    .filter(c => c.phoneNumbers && c.phoneNumbers.length > 0)
-                    .map(c => ({
-                        ...c,
-                        displayName: `${c.givenName || ''} ${c.familyName || ''}`.trim() || 'Unknown',
-                        uniqueId: c.recordID || `${c.givenName}-${c.familyName}-${Math.random()}`
-                    }))
+                // First Phase: Filter invalid contacts
+                const validContacts = contacts.filter(c => c.phoneNumbers && c.phoneNumbers.length > 0);
+
+                // Second Phase: Advanced Deduplication
+                // We'll use a Map to keep unique contacts based on a composite key or phone number
+                const uniqueContactsMap = new Map();
+
+                validContacts.forEach((contact) => {
+                    const displayName = `${contact.givenName || ''} ${contact.familyName || ''}`.trim() || 'Unknown';
+
+                    // Normalize phone numbers for this contact
+                    const uniquePhonesForContact = new Set(
+                        contact.phoneNumbers.map((p: any) => p.number.replace(/[^0-9]/g, '').slice(-10))
+                    );
+
+                    // If we haven't seen this name yet, add it
+                    if (!uniqueContactsMap.has(displayName)) {
+                        uniqueContactsMap.set(displayName, {
+                            ...contact,
+                            displayName,
+                            phoneNumbers: contact.phoneNumbers, // Keep original structure
+                            uniqueId: contact.recordID || `${displayName}-${Math.random()}`
+                        });
+                    } else {
+                        // If we HAVE seen this name, we should check if we can merge phone numbers
+                        // This handles the case where "John Doe" has 2 entries: one with mobile, one with home
+                        const existingContact = uniqueContactsMap.get(displayName);
+
+                        const existingPhones = new Set(
+                            existingContact.phoneNumbers.map((p: any) => p.number.replace(/[^0-9]/g, '').slice(-10))
+                        );
+
+                        // Add new phones that aren't in the existing contact
+                        let hasNewPhones = false;
+                        const mergedPhoneNumbers = [...existingContact.phoneNumbers];
+
+                        contact.phoneNumbers.forEach((p: any) => {
+                            const normalized = p.number.replace(/[^0-9]/g, '').slice(-10);
+                            if (!existingPhones.has(normalized)) {
+                                existingPhones.add(normalized);
+                                mergedPhoneNumbers.push(p);
+                                hasNewPhones = true;
+                            }
+                        });
+
+                        if (hasNewPhones) {
+                            uniqueContactsMap.set(displayName, {
+                                ...existingContact,
+                                phoneNumbers: mergedPhoneNumbers
+                            });
+                        }
+                    }
+                });
+
+                // Convert Map back to array and sort
+                const contactsWithPhones = Array.from(uniqueContactsMap.values())
                     .sort((a, b) => a.displayName.localeCompare(b.displayName));
 
                 setAllContacts(contactsWithPhones);
@@ -443,27 +493,28 @@ export default function ForemanAddDriver() {
         const emailAddress = contact.emailAddresses && contact.emailAddresses.length > 0
             ? contact.emailAddresses[0].email
             : '';
+
+        // Extract and clean phone numbers
         const phoneNumbers = contact.phoneNumbers
             ? contact.phoneNumbers.map((p: any) => p.number.replace(/[^0-9]/g, '').slice(-10))
             : [];
 
-        if (phoneNumbers.length > 1) {
-            // Show multiple numbers sheet
-            setPendingContactName(name);
-            setPendingContactEmail(emailAddress);
-            setContactPhoneNumbers(phoneNumbers);
-            setShowMultipleNumbersSheet(true);
-        } else if (phoneNumbers.length === 1) {
-            applyContactData(name, phoneNumbers[0], emailAddress);
+        // Filter for valid 10-digit numbers and get unique ones
+        const validNumbers = [...new Set(phoneNumbers.filter((n: string) => n.length === 10))];
+
+        if (validNumbers.length > 0) {
+            // "Pick only one unique no" - Automatically select the first valid number
+            applyContactData(name, validNumbers[0] as string, emailAddress);
+            setShowContactListModal(false);
         } else {
-            showToast(t('noPhoneNumber', 'Contact has no phone number'));
+            showToast(t('noPhoneNumber', 'Contact has no valid phone number'));
         }
     };
 
     const applyContactData = (name: string, phone: string, emailAddr: string) => {
         setFullName(name);
         setMobileNumber(phone);
-        if (emailAddr) setEmail(emailAddr);
+        // if (emailAddr) setEmail(emailAddr); // User requested only Name and Mobile
         setIsImportedFromContacts(true);
         setIsOtpVerified(phone.length > 0);
         setErrors({});
@@ -1059,18 +1110,18 @@ export default function ForemanAddDriver() {
                                 const primaryPhone = item.phoneNumbers?.[0]?.number || '';
                                 return (
                                     <TouchableOpacity
-                                        onPress={() => handleContactCheckboxSelect(item)}
+                                        onPress={() => handleContactSelected(item)}
                                         style={styles.contactRowMinimal}
                                         activeOpacity={0.6}
                                     >
                                         {/* Compact Avatar */}
                                         <View style={[
                                             styles.contactAvatarMinimal,
-                                            isSelected && styles.contactAvatarMinimalSelected
+                                            // isSelected && styles.contactAvatarMinimalSelected 
                                         ]}>
                                             <Text style={[
                                                 styles.contactAvatarLetterMinimal,
-                                                isSelected && styles.contactAvatarLetterMinimalSelected
+                                                // isSelected && styles.contactAvatarLetterMinimalSelected
                                             ]}>
                                                 {item.displayName.charAt(0).toUpperCase()}
                                             </Text>
@@ -1086,15 +1137,15 @@ export default function ForemanAddDriver() {
                                             </Text>
                                         </View>
 
-                                        {/* Selection Circle */}
-                                        <View style={[
+                                        {/* Selection Circle - Removed for single select */}
+                                        {/* <View style={[
                                             styles.selectionCircle,
                                             isSelected && styles.selectionCircleActive
                                         ]}>
                                             {isSelected && (
                                                 <Ionicons name="checkmark" size={14} color={COLORS.white} />
                                             )}
-                                        </View>
+                                        </View> */}
                                     </TouchableOpacity>
                                 );
                             }}
@@ -1109,8 +1160,8 @@ export default function ForemanAddDriver() {
                         />
                     )}
 
-                    {/* Bottom Add Button */}
-                    {!loadingContacts && filteredContacts.length > 0 && (
+                    {/* Bottom Add Button - Removed for single select */}
+                    {/* {!loadingContacts && filteredContacts.length > 0 && (
                         <View style={[styles.addButtonWrapper, { paddingBottom: safeAreaInsets.bottom + 16 }]}>
                             <TouchableOpacity
                                 onPress={handleConfirmBulkSelection}
@@ -1129,7 +1180,7 @@ export default function ForemanAddDriver() {
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                    )}
+                    )} */}
                 </View>
             </Modal>
 
