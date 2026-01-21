@@ -24,6 +24,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 import LinearGradient from 'react-native-linear-gradient';
+import CommentsModal from '../components/CommentsModal';
+
+import { DriverKiAwazService } from '../services';
+import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -41,6 +45,7 @@ interface ReelData {
     isSupported: boolean;
     videoUrl: string;
     description: string;
+    createdAt?: string;
 }
 
 // Mock data
@@ -392,10 +397,109 @@ const ReelItem: React.FC<{
 const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }) => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const insets = useSafeAreaInsets();
-    const [reels, setReels] = useState<ReelData[]>(MOCK_REELS);
+    const [reels, setReels] = useState<ReelData[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [isGlobalMuted, setIsGlobalMuted] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [cursor, setCursor] = useState<string | undefined>(undefined);
+    const [lastId, setLastId] = useState<string | undefined>(undefined);
+    const [hasMore, setHasMore] = useState(true);
+    const [showComments, setShowComments] = useState(false);
+    const [activeReelId, setActiveReelId] = useState<string | null>(null);
     const flatListRef = useRef<FlatList>(null);
+
+    // Initial Fetch
+    useEffect(() => {
+        fetchFeed(true);
+    }, []);
+
+
+
+    // ... (existing imports)
+
+    // Inside ReelsScreen component
+
+    // ...
+
+    const fetchFeed = async (refresh = false) => {
+        if (loading || (!hasMore && !refresh)) return;
+
+        setLoading(true);
+        try {
+            const currentCursor = refresh ? undefined : cursor;
+            const currentLastId = refresh ? undefined : lastId;
+
+            const response = await DriverKiAwazService.getFeed(currentCursor, currentLastId);
+
+            // Determine if data is directly the array or nested in .data
+            const feedData = Array.isArray(response.data) ? response.data : response.data?.data;
+
+            if (Array.isArray(feedData)) {
+                const newReels: ReelData[] = feedData
+                    .filter((item: any) => item.media_type === 'video')
+                    .map((item: any) => {
+                        // Check if URL is already absolute
+                        const rawUrl = item.media_url || '';
+                        const hasHttp = rawUrl.startsWith('http');
+                        // Clean leading slash if appending
+                        const cleanPath = rawUrl && rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
+                        // Construct final URL
+                        const finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
+
+                        // Avatar Logic
+                        const rawAvatar = item.user_avatar || item.user?.avatar || '';
+                        const hasAvatarHttp = rawAvatar.startsWith('http');
+                        const cleanAvatarPath = rawAvatar && rawAvatar.startsWith('/') ? rawAvatar.substring(1) : rawAvatar;
+                        const finalAvatarUrl = !rawAvatar
+                            ? 'https://via.placeholder.com/150'
+                            : (hasAvatarHttp ? rawAvatar : `https://devtruckmitr.in/public/${cleanAvatarPath}`);
+
+                        return {
+                            id: item.id.toString(),
+                            userName: item.user_name || item.user?.name || `Driver ${item.user_id || ''}`,
+                            userAvatar: finalAvatarUrl,
+                            userState: item.user?.state || '',
+                            category: item.media_type || 'VIDEO',
+                            categoryLabel: item.category ? `#${item.category}` : (item.media_type === 'video' ? '🎬 Video' : '🎵 Audio'),
+                            hashtags: [],
+                            supportCount: item.likes_count || 0,
+                            commentCount: item.comments_count || 0,
+                            shareCount: item.shares_count || 0,
+                            isSupported: item.is_liked === 1,
+                            videoUrl: finalUrl,
+                            description: item.caption || '',
+                            createdAt: item.created_at,
+                        };
+                    });
+
+                if (refresh) {
+                    setReels(newReels);
+                } else {
+                    setReels(prev => [...prev, ...newReels]);
+                }
+
+                if (newReels.length > 0) {
+                    const lastItem = newReels[newReels.length - 1];
+                    setCursor(lastItem.createdAt);
+                    setLastId(lastItem.id);
+                } else {
+                    setHasMore(false);
+                }
+            } else {
+                setHasMore(false);
+            }
+        } catch (error) {
+            console.error('Fetch feed error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadMore = () => {
+        if (!loading && hasMore) {
+            fetchFeed();
+        }
+    };
 
     const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
         if (viewableItems.length > 0) {
@@ -407,7 +511,7 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
         itemVisiblePercentThreshold: 50,
     };
 
-    const toggleSupport = (reelId: string) => {
+    const toggleSupport = async (reelId: string) => {
         setReels(prev =>
             prev.map(reel =>
                 reel.id === reelId
@@ -421,11 +525,17 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
                     : reel
             )
         );
+
+        try {
+            await DriverKiAwazService.likePost(reelId);
+        } catch (error) {
+            console.error('Like failed', error);
+        }
     };
 
     const openComments = (reelId: string) => {
-        // TODO: Implement comments bottom sheet
-        console.log('Open comments:', reelId);
+        setActiveReelId(reelId);
+        setShowComments(true);
     };
 
     const shareReel = async (reel: ReelData) => {
@@ -433,14 +543,11 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
             await Share.share({
                 message: `Check out this reel by ${reel.userName} on Driver Ki Awaz! 🚛\n${reel.description}\n\n#DriverKiAwaz ${reel.hashtags.map(t => `#${t}`).join(' ')}`,
             });
+            await DriverKiAwazService.sharePost(reel.id);
         } catch (error) {
             console.log('Share error:', error);
         }
     };
-
-    // const navigateToCreatePost = () => {
-    //     navigation.navigate(STACKS.DRIVER_KI_AWAZ_CREATE_POST as any, { defaultType: 'VIDEO' });
-    // };
 
     const getItemLayout = (_: any, index: number) => ({
         length: SCREEN_HEIGHT,
@@ -481,6 +588,32 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
                 removeClippedSubviews
                 maxToRenderPerBatch={2}
                 windowSize={3}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.5}
+                ListEmptyComponent={
+                    !loading ? (
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', height: SCREEN_HEIGHT }}>
+                            <Text style={{ color: 'white' }}>No posts available</Text>
+                        </View>
+                    ) : null
+                }
+                ListFooterComponent={
+                    loading && reels.length > 0 ? (
+                        <View style={{ position: 'absolute', bottom: 50, width: '100%', alignItems: 'center' }}>
+                            <ActivityIndicator color="white" size="small" />
+                        </View>
+                    ) : null
+                }
+            />
+            {loading && reels.length === 0 && (
+                <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
+                    <ActivityIndicator color="white" size="large" />
+                </View>
+            )}
+            <CommentsModal
+                visible={showComments}
+                postId={activeReelId}
+                onClose={() => setShowComments(false)}
             />
         </View>
     );

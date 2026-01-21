@@ -4,6 +4,7 @@
 // export const BASE_URL = `http://192.168.1.41:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
 export const BASE_URL = 'https://devtruckmitr.in/'
+export const DRIVER_KI_AWAZ_BASE = 'https://awaz.devtruckmitr.in/'
 export const STATICS = {
     // RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
     // RAYZORPAY_SECRET: 'Jo14oUIoX75fb0WJejakbRvQ', // live
@@ -153,4 +154,15 @@ export const END_POINTS = {
     // Document Verification (DigiLocker)
     DOC_VERIFY: `api/kyc/doc-verify`,
 
+    // Driver Ki Awaz
+    DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
+    DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,
+    DKA_LIKE: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}/like`,
+    DKA_COMMENT: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}/comment`,
+    DKA_GET_COMMENTS: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}/getcomments`,
+    DKA_SHARE: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}/share`,
+    DKA_EDIT_POST: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}`,
+    DKA_DELETE_POST: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}`,
+    DKA_USER_FEED: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/user/${id}`,
+    DKA_USER_DASHBOARD: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/users/${id}/dashboard`,
 }

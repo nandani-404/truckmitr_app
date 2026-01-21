@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { ReelsScreen, FeedScreen, CreatePostScreen } from './screens';
+import { STACKS } from '@truckmitr/src/stacks/stacks';
 
 type TabType = 'reels' | 'feed' | 'create';
 
@@ -75,6 +76,10 @@ const DriverKiAwazHome: React.FC = () => {
 
     const handleOpenFeed = () => {
         setActiveTab('feed');
+    };
+
+    const handleOpenMyPosts = () => {
+        navigation.navigate(STACKS.DRIVER_KI_AWAZ_MY_POSTS);
     };
 
     return (
