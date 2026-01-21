@@ -32,6 +32,8 @@ import { END_POINTS } from '@truckmitr/src/utils/config';
 import { Space } from '@truckmitr/src/app/components';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector } from 'react-redux';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -63,6 +65,9 @@ export default function ForemanAddDriver() {
     const { shadow } = useShadow();
     const { responsiveWidth, responsiveFontSize, responsiveHeight } = useResponsiveScale();
     useStatusBarStyle('dark-content');
+
+    // Debug: Get entire Redux state
+    const reduxState = useSelector((state: any) => state);
 
     // Form state
     const [fullName, setFullName] = useState('');
@@ -140,6 +145,19 @@ export default function ForemanAddDriver() {
         email?: string;
         state?: string;
     }>({});
+
+    // OTP Verification State
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otp, setOtp] = useState('');
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [otpError, setOtpError] = useState('');
+    const [pendingDriverData, setPendingDriverData] = useState<{
+        name: string;
+        mobile: string;
+        email: string;
+        states: string;
+        stateName: string;
+    } | null>(null);
 
     useEffect(() => {
         fetchLocations();
@@ -459,7 +477,7 @@ export default function ForemanAddDriver() {
                 formData.append('email', driver.email);
                 formData.append('states', driver.state);
 
-                await axiosInstance.post(END_POINTS.TRANSPORTER_DRIVER_CREATE, formData);
+                await axiosInstance.post(END_POINTS.FOREMAN_ADD_DRIVER, formData);
                 localSuccessCount++;
                 addedDrivers.push({ name: driver.name, phone: driver.phone });
             } catch (error) {
@@ -569,15 +587,6 @@ export default function ForemanAddDriver() {
 
         setLoading(true);
 
-        setTimeout(() => {
-            setLoading(false);
-            // navigation.replace(STACKS.DRIVER_ADDED_SUCCESS as any, {
-            //     driverName: fullName,
-            //     tmId: 'TM2503UDPR00021',
-            //     mobileNumber: `+91 ${mobileNumber}`,
-            // });
-        }, 500);
-
         try {
             const formData = new FormData();
             formData.append('name', fullName);
@@ -585,13 +594,114 @@ export default function ForemanAddDriver() {
             formData.append('email', email);
             formData.append('states', state);
 
-            const response = await axiosInstance.post(END_POINTS.TRANSPORTER_DRIVER_CREATE, formData);
-            if (response?.data?.success) {
-                console.log('Driver added successfully:', response?.data);
+            const response = await axiosInstance.post(END_POINTS.FOREMAN_ADD_DRIVER, formData);
+
+            if (response?.data?.status || response?.data?.success) {
+                // Check if OTP was sent (common patterns: "otp sent", "OTP has been sent", etc.)
+                const message = response?.data?.message?.toLowerCase() || '';
+                if (message.includes('otp')) {
+                    // Save driver data locally for OTP verification
+                    setPendingDriverData({
+                        name: fullName,
+                        mobile: mobileNumber,
+                        email: email,
+                        states: state || '',
+                        stateName: selectedStateName,
+                    });
+                    // Show OTP modal
+                    setShowOtpModal(true);
+                    showToast(response?.data?.message || t('otpSent', 'OTP sent successfully'));
+                } else {
+                    // Driver added successfully without OTP
+                    const successMessage = response?.data?.message || t('driverAddedSuccessfully', 'Driver added successfully!');
+                    showToast(`${successMessage}`);
+                    console.log('Driver added successfully:', response?.data);
+
+                    // Reset form
+                    setFullName('');
+                    setMobileNumber('');
+                    setEmail('');
+                    setState(undefined);
+                    setSelectedStateName('');
+                    setIsImportedFromContacts(false);
+                    setIsOtpVerified(false);
+                    setErrors({});
+                }
+            } else {
+                // Backend returned status: false
+                const errorMessage = response?.data?.message || t('failedToAddDriver', 'Failed to add driver');
+                showToast(`${errorMessage}`);
             }
         } catch (error: any) {
             console.log('Error adding driver:', error);
+            // Show error toast with backend message or fallback
+            const errorMessage = error?.response?.data?.message || error?.message || t('somethingWentWrong', 'Something went wrong');
+            showToast(`${errorMessage}`);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    // OTP Verification Handler
+    const handleVerifyOtp = async () => {
+        if (!otp || otp.length < 4) {
+            setOtpError(t('pleaseEnterValidOtp', 'Please enter a valid OTP'));
+            return;
+        }
+
+        if (!pendingDriverData) {
+            setOtpError(t('somethingWentWrong', 'Something went wrong'));
+            return;
+        }
+
+        setOtpLoading(true);
+        setOtpError('');
+
+        try {
+            const formData = new FormData();
+            formData.append('mobile', pendingDriverData.mobile);
+            formData.append('otp', otp);
+
+            // Use same OTP verify endpoint as auth
+            const response = await axiosInstance.post(END_POINTS.OTP_VERIFY, formData);
+
+            if (response?.data?.status || response?.data?.success) {
+                // OTP verified - driver was already added when OTP was sent
+                const successMessage = response?.data?.message || t('driverAddedSuccessfully', 'Driver added successfully!');
+                showToast(`${successMessage}`);
+
+                // Reset everything
+                setShowOtpModal(false);
+                setOtp('');
+                setOtpError('');
+                setPendingDriverData(null);
+                setFullName('');
+                setMobileNumber('');
+                setEmail('');
+                setState(undefined);
+                setSelectedStateName('');
+                setIsImportedFromContacts(false);
+                setIsOtpVerified(false);
+                setErrors({});
+            } else {
+                const errorMessage = response?.data?.message || t('invalidOtp', 'Invalid OTP');
+                setOtpError(errorMessage);
+            }
+        } catch (error: any) {
+            console.log('Error verifying OTP:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || t('otpVerificationFailed', 'OTP verification failed');
+            setOtpError(errorMessage);
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    // Close OTP Modal
+    const handleCloseOtpModal = () => {
+        setShowOtpModal(false);
+        setOtp('');
+        setOtpError('');
+        // Keep pendingDriverData so user can retry later if needed
     };
 
     const goBack = () => {
@@ -628,7 +738,7 @@ export default function ForemanAddDriver() {
                 extraScrollHeight={responsiveHeight(15)}
             >
                 {/* Step Header - BASIC DETAILS */}
-                <LinearGradient
+                {/* <LinearGradient
                     colors={['#FEF3C7', '#FDE68A']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -638,7 +748,7 @@ export default function ForemanAddDriver() {
                         <Text style={styles.stepNumberText}>1</Text>
                     </View>
                     <Text style={styles.stepTitle}>{t('basicDetails', 'BASIC DETAILS')}</Text>
-                </LinearGradient>
+                </LinearGradient> */}
 
                 {/* Contact Import Card - Primary CTA */}
                 <TouchableOpacity
@@ -795,18 +905,39 @@ export default function ForemanAddDriver() {
                 </View>
 
                 {/* Add More Details Section */}
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     onPress={() => {
                         if (!validate()) return;
-                        navigation.navigate(STACKS.DRIVING_DETAILS as any, {
-                            isAddDriverMode: true,
-                            initialData: {
+                        navigation.navigate(STACKS.FOREMAN_DRIVER_DETAILS as any, {
+                            driver: {
+                                id: '',
                                 name: fullName,
+                                tmId: '',
                                 mobile: mobileNumber,
+                                status: 'Pending',
+                                image: 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png',
+                                isNew: true,
+                                state: selectedStateName,
+                                addedDate: new Date().toLocaleDateString(),
+                                completion: 25,
+                                subscriptionPlan: 0,
+                                training: 0,
+                                healthHygiene: 0,
+                                jobsApplied: 0,
+                                dob: '',
+                                gender: '',
+                                education: '',
+                                vehicleType: '',
+                                drivingExp: '',
+                                licenseType: '',
+                                licenseEndorsement: '',
+                                currentSalary: '',
+                                expectedSalary: '',
+                                aadharNo: '',
+                                licenseNo: '',
+                                licenseExpiry: '',
+                                amount: 0,
                                 email: email,
-                                states: state,
-                                state_name: selectedStateName,
-                                state_id: state
                             }
                         });
                     }}
@@ -824,7 +955,7 @@ export default function ForemanAddDriver() {
                         size={18}
                         color={COLORS.primary}
                     />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 <Space height={responsiveHeight(4)} />
 
@@ -845,8 +976,166 @@ export default function ForemanAddDriver() {
                     )}
                 </TouchableOpacity>
 
+                {/* Debug Button - Log AsyncStorage */}
+                <TouchableOpacity
+                    onPress={async () => {
+                        try {
+                            const keys = await AsyncStorage.getAllKeys();
+                            const result = await AsyncStorage.multiGet(keys);
+                            console.log('\n========== AsyncStorage Data ==========');
+                            result.forEach(([key, value]) => {
+                                console.log(`\n[${key}]:`, value);
+                            });
+                            console.log('\n========================================\n');
+                            Alert.alert('AsyncStorage Logged', `${keys.length} keys logged to console. Check your terminal/debugger.`);
+                        } catch (error) {
+                            console.error('Error reading AsyncStorage:', error);
+                            Alert.alert('Error', 'Failed to read AsyncStorage');
+                        }
+                    }}
+                    style={{
+                        marginHorizontal: 16,
+                        marginTop: 16,
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        backgroundColor: '#FF9800',
+                        borderRadius: 8,
+                        alignItems: 'center',
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
+                        🐛 Log AsyncStorage Data
+                    </Text>
+                </TouchableOpacity>
+
+                {/* Debug Button - Log Redux State */}
+                {/* <TouchableOpacity
+                    onPress={() => {
+                        try {
+                            console.log('\n========== Redux State Data ==========');
+                            console.log(JSON.stringify(reduxState, null, 2));
+                            console.log('\n========================================\n');
+                            const stateKeys = Object.keys(reduxState || {});
+                            Alert.alert('Redux State Logged', `${stateKeys.length} reducers logged to console: ${stateKeys.join(', ')}`);
+                        } catch (error) {
+                            console.error('Error reading Redux state:', error);
+                            Alert.alert('Error', 'Failed to read Redux state');
+                        }
+                    }}
+                    style={{
+                        marginHorizontal: 16,
+                        marginTop: 12,
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        backgroundColor: '#9C27B0',
+                        borderRadius: 8,
+                        alignItems: 'center',
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
+                        🗃️ Log Redux State
+                    </Text>
+                </TouchableOpacity> */}
+
                 <Space height={responsiveHeight(10)} />
             </KeyboardAwareScrollView>
+
+            {/* OTP Verification Modal */}
+            <Modal
+                visible={showOtpModal}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={handleCloseOtpModal}
+            >
+                <View style={styles.otpModalOverlay}>
+                    <View style={styles.otpModalContainer}>
+                        {/* Close Button */}
+                        <TouchableOpacity
+                            onPress={handleCloseOtpModal}
+                            style={styles.otpCloseButton}
+                            hitSlop={hitSlop(10)}
+                        >
+                            <Ionicons name="close" size={24} color={COLORS.textDark} />
+                        </TouchableOpacity>
+
+                        {/* OTP Icon */}
+                        <View style={styles.otpIconContainer}>
+                            <MaterialCommunityIcons name="message-text-lock" size={48} color={COLORS.primary} />
+                        </View>
+
+                        {/* Title */}
+                        <Text style={styles.otpTitle}>
+                            {t('verifyOtp', 'Verify OTP')}
+                        </Text>
+
+                        {/* Subtitle with phone number */}
+                        <Text style={styles.otpSubtitle}>
+                            {t('pleaseEnterOtpFor', 'Please enter OTP sent to')}{'\n'}
+                            <Text style={styles.otpPhoneNumber}>+91 {pendingDriverData?.mobile}</Text>
+                        </Text>
+
+                        {/* OTP Input */}
+                        <View style={styles.otpInputContainer}>
+                            <TextInput
+                                value={otp}
+                                onChangeText={(text) => {
+                                    setOtp(text.replace(/[^0-9]/g, ''));
+                                    if (otpError) setOtpError('');
+                                }}
+                                placeholder={t('enterOtp', 'Enter OTP')}
+                                placeholderTextColor={COLORS.textLight}
+                                keyboardType="number-pad"
+                                maxLength={6}
+                                style={[
+                                    styles.otpInput,
+                                    otpError ? styles.otpInputError : null
+                                ]}
+                                autoFocus={true}
+                            />
+                            {otpError ? (
+                                <Text style={styles.otpErrorText}>{otpError}</Text>
+                            ) : null}
+                        </View>
+
+                        {/* Verify Button */}
+                        <TouchableOpacity
+                            onPress={handleVerifyOtp}
+                            disabled={otpLoading || otp.length < 4}
+                            style={[
+                                styles.otpVerifyButton,
+                                (otpLoading || otp.length < 4) && styles.otpVerifyButtonDisabled
+                            ]}
+                            activeOpacity={0.8}
+                        >
+                            {otpLoading ? (
+                                <ActivityIndicator color="#fff" size="small" />
+                            ) : (
+                                <Text style={styles.otpVerifyButtonText}>
+                                    {t('verifyAndAdd', 'Verify & Add Driver')}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+
+                        {/* Resend OTP */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                // Close modal and resubmit form to resend OTP
+                                setShowOtpModal(false);
+                                setOtp('');
+                                handleSubmit();
+                            }}
+                            style={styles.resendOtpButton}
+                            disabled={loading}
+                        >
+                            <Text style={styles.resendOtpText}>
+                                {t('didntReceiveOtp', "Didn't receive OTP?")} <Text style={styles.resendOtpLink}>{t('resend', 'Resend')}</Text>
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
             {/* State Selection Modal */}
             <Modal
@@ -2868,5 +3157,107 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.primary,
+    },
+    // OTP Modal Styles
+    otpModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    otpModalContainer: {
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
+        padding: 24,
+        width: '100%',
+        maxWidth: 360,
+        alignItems: 'center',
+    },
+    otpCloseButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        padding: 4,
+        zIndex: 1,
+    },
+    otpIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: COLORS.primaryLight,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    otpTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: COLORS.textDark,
+        marginBottom: 8,
+    },
+    otpSubtitle: {
+        fontSize: 14,
+        color: COLORS.textMuted,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 24,
+    },
+    otpPhoneNumber: {
+        fontWeight: '700',
+        color: COLORS.textDark,
+    },
+    otpInputContainer: {
+        width: '100%',
+        marginBottom: 20,
+    },
+    otpInput: {
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 20,
+        fontWeight: '600',
+        color: COLORS.textDark,
+        textAlign: 'center',
+        letterSpacing: 8,
+    },
+    otpVerifyButton: {
+        width: '100%',
+        backgroundColor: COLORS.primary,
+        borderRadius: 12,
+        paddingVertical: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    otpVerifyButtonDisabled: {
+        backgroundColor: COLORS.textLight,
+    },
+    otpVerifyButtonText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: COLORS.white,
+    },
+    resendOtpButton: {
+        marginTop: 16,
+        paddingVertical: 8,
+    },
+    resendOtpText: {
+        fontSize: 14,
+        color: COLORS.textMuted,
+    },
+    resendOtpLink: {
+        color: COLORS.primary,
+        fontWeight: '600',
+    },
+    otpInputError: {
+        borderColor: COLORS.error,
+    },
+    otpErrorText: {
+        fontSize: 13,
+        color: COLORS.error,
+        marginTop: 8,
+        textAlign: 'center',
     },
 });

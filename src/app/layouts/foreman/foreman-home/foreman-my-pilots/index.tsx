@@ -1,11 +1,27 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/utils/config/index';
 
+// API Response Driver Type
+type ApiDriver = {
+    id: number;
+    name: string;
+    unique_id: string;
+    mobile: string;
+    images: string | null;
+    state_name: string;
+    created_at: string;
+    payment_type: string | null;
+    profile_completion_percentage: number | string;
+};
+
+// Component Driver Type (mapped from API)
 type Driver = {
     id: string;
     name: string;
@@ -35,167 +51,152 @@ type Driver = {
     licenseExpiry: string;
     amount: number;
     email: string;
+    profile_completion_percentage: string;
 };
 
-const DRIVERS_DATA: Driver[] = [
-    {
-        id: '1',
-        name: 'Ramesh Kumar',
-        tmId: 'TM 1024FR045758339',
-        mobile: '+91 98765 43210',
-        status: 'Verified',
-        image: 'https://randomuser.me/api/portraits/men/32.jpg',
-        isNew: true,
-        state: 'Haryana',
-        addedDate: '12 Jan 2024',
-        completion: 100,
-        subscriptionPlan: 499,
-        training: 100,
-        healthHygiene: 90,
-        jobsApplied: 5,
-        dob: '15 Aug 1985',
-        gender: 'Male',
-        education: '12th Pass',
-        vehicleType: 'Heavy Truck',
-        drivingExp: '5 Years',
-        licenseType: 'HCV',
-        licenseEndorsement: 'Hazardous',
-        currentSalary: '₹ 25,000 - ₹ 30,000',
-        expectedSalary: '₹ 30,000 - ₹ 40,000',
-        aadharNo: '1234 5678 9012',
-        licenseNo: 'DL1234567890',
-        licenseExpiry: '10 Oct 2028',
-        amount: 499,
-        email: 'ramesh.kumar@example.com',
-    },
-    {
-        id: '2',
-        name: 'Suresh Singh',
-        tmId: 'TM 1025FR045758340',
-        mobile: '+91 98765 43211',
-        status: 'Pending',
-        image: 'https://randomuser.me/api/portraits/men/44.jpg',
-        isNew: false,
-        state: 'Punjab',
-        addedDate: '10 Jan 2024',
-        completion: 67,
-        subscriptionPlan: 0,
-        training: 50,
-        healthHygiene: 60,
-        jobsApplied: 2,
-        dob: '20 Jul 1990',
-        gender: 'Male',
-        education: '10th Pass',
-        vehicleType: 'Mini Truck',
-        drivingExp: '2 Years',
-        licenseType: 'LMV',
-        licenseEndorsement: 'None',
-        currentSalary: '₹ 15,000 - ₹ 20,000',
-        expectedSalary: '₹ 20,000 - ₹ 25,000',
-        aadharNo: '9876 5432 1098',
-        licenseNo: 'DL0987654321',
-        licenseExpiry: '15 Mar 2026',
-        amount: 0,
-        email: 'suresh.singh@example.com',
-    },
-    {
-        id: '3',
-        name: 'Rajesh Yadav',
-        tmId: 'TM 1026FR045758341',
-        mobile: '+91 98765 43212',
-        status: 'Verified',
-        image: 'https://randomuser.me/api/portraits/men/12.jpg',
-        isNew: false,
-        state: 'Uttar Pradesh',
-        addedDate: '05 Dec 2023',
-        completion: 100,
-        subscriptionPlan: 199,
-        training: 100,
-        healthHygiene: 80,
-        jobsApplied: 8,
-        dob: '05 Jan 1988',
-        gender: 'Male',
-        education: 'Graduate',
-        vehicleType: 'Tanker',
-        drivingExp: '8 Years',
-        licenseType: 'HCV',
-        licenseEndorsement: 'Hill',
-        currentSalary: '₹ 25,000 - ₹ 30,000',
-        expectedSalary: '₹ 30,000 - ₹ 40,000',
-        aadharNo: '4567 8901 2345',
-        licenseNo: 'DL5432167890',
-        licenseExpiry: '22 Dec 2030',
-        amount: 199,
-        email: 'rajesh.yadav@example.com',
-    },
-    {
-        id: '4',
-        name: 'Amit Sharma',
-        tmId: 'TM 1027FR045758342',
-        mobile: '+91 98765 43213',
-        status: 'Rejected',
-        image: 'https://randomuser.me/api/portraits/men/66.jpg',
-        isNew: true,
-        state: 'Rajasthan',
-        addedDate: '20 Nov 2023',
-        completion: 25,
-        subscriptionPlan: 0,
-        training: 10,
-        healthHygiene: 20,
+const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
+
+// Helper function to format date
+const formatDate = (dateString: string): string => {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+        return dateString;
+    }
+};
+
+// Helper function to check if driver is new (added within last 7 days)
+const isNewDriver = (dateString: string): boolean => {
+    try {
+        const createdDate = new Date(dateString);
+        const now = new Date();
+        const diffTime = now.getTime() - createdDate.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        return diffDays <= 7;
+    } catch {
+        return false;
+    }
+};
+
+// Map API driver to component driver
+const mapApiDriverToDriver = (apiDriver: ApiDriver): Driver => {
+    const paymentType = apiDriver.payment_type;
+    let status = 'Pending';
+    let amount = 0;
+    let subscriptionPlan = 0;
+
+    if (paymentType) {
+        status = paymentType;
+        if (paymentType.toLowerCase().includes('trusted')) {
+            amount = 499;
+            subscriptionPlan = 499;
+        } else if (paymentType.toLowerCase().includes('verified')) {
+            amount = 199;
+            subscriptionPlan = 199;
+        } else if (paymentType.toLowerCase().includes('job ready') || paymentType.toLowerCase().includes('job_ready')) {
+            amount = 99;
+            subscriptionPlan = 99;
+        }
+    } else {
+        status = 'No Subscription';
+    }
+
+    return {
+        id: String(apiDriver.id),
+        name: apiDriver.name || 'Unknown',
+        tmId: apiDriver.unique_id || '',
+        mobile: apiDriver.mobile || '',
+        status: status,
+        image: apiDriver.images || DEFAULT_AVATAR,
+        isNew: isNewDriver(apiDriver.created_at),
+        state: apiDriver.state_name || 'N/A',
+        addedDate: formatDate(apiDriver.created_at),
+        completion: Number(apiDriver.profile_completion_percentage) || 0,
+        subscriptionPlan: subscriptionPlan,
+        training: 0,
+        healthHygiene: 0,
         jobsApplied: 0,
-        dob: '12 Feb 1995',
-        gender: 'Male',
-        education: '8th Pass',
-        vehicleType: 'Pickup',
-        drivingExp: '1 Year',
-        licenseType: 'LMV',
-        licenseEndorsement: 'None',
-        currentSalary: '₹ 10,000 - ₹ 15,000',
-        expectedSalary: '₹ 15,000 - ₹ 20,000',
-        aadharNo: '3210 9876 5432',
-        licenseNo: 'DL1122334455',
-        licenseExpiry: '01 Jan 2025',
-        amount: 0,
-        email: 'amit.sharma@example.com',
-    },
-    {
-        id: '5',
-        name: 'Vikas Verma',
-        tmId: 'TM 1028FR045758343',
-        mobile: '+91 98765 43214',
-        status: 'Verified',
-        image: 'https://randomuser.me/api/portraits/men/75.jpg',
-        isNew: true,
-        state: 'Delhi',
-        addedDate: '15 Jan 2024',
-        completion: 100,
-        subscriptionPlan: 99,
-        training: 100,
-        healthHygiene: 100,
-        jobsApplied: 10,
-        dob: '01 Mar 1992',
-        gender: 'Male',
-        education: '10th Pass',
-        vehicleType: 'Trailer',
-        drivingExp: '4 Years',
-        licenseType: 'HCV',
-        licenseEndorsement: 'None',
-        currentSalary: '₹ 20,000 - ₹ 25,000',
-        expectedSalary: '₹ 25,000 - ₹ 30,000',
-        aadharNo: '7890 1234 5678',
-        licenseNo: 'DL9988776655',
-        licenseExpiry: '14 Feb 2029',
-        amount: 99,
-        email: 'vikas.verma@example.com',
-    },
-];
+        dob: '',
+        gender: '',
+        education: '',
+        vehicleType: '',
+        drivingExp: '',
+        licenseType: '',
+        licenseEndorsement: '',
+        currentSalary: '',
+        expectedSalary: '',
+        aadharNo: '',
+        licenseNo: '',
+        licenseExpiry: '',
+        amount: amount,
+        email: '',
+        profile_completion_percentage: String(apiDriver.profile_completion_percentage || '0'),
+    };
+};
 
 export default function ForemanMyPilots() {
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
 
-    const renderDriverCard = (driver: Driver) => (
-        <View key={driver.id} style={styles.driverCard}>
+    // State
+    const [drivers, setDrivers] = useState<Driver[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [totalDrivers, setTotalDrivers] = useState(0);
+
+    // Fetch drivers from API
+    const fetchDrivers = useCallback(async (isRefresh = false) => {
+        try {
+            if (isRefresh) {
+                setRefreshing(true);
+            } else {
+                setLoading(true);
+            }
+            setError(null);
+
+            const response = await axiosInstance.get(END_POINTS.FOREMAN_MY_PILOTS);
+            console.log('My Pilots API Response:', response?.data);
+
+            if (response?.data?.success) {
+                const apiDrivers: ApiDriver[] = response?.data?.drivers || [];
+                // console.log('data-------------', apiDrivers);
+                const mappedDrivers = apiDrivers.map(mapApiDriverToDriver);
+                // console.log('data-------------', mappedDrivers);
+
+                setDrivers(mappedDrivers);
+                setTotalDrivers(response?.data?.total || 0);
+            } else {
+                const errorMessage = response?.data?.message || 'Failed to fetch drivers';
+                setError(errorMessage);
+                setDrivers([]);
+                setTotalDrivers(0);
+            }
+        } catch (err: any) {
+            console.log('Error fetching drivers:', err);
+            const errorMessage = err?.response?.data?.message || err?.message || 'Something went wrong';
+            setError(errorMessage);
+            setDrivers([]);
+            setTotalDrivers(0);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, []);
+
+    // Fetch on mount
+    useEffect(() => {
+        fetchDrivers();
+    }, [fetchDrivers]);
+
+    // Pull to refresh
+    const onRefresh = useCallback(() => {
+        fetchDrivers(true);
+    }, [fetchDrivers]);
+
+    const renderDriverCard = ({ item: driver }: { item: Driver }) => (
+        <View style={styles.driverCard}>
             <View style={styles.driverMainRow}>
                 {/* Profile Image with Completion Circle */}
                 <View style={styles.profileImageWrapper}>
@@ -213,7 +214,12 @@ export default function ForemanMyPilots() {
                                 cx="37"
                                 cy="37"
                                 r="34"
-                                stroke={driver.status === 'Verified' ? "#22C55E" : "#3B82F6"}
+                                stroke={
+                                    driver.status.toLowerCase().includes('verified') ? "#22C55E" :
+                                        driver.status.toLowerCase().includes('trusted') ? "#7E22CE" :
+                                            (driver.status.toLowerCase().includes('job ready') || driver.status.toLowerCase().includes('job_ready')) ? "#1D4ED8" :
+                                                "#3B82F6"
+                                }
                                 strokeWidth="4"
                                 fill="none"
                                 strokeDasharray={`${2 * Math.PI * 34}`}
@@ -229,13 +235,17 @@ export default function ForemanMyPilots() {
                         {/* Status Checkmark or Percentage Badge */}
                         <View style={[
                             styles.completionBadge,
-                            driver.status === 'Verified' && { borderColor: '#BBF7D0', backgroundColor: '#F0FDF4' }
+                            driver.status.toLowerCase().includes('verified') && { borderColor: '#BBF7D0', backgroundColor: '#F0FDF4' },
+                            driver.status.toLowerCase().includes('trusted') && { borderColor: '#E9D5FF', backgroundColor: '#F3E8FF' },
+                            (driver.status.toLowerCase().includes('job ready') || driver.status.toLowerCase().includes('job_ready')) && { borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }
                         ]}>
                             <Text style={[
                                 styles.completionText,
-                                driver.status === 'Verified' && { color: '#166534' }
+                                driver.status.toLowerCase().includes('verified') && { color: '#166534' },
+                                driver.status.toLowerCase().includes('trusted') && { color: '#7E22CE' },
+                                (driver.status.toLowerCase().includes('job ready') || driver.status.toLowerCase().includes('job_ready')) && { color: '#1D4ED8' }
                             ]}>
-                                {driver.completion}%
+                                {driver.profile_completion_percentage}%
                             </Text>
                         </View>
                     </View>
@@ -250,7 +260,12 @@ export default function ForemanMyPilots() {
                         </View>
                         {/* Status Badges based on Subscription Plan */}
                         <View style={styles.badgesColumn}>
-                            {driver.status === 'Pending' ? (
+                            {driver.status === 'No Subscription' ? (
+                                <View style={styles.noSubscriptionBadge}>
+                                    <Ionicons name="alert-circle-outline" size={12} color="#64748B" />
+                                    <Text style={styles.noSubscriptionText}>No Subscription</Text>
+                                </View>
+                            ) : driver.status === 'Pending' ? (
                                 <View style={styles.pendingBadge}>
                                     <Ionicons name="time" size={12} color="#92400E" />
                                     <Text style={styles.pendingText}>Pending</Text>
@@ -260,17 +275,17 @@ export default function ForemanMyPilots() {
                                     <Ionicons name="close-circle" size={12} color="#991B1B" />
                                     <Text style={styles.rejectedText}>Rejected</Text>
                                 </View>
-                            ) : driver.subscriptionPlan === 499 ? (
+                            ) : driver.status.toLowerCase().includes('trusted') ? (
                                 <View style={styles.trustedBadge}>
                                     <Ionicons name="shield-checkmark" size={12} color="#7E22CE" />
                                     <Text style={styles.trustedText}>Trusted Driver • ₹{driver.amount}</Text>
                                 </View>
-                            ) : driver.subscriptionPlan === 199 ? (
+                            ) : driver.status.toLowerCase().includes('verified') ? (
                                 <View style={styles.verifiedBadge}>
                                     <Ionicons name="checkmark-circle" size={12} color="#166534" />
                                     <Text style={styles.verifiedText}>Verified Driver • ₹{driver.amount}</Text>
                                 </View>
-                            ) : driver.subscriptionPlan === 99 ? (
+                            ) : (driver.status.toLowerCase().includes('job ready') || driver.status.toLowerCase().includes('job_ready')) ? (
                                 <View style={styles.jobReadyBadge}>
                                     <Ionicons name="briefcase" size={12} color="#1D4ED8" />
                                     <Text style={styles.jobReadyText}>Job Ready Driver • ₹{driver.amount}</Text>
@@ -278,7 +293,7 @@ export default function ForemanMyPilots() {
                             ) : (
                                 <View style={styles.verifiedBadge}>
                                     <Ionicons name="checkmark-circle" size={12} color="#166534" />
-                                    <Text style={styles.verifiedText}>Verified</Text>
+                                    <Text style={styles.verifiedText}>{driver.status}</Text>
                                 </View>
                             )}
                         </View>
@@ -287,7 +302,7 @@ export default function ForemanMyPilots() {
                     {/* Phone */}
                     <View style={styles.infoRow}>
                         <Ionicons name="call-outline" size={14} color="#64748B" />
-                        <Text style={styles.infoText}>{driver.mobile}</Text>
+                        <Text style={styles.infoText}>+91 {driver.mobile}</Text>
                     </View>
                 </View>
             </View>
@@ -312,10 +327,178 @@ export default function ForemanMyPilots() {
             <TouchableOpacity
                 style={styles.viewDetailButton}
                 activeOpacity={0.8}
-            // onPress={() => (navigation as any).navigate(STACKS.FOREMAN_DRIVER_DETAILS, { driver })}
+                onPress={() => (navigation as any).navigate(STACKS.FOREMAN_DRIVER_DETAILS, { driver })}
             >
                 <Text style={styles.viewDetailText}>View Detail</Text>
                 <Ionicons name="arrow-forward" size={14} color="#3B82F6" />
+            </TouchableOpacity>
+        </View>
+    );
+
+    // Loading State
+
+    // const renderDriverCard = (driver: Driver) => (
+    //     <View key={driver.id} style={styles.driverCard}>
+    //         <View style={styles.driverMainRow}>
+    //             {/* Profile Image with Completion Circle */}
+    //             <View style={styles.profileImageWrapper}>
+    //                 <View style={styles.circularProgressContainer}>
+    //                     <Svg width={74} height={74} viewBox="0 0 74 74">
+    //                         <Circle
+    //                             cx="37"
+    //                             cy="37"
+    //                             r="34"
+    //                             stroke="#E2E8F0"
+    //                             strokeWidth="4"
+    //                             fill="none"
+    //                         />
+    //                         <Circle
+    //                             cx="37"
+    //                             cy="37"
+    //                             r="34"
+    //                             stroke={driver.status === 'Verified' ? "#22C55E" : "#3B82F6"}
+    //                             strokeWidth="4"
+    //                             fill="none"
+    //                             strokeDasharray={`${2 * Math.PI * 34}`}
+    //                             strokeDashoffset={`${2 * Math.PI * 34 * (1 - driver.completion / 100)}`}
+    //                             strokeLinecap="round"
+    //                             rotation="90"
+    //                             origin="37, 37"
+    //                         />
+    //                     </Svg>
+    //                     <View style={styles.profileImageContainerInner}>
+    //                         <Image source={{ uri: driver.image }} style={styles.profileImage} />
+    //                     </View>
+    //                     {/* Status Checkmark or Percentage Badge */}
+    //                     <View style={[
+    //                         styles.completionBadge,
+    //                         driver.status === 'Verified' && { borderColor: '#BBF7D0', backgroundColor: '#F0FDF4' }
+    //                     ]}>
+    //                         <Text style={[
+    //                             styles.completionText,
+    //                             driver.status === 'Verified' && { color: '#166534' }
+    //                         ]}>
+    //                             {driver.completion}%
+    //                         </Text>
+    //                     </View>
+    //                 </View>
+    //             </View>
+
+    //             {/* Info & Status */}
+    //             <View style={styles.driverContent}>
+    //                 <View style={styles.driverHeader}>
+    //                     <View style={{ flex: 1, marginRight: 8 }}>
+    //                         <Text style={styles.driverName}>{driver.name}</Text>
+    //                         <Text style={styles.driverTmId} numberOfLines={1} adjustsFontSizeToFit>{driver.tmId}</Text>
+    //                     </View>
+    //                     {/* Status Badges based on Subscription Plan */}
+    //                     <View style={styles.badgesColumn}>
+    //                         {driver.status === 'Pending' ? (
+    //                             <View style={styles.pendingBadge}>
+    //                                 <Ionicons name="time" size={12} color="#92400E" />
+    //                                 <Text style={styles.pendingText}>Pending</Text>
+    //                             </View>
+    //                         ) : driver.status === 'Rejected' ? (
+    //                             <View style={styles.rejectedBadge}>
+    //                                 <Ionicons name="close-circle" size={12} color="#991B1B" />
+    //                                 <Text style={styles.rejectedText}>Rejected</Text>
+    //                             </View>
+    //                         ) : driver.subscriptionPlan === 499 ? (
+    //                             <View style={styles.trustedBadge}>
+    //                                 <Ionicons name="shield-checkmark" size={12} color="#7E22CE" />
+    //                                 <Text style={styles.trustedText}>Trusted Driver • ₹{driver.amount}</Text>
+    //                             </View>
+    //                         ) : driver.subscriptionPlan === 199 ? (
+    //                             <View style={styles.verifiedBadge}>
+    //                                 <Ionicons name="checkmark-circle" size={12} color="#166534" />
+    //                                 <Text style={styles.verifiedText}>Verified Driver • ₹{driver.amount}</Text>
+    //                             </View>
+    //                         ) : driver.subscriptionPlan === 99 ? (
+    //                             <View style={styles.jobReadyBadge}>
+    //                                 <Ionicons name="briefcase" size={12} color="#1D4ED8" />
+    //                                 <Text style={styles.jobReadyText}>Job Ready Driver • ₹{driver.amount}</Text>
+    //                             </View>
+    //                         ) : (
+    //                             <View style={styles.verifiedBadge}>
+    //                                 <Ionicons name="checkmark-circle" size={12} color="#166534" />
+    //                                 <Text style={styles.verifiedText}>Verified</Text>
+    //                             </View>
+    //                         )}
+    //                     </View>
+    //                 </View>
+
+    //                 {/* Phone */}
+    //                 <View style={styles.infoRow}>
+    //                     <Ionicons name="call-outline" size={14} color="#64748B" />
+    //                     <Text style={styles.infoText}>{driver.mobile}</Text>
+    //                 </View>
+    //             </View>
+    //         </View>
+
+    //         <View style={styles.divider} />
+
+    //         {/* Additional Info Row: State & Date */}
+    //         <View style={styles.additionalInfoContainer}>
+    //             <View style={styles.additionalInfoItem}>
+    //                 <Ionicons name="location-outline" size={14} color="#64748B" />
+    //                 <Text style={styles.additionalInfoLabel}>State:</Text>
+    //                 <Text style={styles.additionalInfoValue}>{driver.state}</Text>
+    //             </View>
+    //             <View style={styles.additionalInfoItem}>
+    //                 <Ionicons name="calendar-outline" size={14} color="#64748B" />
+    //                 <Text style={styles.additionalInfoLabel}>Added:</Text>
+    //                 <Text style={styles.additionalInfoValue}>{driver.addedDate}</Text>
+    //             </View>
+    //         </View>
+
+    //         {/* View Detail Button */}
+    //         <TouchableOpacity
+    //             style={styles.viewDetailButton}
+    //             activeOpacity={0.8}
+    //             onPress={() => (navigation as any).navigate(STACKS.FOREMAN_DRIVER_DETAILS, { driver })}
+    //         >
+    //             <Text style={styles.viewDetailText}>View Detail</Text>
+    //             <Ionicons name="arrow-forward" size={14} color="#3B82F6" />
+    //         </TouchableOpacity>
+    //     </View>
+    // );
+
+    const renderLoading = () => (
+        <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text style={styles.loadingText}>Loading drivers...</Text>
+        </View>
+    );
+
+    // Error State
+    const renderError = () => (
+        <View style={styles.centerContainer}>
+            <View style={styles.errorIconContainer}>
+                <Ionicons name="alert-circle" size={48} color="#EF4444" />
+            </View>
+            <Text style={styles.errorTitle}>Something went wrong</Text>
+            <Text style={styles.errorMessage}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => fetchDrivers()}>
+                <Ionicons name="refresh" size={18} color="#fff" />
+                <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+        </View>
+    );
+
+    // Empty State
+    const renderEmpty = () => (
+        <View style={styles.centerContainer}>
+            <View style={styles.emptyIconContainer}>
+                <Ionicons name="people-outline" size={48} color="#94A3B8" />
+            </View>
+            <Text style={styles.emptyTitle}>No Pilots Yet</Text>
+            <Text style={styles.emptyMessage}>You haven't added any drivers yet. Start adding drivers to see them here.</Text>
+            <TouchableOpacity
+                style={styles.addDriverButton}
+                onPress={() => (navigation as any).navigate(STACKS.FOREMAN_BOTTOM_TAB, { screen: STACKS.FOREMAN_ADD_DRIVER })}
+            >
+                <Ionicons name="add" size={18} color="#fff" />
+                <Text style={styles.addDriverButtonText}>Add Driver</Text>
             </TouchableOpacity>
         </View>
     );
@@ -329,13 +512,34 @@ export default function ForemanMyPilots() {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#1E293B" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Pilots</Text>
-                <View style={{ width: 24 }} />
+                <Text style={styles.headerTitle}>My Pilots {totalDrivers > 0 ? `(${totalDrivers})` : ''}</Text>
+                <TouchableOpacity onPress={() => fetchDrivers()} style={styles.refreshButton}>
+                    <Ionicons name="refresh" size={22} color="#3B82F6" />
+                </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                {DRIVERS_DATA.map(renderDriverCard)}
-            </ScrollView>
+            {loading ? (
+                renderLoading()
+            ) : error ? (
+                renderError()
+            ) : drivers.length === 0 ? (
+                renderEmpty()
+            ) : (
+                <FlatList
+                    data={drivers}
+                    renderItem={renderDriverCard}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.scrollContent}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={['#3B82F6']}
+                            tintColor="#3B82F6"
+                        />
+                    }
+                />
+            )}
         </View>
     );
 }
@@ -358,6 +562,9 @@ const styles = StyleSheet.create({
     backButton: {
         padding: 4,
     },
+    refreshButton: {
+        padding: 4,
+    },
     headerTitle: {
         fontSize: 18,
         fontWeight: '700',
@@ -367,6 +574,92 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 40,
     },
+    // Center container for loading, error, empty states
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    loadingText: {
+        fontSize: 14,
+        color: '#64748B',
+        marginTop: 12,
+    },
+    // Error state
+    errorIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#FEE2E2',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    errorTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1E293B',
+        marginBottom: 8,
+    },
+    errorMessage: {
+        fontSize: 14,
+        color: '#64748B',
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    retryButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#3B82F6',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 10,
+        gap: 8,
+    },
+    retryButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    // Empty state
+    emptyIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1E293B',
+        marginBottom: 8,
+    },
+    emptyMessage: {
+        fontSize: 14,
+        color: '#64748B',
+        textAlign: 'center',
+        marginBottom: 20,
+        paddingHorizontal: 16,
+    },
+    addDriverButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#3B82F6',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 10,
+        gap: 8,
+    },
+    addDriverButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    // Driver card styles
     driverCard: {
         backgroundColor: '#fff',
         borderRadius: 16,
@@ -389,7 +682,7 @@ const styles = StyleSheet.create({
         marginRight: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: -12, // Shifted up
+        marginTop: -12,
     },
     circularProgressContainer: {
         width: 74,
@@ -412,16 +705,6 @@ const styles = StyleSheet.create({
         height: 60,
         borderRadius: 30,
         backgroundColor: '#E2E8F0',
-    },
-    verifiedBadgeSmall: {
-        position: 'absolute',
-        bottom: -2,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 1,
-        borderWidth: 2,
-        borderColor: '#fff',
-        elevation: 2,
     },
     completionBadge: {
         position: 'absolute',
@@ -474,6 +757,7 @@ const styles = StyleSheet.create({
     },
     badgesColumn: {
         alignItems: 'flex-end',
+        gap: 4,
     },
     verifiedBadge: {
         flexDirection: 'row',
@@ -488,6 +772,20 @@ const styles = StyleSheet.create({
         fontSize: 9,
         fontWeight: '700',
         color: '#166534',
+    },
+    noSubscriptionBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F1F5F9',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 4,
+    },
+    noSubscriptionText: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: '#64748B',
     },
     pendingBadge: {
         flexDirection: 'row',
@@ -516,6 +814,45 @@ const styles = StyleSheet.create({
         fontSize: 9,
         fontWeight: '700',
         color: '#991B1B',
+    },
+    trustedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F3E8FF',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 4,
+    },
+    trustedText: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: '#7E22CE',
+    },
+    jobReadyBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#DBEAFE',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 4,
+    },
+    jobReadyText: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: '#1D4ED8',
+    },
+    newBadge: {
+        backgroundColor: '#3B82F6',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    newBadgeText: {
+        fontSize: 8,
+        fontWeight: '700',
+        color: '#fff',
     },
     divider: {
         height: 1,
@@ -557,33 +894,5 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '700',
         color: '#0284C7',
-    },
-    trustedBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F3E8FF',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        gap: 4,
-    },
-    trustedText: {
-        fontSize: 9,
-        fontWeight: '700',
-        color: '#7E22CE',
-    },
-    jobReadyBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#DBEAFE',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        gap: 4,
-    },
-    jobReadyText: {
-        fontSize: 9,
-        fontWeight: '700',
-        color: '#1D4ED8',
     },
 });

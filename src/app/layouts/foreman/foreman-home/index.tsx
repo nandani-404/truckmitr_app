@@ -23,6 +23,8 @@ import { NavigatorParams } from '@truckmitr/stacks/stacks';
 import Svg, { Circle, Path, Defs, LinearGradient as SvgGradient, Stop, G } from 'react-native-svg';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { useSelector } from 'react-redux';
+import { RootState } from '@truckmitr/redux/store';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -141,17 +143,20 @@ export default function ForemanHome() {
     const { shadow } = useShadow();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
 
-    const foremanName = 'Nandani Saraswat';
-    const profileCompletion = 75; // Profile completion percentage
-    const star_rating = 4;
-    const rank = 'Emerald';
+    const { user, profileCompletion } = useSelector((state: RootState) => state.user);
+
+    const foremanName = user?.name || 'User';
+    const dynamicTMID = user?.unique_id || 'TMID';
+    const dynamicProfileCompletion = Number(profileCompletion) || 0;
+    const star_rating = user?.star_rating || 0;
+    const rank = user?.rank || 'No Rank';
 
     // SVG circle calculations
     const size = responsiveFontSize(8);
     const strokeWidth = 4;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
-    const progressOffset = circumference - (profileCompletion / 100) * circumference;
+    const progressOffset = circumference - (dynamicProfileCompletion / 100) * circumference;
 
 
     // Category data for Foreman
@@ -225,8 +230,8 @@ export default function ForemanHome() {
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                         <View>
                             <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`Hello, ${foremanName} 👋`}</Text>
-                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>TM2503UPDR00003</Text>
-                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>Silver Foreman</Text>
+                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{dynamicTMID}</Text>
+                            <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>{rank}</Text>
                             <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>Certified TruckMitr Partner</Text>
                         </View>
 
@@ -255,20 +260,23 @@ export default function ForemanHome() {
                                         origin={`${size / 2}, ${size / 2}`}
                                     />
                                 </Svg>
-                                <Image style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }} source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }} />
+                                <Image
+                                    style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }}
+                                    source={{ uri: user?.images || user?.avatar || 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}
+                                />
                                 <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
-                                    <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${profileCompletion}%`}</Text>
+                                    <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${dynamicProfileCompletion}%`}</Text>
                                 </View>
                             </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: responsiveFontSize(1.5), gap: 2 }}>
-                                {Array.from({ length: 5 }).map((_, i) => (
+                                {/* {Array.from({ length: 5 }).map((_, i) => (
                                     <FontAwesome
                                         key={i}
                                         name={i < star_rating ? 'star' : 'star-o'}
                                         size={responsiveFontSize(1.6)}
                                         color={i < star_rating ? '#FFD700' : 'rgba(0,0,0,0.2)'}
                                     />
-                                ))}
+                                ))} */}
                             </View>
                         </TouchableOpacity>
                     </View>

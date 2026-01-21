@@ -14,6 +14,7 @@ import ForemanExpiringDocuments from '@truckmitr/src/app/layouts/foreman/foreman
 import ForemanVerifiedDrivers from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-verified-drivers';
 import ForemanTrustedDrivers from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-trusted-drivers';
 import ForemanJobsList from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-jobs-list';
+import ForemanDriverDetails from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-driver-details';
 
 const Stack = createNativeStackNavigator();
 
@@ -82,6 +83,7 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.FOREMAN_VERIFIED_DRIVERS} component={ForemanVerifiedDrivers} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_TRUSTED_DRIVERS} component={ForemanTrustedDrivers} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_JOBS_LIST} component={ForemanJobsList} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_DRIVER_DETAILS} component={ForemanDriverDetails} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     )
 }

@@ -136,6 +136,14 @@ export type NavigatorParams = {
     foremanVerifiedDrivers: undefined
     foremanTrustedDrivers: undefined
     foremanJobsList: undefined
+    foremanDriverDetails: { driver: any }
+    foremanBottomTab: any;
+    foremanHome: undefined;
+    foremanAddDriver: undefined;
+    foremanMyPilots: undefined;
+    foremanMyEarnings: undefined;
+    foremanProfile: undefined;
+    foremanDriverKiAwaz: undefined;
 };
 
 export const STACKS = {
@@ -294,6 +302,7 @@ export const STACKS = {
     FOREMAN_VERIFIED_DRIVERS: 'foremanVerifiedDrivers',
     FOREMAN_TRUSTED_DRIVERS: 'foremanTrustedDrivers',
     FOREMAN_JOBS_LIST: 'foremanJobsList',
+    FOREMAN_DRIVER_DETAILS: 'foremanDriverDetails',
 
     // ASSOCIATE MODULE
     ASSOCIATE_BOTTOM_TAB: 'associateBottomTab',

@@ -1,28 +1,50 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
     TouchableOpacity,
-    ScrollView,
     StyleSheet,
     Image,
     StatusBar,
     Share,
     Clipboard,
     Animated,
+    ActivityIndicator,
+    RefreshControl,
+    FlatList,
+    Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Feather from 'react-native-vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
+import { NavigatorParams } from '@truckmitr/stacks/stacks';
 import { useTranslation } from 'react-i18next';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSelector } from 'react-redux';
+import { RootState } from '@truckmitr/redux/store';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/utils/config/index';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
+
+interface ApiPendingDriver {
+    driver_id: string | number;
+    driver_name: string;
+    unique_id: string;
+    mobile: string;
+    images: string | null;
+    DOB: string | null;
+    Driving_Experience: string | null;
+    License_Number: string | null;
+    Expiry_date_of_License: string | null;
+    PAN_Number: string | null;
+    state_name: string;
+    created_at: string;
+    profile_completion_percentage: number;
+}
 
 interface PendingDriver {
     id: string;
@@ -35,59 +57,34 @@ interface PendingDriver {
     profileCompletion: number;
 }
 
-// Sample pending drivers data
-const PENDING_DRIVERS: PendingDriver[] = [
-    {
-        id: '1',
-        name: 'Ramesh Kumar',
-        tmId: 'TM2503UDPR00015',
-        mobileNumber: '+91 98765 43210',
-        profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
-        pendingReason: 'Documents not uploaded',
-        addedDate: '2 days ago',
-        profileCompletion: 35,
-    },
-    {
-        id: '2',
-        name: 'Suresh Singh',
-        tmId: 'TM2503UDPR00016',
-        mobileNumber: '+91 87654 32109',
-        profileImage: 'https://randomuser.me/api/portraits/men/2.jpg',
-        pendingReason: 'App not downloaded',
-        addedDate: '3 days ago',
-        profileCompletion: 15,
-    },
-    {
-        id: '3',
-        name: 'Vikram Yadav',
-        tmId: 'TM2503UDPR00017',
-        mobileNumber: '+91 76543 21098',
-        profileImage: 'https://randomuser.me/api/portraits/men/3.jpg',
-        pendingReason: 'Profile incomplete',
-        addedDate: '4 days ago',
-        profileCompletion: 55,
-    },
-    {
-        id: '4',
-        name: 'Anil Sharma',
-        tmId: 'TM2503UDPR00018',
-        mobileNumber: '+91 65432 10987',
-        profileImage: 'https://randomuser.me/api/portraits/men/4.jpg',
-        pendingReason: 'Training not started',
-        addedDate: '5 days ago',
-        profileCompletion: 70,
-    },
-    {
-        id: '5',
-        name: 'Deepak Verma',
-        tmId: 'TM2503UDPR00019',
-        mobileNumber: '+91 54321 09876',
-        profileImage: 'https://randomuser.me/api/portraits/men/5.jpg',
-        pendingReason: 'Documents not uploaded',
-        addedDate: '1 week ago',
-        profileCompletion: 25,
-    },
-];
+const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
+
+const mapApiToPendingDriver = (apiDriver: ApiPendingDriver): PendingDriver => {
+    // Determine pending reason based on missing data
+    let reason = 'Profile incomplete';
+    if (!apiDriver.images) reason = 'Profile photo missing';
+    else if (!apiDriver.License_Number) reason = 'DL details missing';
+    else if (!apiDriver.DOB) reason = 'DOB not provided';
+    else if (apiDriver.profile_completion_percentage < 50) reason = 'Many fields pending';
+
+    // Format date if possible
+    let formattedDate = apiDriver.created_at;
+    try {
+        const date = new Date(apiDriver.created_at);
+        formattedDate = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    } catch (e) { }
+
+    return {
+        id: String(apiDriver.driver_id),
+        name: apiDriver.driver_name || 'Unknown',
+        tmId: apiDriver.unique_id || 'N/A',
+        mobileNumber: apiDriver.mobile || 'N/A',
+        profileImage: apiDriver.images ? (apiDriver.images.startsWith('http') ? apiDriver.images : `https://devtruckmitr.in/${apiDriver.images}`) : DEFAULT_AVATAR,
+        pendingReason: reason,
+        addedDate: formattedDate,
+        profileCompletion: apiDriver.profile_completion_percentage || 0,
+    };
+};
 
 // Driver Card Component
 const PendingDriverCard = ({ driver }: { driver: PendingDriver }) => {
@@ -121,8 +118,27 @@ const PendingDriverCard = ({ driver }: { driver: PendingDriver }) => {
 
     const handleWhatsAppShare = () => {
         const shareMessage = `Download TruckMitr App to get started. Use the below ID & Mobile No. to login:\n\nTM ID: ${driver.tmId}\nMobile: ${driver.mobileNumber}`;
-        showToast(t('openingWhatsApp', 'Opening WhatsApp...'));
-        // Would open WhatsApp with pre-filled message
+        const encodedMessage = encodeURIComponent(shareMessage);
+
+        // Format mobile number for WhatsApp link (wa.me expects international format without +)
+        let cleanMobile = driver.mobileNumber.replace(/\D/g, ''); // Remove non-digits
+        if (cleanMobile.startsWith('0')) cleanMobile = cleanMobile.substring(1);
+        if (cleanMobile.length === 10) cleanMobile = '91' + cleanMobile;
+
+        const whatsappUrl = `https://wa.me/${cleanMobile}?text=${encodedMessage}`;
+
+        Linking.canOpenURL(whatsappUrl)
+            .then((supported) => {
+                if (supported) {
+                    return Linking.openURL(whatsappUrl);
+                } else {
+                    showToast(t('whatsAppNotInstalled', 'WhatsApp is not installed'));
+                }
+            })
+            .catch((err) => {
+                console.error('Error opening WhatsApp:', err);
+                showToast(t('errorOpeningWhatsApp', 'Error opening WhatsApp'));
+            });
     };
 
     const handleCopy = () => {
@@ -207,12 +223,12 @@ const PendingDriverCard = ({ driver }: { driver: PendingDriver }) => {
             </View>
 
             {/* Pending Reason */}
-            <View style={styles.pendingReasonContainer}>
+            {/* <View style={styles.pendingReasonContainer}>
                 <View style={styles.pendingReasonIcon}>
                     <Ionicons name="alert-circle" size={16} color="#F59E0B" />
                 </View>
                 <Text style={styles.pendingReasonText}>{driver.pendingReason}</Text>
-            </View>
+            </View> */}
 
             {/* Action Buttons */}
             <View style={styles.actionButtonsRow}>
@@ -251,9 +267,79 @@ export default function ForemanPendingProfiles() {
     const navigation = useNavigation<NavigatorProp>();
     const safeAreaInsets = useSafeAreaInsets();
 
+    // Redux
+    const foremanId = useSelector((state: RootState) => state.user?.user?.id);
+
+    // State
+    const [drivers, setDrivers] = useState<PendingDriver[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     const handleGoBack = () => {
         navigation.goBack();
     };
+
+    const fetchDrivers = useCallback(async (isRefresh = false) => {
+        if (!foremanId) {
+            setError('User not authenticated');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            if (isRefresh) setRefreshing(true);
+            else setLoading(true);
+            setError(null);
+
+            const response = await axiosInstance.get(END_POINTS.DRIVERS_PENDING_PROFILE(foremanId));
+            console.log('Pending Profiles API Response:', response?.data);
+
+            if (response?.data?.drivers) {
+                const apiDrivers: ApiPendingDriver[] = response.data.drivers;
+                const mapped = apiDrivers.map(mapApiToPendingDriver);
+                setDrivers(mapped);
+            } else {
+                setDrivers([]);
+            }
+        } catch (err: any) {
+            console.error('Error fetching pending profiles:', err);
+            setError(err?.response?.data?.message || err?.message || 'Failed to fetch pending profiles');
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [foremanId]);
+
+    useEffect(() => {
+        fetchDrivers();
+    }, [fetchDrivers]);
+
+    const onRefresh = () => {
+        fetchDrivers(true);
+    };
+
+    if (loading && !refreshing) {
+        return (
+            <View style={styles.centerContainer}>
+                <ActivityIndicator size="large" color="#6366F1" />
+                <Text style={styles.loadingText}>Loading profiles...</Text>
+            </View>
+        );
+    }
+
+    if (error && drivers.length === 0) {
+        return (
+            <View style={styles.centerContainer}>
+                <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
+                <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+                <Text style={styles.errorSubtitle}>{error}</Text>
+                <TouchableOpacity style={styles.retryButton} onPress={() => fetchDrivers()}>
+                    <Text style={styles.retryText}>Try Again</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -270,7 +356,7 @@ export default function ForemanPendingProfiles() {
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Pending Profiles</Text>
                 <View style={styles.headerBadge}>
-                    <Text style={styles.headerBadgeText}>{PENDING_DRIVERS.length}</Text>
+                    <Text style={styles.headerBadgeText}>{drivers.length}</Text>
                 </View>
             </View>
 
@@ -285,15 +371,23 @@ export default function ForemanPendingProfiles() {
             </View>
 
             {/* Driver List */}
-            <ScrollView
-                style={styles.scrollView}
+            <FlatList
+                data={drivers}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <PendingDriverCard driver={item} />}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
-            >
-                {PENDING_DRIVERS.map((driver) => (
-                    <PendingDriverCard key={driver.id} driver={driver} />
-                ))}
-            </ScrollView>
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#6366F1']} />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <MaterialCommunityIcons name="account-check-outline" size={80} color="#CBD5E1" />
+                        <Text style={styles.emptyTitle}>All caught up!</Text>
+                        <Text style={styles.emptySubtitle}>No pending profiles found for your pilots.</Text>
+                    </View>
+                }
+            />
         </View>
     );
 }
@@ -302,6 +396,61 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8FAFC',
+    },
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        padding: 24,
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: '#64748B',
+        fontWeight: '500',
+    },
+    errorTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginTop: 16,
+    },
+    errorSubtitle: {
+        fontSize: 14,
+        color: '#64748B',
+        textAlign: 'center',
+        marginTop: 8,
+        marginBottom: 24,
+    },
+    retryButton: {
+        backgroundColor: '#6366F1',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 12,
+    },
+    retryText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: 16,
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 100,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginTop: 16,
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        color: '#64748B',
+        textAlign: 'center',
+        marginTop: 8,
+        paddingHorizontal: 40,
     },
     header: {
         flexDirection: 'row',

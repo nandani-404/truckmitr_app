@@ -250,7 +250,10 @@ export default function ProfileCompletionForeman() {
             case 'personal_details':
                 return (
                     <View style={styles.stepContainer}>
-                        <Text style={styles.classicLabel}>{t('selectDateOfBirth')}</Text>
+                        <View style={styles.labelContainer}>
+                            <Text style={styles.classicLabel}>{t('selectDateOfBirth')}</Text>
+                            <Text style={styles.asterisk}>*</Text>
+                        </View>
                         <TouchableOpacity onPress={() => setYearPickerOpen(true)} style={styles.classicBox}>
                             <Text style={{ color: userEdit?.DOB ? '#333' : '#999' }}>{userEdit?.DOB ? moment(userEdit.DOB).format('DD MMM YYYY') : t('selectDateOfBirth')}</Text>
                             <Ionicons name="calendar-outline" size={20} color={colors.royalBlue} />
@@ -321,6 +324,7 @@ export default function ProfileCompletionForeman() {
                             <Text style={styles.asterisk}>*</Text>
                         </View>
                         <TextInput
+                            maxLength={16}
                             style={styles.classicInput}
                             placeholder="MH01 20230000000"
                             placeholderTextColor="#999"
