@@ -44,22 +44,7 @@ const DriverKiAwazHome: React.FC = () => {
         }
     }, [activeTab, isFocused]);
 
-    // Hide Bottom Tab Bar when on this screen
-    useEffect(() => {
-        const parent = navigation.getParent();
-        if (parent && isFocused) {
-            parent.setOptions({ tabBarStyle: { display: 'none' } });
-        }
-        return () => {
-            if (parent && isFocused) {
-                // Restore tab bar when leaving (or rely on other screens to set their preference)
-                // Note: resetting to undefined or 'flex' usually works to restore.
-                // However, we only want to restore if we are actually leaving this screen,
-                // handled by the return cleanup when isFocused changes to false.
-                parent.setOptions({ tabBarStyle: { display: 'flex' } });
-            }
-        };
-    }, [isFocused, navigation]);
+    // Note: Bottom Tab Bar is now kept visible since DriverKiAwazHome is a tab screen
 
 
     const handleGoBack = () => {

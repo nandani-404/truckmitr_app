@@ -30,6 +30,7 @@ import { DriverKiAwazService } from '../services';
 import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const TAB_BAR_HEIGHT = 40; // Approximate tab bar height
 
 interface ReelData {
     id: string;
@@ -394,9 +395,10 @@ const ReelItem: React.FC<{
     );
 };
 
-const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }) => {
+const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }> = ({ isScreenFocused, tabBarHeight = TAB_BAR_HEIGHT }) => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const insets = useSafeAreaInsets();
+    const CONTENT_HEIGHT = SCREEN_HEIGHT - tabBarHeight; // Adjust for tab bar
     const [reels, setReels] = useState<ReelData[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [isGlobalMuted, setIsGlobalMuted] = useState(false);
@@ -550,8 +552,8 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
     };
 
     const getItemLayout = (_: any, index: number) => ({
-        length: SCREEN_HEIGHT,
-        offset: SCREEN_HEIGHT * index,
+        length: CONTENT_HEIGHT,
+        offset: CONTENT_HEIGHT * index,
         index,
     });
 
@@ -578,7 +580,7 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
                 pagingEnabled
                 showsVerticalScrollIndicator={false}
                 snapToAlignment="start"
-                snapToInterval={SCREEN_HEIGHT}
+                snapToInterval={CONTENT_HEIGHT}
                 decelerationRate="fast"
                 getItemLayout={getItemLayout}
                 onViewableItemsChanged={onViewableItemsChanged}
@@ -592,7 +594,7 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
                 onEndReachedThreshold={0.5}
                 ListEmptyComponent={
                     !loading ? (
-                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', height: SCREEN_HEIGHT }}>
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', height: CONTENT_HEIGHT }}>
                             <Text style={{ color: 'white' }}>No posts available</Text>
                         </View>
                     ) : null
@@ -626,7 +628,7 @@ const styles = StyleSheet.create({
     },
     reelContainer: {
         width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT,
+        height: SCREEN_HEIGHT - TAB_BAR_HEIGHT,
         backgroundColor: '#000000',
     },
     videoWrapper: {
