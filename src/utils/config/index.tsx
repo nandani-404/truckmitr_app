@@ -165,5 +165,7 @@ export const END_POINTS = {
     FOREMAN_MY_PILOTS: `api/foreman/drivers`,
     DRIVER_PROFILE: (driver_id: any) => `api/foreman/drivers/${driver_id}/full-details`,
     DRIVERS_PENDING_PROFILE: (foreman_id: any) => `api/foreman/${foreman_id}/incomplete-profile-drivers`,
-
+    GET_VERIFIED_DRIVERS: (foreman_id: any) => `api/foreman/${foreman_id}/verified-driver`,
+    GET_TRUSTED_DRIVERS: (foreman_id: any) => `api/foreman/${foreman_id}/trusted-driver`,
+    PENDING_SUBSCRIPTIONS: (foreman_id: any) => `api/foreman/${foreman_id}/unsubscribe-driver`,
 }

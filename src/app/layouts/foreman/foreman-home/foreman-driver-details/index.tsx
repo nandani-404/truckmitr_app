@@ -67,6 +67,61 @@ type FullDriver = {
     addedDate?: string;
 };
 
+// Vehicle Type ID to Name mapping
+const VEHICLE_TYPE_MAP: Record<string, string> = {
+    '1': 'Container Trucks',
+    '2': 'Heavy Commercial Vehicles',
+    '3': 'Heavy Open Body Trucks',
+    '4': 'Light Commercial Vehicles',
+    '5': 'Light Open Body Trucks',
+    '6': 'Medium Commercial Vehicles',
+    '7': 'Multi-Axle Trucks',
+    '8': 'Refrigerated Trucks',
+    '9': 'Special Purpose Trucks',
+    '10': 'Tankers',
+    '11': 'Tippers',
+    '13': 'Crane Mounted Lorries',
+    '14': 'Curtainsiders',
+    '15': 'Flatbeds',
+    '16': 'Light Commercial Vehicles (LCVs)',
+    '17': 'Medium and Heavy Commercial Vehicles (MHCVs)',
+    '18': 'Mini Trucks',
+    '19': 'Moffett Lorries',
+    '20': 'Pickups',
+    '21': 'Three-Wheelers',
+    '22': 'Trailer Trucks',
+    '23': 'Transporters',
+    '24': 'Trucks',
+    '25': 'Walking Floor Lorries',
+    '26': 'Car Carrier',
+};
+
+// Helper function to parse JSON array string and return formatted string
+const parseJsonArrayField = (value: string | null | undefined, isVehicleType: boolean = false): string => {
+    if (!value || value === 'N/A') return 'N/A';
+
+    try {
+        // Check if the value is a JSON array string
+        if (value.startsWith('[') && value.endsWith(']')) {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) {
+                if (isVehicleType) {
+                    // Map vehicle type IDs to names
+                    const names = parsed.map((id: string) => VEHICLE_TYPE_MAP[id] || id);
+                    return names.join(', ');
+                }
+                // For license endorsement or other arrays, just join the values
+                return parsed.join(', ');
+            }
+        }
+        // Return as-is if not a JSON array
+        return value;
+    } catch {
+        // If parsing fails, return the original value
+        return value;
+    }
+};
+
 const ForemanDriverDetails = () => {
     const navigation = useNavigation();
     const route = useRoute<RouteProp<{ params: Params }, 'params'>>();
@@ -100,11 +155,11 @@ const ForemanDriverDetails = () => {
                     dob: apiData.DOB || 'N/A',
                     gender: apiData.Sex || 'N/A',
                     education: apiData.Highest_Education || 'N/A',
-                    vehicleType: apiData.vehicle_type || 'N/A',
+                    vehicleType: parseJsonArrayField(apiData.vehicle_type, true),
                     drivingExp: apiData.driving_experience || 'N/A',
                     licenseNo: apiData.licence_number || 'N/A',
                     licenseExpiry: apiData.licence_expiry || 'N/A',
-                    licenseEndorsement: apiData.licence_endorsement || 'N/A',
+                    licenseEndorsement: parseJsonArrayField(apiData.licence_endorsement, false),
                     currentSalary: apiData.Current_Monthly_Income || 'N/A',
                     expectedSalary: apiData.Expected_Monthly_Income || 'N/A',
                     state: apiData.state_name || 'N/A',
@@ -114,6 +169,9 @@ const ForemanDriverDetails = () => {
                     subscriptionEndDate: apiData.subscription_end_date || 'N/A',
                     addedDate: driverParam.addedDate
                 });
+
+                console.log("Driver Details", details);
+
             } else {
                 setError(response?.data?.message || 'Failed to fetch driver details');
             }

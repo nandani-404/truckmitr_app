@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,16 +7,22 @@ import {
     FlatList,
     Image,
     StatusBar,
-    ScrollView,
+    ActivityIndicator,
+    RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Svg, { Circle } from 'react-native-svg';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { useTranslation } from 'react-i18next';
 import { Space } from '@truckmitr/src/app/components';
+import { useSelector } from 'react-redux';
+import { RootState } from '@truckmitr/redux/store';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/utils/config/index';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -38,215 +44,65 @@ const COLORS = {
 };
 
 // Driver Interface matching My Pilots structure but for Verified Drivers
+interface ApiVerifiedDriver {
+    driver_id: string | number;
+    driver_name: string;
+    unique_id: string;
+    mobile: string;
+    images: string | null;
+    state_name: string;
+    end_at_ist: string;
+    remaining_days: string | number;
+    payment_type: string;
+    profile_completion_percentage: number;
+}
+
 interface VerifiedDriver {
     id: string;
     name: string;
     tmId: string;
     mobile: string;
     image: string;
-    status: string; // Changed to string to match ForemanDriverDetails
+    status: string;
     state: string;
-    addedDate: string;
     completion: number;
     amount: number;
-    subscriptionDate: string;
     expiryDate: string;
     daysRemaining: number;
-    // Additional fields required by ForemanDriverDetails
-    isNew: boolean;
-    subscriptionPlan: number;
-    training: number;
-    healthHygiene: number;
-    jobsApplied: number;
-    dob: string;
-    gender: string;
-    education: string;
-    vehicleType: string;
-    drivingExp: string;
-    licenseType: string;
-    licenseEndorsement: string;
-    currentSalary: string;
-    expectedSalary: string;
-    aadharNo: string;
-    licenseNo: string;
-    licenseExpiry: string;
-    email: string;
 }
 
-// Sample data - Verified drivers with ₹199 subscription
-const VERIFIED_DRIVERS: VerifiedDriver[] = [
-    {
-        id: '1',
-        name: 'Ramesh Verma',
-        tmId: 'TM2503UDPR00010',
-        mobile: '+91 98765 43210',
-        image: 'https://randomuser.me/api/portraits/men/10.jpg',
-        status: 'Verified',
-        state: 'Haryana',
-        addedDate: '15 Dec 2024',
-        completion: 100,
-        amount: 199,
-        subscriptionDate: '2024-12-15',
-        expiryDate: '2025-03-15',
-        daysRemaining: 59,
-        // Full details
-        isNew: false,
-        subscriptionPlan: 199,
-        training: 100,
-        healthHygiene: 95,
-        jobsApplied: 12,
-        dob: '15 Aug 1988',
-        gender: 'Male',
-        education: '12th Pass',
-        vehicleType: 'Heavy Truck',
-        drivingExp: '8 Years',
-        licenseType: 'HCV',
-        licenseEndorsement: 'Hazardous',
-        currentSalary: '₹ 25,000 - ₹ 30,000',
-        expectedSalary: '₹ 30,000 - ₹ 35,000',
-        aadharNo: '1234 5678 9012',
-        licenseNo: 'DL1234567890',
-        licenseExpiry: '10 Oct 2028',
-        email: 'ramesh.verma@example.com',
-    },
-    {
-        id: '2',
-        name: 'Sunil Kumar',
-        tmId: 'TM2503UDPR00011',
-        mobile: '+91 87654 32109',
-        image: 'https://randomuser.me/api/portraits/men/11.jpg',
-        status: 'Verified',
-        state: 'Punjab',
-        addedDate: '20 Nov 2024',
-        completion: 100,
-        amount: 199,
-        subscriptionDate: '2024-11-20',
-        expiryDate: '2025-02-20',
-        daysRemaining: 36,
-        // Full details
-        isNew: false,
-        subscriptionPlan: 199,
-        training: 90,
-        healthHygiene: 85,
-        jobsApplied: 8,
-        dob: '10 Jan 1990',
-        gender: 'Male',
-        education: 'Graduate',
-        vehicleType: 'Tanker',
-        drivingExp: '5 Years',
-        licenseType: 'HCV',
-        licenseEndorsement: 'Hill',
-        currentSalary: '₹ 20,000 - ₹ 25,000',
-        expectedSalary: '₹ 25,000 - ₹ 30,000',
-        aadharNo: '9876 5432 1098',
-        licenseNo: 'DL0987654321',
-        licenseExpiry: '05 Mar 2027',
-        email: 'sunil.kumar@example.com',
-    },
-    {
-        id: '3',
-        name: 'Anil Singh',
-        tmId: 'TM2503UDPR00012',
-        mobile: '+91 76543 21098',
-        image: 'https://randomuser.me/api/portraits/men/12.jpg',
-        status: 'Verified',
-        state: 'Uttar Pradesh',
-        addedDate: '01 Jan 2025',
-        completion: 100,
-        amount: 199,
-        subscriptionDate: '2025-01-01',
-        expiryDate: '2025-04-01',
-        daysRemaining: 76,
-        // Full details
-        isNew: true,
-        subscriptionPlan: 199,
-        training: 100,
-        healthHygiene: 92,
-        jobsApplied: 15,
-        dob: '22 Jul 1992',
-        gender: 'Male',
-        education: '10th Pass',
-        vehicleType: 'Mini Truck',
-        drivingExp: '4 Years',
-        licenseType: 'LMV',
-        licenseEndorsement: 'None',
-        currentSalary: '₹ 18,000 - ₹ 22,000',
-        expectedSalary: '₹ 22,000 - ₹ 28,000',
-        aadharNo: '4567 8901 2345',
-        licenseNo: 'DL5432167890',
-        licenseExpiry: '12 Dec 2029',
-        email: 'anil.singh@example.com',
-    },
-    {
-        id: '4',
-        name: 'Deepak Yadav',
-        tmId: 'TM2503UDPR00013',
-        mobile: '+91 65432 10987',
-        image: 'https://randomuser.me/api/portraits/men/13.jpg',
-        status: 'Expiring',
-        state: 'Rajasthan',
-        addedDate: '25 Oct 2024',
-        completion: 100,
-        amount: 199,
-        subscriptionDate: '2024-10-25',
-        expiryDate: '2025-01-25',
-        daysRemaining: 10,
-        // Full details
-        isNew: false,
-        subscriptionPlan: 199,
-        training: 100,
-        healthHygiene: 98,
-        jobsApplied: 20,
-        dob: '05 Sep 1985',
-        gender: 'Male',
-        education: '8th Pass',
-        vehicleType: 'Trailer',
-        drivingExp: '12 Years',
-        licenseType: 'HCV',
-        licenseEndorsement: 'Heavy',
-        currentSalary: '₹ 30,000 - ₹ 35,000',
-        expectedSalary: '₹ 35,000 - ₹ 40,000',
-        aadharNo: '3210 9876 5432',
-        licenseNo: 'DL1122334455',
-        licenseExpiry: '20 Nov 2026',
-        email: 'deepak.yadav@example.com',
-    },
-    {
-        id: '6',
-        name: 'Pradeep Gupta',
-        tmId: 'TM2503UDPR00015',
-        mobile: '+91 43210 98765',
-        image: 'https://randomuser.me/api/portraits/men/15.jpg',
-        status: 'Expired',
-        state: 'Delhi',
-        addedDate: '10 Oct 2024',
-        completion: 100,
-        amount: 199,
-        subscriptionDate: '2024-10-10',
-        expiryDate: '2025-01-10',
-        daysRemaining: 0,
-        // Full details
-        isNew: false,
-        subscriptionPlan: 199,
-        training: 100,
-        healthHygiene: 88,
-        jobsApplied: 18,
-        dob: '18 Mar 1991',
-        gender: 'Male',
-        education: '12th Pass',
-        vehicleType: 'Pickup',
-        drivingExp: '6 Years',
-        licenseType: 'LMV',
-        licenseEndorsement: 'None',
-        currentSalary: '₹ 22,000 - ₹ 26,000',
-        expectedSalary: '₹ 26,000 - ₹ 32,000',
-        aadharNo: '7890 1234 5678',
-        licenseNo: 'DL9988776655',
-        licenseExpiry: '14 Feb 2030',
-        email: 'pradeep.gupta@example.com',
-    },
-];
+const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
 
+const parseApiDate = (dateStr: string) => {
+    if (!dateStr || typeof dateStr !== 'string' || !dateStr.includes('-')) return null;
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return null;
+    // Parts: [DD, MM, YYYY]
+    return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+};
+
+const mapApiToVerifiedDriver = (apiDriver: ApiVerifiedDriver): VerifiedDriver => {
+    const days = Number(apiDriver.remaining_days) || 0;
+    let status = 'Verified';
+    if (days <= 0) status = 'Expired';
+    else if (days < 30) status = 'Expiring';
+
+    return {
+        id: String(apiDriver.driver_id),
+        name: apiDriver.driver_name || 'Unknown',
+        tmId: apiDriver.unique_id || 'N/A',
+        mobile: apiDriver.mobile || 'N/A',
+        image: apiDriver.images ? (apiDriver.images.startsWith('http') ? apiDriver.images : `https://devtruckmitr.in/${apiDriver.images}`) : DEFAULT_AVATAR,
+        status: status,
+        state: apiDriver.state_name || 'N/A',
+        completion: apiDriver.profile_completion_percentage || 0,
+        amount: 199,
+        expiryDate: apiDriver.end_at_ist || '',
+        daysRemaining: days,
+    };
+};
+
+// Filter Type
 type FilterType = 'All' | 'Active' | 'Expiring' | 'Expired';
 
 export default function ForemanVerifiedDrivers() {
@@ -254,23 +110,70 @@ export default function ForemanVerifiedDrivers() {
     const navigation = useNavigation<NavigatorProp>();
     const safeAreaInsets = useSafeAreaInsets();
 
+    // Redux
+    const foremanId = useSelector((state: RootState) => state.user?.user?.id);
+
+    // State
+    const [drivers, setDrivers] = useState<VerifiedDriver[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [activeFilter, setActiveFilter] = useState<FilterType>('All');
 
     const goBack = () => navigation.goBack();
 
+    const fetchDrivers = useCallback(async (isRefresh = false) => {
+        if (!foremanId) {
+            setError('User not authenticated');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            if (isRefresh) setRefreshing(true);
+            else setLoading(true);
+            setError(null);
+
+            const response = await axiosInstance.get(END_POINTS.GET_VERIFIED_DRIVERS(foremanId));
+            console.log('Verified Drivers API Response:', response?.data);
+
+            if (response?.data?.drivers) {
+                const apiDrivers: ApiVerifiedDriver[] = response.data.drivers;
+                const mapped = apiDrivers.map(mapApiToVerifiedDriver);
+                setDrivers(mapped);
+            } else {
+                setDrivers([]);
+            }
+        } catch (err: any) {
+            console.error('Error fetching verified drivers:', err);
+            setError(err?.response?.data?.message || err?.message || 'Failed to fetch verified drivers');
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [foremanId]);
+
+    useEffect(() => {
+        fetchDrivers();
+    }, [fetchDrivers]);
+
+    const onRefresh = () => {
+        fetchDrivers(true);
+    };
+
     // Filter drivers
     const filteredDrivers = activeFilter === 'All'
-        ? VERIFIED_DRIVERS
+        ? drivers
         : activeFilter === 'Active'
-            ? VERIFIED_DRIVERS.filter(d => d.status === 'Verified')
-            : VERIFIED_DRIVERS.filter(d => d.status === activeFilter);
+            ? drivers.filter(d => d.status === 'Verified')
+            : drivers.filter(d => d.status === activeFilter);
 
     // Filter counts
     const filterCounts = {
-        All: VERIFIED_DRIVERS.length,
-        Active: VERIFIED_DRIVERS.filter(d => d.status === 'Verified').length,
-        Expiring: VERIFIED_DRIVERS.filter(d => d.status === 'Expiring').length,
-        Expired: VERIFIED_DRIVERS.filter(d => d.status === 'Expired').length,
+        All: drivers.length,
+        Active: drivers.filter(d => d.status === 'Verified').length,
+        Expiring: drivers.filter(d => d.status === 'Expiring').length,
+        Expired: drivers.filter(d => d.status === 'Expired').length,
     };
 
     const filters: { key: FilterType; label: string; color: string }[] = [
@@ -285,24 +188,35 @@ export default function ForemanVerifiedDrivers() {
             <View style={styles.driverMainRow}>
                 {/* Profile Image with Completion Circle */}
                 <View style={styles.profileImageWrapper}>
-                    <View style={[styles.circularProgressContainer, {
-                        borderRadius: 37,
-                        borderWidth: 4,
-                        borderColor: '#E2E8F0',
-                        backgroundColor: 'transparent'
-                    }]}>
-                        {/* Simplified progress representation */}
-                        <View style={{
-                            position: 'absolute',
-                            top: -4, left: -4, right: -4, bottom: -4,
-                            borderRadius: 37,
-                            borderWidth: 4,
-                            borderColor: item.status === 'Verified' ? "#22C55E" : item.status === 'Expiring' ? COLORS.warning : COLORS.error,
-                            borderLeftColor: 'transparent', // Simulate progress
-                            transform: [{ rotate: '45deg' }]
-                        }} />
-
-                        <View style={[styles.profileImageContainerInner, { top: 3, left: 3 }]}>
+                    <View style={styles.circularProgressContainer}>
+                        <Svg width={74} height={74} viewBox="0 0 74 74">
+                            <Circle
+                                cx="37"
+                                cy="37"
+                                r="34"
+                                stroke="#E2E8F0"
+                                strokeWidth="4"
+                                fill="none"
+                            />
+                            <Circle
+                                cx="37"
+                                cy="37"
+                                r="34"
+                                stroke={
+                                    item.status === 'Verified' ? "#22C55E" :
+                                        item.status === 'Expiring' ? COLORS.warning :
+                                            COLORS.error
+                                }
+                                strokeWidth="4"
+                                fill="none"
+                                strokeDasharray={`${2 * Math.PI * 34}`}
+                                strokeDashoffset={`${2 * Math.PI * 34 * (1 - item.completion / 100)}`}
+                                strokeLinecap="round"
+                                rotation="-90"
+                                origin="37, 37"
+                            />
+                        </Svg>
+                        <View style={styles.profileImageContainerInner}>
                             <Image source={{ uri: item.image }} style={styles.profileImage} />
                         </View>
                         {/* Completion Badge */}
@@ -369,7 +283,10 @@ export default function ForemanVerifiedDrivers() {
                     <Ionicons name="calendar-outline" size={14} color="#64748B" />
                     <Text style={styles.additionalInfoLabel}>Expires:</Text>
                     <Text style={styles.additionalInfoValue}>
-                        {new Date(item.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {(() => {
+                            const date = parseApiDate(item.expiryDate);
+                            return date ? date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : item.expiryDate;
+                        })()}
                     </Text>
                 </View>
             </View>
@@ -414,7 +331,20 @@ export default function ForemanVerifiedDrivers() {
                     <TouchableOpacity
                         style={styles.viewDetailButton}
                         activeOpacity={0.8}
-                    // onPress={() => navigation.navigate(STACKS.FOREMAN_DRIVER_DETAILS, { driver: item as any })}
+                        onPress={() => (navigation as any).navigate(STACKS.FOREMAN_DRIVER_DETAILS, {
+                            driver: {
+                                id: item.id,
+                                name: item.name,
+                                tmId: item.tmId,
+                                mobile: item.mobile,
+                                image: item.image,
+                                status: item.status,
+                                state: item.state,
+                                completion: item.completion,
+                                amount: item.amount,
+                                profile_completion_percentage: String(item.completion),
+                            }
+                        })}
                     >
                         <Text style={styles.viewDetailText}>View Details</Text>
                         <Ionicons name="arrow-forward" size={14} color="#0284C7" />
@@ -423,6 +353,28 @@ export default function ForemanVerifiedDrivers() {
             </View>
         </View>
     );
+
+    if (loading && !refreshing) {
+        return (
+            <View style={styles.centerContainer}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={styles.loadingText}>Loading verified drivers...</Text>
+            </View>
+        );
+    }
+
+    if (error && drivers.length === 0) {
+        return (
+            <View style={styles.centerContainer}>
+                <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
+                <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+                <Text style={styles.errorSubtitle}>{error}</Text>
+                <TouchableOpacity style={styles.retryButton} onPress={() => fetchDrivers()}>
+                    <Text style={styles.retryText}>Try Again</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -447,7 +399,7 @@ export default function ForemanVerifiedDrivers() {
             </View>
 
             {/* Summary Card */}
-            <View style={styles.summaryCard}>
+            {/* <View style={styles.summaryCard}>
                 <View style={styles.summaryItem}>
                     <Text style={styles.summaryValue}>{filterCounts.Active}</Text>
                     <Text style={styles.summaryLabel}>Active</Text>
@@ -462,10 +414,10 @@ export default function ForemanVerifiedDrivers() {
                     <Text style={[styles.summaryValue, { color: COLORS.error }]}>{filterCounts.Expired}</Text>
                     <Text style={styles.summaryLabel}>Expired</Text>
                 </View>
-            </View>
+            </View> */}
 
             {/* Filter Tabs */}
-            <View style={styles.filterContainer}>
+            {/* <View style={styles.filterContainer}>
                 {filters.map((filter) => (
                     <TouchableOpacity
                         key={filter.key}
@@ -483,7 +435,7 @@ export default function ForemanVerifiedDrivers() {
                         </Text>
                     </TouchableOpacity>
                 ))}
-            </View>
+            </View> */}
 
             {/* Driver List */}
             <FlatList
@@ -492,6 +444,9 @@ export default function ForemanVerifiedDrivers() {
                 renderItem={renderDriverCard}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
+                }
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <MaterialCommunityIcons name="account-check" size={64} color="#CBD5E1" />
@@ -508,6 +463,43 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
+    },
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: COLORS.background,
+        padding: 24,
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: COLORS.textMuted,
+        fontWeight: '500',
+    },
+    errorTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: COLORS.textDark,
+        marginTop: 16,
+    },
+    errorSubtitle: {
+        fontSize: 14,
+        color: COLORS.textMuted,
+        textAlign: 'center',
+        marginTop: 8,
+        marginBottom: 24,
+    },
+    retryButton: {
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 12,
+    },
+    retryText: {
+        color: COLORS.white,
+        fontWeight: '600',
+        fontSize: 16,
     },
     header: {
         flexDirection: 'row',
@@ -609,7 +601,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: 16,
-        paddingTop: 0,
+        paddingTop: 12,
         paddingBottom: 40,
     },
 
@@ -829,7 +821,8 @@ const styles = StyleSheet.create({
     emptyContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 60,
+        paddingVertical: 160,
+        // flex: 1
     },
     emptyTitle: {
         fontSize: 18,
