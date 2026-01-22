@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
+import LinearGradientLib from 'react-native-linear-gradient';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/utils/config/index';
+import { useSelector } from 'react-redux';
+import { RootState } from '@truckmitr/redux/store';
 
-// Icons Map - Using standard URL placeholders for now to match style
 // Local Icons
 const myPilotsIcon = require('../../../../../assets/my_pilots.png');
 const jobsIcon = require('../../../../../assets/jobs.png');
@@ -32,9 +36,63 @@ const ICONS = {
     trusted: trustedDriverIcon
 };
 
-const DashboardStatsCard = ({ icon, count, title }: { icon: any, count: number | string, title: string }) => {
+// Dashboard API Response Interface
+interface DashboardData {
+    success: boolean;
+    forman_id: string;
+    forman_name: string;
+    referral_code: string;
+    total_drivers: number;
+    counts: {
+        job_ready: number;
+        trusted: number;
+        verified: number;
+    };
+    amounts: {
+        job_ready: number;
+        trusted: number;
+        verified: number;
+    };
+    commission: {
+        job_ready: number;
+        trusted: number;
+        verified: number;
+    };
+    completed_profiles_count: number;
+    training: {
+        complete: number;
+        pending: number;
+    };
+}
+
+// Shimmer Card Component
+const ShimmerCard = () => {
+    const { shadow } = useShadow();
+    return (
+        <View style={[styles.card, shadow, { width: '31%' }]}>
+            <ShimmerPlaceholder
+                LinearGradient={LinearGradientLib}
+                style={{ width: 42, height: 42, borderRadius: 10, marginBottom: 4 }}
+            />
+            <ShimmerPlaceholder
+                LinearGradient={LinearGradientLib}
+                style={{ width: 40, height: 18, borderRadius: 4, marginTop: 4 }}
+            />
+            <ShimmerPlaceholder
+                LinearGradient={LinearGradientLib}
+                style={{ width: 60, height: 12, borderRadius: 4, marginTop: 4 }}
+            />
+        </View>
+    );
+};
+
+const DashboardStatsCard = ({ icon, count, title, loading }: { icon: any, count: number | string, title: string, loading?: boolean }) => {
     const { responsiveFontSize } = useResponsiveScale();
     const { shadow } = useShadow();
+
+    if (loading) {
+        return <ShimmerCard />;
+    }
 
     return (
         <View style={[styles.card, shadow, { width: '31%' }]}>
@@ -52,11 +110,57 @@ export default function ForemanDashboard() {
     const navigation = useNavigation();
     const { responsiveFontSize } = useResponsiveScale();
     const { shadow } = useShadow();
-    const foremanName = 'Nandani Saraswat';
+
+    const { user, profileCompletion } = useSelector((state: RootState) => state.user);
+
+    const [loading, setLoading] = useState(true);
+    const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+
+    // Progress ring calculations
     const radius = 27;
     const circumference = 2 * Math.PI * radius;
-    const progress = 75;
+    const progress = Number(profileCompletion) || 0;
     const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+    // Fetch dashboard data
+    const fetchDashboardData = useCallback(async () => {
+        if (!user?.id) return;
+
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get(END_POINTS.FOREMAN_DASHBOARD(user.id));
+            console.log('Dashboard API Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.success) {
+                setDashboardData(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [user?.id]);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchDashboardData();
+        }, [fetchDashboardData])
+    );
+
+    // Format currency
+    const formatCurrency = (amount: number) => {
+        if (!amount) return '₹ 0';
+        return `₹ ${amount.toLocaleString('en-IN')}`;
+    };
+
+    // Get total subscription amount
+    const getTotalSubscription = () => {
+        if (!dashboardData) return '₹ 0';
+        const total = (dashboardData.amounts?.job_ready || 0) +
+            (dashboardData.amounts?.trusted || 0) +
+            (dashboardData.amounts?.verified || 0);
+        return formatCurrency(total);
+    };
 
     return (
         <View style={styles.container}>
@@ -68,57 +172,72 @@ export default function ForemanDashboard() {
                 <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: 'bold', color: '#1E293B' }}>Dashboard</Text>
             </View>
 
-            {/* Profile Info Section (Below Header) */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 10, alignItems: 'center' }}>
-                <View>
-                    <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`Hello, ${foremanName} 👋`}</Text>
-                    <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>TM2503UPDR00003</Text>
-                    <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>Foreman</Text>
-                </View>
+            <ScrollView contentContainerStyle={[styles.content, { paddingBottom: safeAreaInsets.bottom + 20 }]} showsVerticalScrollIndicator={false}>
 
-                {/* Profile Icon Same as Home (Right Side) */}
-                <View style={{ alignItems: 'center' }}>
-                    <View style={{ width: 58, height: 58, alignItems: 'center', justifyContent: 'center' }}>
-                        <Svg width={58} height={58} style={{ position: "absolute", top: 0, left: 0 }}>
-                            <Defs>
-                                <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <Stop offset="0" stopColor="#FFD700" stopOpacity="1" />
-                                    <Stop offset="1" stopColor="#FFA500" stopOpacity="1" />
-                                </LinearGradient>
-                            </Defs>
-                            <Circle
-                                cx={29}
-                                cy={29}
-                                r={radius}
-                                stroke="url(#grad)"
-                                strokeWidth={4}
-                                fill="none"
-                                strokeDasharray={`${circumference} ${circumference}`}
-                                strokeDashoffset={strokeDashoffset}
-                                strokeLinecap="round"
-                                transform="rotate(-90 29 29)"
+                {/* Profile Info Section */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, alignItems: 'center' }}>
+                    {loading ? (
+                        <View>
+                            <ShimmerPlaceholder
+                                LinearGradient={LinearGradientLib}
+                                style={{ width: 180, height: 24, borderRadius: 4, marginBottom: 8 }}
                             />
-                        </Svg>
-                        <Image style={{ height: 58 - 4, width: 58 - 4, borderRadius: 100, backgroundColor: '#fff' }} source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }} />
-                        <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${progress}%`}</Text>
+                            <ShimmerPlaceholder
+                                LinearGradient={LinearGradientLib}
+                                style={{ width: 140, height: 18, borderRadius: 4, marginBottom: 6 }}
+                            />
+                            <ShimmerPlaceholder
+                                LinearGradient={LinearGradientLib}
+                                style={{ width: 80, height: 16, borderRadius: 4 }}
+                            />
+                        </View>
+                    ) : (
+                        <View>
+                            <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>
+                                {`Hello, ${dashboardData?.forman_name || user?.name || 'User'} 👋`}
+                            </Text>
+                            <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>
+                                {dashboardData?.referral_code || user?.unique_id || 'TMID'}
+                            </Text>
+                            <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>
+                                Foreman
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Profile Icon (Right Side) */}
+                    <View style={{ alignItems: 'center' }}>
+                        <View style={{ width: 58, height: 58, alignItems: 'center', justifyContent: 'center' }}>
+                            <Svg width={58} height={58} style={{ position: "absolute", top: 0, left: 0 }}>
+                                <Defs>
+                                    <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <Stop offset="0" stopColor="#FFD700" stopOpacity="1" />
+                                        <Stop offset="1" stopColor="#FFA500" stopOpacity="1" />
+                                    </LinearGradient>
+                                </Defs>
+                                <Circle
+                                    cx={29}
+                                    cy={29}
+                                    r={radius}
+                                    stroke="url(#grad)"
+                                    strokeWidth={4}
+                                    fill="none"
+                                    strokeDasharray={`${circumference} ${circumference}`}
+                                    strokeDashoffset={strokeDashoffset}
+                                    strokeLinecap="round"
+                                    transform="rotate(-90 29 29)"
+                                />
+                            </Svg>
+                            <Image
+                                style={{ height: 58 - 4, width: 58 - 4, borderRadius: 100, backgroundColor: '#fff' }}
+                                source={{ uri: user?.images || user?.avatar || 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}
+                            />
+                            <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${progress}%`}</Text>
+                            </View>
                         </View>
                     </View>
-                    {/* Stars */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: responsiveFontSize(1.5), gap: 2 }}>
-                        {Array.from({ length: 5 }).map((_, i) => (
-                            <FontAwesome
-                                key={i}
-                                name={i < 4 ? 'star' : 'star-o'}
-                                size={responsiveFontSize(1.6)}
-                                color={i < 4 ? '#FFD700' : 'rgba(0,0,0,0.2)'}
-                            />
-                        ))}
-                    </View>
                 </View>
-            </View>
-
-            <ScrollView contentContainerStyle={[styles.content, { paddingBottom: safeAreaInsets.bottom + 20 }]} showsVerticalScrollIndicator={false}>
 
                 {/* Work Overview */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 16 }}>
@@ -126,9 +245,24 @@ export default function ForemanDashboard() {
                     <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>Work Overview</Text>
                 </View>
                 <View style={styles.cardRow}>
-                    <DashboardStatsCard icon={ICONS.pilots} count={12} title="My Pilots" />
-                    <DashboardStatsCard icon={ICONS.application} count={5} title="Job Application" />
-                    <DashboardStatsCard icon={ICONS.jobs} count={8} title="Jobs" />
+                    <DashboardStatsCard
+                        icon={ICONS.pilots}
+                        count={loading ? 0 : (dashboardData?.total_drivers || 0)}
+                        title="My Pilots"
+                        loading={loading}
+                    />
+                    <DashboardStatsCard
+                        icon={ICONS.application}
+                        count={5}
+                        title="Job Application"
+                        loading={loading}
+                    />
+                    <DashboardStatsCard
+                        icon={ICONS.jobs}
+                        count={8}
+                        title="Jobs"
+                        loading={loading}
+                    />
                 </View>
 
                 {/* Driver Readiness Status */}
@@ -137,9 +271,24 @@ export default function ForemanDashboard() {
                     <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>Driver Readiness Status</Text>
                 </View>
                 <View style={styles.cardRow}>
-                    <DashboardStatsCard icon={ICONS.subscription} count={'₹ 2500'} title="Subscription" />
-                    <DashboardStatsCard icon={ICONS.training} count={4} title="Training" />
-                    <DashboardStatsCard icon={ICONS.profile} count={1} title="Profile" />
+                    <DashboardStatsCard
+                        icon={ICONS.subscription}
+                        count={loading ? '₹ 0' : getTotalSubscription()}
+                        title="Subscription"
+                        loading={loading}
+                    />
+                    <DashboardStatsCard
+                        icon={ICONS.training}
+                        count={loading ? 0 : (dashboardData?.training?.complete || 0)}
+                        title="Complete Training"
+                        loading={loading}
+                    />
+                    <DashboardStatsCard
+                        icon={ICONS.profile}
+                        count={loading ? 0 : (dashboardData?.completed_profiles_count || 0)}
+                        title="Profile Completed"
+                        loading={loading}
+                    />
                 </View>
 
                 {/* Subscription */}
@@ -148,9 +297,24 @@ export default function ForemanDashboard() {
                     <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>Subscription</Text>
                 </View>
                 <View style={styles.cardRow}>
-                    <DashboardStatsCard icon={ICONS.jobReady} count={10} title="Job Ready Driver" />
-                    <DashboardStatsCard icon={ICONS.verified} count={15} title="Verified Driver" />
-                    <DashboardStatsCard icon={ICONS.trusted} count={3} title="Trusted Driver" />
+                    <DashboardStatsCard
+                        icon={ICONS.jobReady}
+                        count={loading ? 0 : (dashboardData?.counts?.job_ready || 0)}
+                        title="Job Ready"
+                        loading={loading}
+                    />
+                    <DashboardStatsCard
+                        icon={ICONS.verified}
+                        count={loading ? 0 : (dashboardData?.counts?.verified || 0)}
+                        title="Verified"
+                        loading={loading}
+                    />
+                    <DashboardStatsCard
+                        icon={ICONS.trusted}
+                        count={loading ? 0 : (dashboardData?.counts?.trusted || 0)}
+                        title="Trusted"
+                        loading={loading}
+                    />
                 </View>
 
             </ScrollView>
@@ -218,7 +382,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        height: 120, // Same height as Home cards
+        height: 120,
         shadowColor: '#64748B',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,

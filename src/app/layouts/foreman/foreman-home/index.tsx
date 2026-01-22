@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -10,13 +10,14 @@ import {
     Animated,
     TouchableWithoutFeedback,
     StatusBar,
+    RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import { NavigatorParams } from '@truckmitr/stacks/stacks';
@@ -25,6 +26,8 @@ import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hook
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
+import { END_POINTS } from '@truckmitr/src/utils/config';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -151,6 +154,125 @@ export default function ForemanHome() {
     const star_rating = user?.star_rating || 0;
     const rank = user?.rank || 'No Rank';
 
+    // Dashboard API data state
+    const [dashboardData, setDashboardData] = useState({
+        todayEarning: '',
+        thisMonthEarning: '',
+        levelName: '',
+        driverCount: 0,
+        bonusPercent: 0,
+        pendingTrainingCount: '',
+        incompleteProfileCount: '',
+        licenseExpiringCount: '',
+    });
+    const [refreshing, setRefreshing] = useState(false);
+
+    // Format currency
+    const formatCurrency = (amount: number) => {
+        if (amount === 0) return '₹ 0';
+        return `₹ ${amount.toLocaleString('en-IN')}`;
+    };
+
+    // Fetch dashboard data
+    const fetchDashboardData = useCallback(async () => {
+        if (!user?.id) return;
+
+        try {
+            const response = await axiosInstance.get(`${END_POINTS.FOREMAN_HOME_DASHBOARD(user.id)}`);
+            console.log('Dashboard response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data) {
+                const data = response.data;
+                setDashboardData({
+                    todayEarning: formatCurrency(data.today?.final_commission || 0),
+                    thisMonthEarning: formatCurrency(data.this_month?.final_commission || 0),
+                    levelName: data.level?.name || '',
+                    driverCount: data.level?.driver_count || 0,
+                    bonusPercent: data.level?.bonus_percent || 0,
+                    pendingTrainingCount: data.pending_training_count?.toString() || '',
+                    incompleteProfileCount: data.incomplete_profile_count?.toString() || '',
+                    licenseExpiringCount: data.license_expiring_next_month_count?.toString() || '',
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        }
+    }, [user?.id]);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchDashboardData();
+        }, [fetchDashboardData])
+    );
+
+    // Pull to refresh handler
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchDashboardData();
+        setRefreshing(false);
+    }, [fetchDashboardData]);
+
+    // Level tiers configuration
+    // Bronze: 0-50 drivers, Silver: 51-149 drivers, Gold: 150-299 drivers, Platinum: 300+ drivers
+    const LEVEL_TIERS = [
+        { name: 'Bronze', minDrivers: 0, maxDrivers: 50, bonus: 0 },
+        { name: 'Silver', minDrivers: 51, maxDrivers: 149, bonus: 2 },
+        { name: 'Gold', minDrivers: 150, maxDrivers: 299, bonus: 5 },
+        { name: 'Platinum', minDrivers: 300, maxDrivers: Infinity, bonus: 10 },
+    ];
+
+    // Calculate progress towards next level
+    const getLevelProgress = () => {
+        const currentDrivers = dashboardData.driverCount;
+        const currentLevelName = dashboardData.levelName || 'Bronze';
+
+        // Find current level index based on driver count
+        let currentLevelIndex = LEVEL_TIERS.findIndex(tier =>
+            currentDrivers >= tier.minDrivers && currentDrivers <= tier.maxDrivers
+        );
+
+        // Fallback to first tier if not found
+        if (currentLevelIndex === -1) currentLevelIndex = 0;
+
+        const currentLevel = LEVEL_TIERS[currentLevelIndex];
+
+        // Check if at max level (Platinum)
+        if (currentLevelIndex >= LEVEL_TIERS.length - 1) {
+            return {
+                currentLevel: currentLevel.name,
+                nextLevel: 'Max Level',
+                progress: 100,
+                driversNeeded: 0,
+                nextBonus: currentLevel.bonus,
+                isMaxLevel: true,
+            };
+        }
+
+        const nextLevel = LEVEL_TIERS[currentLevelIndex + 1];
+        const driversForNextLevel = nextLevel.minDrivers;
+
+        // Calculate progress percentage within current tier
+        // Progress = how far into current tier / total tier range
+        const tierStart = currentLevel.minDrivers;
+        const tierEnd = currentLevel.maxDrivers;
+        const driversInTier = currentDrivers - tierStart;
+        const tierRange = tierEnd - tierStart + 1;
+        const progress = Math.min((driversInTier / tierRange) * 100, 100);
+
+        const driversNeeded = driversForNextLevel - currentDrivers;
+
+        return {
+            currentLevel: currentLevel.name,
+            nextLevel: nextLevel.name,
+            progress: Math.max(0, progress),
+            driversNeeded: Math.max(0, driversNeeded),
+            nextBonus: nextLevel.bonus,
+            isMaxLevel: false,
+        };
+    };
+
+    const levelProgress = getLevelProgress();
+
     // SVG circle calculations
     const size = responsiveFontSize(8);
     const strokeWidth = 4;
@@ -218,6 +340,14 @@ export default function ForemanHome() {
             <ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#6E7CF5']}
+                        tintColor="#6E7CF5"
+                    />
+                }
             >
                 <View style={{ height: responsiveHeight(42), width: responsiveWidth(100), borderBottomLeftRadius: 60, borderBottomRightRadius: 60, marginBottom: responsiveHeight(1.5) }}>
                     {/* Banner Background */}
@@ -399,7 +529,7 @@ export default function ForemanHome() {
                                         <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Earning</Text>
                                     </View>
                                 </View>
-                                <Text style={{ fontSize: 20, fontWeight: '700', color: '#22C55E' }}>₹ 2<Text style={{ fontFamily: 'serif', fontSize: 20 }}>,</Text>450</Text>
+                                <Text style={{ fontSize: 20, fontWeight: '700', color: '#22C55E' }}>{dashboardData.todayEarning || '₹ 0'}</Text>
                             </View>
 
                             {/* This Month Earning Card */}
@@ -413,21 +543,51 @@ export default function ForemanHome() {
                                         <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Earning</Text>
                                     </View>
                                 </View>
-                                <Text style={{ fontSize: 20, fontWeight: '700', color: '#3B82F6' }}>₹ 45<Text style={{ fontFamily: 'serif', fontSize: 20 }}>,</Text>800</Text>
+                                <Text style={{ fontSize: 20, fontWeight: '700', color: '#3B82F6' }}>{dashboardData.thisMonthEarning || '₹ 0'}</Text>
                             </View>
                         </View>
 
                         {/* Progress Bar Section */}
                         <View style={{ backgroundColor: '#FEF3C7', borderRadius: 12, padding: 12 }}>
+                            {/* Level Labels */}
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                                <Text style={{ fontSize: 12, fontWeight: '600', color: '#92400E' }}>Silver Foreman</Text>
-                                <Text style={{ fontSize: 12, fontWeight: '600', color: '#B45309' }}>Gold Foreman</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#F59E0B', marginRight: 6 }} />
+                                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#92400E' }}>{levelProgress.currentLevel}</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#B45309' }}>{levelProgress.nextLevel}</Text>
+                                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#D97706', marginLeft: 6 }} />
+                                </View>
                             </View>
+
+                            {/* Progress Bar */}
                             <View style={{ height: 10, backgroundColor: '#E5E7EB', borderRadius: 5, overflow: 'hidden' }}>
-                                <View style={{ width: '91%', height: '100%', backgroundColor: '#F59E0B', borderRadius: 5 }} />
+                                <View style={{ width: `${levelProgress.progress}%`, height: '100%', backgroundColor: '#F59E0B', borderRadius: 5 }} />
                             </View>
-                            <Text style={{ fontSize: 11, color: '#92400E', marginTop: 8 }}>You are 9 drivers away from Gold Foreman</Text>
-                            <Text style={{ fontSize: 11, fontWeight: '600', color: '#B45309', marginTop: 2 }}>Earn +5% extra commission</Text>
+
+                            {/* Driver Count & Status */}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                <Text style={{ fontSize: 11, color: '#92400E' }}>
+                                    {dashboardData.driverCount} drivers
+                                </Text>
+                                {!levelProgress.isMaxLevel && (
+                                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#92400E' }}>
+                                        {levelProgress.driversNeeded} more for {levelProgress.nextLevel}
+                                    </Text>
+                                )}
+                            </View>
+
+                            {/* Bonus Info */}
+                            {!levelProgress.isMaxLevel ? (
+                                <Text style={{ fontSize: 11, fontWeight: '600', color: '#B45309', marginTop: 4 }}>
+                                    🎁 Reach {levelProgress.nextLevel} to earn +{levelProgress.nextBonus}% bonus
+                                </Text>
+                            ) : (
+                                <Text style={{ fontSize: 11, fontWeight: '600', color: '#16A34A', marginTop: 4 }}>
+                                    🏆 You've reached the highest level!
+                                </Text>
+                            )}
                         </View>
                     </View>
 
@@ -456,7 +616,7 @@ export default function ForemanHome() {
                                     </View>
                                     <Feather name="chevron-right" size={16} color="#F59E0B" />
                                 </View>
-                                <Text style={{ fontSize: 12, color: '#64748B' }}>14 profiles need review</Text>
+                                <Text style={{ fontSize: 12, color: '#64748B' }}>{dashboardData.incompleteProfileCount ? `${dashboardData.incompleteProfileCount} profiles need review` : 'Loading...'}</Text>
                             </TouchableOpacity>
 
                             {/* Card 2: Pending Subscription */}
@@ -497,7 +657,7 @@ export default function ForemanHome() {
                                     </View>
                                     <Feather name="chevron-right" size={16} color="#6366F1" />
                                 </View>
-                                <Text style={{ fontSize: 12, color: '#64748B' }}>3 trainings in progress</Text>
+                                <Text style={{ fontSize: 12, color: '#64748B' }}>{dashboardData.pendingTrainingCount ? `${dashboardData.pendingTrainingCount} trainings pending` : 'Loading...'}</Text>
                             </TouchableOpacity>
 
                             {/* Card 4: Expiring Documents */}
@@ -516,7 +676,7 @@ export default function ForemanHome() {
                                     </View>
                                     <Feather name="chevron-right" size={16} color="#EF4444" />
                                 </View>
-                                <Text style={{ fontSize: 12, color: '#64748B' }}>5 documents expiring soon</Text>
+                                <Text style={{ fontSize: 12, color: '#64748B' }}>{dashboardData.licenseExpiringCount ? `${dashboardData.licenseExpiringCount} documents expiring soon` : 'Loading...'}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -569,6 +729,10 @@ export default function ForemanHome() {
                                     onPress={() => {
                                         if (item.id === 4) {
                                             navigation.navigate(STACKS.FOREMAN_JOBS_LIST as any);
+                                        } else if (item.id === 5) {
+                                            navigation.navigate(STACKS.FOREMAN_APPLICATIONS as any);
+                                        } else if (item.id === 6) {
+                                            navigation.navigate(STACKS.FOREMAN_RECRUITMENTS as any);
                                         } else {
                                             console.log(item.title);
                                         }

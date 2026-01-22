@@ -169,6 +169,9 @@ export const END_POINTS = {
     GET_VERIFIED_DRIVERS: (foreman_id: any) => `api/foreman/${foreman_id}/verified-driver`,
     GET_TRUSTED_DRIVERS: (foreman_id: any) => `api/foreman/${foreman_id}/trusted-driver`,
     PENDING_SUBSCRIPTIONS: (foreman_id: any) => `api/foreman/${foreman_id}/unsubscribe-driver`,
+    PENDING_TRAINING: (foreman_id: any) => `api/foreman/${foreman_id}/pending-training`,
+    FOREMAN_HOME_DASHBOARD: (foreman_id: any) => `api/foreman/${foreman_id}/commission-summary`,
+    FOREMAN_DASHBOARD: (foreman_id: any) => `api/foreman/dashboard-counts/${foreman_id}`,
     // Driver Ki Awaz
     DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
     DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,

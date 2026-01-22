@@ -1,123 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
     TouchableOpacity,
-    ScrollView,
+    FlatList,
     StyleSheet,
     Image,
     StatusBar,
     Share,
     Clipboard,
-    Dimensions,
+    ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NavigatorParams } from '@truckmitr/stacks/stacks';
 import { useTranslation } from 'react-i18next';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
+import { useSelector } from 'react-redux';
+import { RootState } from '@truckmitr/redux/store';
+import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
-interface TrainingModule {
-    id: string;
-    title: string;
-    completed: boolean;
-}
-
 interface PendingTrainingDriver {
-    id: string;
     name: string;
-    tmId: string;
-    mobile: string;
-    image: string;
-    trainingProgress: number; // 0 to 100
-    completedModules: number;
-    totalModules: number;
-    currentModule: string;
-    lastActive: string;
+    images: string | null;
+    unique_id: string;
+    last_watch_video_topic: string;
 }
-
-// Sample data
-const DRIVERS: PendingTrainingDriver[] = [
-    {
-        id: '1',
-        name: 'Rahul Kumar',
-        tmId: 'TM2503UDPR00030',
-        mobile: '+91 98765 12345',
-        image: 'https://randomuser.me/api/portraits/men/32.jpg',
-        trainingProgress: 40,
-        completedModules: 2,
-        totalModules: 5,
-        currentModule: 'Safety Guidelines',
-        lastActive: '2 days ago',
-    },
-    {
-        id: '2',
-        name: 'Vikram Singh',
-        tmId: 'TM2503UDPR00031',
-        mobile: '+91 87654 23456',
-        image: 'https://randomuser.me/api/portraits/men/45.jpg',
-        trainingProgress: 10,
-        completedModules: 0,
-        totalModules: 5,
-        currentModule: 'Introduction to App',
-        lastActive: '5 days ago',
-    },
-    {
-        id: '3',
-        name: 'Amit Patel',
-        tmId: 'TM2503UDPR00032',
-        mobile: '+91 76543 34567',
-        image: 'https://randomuser.me/api/portraits/men/22.jpg',
-        trainingProgress: 80,
-        completedModules: 4,
-        totalModules: 5,
-        currentModule: 'Advanced Navigation',
-        lastActive: '1 day ago',
-    },
-    {
-        id: '4',
-        name: 'Suresh Raina',
-        tmId: 'TM2503UDPR00033',
-        mobile: '+91 65432 45678',
-        image: 'https://randomuser.me/api/portraits/men/18.jpg',
-        trainingProgress: 0,
-        completedModules: 0,
-        totalModules: 5,
-        currentModule: 'Introduction to App',
-        lastActive: '1 week ago',
-    },
-];
 
 const TrainingCard = ({ driver }: { driver: PendingTrainingDriver }) => {
     const { t } = useTranslation();
 
     const handleRemind = () => {
-        const msg = `Hi ${driver.name}, please complete your pending training "${driver.currentModule}" on TruckMitr app to get verified!\n\nTM ID: ${driver.tmId}`;
+        const msg = `Hi ${driver.name}, please complete your pending training on TruckMitr app to get verified!\n\nTM ID: ${driver.unique_id}`;
         Share.share({ message: msg });
     };
 
     const handleCopy = () => {
-        Clipboard.setString(`TM ID: ${driver.tmId}\nMobile: ${driver.mobile}`);
+        Clipboard.setString(`TM ID: ${driver.unique_id}`);
         showToast(t('copiedToClipboard', 'Copied!'));
     };
 
-    // Determine progress color
-    let progressColor = '#3B82F6'; // Blue default
-    if (driver.trainingProgress > 75) progressColor = '#22C55E'; // Green
-    else if (driver.trainingProgress < 30) progressColor = '#EF4444'; // Red
+    const profileImage = driver.images
+        ? `${BASE_URL}${driver.images}`
+        : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
     return (
         <View style={styles.card}>
             <View style={styles.cardHeader}>
-                <Image source={{ uri: driver.image }} style={styles.avatar} />
+                <Image source={{ uri: profileImage }} style={styles.avatar} />
                 <View style={styles.cardInfo}>
                     <Text style={styles.name}>{driver.name}</Text>
-                    <Text style={styles.tmId}>{driver.tmId}</Text>
-                    <Text style={styles.lastActive}>Last active: {driver.lastActive}</Text>
+                    <Text style={styles.tmId}>{driver.unique_id}</Text>
+                    {/* <Text style={styles.lastActive}>Last Topic: {driver.last_watch_video_topic}</Text> */}
                 </View>
                 <View style={styles.actions}>
                     <TouchableOpacity style={styles.remindBtn} onPress={handleRemind}>
@@ -129,29 +68,34 @@ const TrainingCard = ({ driver }: { driver: PendingTrainingDriver }) => {
                 </View>
             </View>
 
-            <View style={styles.divider} />
+            {/* <View style={styles.divider} /> */}
 
-            <View style={styles.progressSection}>
-                <View style={styles.progressLabels}>
-                    <Text style={styles.moduleText}>
-                        Current: <Text style={styles.moduleName}>{driver.currentModule}</Text>
-                    </Text>
-                    <Text style={styles.percentageText}>{driver.trainingProgress}%</Text>
+            {/* Training Status Section */}
+            {/* <View style={styles.trainingStatusSection}>
+                <View style={styles.statusRow}>
+                    <Text style={styles.statusLabel}>Training Status:</Text>
+                    <View style={[
+                        styles.statusChip,
+                        driver.last_watch_video_topic === 'Not Started'
+                            ? styles.statusNotStarted
+                            : styles.statusInProgress
+                    ]}>
+                        <Ionicons
+                            name={driver.last_watch_video_topic === 'Not Started' ? 'time-outline' : 'play-circle-outline'}
+                            size={14}
+                            color={driver.last_watch_video_topic === 'Not Started' ? '#DC2626' : '#F59E0B'}
+                        />
+                        <Text style={[
+                            styles.statusChipText,
+                            driver.last_watch_video_topic === 'Not Started'
+                                ? styles.statusTextNotStarted
+                                : styles.statusTextInProgress
+                        ]}>
+                            {driver.last_watch_video_topic}
+                        </Text>
+                    </View>
                 </View>
-
-                <View style={styles.progressBarContainer}>
-                    <View
-                        style={[
-                            styles.progressBarFill,
-                            { width: `${driver.trainingProgress}%`, backgroundColor: progressColor }
-                        ]}
-                    />
-                </View>
-
-                <Text style={styles.modulesCount}>
-                    {driver.completedModules} of {driver.totalModules} modules completed
-                </Text>
-            </View>
+            </View> */}
         </View>
     );
 };
@@ -159,8 +103,66 @@ const TrainingCard = ({ driver }: { driver: PendingTrainingDriver }) => {
 export default function ForemanPendingTraining() {
     const navigation = useNavigation<NavigatorProp>();
     const safeAreaInsets = useSafeAreaInsets();
+    const { t } = useTranslation();
 
-    const totalIncomplete = DRIVERS.filter(d => d.trainingProgress < 100).length;
+    const { user } = useSelector((state: RootState) => state.user);
+    const [loading, setLoading] = useState(true);
+    const [drivers, setDrivers] = useState<PendingTrainingDriver[]>([]);
+    const [pendingCount, setPendingCount] = useState(0);
+
+    const fetchPendingTraining = useCallback(async () => {
+        if (!user?.id) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get(`${END_POINTS.PENDING_TRAINING(user.id)}`);
+            console.log('pending training response', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.success) {
+                setDrivers(response.data.drivers || []);
+                setPendingCount(response.data.pending_training_count || 0);
+            } else {
+                setDrivers([]);
+                setPendingCount(0);
+            }
+        } catch (error) {
+            console.error('Error fetching pending training:', error);
+            showToast(t('errorFetchingData', 'Error fetching data'));
+            setDrivers([]);
+            setPendingCount(0);
+        } finally {
+            setLoading(false);
+        }
+    }, [user?.id, t]);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchPendingTraining();
+        }, [fetchPendingTraining])
+    );
+
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+                <View style={[styles.header, { paddingTop: safeAreaInsets.top + 12 }]}>
+                    <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                        <Ionicons name="arrow-back" size={24} color="#1F2937" />
+                    </TouchableOpacity>
+                    <View>
+                        <Text style={styles.headerTitle}>Pending Training</Text>
+                        <Text style={styles.headerSubtitle}>Loading...</Text>
+                    </View>
+                </View>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#6366F1" />
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -173,15 +175,24 @@ export default function ForemanPendingTraining() {
                 </TouchableOpacity>
                 <View>
                     <Text style={styles.headerTitle}>Pending Training</Text>
-                    <Text style={styles.headerSubtitle}>{totalIncomplete} drivers have incomplete training</Text>
+                    <Text style={styles.headerSubtitle}>{pendingCount} drivers have incomplete training</Text>
                 </View>
             </View>
 
-            <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-                {DRIVERS.map((driver) => (
-                    <TrainingCard key={driver.id} driver={driver} />
-                ))}
-            </ScrollView>
+            <FlatList
+                data={drivers}
+                keyExtractor={(item, index) => item.unique_id || index.toString()}
+                renderItem={({ item }) => <TrainingCard driver={item} />}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="checkmark-circle-outline" size={64} color="#22C55E" />
+                        <Text style={styles.emptyTitle}>All Caught Up!</Text>
+                        <Text style={styles.emptySubtitle}>No drivers with pending training</Text>
+                    </View>
+                }
+            />
         </View>
     );
 }
@@ -224,6 +235,28 @@ const styles = StyleSheet.create({
     listContent: {
         padding: 16,
         paddingBottom: 32,
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 100,
+    },
+    emptyTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginTop: 16,
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        color: '#64748B',
+        marginTop: 4,
     },
     card: {
         backgroundColor: '#FFFFFF',
@@ -295,6 +328,44 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         marginBottom: 12,
     },
+    trainingStatusSection: {
+        gap: 8,
+    },
+    statusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    statusLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#64748B',
+    },
+    statusChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
+        gap: 5,
+    },
+    statusNotStarted: {
+        backgroundColor: '#FEE2E2',
+    },
+    statusInProgress: {
+        backgroundColor: '#FEF3C7',
+    },
+    statusChipText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    statusTextNotStarted: {
+        color: '#DC2626',
+    },
+    statusTextInProgress: {
+        color: '#B45309',
+    },
+    // Progress bar styles - kept for future use
     progressSection: {
         gap: 8,
     },
