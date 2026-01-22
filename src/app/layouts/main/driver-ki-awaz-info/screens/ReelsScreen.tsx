@@ -126,7 +126,7 @@ const GradientHeart: React.FC<{
     );
 };
 
-const ReelItem: React.FC<{
+const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport, onComment, onShare, bottomInset, contentHeight }: {
     reel: ReelData;
     isActive: boolean;
     isMuted: boolean;
@@ -136,7 +136,7 @@ const ReelItem: React.FC<{
     onShare: () => void;
     bottomInset: number;
     contentHeight: number;
-}> = ({ reel, isActive, isMuted, onToggleMute, onSupport, onComment, onShare, bottomInset, contentHeight }) => {
+}) => {
     const [isPaused, setIsPaused] = useState(!isActive);
     const [showMuteIndicator, setShowMuteIndicator] = useState(false);
     const [isBuffering, setIsBuffering] = useState(true);
@@ -238,10 +238,10 @@ const ReelItem: React.FC<{
                     onBuffer={handleBuffer}
                     onLoad={handleLoad}
                     bufferConfig={{
-                        minBufferMs: 15000,
-                        maxBufferMs: 50000,
-                        bufferForPlaybackMs: 2500,
-                        bufferForPlaybackAfterRebufferMs: 5000,
+                        minBufferMs: 2000,
+                        maxBufferMs: 30000,
+                        bufferForPlaybackMs: 100,
+                        bufferForPlaybackAfterRebufferMs: 500,
                     }}
                     playInBackground={false}
                     playWhenInactive={false}
@@ -351,7 +351,7 @@ const ReelItem: React.FC<{
             </View>
         </View>
     );
-};
+});
 
 const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }> = ({ isScreenFocused, tabBarHeight = TAB_BAR_HEIGHT }) => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -554,9 +554,10 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }>
                 viewabilityConfig={viewabilityConfig}
                 bounces={false}
                 overScrollMode="never"
-                removeClippedSubviews
-                maxToRenderPerBatch={2}
-                windowSize={3}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={3}
+                windowSize={5}
+                initialNumToRender={3}
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.5}
                 ListEmptyComponent={
