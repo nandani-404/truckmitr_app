@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 import LinearGradient from 'react-native-linear-gradient';
+import Orientation from 'react-native-orientation-locker';
 import CommentsModal from '../components/CommentsModal';
 
 import { DriverKiAwazService } from '../services';
@@ -49,54 +50,7 @@ interface ReelData {
     createdAt?: string;
 }
 
-// Mock data
-const MOCK_REELS: ReelData[] = [
-    {
-        id: '1',
-        userName: 'Ramesh Kumar',
-        userAvatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-        userState: 'Uttar Pradesh',
-        category: 'DRIVER_LIFE',
-        categoryLabel: '🚛 Driver Life',
-        hashtags: ['DriverLife', 'Trucking', 'Highway'],
-        supportCount: 1245,
-        commentCount: 89,
-        shareCount: 34,
-        isSupported: false,
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        description: 'Aaj ka safar bahut acha raha! 🛣️',
-    },
-    {
-        id: '2',
-        userName: 'Suresh Singh',
-        userAvatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-        userState: 'Rajasthan',
-        category: 'RTO_CHALLAN',
-        categoryLabel: '📋 RTO Issues',
-        hashtags: ['RTO', 'Challan', 'DriverRights'],
-        supportCount: 892,
-        commentCount: 156,
-        shareCount: 67,
-        isSupported: true,
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-        description: 'RTO ke unfair challans ke baare mein baat karte hain',
-    },
-    {
-        id: '3',
-        userName: 'Mahesh Yadav',
-        userAvatar: 'https://randomuser.me/api/portraits/men/3.jpg',
-        userState: 'Maharashtra',
-        category: 'WELFARE_RIGHTS',
-        categoryLabel: '⚖️ Welfare Rights',
-        hashtags: ['DriverWelfare', 'Rights', 'Unity'],
-        supportCount: 2341,
-        commentCount: 234,
-        shareCount: 112,
-        isSupported: false,
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-        description: 'Humari awaaz, humari jeet! 💪',
-    },
-];
+
 
 const GradientHeart: React.FC<{
     onComplete: () => void;
@@ -181,7 +135,8 @@ const ReelItem: React.FC<{
     onComment: () => void;
     onShare: () => void;
     bottomInset: number;
-}> = ({ reel, isActive, isMuted, onToggleMute, onSupport, onComment, onShare, bottomInset }) => {
+    contentHeight: number;
+}> = ({ reel, isActive, isMuted, onToggleMute, onSupport, onComment, onShare, bottomInset, contentHeight }) => {
     const [isPaused, setIsPaused] = useState(!isActive);
     const [showMuteIndicator, setShowMuteIndicator] = useState(false);
     const [isBuffering, setIsBuffering] = useState(true);
@@ -263,7 +218,7 @@ const ReelItem: React.FC<{
     };
 
     return (
-        <View style={[styles.reelContainer, { paddingBottom: bottomInset }]}>
+        <View style={[styles.reelContainer, { height: contentHeight, paddingBottom: bottomInset }]}>
             {/* Video Background */}
             <TouchableOpacity
                 activeOpacity={1}
@@ -330,10 +285,13 @@ const ReelItem: React.FC<{
             <View style={[styles.actionsContainer, { bottom: bottomInset + 100 }]}>
                 {/* User Avatar */}
                 <TouchableOpacity style={styles.avatarContainer}>
-                    <Image source={{ uri: reel.userAvatar }} style={styles.avatar} />
-                    <View style={styles.followBadge}>
-                        <Ionicons name="add" size={12} color="#FFFFFF" />
-                    </View>
+                    {reel.userAvatar && !reel.userAvatar.includes('placeholder') ? (
+                        <Image source={{ uri: reel.userAvatar }} style={styles.avatar} />
+                    ) : (
+                        <View style={[styles.avatar, { backgroundColor: '#333333', alignItems: 'center', justifyContent: 'center' }]}>
+                            <Ionicons name="person" size={24} color="#FFFFFF" />
+                        </View>
+                    )}
                 </TouchableOpacity>
 
                 {/* Support Button */}
@@ -398,7 +356,7 @@ const ReelItem: React.FC<{
 const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }> = ({ isScreenFocused, tabBarHeight = TAB_BAR_HEIGHT }) => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const insets = useSafeAreaInsets();
-    const CONTENT_HEIGHT = SCREEN_HEIGHT - tabBarHeight; // Adjust for tab bar
+    const CONTENT_HEIGHT = SCREEN_HEIGHT - tabBarHeight - insets.top; // Adjust for tab bar and status bar
     const [reels, setReels] = useState<ReelData[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [isGlobalMuted, setIsGlobalMuted] = useState(false);
@@ -409,6 +367,14 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }>
     const [showComments, setShowComments] = useState(false);
     const [activeReelId, setActiveReelId] = useState<string | null>(null);
     const flatListRef = useRef<FlatList>(null);
+
+    // Lock Orientation to Portrait
+    useEffect(() => {
+        Orientation.lockToPortrait();
+        return () => {
+            Orientation.unlockAllOrientations();
+        };
+    }, []);
 
     // Initial Fetch
     useEffect(() => {
@@ -558,8 +524,8 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }>
     });
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+            <StatusBar barStyle="light-content" backgroundColor="black" translucent={true} />
 
             <FlatList
                 ref={flatListRef}
@@ -574,6 +540,7 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }>
                         onComment={() => openComments(item.id)}
                         onShare={() => shareReel(item)}
                         bottomInset={insets.bottom}
+                        contentHeight={CONTENT_HEIGHT}
                     />
                 )}
                 keyExtractor={item => item.id}
@@ -628,7 +595,6 @@ const styles = StyleSheet.create({
     },
     reelContainer: {
         width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT - TAB_BAR_HEIGHT,
         backgroundColor: '#000000',
     },
     videoWrapper: {

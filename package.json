@@ -62,6 +62,7 @@
     "react-native-maps": "1.19.0",
     "react-native-modal": "^14.0.0-rc.1",
     "react-native-modal-datetime-picker": "^18.0.0",
+    "react-native-nitro-modules": "^0.33.2",
     "react-native-orientation-locker": "^1.7.0",
     "react-native-otp-verify": "^1.1.8",
     "react-native-paper": "^5.14.5",
