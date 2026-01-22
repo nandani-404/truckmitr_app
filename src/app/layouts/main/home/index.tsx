@@ -17,6 +17,7 @@ import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MediaSwiper, Space } from '@truckmitr/src/app/components';
 import { Image } from 'react-native';
+import TopClassPopup from '../../../../utils/popup_banner';
 import Svg, { Circle, Path, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6'
@@ -36,6 +37,7 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WelcomeModal from '@truckmitr/src/app/components/welcome-modal';
 import { getUserBadgeText } from '@truckmitr/src/utils/global';
+import PollSurveyModal from '@truckmitr/src/utils/poll-survey';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -619,7 +621,7 @@ const Home = React.forwardRef((props, ref) => {
         navigation.navigate(STACKS.DASHBOARD)
     }
     const _navigateTraning = () => {
-        navigation.navigate(STACKS.BOTTOM_TAB, { screen: STACKS.TRAINING })
+        navigation.navigate(STACKS.TRAINING)
     }
     const _navigateProfile = () => {
         navigation.navigate(STACKS.BOTTOM_TAB, { screen: STACKS.PROFILE })
@@ -2045,6 +2047,8 @@ const Home = React.forwardRef((props, ref) => {
                     </View>
                 </TouchableOpacity>
             </Modal>
+            <PollSurveyModal />
+            <TopClassPopup />
         </View >
     )
 })
