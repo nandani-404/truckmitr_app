@@ -31,7 +31,7 @@ import { Alert } from 'react-native';
 
 interface PostData {
     id: string;
-    type: 'VOICE' | 'TEXT' | 'VIDEO';
+    type: 'VOICE' | 'TEXT' | 'VIDEO' | 'IMAGE';
     userName: string;
     userAvatar: string;
     userState: string;
@@ -93,7 +93,13 @@ const PostCard: React.FC<{
         <View style={styles.postCard}>
             {/* Header */}
             <View style={styles.postHeader}>
-                <Image source={{ uri: post.userAvatar }} style={styles.postAvatar} />
+                {post.userAvatar && post.userAvatar !== 'https://via.placeholder.com/150' ? (
+                    <Image source={{ uri: post.userAvatar }} style={styles.postAvatar} />
+                ) : (
+                    <View style={[styles.postAvatar, { backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
+                        <Ionicons name="person" size={24} color="#94A3B8" />
+                    </View>
+                )}
                 <View style={styles.postUserInfo}>
                     <View style={styles.postUserRow}>
                         <Text style={styles.postUserName}>{post.userName}</Text>
@@ -157,6 +163,32 @@ const PostCard: React.FC<{
                         />
                     )}
                 </TouchableOpacity>
+            ) : post.type === 'IMAGE' ? (
+                <View>
+                    {post.content ? (
+                        <Text style={styles.postContent}>{post.content}</Text>
+                    ) : null}
+                    <Image
+                        source={{ uri: post.mediaUrl }}
+                        style={styles.postImage}
+                        resizeMode="cover"
+                    />
+                </View>
+            ) : post.type === 'VIDEO' ? (
+                <View>
+                    {post.content ? (
+                        <Text style={styles.postContent}>{post.content}</Text>
+                    ) : null}
+                    <View style={styles.videoContainer}>
+                        <Video
+                            source={{ uri: post.videoUrl || post.mediaUrl }}
+                            style={styles.postVideo}
+                            resizeMode="cover"
+                            paused={true} // Start paused
+                            controls={true}
+                        />
+                    </View>
+                </View>
             ) : (
                 <Text style={styles.postContent}>{post.content}</Text>
             )}
@@ -234,12 +266,11 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
                 : await DriverKiAwazService.getFeed(currentCursor, currentLastId);
 
             if (response.data) {
-                const feedData = Array.isArray(response.data) ? response.data : response.data?.data;
-                const dataArray = Array.isArray(feedData) ? feedData : [];
+                // Check if response has valid data structure
+                const feedData = response.data.data || (Array.isArray(response.data) ? response.data : []);
 
-                if (dataArray.length > 0) {
-                    const newPosts: PostData[] = dataArray
-                        .filter((item: any) => item.media_type !== 'video') // Filter out videos
+                if (feedData.length > 0) {
+                    const newPosts: PostData[] = feedData
                         .map((item: any) => {
                             // Media URL Logic
                             const rawUrl = item.media_url || '';
@@ -254,9 +285,14 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
                                 ? 'https://via.placeholder.com/150'
                                 : (hasAvatarHttp ? rawAvatar : `https://devtruckmitr.in/public/${cleanAvatarPath}`);
 
+                            let postType: 'VOICE' | 'TEXT' | 'VIDEO' | 'IMAGE' = 'TEXT';
+                            if (item.media_type === 'audio') postType = 'VOICE';
+                            else if (item.media_type === 'image') postType = 'IMAGE';
+                            else if (item.media_type === 'video') postType = 'VIDEO';
+
                             return {
                                 id: item.id.toString(),
-                                type: item.media_type === 'audio' ? 'VOICE' : 'TEXT',
+                                type: postType,
                                 userName: item.user_name || item.user?.name || 'Unknown',
                                 userAvatar: finalAvatarUrl,
                                 userState: item.user?.state || '',
@@ -273,6 +309,7 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
                                 audioDuration: item.duration || 0,
                                 audioUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
                                 mediaUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
+                                videoUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
                             };
                         });
 
@@ -282,14 +319,25 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
                         setPosts(prev => [...prev, ...newPosts]);
                     }
 
-                    if (newPosts.length > 0) {
-                        const lastItem = newPosts[newPosts.length - 1];
-                        setCursor(lastItem.createdAt);
-                        setLastId(lastItem.id);
+                    // Use API provided pagination info if available
+                    if (response.data.nextCursor) {
+                        setCursor(response.data.nextCursor);
+                        setLastId(response.data.nextId?.toString());
+                        setHasMore(response.data.hasMore !== false); // Default to true if missing, unless explicitly false
                     } else {
-                        setHasMore(false);
+                        // Fallback for older API structure
+                        if (newPosts.length > 0) {
+                            const lastItem = newPosts[newPosts.length - 1];
+                            setCursor(lastItem.createdAt);
+                            setLastId(lastItem.id);
+                        } else {
+                            setHasMore(false);
+                        }
                     }
                 } else {
+                    if (refresh) {
+                        setPosts([]);
+                    }
                     setHasMore(false);
                 }
             }
@@ -562,6 +610,25 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.4,
         shadowRadius: 8,
         elevation: 8,
+    },
+    postImage: {
+        width: '100%',
+        height: 250,
+        borderRadius: 12,
+        marginTop: 8,
+        backgroundColor: '#E2E8F0',
+    },
+    videoContainer: {
+        width: '100%',
+        aspectRatio: 16 / 9,
+        marginTop: 8,
+        borderRadius: 12,
+        overflow: 'hidden',
+        backgroundColor: '#000000',
+    },
+    postVideo: {
+        width: '100%',
+        height: '100%',
     },
 });
 

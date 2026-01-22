@@ -162,6 +162,7 @@ export const END_POINTS = {
     DKA_SHARE: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}/share`,
     DKA_EDIT_POST: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}`,
     DKA_DELETE_POST: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}`,
+    DKA_DELETE_COMMENT: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/comment/${id}`,
     DKA_USER_FEED: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/user/${id}`,
     DKA_USER_DASHBOARD: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/users/${id}/dashboard`,
 
