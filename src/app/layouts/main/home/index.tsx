@@ -10,8 +10,10 @@ import Video from 'react-native-video';
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useColor, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useIsFocused } from '@react-navigation/native';
+
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
+
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MediaSwiper, Space } from '@truckmitr/src/app/components';
 import { Image } from 'react-native';
@@ -42,7 +44,6 @@ interface SubscriptionItem {
     end_at: number;
     [key: string]: any;
 }
-
 const capitalizeFirst = (str: string): string => {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -60,6 +61,7 @@ const Home = React.forwardRef((props, ref) => {
 
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
+    const isFocused = useIsFocused();
     const [showWelcome, setShowWelcome] = useState(false)
 
     const { user, isDriver, isTransporter, whatsapp_link, profileCompletion, subscriptionDetails, subscriptionModal, rank, star_rating } = useSelector((state: any) => { return state?.user }) || {};
@@ -1683,7 +1685,7 @@ const Home = React.forwardRef((props, ref) => {
             </ScrollView>
 
             {/* Draggable Floating Reel-Style Video Player */}
-            {(isDriver || isTransporter) && !isMinimized && <Animated.View
+            {(isDriver || isTransporter) && !isMinimized && isFocused && <Animated.View
                 {...panResponder.panHandlers}
                 style={isFullScreen ? {
                     position: 'absolute',
@@ -1718,7 +1720,7 @@ const Home = React.forwardRef((props, ref) => {
                     resizeMode={isFullScreen ? "contain" : "cover"}
                     controls={false}
                     repeat={true}
-                    paused={!isPlaying}
+                    paused={!isPlaying || !isFocused}
                     onError={(e: any) => console.log('Video Error:', e)}
                 />
 
@@ -1903,7 +1905,7 @@ const Home = React.forwardRef((props, ref) => {
             </Animated.View>}
 
             {/* Minimized Floating Icon */}
-            {(isDriver || isTransporter) && isMinimized && (
+            {(isDriver || isTransporter) && isMinimized && isFocused && (
                 <Animated.View
                     {...panResponder.panHandlers}
                     style={{

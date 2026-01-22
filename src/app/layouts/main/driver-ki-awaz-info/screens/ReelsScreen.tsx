@@ -24,8 +24,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 import LinearGradient from 'react-native-linear-gradient';
+import Orientation from 'react-native-orientation-locker';
+import CommentsModal from '../components/CommentsModal';
+
+import { DriverKiAwazService } from '../services';
+import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const TAB_BAR_HEIGHT = 40; // Approximate tab bar height
 
 interface ReelData {
     id: string;
@@ -41,56 +47,10 @@ interface ReelData {
     isSupported: boolean;
     videoUrl: string;
     description: string;
+    createdAt?: string;
 }
 
-// Mock data
-const MOCK_REELS: ReelData[] = [
-    {
-        id: '1',
-        userName: 'Ramesh Kumar',
-        userAvatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-        userState: 'Uttar Pradesh',
-        category: 'DRIVER_LIFE',
-        categoryLabel: '🚛 Driver Life',
-        hashtags: ['DriverLife', 'Trucking', 'Highway'],
-        supportCount: 1245,
-        commentCount: 89,
-        shareCount: 34,
-        isSupported: false,
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        description: 'Aaj ka safar bahut acha raha! 🛣️',
-    },
-    {
-        id: '2',
-        userName: 'Suresh Singh',
-        userAvatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-        userState: 'Rajasthan',
-        category: 'RTO_CHALLAN',
-        categoryLabel: '📋 RTO Issues',
-        hashtags: ['RTO', 'Challan', 'DriverRights'],
-        supportCount: 892,
-        commentCount: 156,
-        shareCount: 67,
-        isSupported: true,
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-        description: 'RTO ke unfair challans ke baare mein baat karte hain',
-    },
-    {
-        id: '3',
-        userName: 'Mahesh Yadav',
-        userAvatar: 'https://randomuser.me/api/portraits/men/3.jpg',
-        userState: 'Maharashtra',
-        category: 'WELFARE_RIGHTS',
-        categoryLabel: '⚖️ Welfare Rights',
-        hashtags: ['DriverWelfare', 'Rights', 'Unity'],
-        supportCount: 2341,
-        commentCount: 234,
-        shareCount: 112,
-        isSupported: false,
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-        description: 'Humari awaaz, humari jeet! 💪',
-    },
-];
+
 
 const GradientHeart: React.FC<{
     onComplete: () => void;
@@ -166,7 +126,7 @@ const GradientHeart: React.FC<{
     );
 };
 
-const ReelItem: React.FC<{
+const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport, onComment, onShare, bottomInset, contentHeight }: {
     reel: ReelData;
     isActive: boolean;
     isMuted: boolean;
@@ -175,7 +135,8 @@ const ReelItem: React.FC<{
     onComment: () => void;
     onShare: () => void;
     bottomInset: number;
-}> = ({ reel, isActive, isMuted, onToggleMute, onSupport, onComment, onShare, bottomInset }) => {
+    contentHeight: number;
+}) => {
     const [isPaused, setIsPaused] = useState(!isActive);
     const [showMuteIndicator, setShowMuteIndicator] = useState(false);
     const [isBuffering, setIsBuffering] = useState(true);
@@ -257,7 +218,7 @@ const ReelItem: React.FC<{
     };
 
     return (
-        <View style={[styles.reelContainer, { paddingBottom: bottomInset }]}>
+        <View style={[styles.reelContainer, { height: contentHeight, paddingBottom: bottomInset }]}>
             {/* Video Background */}
             <TouchableOpacity
                 activeOpacity={1}
@@ -277,10 +238,10 @@ const ReelItem: React.FC<{
                     onBuffer={handleBuffer}
                     onLoad={handleLoad}
                     bufferConfig={{
-                        minBufferMs: 15000,
-                        maxBufferMs: 50000,
-                        bufferForPlaybackMs: 2500,
-                        bufferForPlaybackAfterRebufferMs: 5000,
+                        minBufferMs: 2000,
+                        maxBufferMs: 30000,
+                        bufferForPlaybackMs: 100,
+                        bufferForPlaybackAfterRebufferMs: 500,
                     }}
                     playInBackground={false}
                     playWhenInactive={false}
@@ -324,10 +285,13 @@ const ReelItem: React.FC<{
             <View style={[styles.actionsContainer, { bottom: bottomInset + 100 }]}>
                 {/* User Avatar */}
                 <TouchableOpacity style={styles.avatarContainer}>
-                    <Image source={{ uri: reel.userAvatar }} style={styles.avatar} />
-                    <View style={styles.followBadge}>
-                        <Ionicons name="add" size={12} color="#FFFFFF" />
-                    </View>
+                    {reel.userAvatar && !reel.userAvatar.includes('placeholder') ? (
+                        <Image source={{ uri: reel.userAvatar }} style={styles.avatar} />
+                    ) : (
+                        <View style={[styles.avatar, { backgroundColor: '#333333', alignItems: 'center', justifyContent: 'center' }]}>
+                            <Ionicons name="person" size={24} color="#FFFFFF" />
+                        </View>
+                    )}
                 </TouchableOpacity>
 
                 {/* Support Button */}
@@ -387,15 +351,123 @@ const ReelItem: React.FC<{
             </View>
         </View>
     );
-};
+});
 
-const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }) => {
+const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }> = ({ isScreenFocused, tabBarHeight = TAB_BAR_HEIGHT }) => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const insets = useSafeAreaInsets();
-    const [reels, setReels] = useState<ReelData[]>(MOCK_REELS);
+    const CONTENT_HEIGHT = SCREEN_HEIGHT - tabBarHeight - insets.top; // Adjust for tab bar and status bar
+    const [reels, setReels] = useState<ReelData[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [isGlobalMuted, setIsGlobalMuted] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [cursor, setCursor] = useState<string | undefined>(undefined);
+    const [lastId, setLastId] = useState<string | undefined>(undefined);
+    const [hasMore, setHasMore] = useState(true);
+    const [showComments, setShowComments] = useState(false);
+    const [activeReelId, setActiveReelId] = useState<string | null>(null);
     const flatListRef = useRef<FlatList>(null);
+
+    // Lock Orientation to Portrait
+    useEffect(() => {
+        Orientation.lockToPortrait();
+        return () => {
+            Orientation.unlockAllOrientations();
+        };
+    }, []);
+
+    // Initial Fetch
+    useEffect(() => {
+        fetchFeed(true);
+    }, []);
+
+
+
+    // ... (existing imports)
+
+    // Inside ReelsScreen component
+
+    // ...
+
+    const fetchFeed = async (refresh = false) => {
+        if (loading || (!hasMore && !refresh)) return;
+
+        setLoading(true);
+        try {
+            const currentCursor = refresh ? undefined : cursor;
+            const currentLastId = refresh ? undefined : lastId;
+
+            const response = await DriverKiAwazService.getFeed(currentCursor, currentLastId);
+
+            // Determine if data is directly the array or nested in .data
+            const feedData = Array.isArray(response.data) ? response.data : response.data?.data;
+
+            if (Array.isArray(feedData)) {
+                const newReels: ReelData[] = feedData
+                    .filter((item: any) => item.media_type === 'video')
+                    .map((item: any) => {
+                        // Check if URL is already absolute
+                        const rawUrl = item.media_url || '';
+                        const hasHttp = rawUrl.startsWith('http');
+                        // Clean leading slash if appending
+                        const cleanPath = rawUrl && rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
+                        // Construct final URL
+                        const finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
+
+                        // Avatar Logic
+                        const rawAvatar = item.user_avatar || item.user?.avatar || '';
+                        const hasAvatarHttp = rawAvatar.startsWith('http');
+                        const cleanAvatarPath = rawAvatar && rawAvatar.startsWith('/') ? rawAvatar.substring(1) : rawAvatar;
+                        const finalAvatarUrl = !rawAvatar
+                            ? 'https://via.placeholder.com/150'
+                            : (hasAvatarHttp ? rawAvatar : `https://devtruckmitr.in/public/${cleanAvatarPath}`);
+
+                        return {
+                            id: item.id.toString(),
+                            userName: item.user_name || item.user?.name || `Driver ${item.user_id || ''}`,
+                            userAvatar: finalAvatarUrl,
+                            userState: item.user?.state || '',
+                            category: item.media_type || 'VIDEO',
+                            categoryLabel: item.category ? `#${item.category}` : (item.media_type === 'video' ? '🎬 Video' : '🎵 Audio'),
+                            hashtags: [],
+                            supportCount: item.likes_count || 0,
+                            commentCount: item.comments_count || 0,
+                            shareCount: item.shares_count || 0,
+                            isSupported: item.is_liked === 1,
+                            videoUrl: finalUrl,
+                            description: item.caption || '',
+                            createdAt: item.created_at,
+                        };
+                    });
+
+                if (refresh) {
+                    setReels(newReels);
+                } else {
+                    setReels(prev => [...prev, ...newReels]);
+                }
+
+                if (newReels.length > 0) {
+                    const lastItem = newReels[newReels.length - 1];
+                    setCursor(lastItem.createdAt);
+                    setLastId(lastItem.id);
+                } else {
+                    setHasMore(false);
+                }
+            } else {
+                setHasMore(false);
+            }
+        } catch (error) {
+            console.error('Fetch feed error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadMore = () => {
+        if (!loading && hasMore) {
+            fetchFeed();
+        }
+    };
 
     const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
         if (viewableItems.length > 0) {
@@ -407,7 +479,7 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
         itemVisiblePercentThreshold: 50,
     };
 
-    const toggleSupport = (reelId: string) => {
+    const toggleSupport = async (reelId: string) => {
         setReels(prev =>
             prev.map(reel =>
                 reel.id === reelId
@@ -421,11 +493,17 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
                     : reel
             )
         );
+
+        try {
+            await DriverKiAwazService.likePost(reelId);
+        } catch (error) {
+            console.error('Like failed', error);
+        }
     };
 
     const openComments = (reelId: string) => {
-        // TODO: Implement comments bottom sheet
-        console.log('Open comments:', reelId);
+        setActiveReelId(reelId);
+        setShowComments(true);
     };
 
     const shareReel = async (reel: ReelData) => {
@@ -433,24 +511,21 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
             await Share.share({
                 message: `Check out this reel by ${reel.userName} on Driver Ki Awaz! 🚛\n${reel.description}\n\n#DriverKiAwaz ${reel.hashtags.map(t => `#${t}`).join(' ')}`,
             });
+            await DriverKiAwazService.sharePost(reel.id);
         } catch (error) {
             console.log('Share error:', error);
         }
     };
 
-    // const navigateToCreatePost = () => {
-    //     navigation.navigate(STACKS.DRIVER_KI_AWAZ_CREATE_POST as any, { defaultType: 'VIDEO' });
-    // };
-
     const getItemLayout = (_: any, index: number) => ({
-        length: SCREEN_HEIGHT,
-        offset: SCREEN_HEIGHT * index,
+        length: CONTENT_HEIGHT,
+        offset: CONTENT_HEIGHT * index,
         index,
     });
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+            <StatusBar barStyle="light-content" backgroundColor="black" translucent={true} />
 
             <FlatList
                 ref={flatListRef}
@@ -465,22 +540,50 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean }> = ({ isScreenFocused }
                         onComment={() => openComments(item.id)}
                         onShare={() => shareReel(item)}
                         bottomInset={insets.bottom}
+                        contentHeight={CONTENT_HEIGHT}
                     />
                 )}
                 keyExtractor={item => item.id}
                 pagingEnabled
                 showsVerticalScrollIndicator={false}
                 snapToAlignment="start"
-                snapToInterval={SCREEN_HEIGHT}
+                snapToInterval={CONTENT_HEIGHT}
                 decelerationRate="fast"
                 getItemLayout={getItemLayout}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
                 bounces={false}
                 overScrollMode="never"
-                removeClippedSubviews
-                maxToRenderPerBatch={2}
-                windowSize={3}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={3}
+                windowSize={5}
+                initialNumToRender={3}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.5}
+                ListEmptyComponent={
+                    !loading ? (
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', height: CONTENT_HEIGHT }}>
+                            <Text style={{ color: 'white' }}>No posts available</Text>
+                        </View>
+                    ) : null
+                }
+                ListFooterComponent={
+                    loading && reels.length > 0 ? (
+                        <View style={{ position: 'absolute', bottom: 50, width: '100%', alignItems: 'center' }}>
+                            <ActivityIndicator color="white" size="small" />
+                        </View>
+                    ) : null
+                }
+            />
+            {loading && reels.length === 0 && (
+                <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
+                    <ActivityIndicator color="white" size="large" />
+                </View>
+            )}
+            <CommentsModal
+                visible={showComments}
+                postId={activeReelId}
+                onClose={() => setShowComments(false)}
             />
         </View>
     );
@@ -493,7 +596,6 @@ const styles = StyleSheet.create({
     },
     reelContainer: {
         width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT,
         backgroundColor: '#000000',
     },
     videoWrapper: {

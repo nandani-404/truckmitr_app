@@ -57,6 +57,48 @@ const COLORS = {
     contactCardBorder: '#BFDBFE',
 };
 
+// State ID Map
+const STATE_ID_MAP: Record<string, string> = {
+    '1': 'Andaman and Nicobar Islands',
+    '2': 'Andhra Pradesh',
+    '3': 'Arunachal Pradesh',
+    '4': 'Assam',
+    '5': 'Bihar',
+    '6': 'Chandigarh',
+    '7': 'Chhattisgarh',
+    '8': 'Dadra and Nagar Haveli',
+    '9': 'Delhi',
+    '10': 'Goa',
+    '11': 'Gujarat',
+    '12': 'Haryana',
+    '13': 'Himachal Pradesh',
+    '14': 'Jammu and Kashmir',
+    '15': 'Jharkhand',
+    '16': 'Karnataka',
+    '17': 'Kerala',
+    '18': 'Ladakh',
+    '19': 'Lakshadweep',
+    '20': 'Madhya Pradesh',
+    '21': 'Maharashtra',
+    '22': 'Manipur',
+    '23': 'Meghalaya',
+    '24': 'Mizoram',
+    '25': 'Nagaland',
+    '26': 'Odisha',
+    '27': 'Others',
+    '28': 'Puducherry',
+    '29': 'Punjab',
+    '30': 'Rajasthan',
+    '31': 'Sikkim',
+    '32': 'Tamil Nadu',
+    '33': 'Telangana',
+    '34': 'Tripura',
+    '35': 'Uttar Pradesh',
+    '36': 'Uttarakhand',
+    '37': 'West Bengal',
+    '38': 'Daman and Diu'
+};
+
 export default function ForemanAddDriver() {
     const { t } = useTranslation();
     const navigation = useNavigation<NavigatorProp>();
@@ -475,7 +517,13 @@ export default function ForemanAddDriver() {
                 formData.append('name', driver.name);
                 formData.append('mobile', driver.phone);
                 formData.append('email', driver.email);
-                formData.append('states', driver.state);
+
+                // Use map to find state code for bulk upload too if needed
+                let stateCode = driver.state;
+                const foundCode = Object.keys(STATE_ID_MAP).find(key => STATE_ID_MAP[key] === driver.stateName);
+                if (foundCode) stateCode = foundCode;
+
+                formData.append('states', stateCode);
 
                 await axiosInstance.post(END_POINTS.FOREMAN_ADD_DRIVER, formData);
                 localSuccessCount++;
@@ -591,8 +639,18 @@ export default function ForemanAddDriver() {
             const formData = new FormData();
             formData.append('name', fullName);
             formData.append('mobile', mobileNumber);
-            formData.append('email', email);
-            formData.append('states', state);
+            if (email) formData.append('email', email);
+
+            // Resolve State Code
+            let finalStateCode = state;
+            if (selectedStateName) {
+                const foundCode = Object.keys(STATE_ID_MAP).find(key => STATE_ID_MAP[key] === selectedStateName);
+                if (foundCode) {
+                    finalStateCode = foundCode;
+                }
+            }
+            formData.append('states', finalStateCode);
+            formData.append('role', 'driver');
 
             const response = await axiosInstance.post(END_POINTS.FOREMAN_ADD_DRIVER, formData);
 

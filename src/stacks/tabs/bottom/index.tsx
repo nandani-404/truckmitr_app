@@ -6,7 +6,7 @@ import { Animated, Image, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SystemNavigationBar from 'react-native-system-navigation-bar';
 import { STACKS } from '@truckmitr/stacks/stacks';
-import { DriverList, HealthHygiene, Home, Job, Profile, Training, TransporterAppliedJob, TransporterVerificationScreen, ViewJobs, DLVerification } from '@truckmitr/layouts/index';
+import { DriverList, HealthHygiene, Home, Job, Profile, Training, TransporterAppliedJob, TransporterVerificationScreen, ViewJobs, DLVerification, DriverKiAwazInfo } from '@truckmitr/layouts/index';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { TourGuideZone, useTourGuideController, Tooltip } from 'rn-tourguide';
@@ -252,13 +252,14 @@ function TabBarDriver({ state, descriptors, navigation, homeRef }: { state: any,
         const jobProps = { height: 22, width: 22, tintColor: isFocused ? colors.white : colors.whiteOpacity(0.5) };
         const healthProps = { height: 26, width: 26, tintColor: isFocused ? colors.white : colors.whiteOpacity(0.5) };
         const profileProps = { height: 20, width: 20, tintColor: isFocused ? colors.white : colors.whiteOpacity(0.5) };
+        const driverKiAwazProps = { height: 24, width: 24, tintColor: isFocused ? colors.white : colors.whiteOpacity(0.5) };
         switch (screen) {
             case STACKS.HOME:
                 return <Image style={homeProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/1946/1946436.png' }} />
-            case STACKS.TRAINING:
-                return <Image style={trainingProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/171/171322.png' }} />
             case STACKS.JOB:
                 return <Image style={jobProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4121/4121106.png' }} />
+            case STACKS.DRIVER_KI_AWAZ_INFO:
+                return <Image style={driverKiAwazProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3938/3938669.png' }} />
             case STACKS.DL_VERIFICATION:
                 return <Image style={healthProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/11831/11831511.png' }} />
             case STACKS.VERIFICATION:
@@ -376,10 +377,10 @@ function TabBarDriver({ state, descriptors, navigation, homeRef }: { state: any,
                     switch (label) {
                         case STACKS.HOME:
                             return t('home');
-                        case STACKS.TRAINING:
-                            return t('training');
                         case STACKS.JOB:
                             return t('job');
+                        case STACKS.DRIVER_KI_AWAZ_INFO:
+                            return t('driverKiAwaz');
                         case STACKS.DL_VERIFICATION:
                             return t('idCheck');
                         case STACKS.PROFILE:
@@ -460,8 +461,8 @@ export default function Bottom() {
                     <Tab.Screen name={STACKS.HOME}>
                         {() => <Home ref={homeRef} />}
                     </Tab.Screen>
-                    <Tab.Screen name={STACKS.TRAINING} component={Training} />
                     <Tab.Screen name={STACKS.JOB} component={Job} />
+                    <Tab.Screen name={STACKS.DRIVER_KI_AWAZ_INFO} component={DriverKiAwazInfo} />
                     <Tab.Screen name={STACKS.DL_VERIFICATION} component={DLVerification} />
                     {/* <Tab.Screen name={STACKS.VERIFICATION} component={Verification} /> */}
                     <Tab.Screen name={STACKS.PROFILE} component={Profile} />

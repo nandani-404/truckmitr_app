@@ -285,6 +285,13 @@ export const STACKS = {
     EDIT_JOB: 'editJob',
     PROFILE_OVERVIEW: 'profileOverview',
 
+    // DRIVER KI AWAZ
+    DRIVER_KI_AWAZ_POST_STATUS: 'driverKiAwazPostStatus',
+    DRIVER_KI_AWAZ_RECORD_VOICE: 'driverKiAwazRecordVoice',
+    DRIVER_KI_AWAZ_CREATE_POST: 'driverKiAwazCreatePost',
+    DRIVER_KI_AWAZ_PROFILE_FEED: 'driverKiAwazProfileFeed',
+    DRIVER_KI_AWAZ_MY_POSTS: 'driverKiAwazMyPosts',
+
     // FOREMAN MODULE
     FOREMAN_BOTTOM_TAB: 'foremanBottomTab',
     FOREMAN_HOME: 'foremanHome',

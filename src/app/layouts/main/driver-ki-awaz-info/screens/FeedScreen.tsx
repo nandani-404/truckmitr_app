@@ -4,7 +4,7 @@
  * @format
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
     View,
     FlatList,
@@ -22,12 +22,20 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { STACKS } from '@truckmitr/src/stacks/stacks';
 
+import CommentsModal from '../components/CommentsModal';
+import { DriverKiAwazService } from '../services';
+import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
+import Video from 'react-native-video';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
+
 interface PostData {
     id: string;
-    type: 'VOICE' | 'TEXT';
+    type: 'VOICE' | 'TEXT' | 'VIDEO';
     userName: string;
     userAvatar: string;
     userState: string;
+    userId: string;
     category: string;
     categoryLabel: string;
     hashtags: string[];
@@ -38,9 +46,11 @@ interface PostData {
     createdAt: string;
     content?: string;
     audioDuration?: number;
+    videoUrl?: string; // Added for completeness, though Feed usually TEXT/VOICE
+    audioUrl?: string;
+    mediaUrl?: string;
 }
 
-// Helper function for time ago
 const getTimeAgo = (dateString: string): string => {
     const now = new Date();
     const date = new Date(dateString);
@@ -55,90 +65,6 @@ const getTimeAgo = (dateString: string): string => {
     return `${diffDays}d`;
 };
 
-// Mock data
-const MOCK_POSTS: PostData[] = [
-    {
-        id: '1',
-        type: 'VOICE',
-        userName: 'Anil Sharma',
-        userAvatar: 'https://randomuser.me/api/portraits/men/11.jpg',
-        userState: 'Punjab',
-        category: 'GOVT_DEMAND',
-        categoryLabel: '🏛️ Govt Demand',
-        hashtags: ['GovtDemand', 'DriverRights'],
-        supportCount: 567,
-        commentCount: 45,
-        shareCount: 23,
-        isSupported: false,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        audioDuration: 45,
-    },
-    {
-        id: '2',
-        type: 'TEXT',
-        userName: 'Vijay Kumar',
-        userAvatar: 'https://randomuser.me/api/portraits/men/12.jpg',
-        userState: 'Haryana',
-        category: 'ROAD_ISSUES',
-        categoryLabel: '🛣️ Road Issues',
-        hashtags: ['RoadIssue', 'Highway'],
-        supportCount: 234,
-        commentCount: 18,
-        shareCount: 12,
-        isSupported: true,
-        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-        content: 'NH44 pe Panipat ke paas bohot bada pothole hai. Raat ko koi bhi dekh nahi sakta. Bahut dangerous hai! 🚛',
-    },
-    {
-        id: '3',
-        type: 'VOICE',
-        userName: 'Dinesh Gupta',
-        userAvatar: 'https://randomuser.me/api/portraits/men/13.jpg',
-        userState: 'Gujarat',
-        category: 'RTO_CHALLAN',
-        categoryLabel: '📋 RTO Issues',
-        hashtags: ['RTO', 'Challan'],
-        supportCount: 891,
-        commentCount: 67,
-        shareCount: 34,
-        isSupported: false,
-        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-        audioDuration: 62,
-    },
-    {
-        id: '4',
-        type: 'TEXT',
-        userName: 'Prakash Singh',
-        userAvatar: 'https://randomuser.me/api/portraits/men/14.jpg',
-        userState: 'Madhya Pradesh',
-        category: 'WELFARE_RIGHTS',
-        categoryLabel: '⚖️ Welfare Rights',
-        hashtags: ['DriverWelfare', 'Health'],
-        supportCount: 445,
-        commentCount: 32,
-        shareCount: 19,
-        isSupported: false,
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        content: 'Sabhi driver bhaiyoon ko request hai ki apna health check-up zaroor karwayein. Long hours driving se back pain aur diabetes ka khayal rakhna zaroori hai! 💪',
-    },
-    {
-        id: '5',
-        type: 'TEXT',
-        userName: 'Rajendra Yadav',
-        userAvatar: 'https://randomuser.me/api/portraits/men/15.jpg',
-        userState: 'Bihar',
-        category: 'DRIVER_LIFE',
-        categoryLabel: '🚛 Driver Life',
-        hashtags: ['DriverLife', 'Family'],
-        supportCount: 1234,
-        commentCount: 89,
-        shareCount: 56,
-        isSupported: true,
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        content: '15 din baad ghar ja raha hoon. Bachche intezaar kar rahe hain. Yahi hai asli earning - family ke saath waqt! 🏠❤️',
-    },
-];
-
 // Post Card Component
 const PostCard: React.FC<{
     post: PostData;
@@ -147,6 +73,8 @@ const PostCard: React.FC<{
     onShare: () => void;
 }> = ({ post, onSupport, onComment, onShare }) => {
     const [isPlaying, setIsPlaying] = useState(false);
+    const [duration, setDuration] = useState(post.audioDuration || 0);
+    const [currentTime, setCurrentTime] = useState(0);
 
     const formatCount = (count: number): string => {
         if (count >= 1000) {
@@ -157,7 +85,7 @@ const PostCard: React.FC<{
 
     const formatDuration = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
+        const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
@@ -173,9 +101,6 @@ const PostCard: React.FC<{
                     </View>
                     <Text style={styles.postUserState}>{post.userState}</Text>
                 </View>
-                <TouchableOpacity style={styles.moreButton}>
-                    <Ionicons name="ellipsis-horizontal" size={20} color="#64748B" />
-                </TouchableOpacity>
             </View>
 
             {/* Category Badge */}
@@ -193,29 +118,44 @@ const PostCard: React.FC<{
                     activeOpacity={0.8}
                 >
                     <View style={styles.playButton}>
-                        <Ionicons
-                            name={isPlaying ? 'pause' : 'play'}
-                            size={24}
-                            color="#FFFFFF"
-                        />
+                        {isPlaying ? (
+                            <Ionicons name="pause" size={24} color="#FFFFFF" />
+                        ) : (
+                            <Ionicons name="play" size={24} color="#FFFFFF" />
+                        )}
                     </View>
                     <View style={styles.waveformContainer}>
-                        {Array.from({ length: 20 }).map((_, i) => (
+                        {/* Audio Progress Bar */}
+                        <View style={{ flex: 1, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, overflow: 'hidden' }}>
                             <View
-                                key={i}
-                                style={[
-                                    styles.waveBar,
-                                    {
-                                        height: 8 + Math.random() * 20,
-                                        backgroundColor: isPlaying ? '#3B82F6' : '#CBD5E1',
-                                    },
-                                ]}
+                                style={{
+                                    width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                                    height: '100%',
+                                    backgroundColor: '#3B82F6'
+                                }}
                             />
-                        ))}
+                        </View>
                     </View>
                     <Text style={styles.duration}>
-                        {formatDuration(post.audioDuration || 0)}
+                        {formatDuration(currentTime)} / {formatDuration(duration)}
                     </Text>
+                    {/* Audio Player Logic */}
+                    {(post.type === 'VOICE' && (post.audioUrl || post.mediaUrl)) && (
+                        <Video
+                            source={{ uri: post.audioUrl || post.mediaUrl }}
+                            paused={!isPlaying}
+                            playInBackground={false}
+                            playWhenInactive={false}
+                            ignoreSilentSwitch="ignore"
+                            onEnd={() => {
+                                setIsPlaying(false);
+                                setCurrentTime(0);
+                            }}
+                            onLoad={(data) => setDuration(data.duration)}
+                            onProgress={(data) => setCurrentTime(data.currentTime)}
+                            style={{ width: 0, height: 0 }}
+                        />
+                    )}
                 </TouchableOpacity>
             ) : (
                 <Text style={styles.postContent}>{post.content}</Text>
@@ -257,21 +197,126 @@ const PostCard: React.FC<{
     );
 };
 
-const FeedScreen: React.FC = () => {
+const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const insets = useSafeAreaInsets();
-    const [posts, setPosts] = useState<PostData[]>(MOCK_POSTS);
+    const [posts, setPosts] = useState<PostData[]>([]);
     const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [cursor, setCursor] = useState<string | undefined>(undefined);
+    const [lastId, setLastId] = useState<string | undefined>(undefined);
+    const [hasMore, setHasMore] = useState(true);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [showComments, setShowComments] = useState(false);
+    const [activePostId, setActivePostId] = useState<string | null>(null);
 
-    const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-        // Simulate API call
-        setTimeout(() => {
+    useEffect(() => {
+        const getUserId = async () => {
+            const id = await AsyncStorage.getItem('user_id');
+            setCurrentUserId(id);
+        };
+        getUserId();
+        fetchFeed(true);
+    }, [userId]); // Re-fetch if userId changes
+
+    const fetchFeed = async (refresh = false) => {
+        if (loading || (!hasMore && !refresh)) return;
+
+        setLoading(true);
+        if (refresh) setRefreshing(true);
+
+        try {
+            const currentCursor = refresh ? undefined : cursor;
+            const currentLastId = refresh ? undefined : lastId;
+
+            const response = userId
+                ? await DriverKiAwazService.getUserFeed(userId, currentCursor, currentLastId)
+                : await DriverKiAwazService.getFeed(currentCursor, currentLastId);
+
+            if (response.data) {
+                const feedData = Array.isArray(response.data) ? response.data : response.data?.data;
+                const dataArray = Array.isArray(feedData) ? feedData : [];
+
+                if (dataArray.length > 0) {
+                    const newPosts: PostData[] = dataArray
+                        .filter((item: any) => item.media_type !== 'video') // Filter out videos
+                        .map((item: any) => {
+                            // Media URL Logic
+                            const rawUrl = item.media_url || '';
+                            const hasHttp = rawUrl.startsWith('http');
+                            const cleanPath = rawUrl && rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
+
+                            // Avatar Logic
+                            const rawAvatar = item.user_avatar || item.user?.avatar || '';
+                            const hasAvatarHttp = rawAvatar.startsWith('http');
+                            const cleanAvatarPath = rawAvatar && rawAvatar.startsWith('/') ? rawAvatar.substring(1) : rawAvatar;
+                            const finalAvatarUrl = !rawAvatar
+                                ? 'https://via.placeholder.com/150'
+                                : (hasAvatarHttp ? rawAvatar : `https://devtruckmitr.in/public/${cleanAvatarPath}`);
+
+                            return {
+                                id: item.id.toString(),
+                                type: item.media_type === 'audio' ? 'VOICE' : 'TEXT',
+                                userName: item.user_name || item.user?.name || 'Unknown',
+                                userAvatar: finalAvatarUrl,
+                                userState: item.user?.state || '',
+                                userId: item.user?.id?.toString() || item.user_id?.toString(),
+                                category: item.category || 'GENERAL',
+                                categoryLabel: item.category ? `#${item.category}` : 'General',
+                                hashtags: [],
+                                supportCount: item.likes_count || 0,
+                                commentCount: item.comments_count || 0,
+                                shareCount: item.shares_count || 0,
+                                isSupported: item.is_liked === 1,
+                                createdAt: item.created_at,
+                                content: item.caption,
+                                audioDuration: item.duration || 0,
+                                audioUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
+                                mediaUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
+                            };
+                        });
+
+                    if (refresh) {
+                        setPosts(newPosts);
+                    } else {
+                        setPosts(prev => [...prev, ...newPosts]);
+                    }
+
+                    if (newPosts.length > 0) {
+                        const lastItem = newPosts[newPosts.length - 1];
+                        setCursor(lastItem.createdAt);
+                        setLastId(lastItem.id);
+                    } else {
+                        setHasMore(false);
+                    }
+                } else {
+                    setHasMore(false);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching feed:', error);
+        } finally {
+            setLoading(false);
             setRefreshing(false);
-        }, 1500);
-    }, []);
+        }
+    };
 
-    const toggleSupport = (postId: string) => {
+    const handleDelete = async (postId: string) => {
+        try {
+            await DriverKiAwazService.deletePost(postId);
+            setPosts(prev => prev.filter(p => p.id !== postId));
+            Alert.alert('Deleted', 'Post deleted successfully');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to delete post');
+        }
+    };
+
+    const onRefresh = () => {
+        setHasMore(true);
+        fetchFeed(true);
+    };
+
+    const toggleSupport = async (postId: string) => {
         setPosts(prev =>
             prev.map(post =>
                 post.id === postId
@@ -285,17 +330,25 @@ const FeedScreen: React.FC = () => {
                     : post
             )
         );
+        try {
+            await DriverKiAwazService.likePost(postId);
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     const openComments = (postId: string) => {
-        console.log('Open comments:', postId);
+        setActivePostId(postId);
+        setShowComments(true);
     };
 
     const sharePost = async (post: PostData) => {
         try {
             await Share.share({
-                message: `${post.userName} on Driver Ki Awaz:\n\n${post.content || 'Voice message'}\n\n${post.hashtags.map(t => `#${t}`).join(' ')}\n\n#DriverKiAwaz`,
+                message: `${post.userName} on Driver Ki Awaz:\n\n${post.content || 'Voice message'}\n\n#DriverKiAwaz`,
             });
+            await DriverKiAwazService.sharePost(post.id);
+            setPosts(prev => prev.map(p => p.id === post.id ? { ...p, shareCount: p.shareCount + 1 } : p));
         } catch (error) {
             console.log('Share error:', error);
         }
@@ -335,6 +388,11 @@ const FeedScreen: React.FC = () => {
                         <Text style={styles.emptySubtitle}>Pehle post karne wale banein!</Text>
                     </View>
                 }
+            />
+            <CommentsModal
+                visible={showComments}
+                postId={activePostId}
+                onClose={() => setShowComments(false)}
             />
         </View>
     );
