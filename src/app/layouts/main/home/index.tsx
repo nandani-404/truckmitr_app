@@ -44,7 +44,6 @@ interface SubscriptionItem {
     end_at: number;
     [key: string]: any;
 }
-
 const capitalizeFirst = (str: string): string => {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1);

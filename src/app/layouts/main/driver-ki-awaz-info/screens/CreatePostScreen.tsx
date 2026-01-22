@@ -32,8 +32,6 @@ import ImagePicker from 'react-native-image-crop-picker';
 import { pick, types } from '@react-native-documents/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Video from 'react-native-video';
-import AudioRecorderPlayer from 'react-native-audio-recorder-player';
-import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { useTranslation } from 'react-i18next';
 
 import { DriverKiAwazService } from '../services';
@@ -42,7 +40,7 @@ import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_SIZE = SCREEN_WIDTH / 3 - 2;
 
-type PostType = 'VIDEO' | 'VOICE' | 'TEXT';
+type PostType = 'VIDEO' | 'TEXT';
 type CategoryType = 'DRIVER_LIFE' | 'GOVT_DEMAND' | 'ROAD_ISSUES' | 'RTO_CHALLAN' | 'WELFARE_RIGHTS';
 type ScreenTab = 'create' | 'myPosts';
 
@@ -183,93 +181,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
         setDialogState(prev => ({ ...prev, visible: false }));
     };
 
-    // ======= Recorder State & Logic =======
-    const audioRecorderPlayer = useRef(
-        typeof AudioRecorderPlayer === 'function'
-            ? new (AudioRecorderPlayer as any)()
-            : AudioRecorderPlayer
-    ).current;
-    const [recModalVisible, setRecModalVisible] = useState(false);
-    const [isRecording, setIsRecording] = useState(false);
-    const [recordTime, setRecordTime] = useState('00:00');
-    const [tempAudioFile, setTempAudioFile] = useState<string | null>(null);
 
-    // Stop recording on unmount
-    useEffect(() => {
-        return () => {
-            try {
-                audioRecorderPlayer.stopRecorder();
-                audioRecorderPlayer.removeRecordBackListener();
-            } catch (e) { }
-        };
-    }, []);
-
-    const onStartRecord = async () => {
-        if (Platform.OS === 'android') {
-            try {
-                // Check Audio Permission
-                let result = await check(PERMISSIONS.ANDROID.RECORD_AUDIO);
-                if (result === RESULTS.DENIED) {
-                    result = await request(PERMISSIONS.ANDROID.RECORD_AUDIO);
-                }
-
-                if (result !== RESULTS.GRANTED) {
-                    Alert.alert(
-                        'Permission Required',
-                        'Please grant audio recording permission in settings to use this feature.'
-                    );
-                    return;
-                }
-            } catch (err) {
-                console.warn(err);
-                return;
-            }
-        }
-
-        try {
-            const result = await audioRecorderPlayer.startRecorder();
-            audioRecorderPlayer.addRecordBackListener((e: any) => {
-                setRecordTime(audioRecorderPlayer.mmssss(Math.floor(e.currentPosition)));
-            });
-            setIsRecording(true);
-            setTempAudioFile(null);
-        } catch (error) {
-            console.error('Start record error', error);
-        }
-    };
-
-    const onStopRecord = async () => {
-        try {
-            const result = await audioRecorderPlayer.stopRecorder();
-            audioRecorderPlayer.removeRecordBackListener();
-            setIsRecording(false);
-            setRecordTime('00:00');
-            setTempAudioFile(result);
-        } catch (error) {
-            console.error('Stop record error', error);
-        }
-    };
-
-    const onUseRecording = () => {
-        if (tempAudioFile) {
-            setSelectedMedia({
-                uri: tempAudioFile,
-                type: 'audio/mp4',
-                name: `voice_${Date.now()}.mp4`
-            });
-            setSelectedType('VOICE');
-            setRecModalVisible(false);
-            setTempAudioFile(null);
-        }
-    };
-
-    const onCancelRecording = async () => {
-        if (isRecording) {
-            await onStopRecord();
-        }
-        setRecModalVisible(false);
-        setTempAudioFile(null);
-    };
 
     const theme = isDarkMode ? THEME.dark : THEME.light;
 
@@ -339,36 +251,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
         );
     };
 
-    const pickAudio = async () => {
-        showDialog(
-            'Upload Audio',
-            'Choose source',
-            [
-                {
-                    text: 'Record Voice',
-                    onPress: () => setRecModalVisible(true)
-                },
-                {
-                    text: 'From Device',
-                    onPress: async () => {
-                        try {
-                            const [result] = await pick({
-                                type: [types.audio],
-                                allowMultiSelection: false
-                            });
-                            if (result) {
-                                setSelectedMedia(result);
-                                setSelectedType('VOICE');
-                            }
-                        } catch (error) {
-                            console.log('DocumentPicker cancelled', error);
-                        }
-                    }
-                },
-                { text: 'Cancel', style: 'cancel' }
-            ]
-        );
-    };
+
 
     const handleSubmit = async () => {
         if (!selectedType) {
@@ -391,10 +274,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
             return;
         }
 
-        if (selectedType === 'VOICE' && !selectedMedia && !initData) {
-            Alert.alert(t('dka_voice'), 'Please select an audio file');
-            return;
-        }
+
 
         setIsSubmitting(true);
 
@@ -423,11 +303,6 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                 } else if (selectedType === 'VIDEO' && mediaFile) {
                     formData.append('media_type', 'video');
                     formData.append('caption', textContent || 'Video Post');
-                    formData.append('media', mediaFile as any);
-                    formData.append('category', (selectedCategory || 'DRIVER_LIFE').toLowerCase());
-                } else if (selectedType === 'VOICE' && mediaFile) {
-                    formData.append('media_type', 'audio');
-                    formData.append('caption', textContent || 'Voice Post');
                     formData.append('media', mediaFile as any);
                     formData.append('category', (selectedCategory || 'DRIVER_LIFE').toLowerCase());
                 }
@@ -462,7 +337,6 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
         if (!selectedCategory) return false;
         if (selectedType === 'TEXT' && !textContent.trim()) return false;
         if (selectedType === 'VIDEO' && !selectedMedia && !initData) return false;
-        if (selectedType === 'VOICE' && !selectedMedia && !initData) return false;
         return true;
     };
 
@@ -631,10 +505,6 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             <Ionicons name="play" size={20} color="#FFFFFF" />
                         </View>
                     </>
-                ) : item.mediaType === 'audio' ? (
-                    <View style={[styles.gridImage, styles.audioPlaceholder, { backgroundColor: theme.card }]}>
-                        <Ionicons name="mic" size={28} color="#3B82F6" />
-                    </View>
                 ) : (
                     <View style={[styles.gridImage, styles.textPlaceholder, { backgroundColor: theme.card }]}>
                         <Text style={styles.textPreview} numberOfLines={4}>
@@ -690,14 +560,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                                     <Text style={styles.mediaTypeText}>Video</Text>
                                 </View>
                             </>
-                        ) : (
-                            <View style={[styles.previewImage, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#374151' }]}>
-                                <Ionicons name="mic" size={48} color="#FFFFFF" />
-                                <Text style={{ color: '#FFFFFF', marginTop: 8, maxWidth: '90%', textAlign: 'center' }} numberOfLines={1}>
-                                    {selectedMedia.name || selectedMedia.filename || 'Audio File'}
-                                </Text>
-                            </View>
-                        )}
+                        ) : null}
                         <TouchableOpacity
                             style={styles.removeMedia}
                             onPress={() => setSelectedMedia(null)}
@@ -742,21 +605,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             selectedType === 'VIDEO' && styles.typeTextActive
                         ]}>{t('dka_video')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.typeButton,
-                            { backgroundColor: theme.inputBg, borderColor: theme.border },
-                            selectedType === 'VOICE' && styles.typeButtonActive
-                        ]}
-                        onPress={pickAudio}
-                    >
-                        <Ionicons name="mic" size={24} color={selectedType === 'VOICE' ? '#3B82F6' : theme.subText} />
-                        <Text style={[
-                            styles.typeText,
-                            { color: theme.subText },
-                            selectedType === 'VOICE' && styles.typeTextActive
-                        ]}>{t('dka_voice')}</Text>
-                    </TouchableOpacity>
+
                     <TouchableOpacity
                         style={[
                             styles.typeButton,
@@ -988,13 +837,6 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                                 repeat
                             // controls={true} // Optional: Add controls if needed
                             />
-                        ) : viewingPost?.mediaType === 'audio' ? (
-                            <View style={styles.audioPreviewContainer}>
-                                <View style={styles.audioWaveform}>
-                                    <Ionicons name="mic-circle" size={80} color="#3B82F6" />
-                                </View>
-                                <Text style={styles.previewCaption}>{viewingPost.caption}</Text>
-                            </View>
                         ) : (
                             <View style={styles.textPreviewContainer}>
                                 <Text style={styles.textPostContent}>{viewingPost?.caption}</Text>
@@ -1066,50 +908,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                 </View>
             </Modal>
 
-            {/* Recording Modal */}
-            <Modal
-                visible={recModalVisible}
-                transparent
-                animationType="slide"
-                onRequestClose={onCancelRecording}
-            >
-                <View style={[styles.dialogOverlay, { backgroundColor: 'rgba(0,0,0,0.85)' }]}>
-                    <View style={[styles.dialogContainer, { backgroundColor: '#1F2937', height: 320, justifyContent: 'space-between', paddingBottom: 30 }]}>
-                        <Text style={[styles.dialogTitle, { color: '#FFF', fontSize: 20 }]}>Record Voice</Text>
 
-                        <View style={{ alignItems: 'center' }}>
-                            <Text style={styles.recordTimer}>{recordTime}</Text>
-                            {tempAudioFile && !isRecording && (
-                                <Text style={{ color: '#3B82F6', marginTop: 8 }}>Recording Saved!</Text>
-                            )}
-                        </View>
-
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 40 }}>
-                            {/* Cancel */}
-                            <TouchableOpacity onPress={onCancelRecording} style={{ padding: 10 }}>
-                                <Text style={{ color: '#9CA3AF', fontSize: 16 }}>Cancel</Text>
-                            </TouchableOpacity>
-
-                            {/* Record Button */}
-                            <TouchableOpacity
-                                style={[styles.recordButton, isRecording && styles.recordingActive]}
-                                onPress={isRecording ? onStopRecord : onStartRecord}
-                            >
-                                <View style={[styles.recordButtonInner, isRecording && { borderRadius: 4, transform: [{ scale: 0.5 }] }]} />
-                            </TouchableOpacity>
-
-                            {/* Confirm (Check) */}
-                            <TouchableOpacity
-                                onPress={onUseRecording}
-                                disabled={!tempAudioFile || isRecording}
-                                style={{ padding: 10, opacity: (!tempAudioFile || isRecording) ? 0.3 : 1 }}
-                            >
-                                <Ionicons name="checkmark-circle" size={48} color="#3B82F6" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
         </View >
     );
 };
