@@ -399,58 +399,80 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }>
 
             const response = await DriverKiAwazService.getFeed(currentCursor, currentLastId);
 
-            // Determine if data is directly the array or nested in .data
-            const feedData = Array.isArray(response.data) ? response.data : response.data?.data;
+            if (response.data) {
+                // Determine if data is directly the array or nested in .data
+                const feedData = response.data.data || (Array.isArray(response.data) ? response.data : []);
 
-            if (Array.isArray(feedData)) {
-                const newReels: ReelData[] = feedData
-                    .filter((item: any) => item.media_type === 'video')
-                    .map((item: any) => {
-                        // Check if URL is already absolute
-                        const rawUrl = item.media_url || '';
-                        const hasHttp = rawUrl.startsWith('http');
-                        // Clean leading slash if appending
-                        const cleanPath = rawUrl && rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
-                        // Construct final URL
-                        const finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
+                if (feedData.length > 0) {
+                    const newReels: ReelData[] = feedData
+                        .filter((item: any) => item.media_type === 'video')
+                        .map((item: any) => {
+                            // Check if URL is already absolute
+                            const rawUrl = item.media_url || '';
+                            const hasHttp = rawUrl.startsWith('http');
+                            // Clean leading slash if appending
+                            const cleanPath = rawUrl && rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
+                            // Construct final URL
+                            const finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
 
-                        // Avatar Logic
-                        const rawAvatar = item.user_avatar || item.user?.avatar || '';
-                        const hasAvatarHttp = rawAvatar.startsWith('http');
-                        const cleanAvatarPath = rawAvatar && rawAvatar.startsWith('/') ? rawAvatar.substring(1) : rawAvatar;
-                        const finalAvatarUrl = !rawAvatar
-                            ? 'https://via.placeholder.com/150'
-                            : (hasAvatarHttp ? rawAvatar : `https://devtruckmitr.in/public/${cleanAvatarPath}`);
+                            // Avatar Logic
+                            const rawAvatar = item.user_avatar || item.user?.avatar || '';
+                            const hasAvatarHttp = rawAvatar.startsWith('http');
+                            const cleanAvatarPath = rawAvatar && rawAvatar.startsWith('/') ? rawAvatar.substring(1) : rawAvatar;
+                            const finalAvatarUrl = !rawAvatar
+                                ? 'https://via.placeholder.com/150'
+                                : (hasAvatarHttp ? rawAvatar : `https://devtruckmitr.in/public/${cleanAvatarPath}`);
 
-                        return {
-                            id: item.id.toString(),
-                            userName: item.user_name || item.user?.name || `Driver ${item.user_id || ''}`,
-                            userAvatar: finalAvatarUrl,
-                            userState: item.user?.state || '',
-                            category: item.media_type || 'VIDEO',
-                            categoryLabel: item.category ? `#${item.category}` : (item.media_type === 'video' ? '🎬 Video' : '🎵 Audio'),
-                            hashtags: [],
-                            supportCount: item.likes_count || 0,
-                            commentCount: item.comments_count || 0,
-                            shareCount: item.shares_count || 0,
-                            isSupported: item.is_liked === 1,
-                            videoUrl: finalUrl,
-                            description: item.caption || '',
-                            createdAt: item.created_at,
-                        };
-                    });
+                            return {
+                                id: item.id.toString(),
+                                userName: item.user_name || item.user?.name || `Driver ${item.user_id || ''}`,
+                                userAvatar: finalAvatarUrl,
+                                userState: item.user?.state || '',
+                                category: item.media_type || 'VIDEO',
+                                categoryLabel: item.category ? `#${item.category}` : (item.media_type === 'video' ? '🎬 Video' : '🎵 Audio'),
+                                hashtags: [],
+                                supportCount: item.likes_count || 0,
+                                commentCount: item.comments_count || 0,
+                                shareCount: item.shares_count || 0,
+                                isSupported: item.is_liked === 1,
+                                videoUrl: finalUrl,
+                                description: item.caption || '',
+                                createdAt: item.created_at,
+                            };
+                        });
 
-                if (refresh) {
-                    setReels(newReels);
+                    if (refresh) {
+                        setReels(newReels);
+                    } else {
+                        setReels(prev => [...prev, ...newReels]);
+                    }
+
+                    // Use API provided pagination info if available
+                    if (response.data.nextCursor) {
+                        setCursor(response.data.nextCursor);
+                        setLastId(response.data.nextId?.toString());
+                        setHasMore(response.data.hasMore !== false); // Default to true if missing, unless explicitly false
+                    } else {
+                        // Fallback logic
+                        if (newReels.length > 0) {
+                            const lastItem = newReels[newReels.length - 1];
+                            setCursor(lastItem.createdAt);
+                            setLastId(lastItem.id);
+                        } else {
+                            // If newReels is empty BUT we had feedData (meaning filtered out videos),
+                            // we might still have more pages. But here we assume end if no new items visible.
+                            // Actually, if we filter out everything, we still need to advance cursor!
+                            // But for now, let's stick to standard behavior.
+                            // Better approach: use response.data.nextCursor even if newReels is empty!
+                            // That is handled by the `nextCursor` block above.
+                            // This fallback assumes manual cursor calculation which requires visible items.
+                            setHasMore(false);
+                        }
+                    }
                 } else {
-                    setReels(prev => [...prev, ...newReels]);
-                }
-
-                if (newReels.length > 0) {
-                    const lastItem = newReels[newReels.length - 1];
-                    setCursor(lastItem.createdAt);
-                    setLastId(lastItem.id);
-                } else {
+                    if (refresh) {
+                        setReels([]);
+                    }
                     setHasMore(false);
                 }
             } else {

@@ -22,7 +22,7 @@ import { Space } from '@truckmitr/src/app/components';
 import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
-import { END_POINTS } from '@truckmitr/utils/config/index';
+import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -92,7 +92,7 @@ const mapApiToVerifiedDriver = (apiDriver: ApiVerifiedDriver): VerifiedDriver =>
         name: apiDriver.driver_name || 'Unknown',
         tmId: apiDriver.unique_id || 'N/A',
         mobile: apiDriver.mobile || 'N/A',
-        image: apiDriver.images ? (apiDriver.images.startsWith('http') ? apiDriver.images : `https://devtruckmitr.in/${apiDriver.images}`) : DEFAULT_AVATAR,
+        image: apiDriver.images || '',
         status: status,
         state: apiDriver.state_name || 'N/A',
         completion: apiDriver.profile_completion_percentage || 0,
@@ -217,7 +217,10 @@ export default function ForemanVerifiedDrivers() {
                             />
                         </Svg>
                         <View style={styles.profileImageContainerInner}>
-                            <Image source={{ uri: item.image }} style={styles.profileImage} />
+                            <Image
+                                source={{ uri: item.image ? `${BASE_URL}public/${item.image}` : DEFAULT_AVATAR }}
+                                style={styles.profileImage}
+                            />
                         </View>
                         {/* Completion Badge */}
                         <View style={[
@@ -346,7 +349,7 @@ export default function ForemanVerifiedDrivers() {
                             }
                         })}
                     >
-                        <Text style={styles.viewDetailText}>View Details</Text>
+                        <Text style={styles.viewDetailText}>View Profile</Text>
                         <Ionicons name="arrow-forward" size={14} color="#0284C7" />
                     </TouchableOpacity>
                 )}

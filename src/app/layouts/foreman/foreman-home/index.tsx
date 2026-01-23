@@ -213,12 +213,12 @@ export default function ForemanHome() {
     }, [fetchDashboardData]);
 
     // Level tiers configuration
-    // Bronze: 0-50 drivers, Silver: 51-149 drivers, Gold: 150-299 drivers, Platinum: 300+ drivers
+    // Bronze: 0-49 drivers, Silver: 50-149 drivers, Gold: 150-299 drivers, Platinum: 300+ drivers
     const LEVEL_TIERS = [
-        { name: 'Bronze', minDrivers: 0, maxDrivers: 50, bonus: 0 },
-        { name: 'Silver', minDrivers: 51, maxDrivers: 149, bonus: 2 },
+        { name: 'Bronze', minDrivers: 0, maxDrivers: 49, bonus: 0 },
+        { name: 'Silver', minDrivers: 50, maxDrivers: 149, bonus: 2 },
         { name: 'Gold', minDrivers: 150, maxDrivers: 299, bonus: 5 },
-        { name: 'Platinum', minDrivers: 300, maxDrivers: Infinity, bonus: 10 },
+        { name: 'Platinum', minDrivers: 300, maxDrivers: Infinity, bonus: 8 },
     ];
 
     // Calculate progress towards next level

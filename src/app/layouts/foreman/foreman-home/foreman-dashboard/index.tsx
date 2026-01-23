@@ -153,12 +153,12 @@ export default function ForemanDashboard() {
         return `₹ ${amount.toLocaleString('en-IN')}`;
     };
 
-    // Get total subscription amount
+    // Get total commission amount for subscription display
     const getTotalSubscription = () => {
         if (!dashboardData) return '₹ 0';
-        const total = (dashboardData.amounts?.job_ready || 0) +
-            (dashboardData.amounts?.trusted || 0) +
-            (dashboardData.amounts?.verified || 0);
+        const total = (dashboardData.commission?.job_ready || 0) +
+            (dashboardData.commission?.trusted || 0) +
+            (dashboardData.commission?.verified || 0);
         return formatCurrency(total);
     };
 
@@ -274,7 +274,7 @@ export default function ForemanDashboard() {
                     <DashboardStatsCard
                         icon={ICONS.subscription}
                         count={loading ? '₹ 0' : getTotalSubscription()}
-                        title="Subscription"
+                        title="Commission"
                         loading={loading}
                     />
                     <DashboardStatsCard

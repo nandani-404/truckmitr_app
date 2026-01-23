@@ -40,9 +40,9 @@ import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_SIZE = SCREEN_WIDTH / 3 - 2;
 
-type PostType = 'VIDEO' | 'TEXT';
+type PostType = 'VIDEO' | 'TEXT' | 'IMAGE';
 type CategoryType = 'DRIVER_LIFE' | 'GOVT_DEMAND' | 'ROAD_ISSUES' | 'RTO_CHALLAN' | 'WELFARE_RIGHTS';
-type ScreenTab = 'create' | 'myPosts';
+type ScreenTab = 'create' | 'myPosts' | 'myComments';
 
 interface RouteParams {
     defaultType?: PostType;
@@ -57,7 +57,7 @@ interface RouteParams {
 
 interface PostData {
     id: string;
-    mediaType: 'video' | 'audio' | 'text';
+    mediaType: 'video' | 'audio' | 'text' | 'image';
     caption: string;
     thumbnailUrl: string;
     mediaUrl: string;
@@ -147,6 +147,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
 
     // My Posts State
     const [posts, setPosts] = useState<PostData[]>([]);
+    const [myComments, setMyComments] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
@@ -190,7 +191,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
     }, []);
 
     useEffect(() => {
-        if (activeScreenTab === 'myPosts' && userId) {
+        if ((activeScreenTab === 'myPosts' || activeScreenTab === 'myComments') && userId) {
             fetchPosts(userId, true);
         }
     }, [activeScreenTab, userId]);
@@ -253,6 +254,20 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
 
 
 
+    const pickImage = async () => {
+        try {
+            const image = await ImagePicker.openCamera({
+                mediaType: 'photo',
+                cropping: true,
+                includeBase64: false,
+            });
+            setSelectedMedia(image);
+            setSelectedType('IMAGE');
+        } catch (error) {
+            console.log('Camera cancelled', error);
+        }
+    };
+
     const handleSubmit = async () => {
         if (!selectedType) {
             Alert.alert(t('dka_postTypeReq'), t('dka_postTypeReq'));
@@ -305,6 +320,11 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                     formData.append('caption', textContent || 'Video Post');
                     formData.append('media', mediaFile as any);
                     formData.append('category', (selectedCategory || 'DRIVER_LIFE').toLowerCase());
+                } else if (selectedType === 'IMAGE' && mediaFile) {
+                    formData.append('media_type', 'image');
+                    formData.append('caption', textContent || 'Image Post');
+                    formData.append('media', mediaFile as any);
+                    formData.append('category', (selectedCategory || 'DRIVER_LIFE').toLowerCase());
                 }
 
                 console.log('[CreatePost] Calling uploadPost with:', JSON.stringify(formData));
@@ -337,6 +357,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
         if (!selectedCategory) return false;
         if (selectedType === 'TEXT' && !textContent.trim()) return false;
         if (selectedType === 'VIDEO' && !selectedMedia && !initData) return false;
+        if (selectedType === 'IMAGE' && !selectedMedia && !initData) return false;
         return true;
     };
 
@@ -364,7 +385,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
 
                     return {
                         id: item.id.toString(),
-                        mediaType: item.media_type || 'text',
+                        mediaType: (item.media_type || 'text').toLowerCase(),
                         caption: item.caption || '',
                         thumbnailUrl: finalUrl,
                         mediaUrl: finalUrl,
@@ -375,12 +396,29 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                     };
                 });
 
+                // Map Comments
+                const commentsData = dashboardData?.comments || [];
+                const mappedComments = Array.isArray(commentsData) ? commentsData.map((item: any) => {
+                    const rawUrl = item.media_url || '';
+                    const hasHttp = rawUrl.startsWith('http');
+                    const cleanPath = rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
+                    const finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
+
+                    return {
+                        id: item.id?.toString(),
+                        comment: item.comment,
+                        postId: item.post_id,
+                        mediaUrl: finalUrl,
+                        createdAt: item.created_at,
+                    };
+                }) : [];
+
                 if (refresh) {
                     setPosts(mappedPosts);
+                    setMyComments(mappedComments);
                 } else {
-                    // For dashboard API, we replace posts instead of appending to avoid duplicates
-                    // since the API returns the full list and pagination isn't strictly supported here.
                     setPosts(mappedPosts);
+                    setMyComments(mappedComments);
                 }
 
                 // Disable infinite scroll for dashboard API as it returns all relevant posts
@@ -505,6 +543,12 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             <Ionicons name="play" size={20} color="#FFFFFF" />
                         </View>
                     </>
+                ) : item.mediaType === 'image' ? (
+                    <Image
+                        source={{ uri: item.mediaUrl }}
+                        style={styles.gridImage}
+                        resizeMode="cover"
+                    />
                 ) : (
                     <View style={[styles.gridImage, styles.textPlaceholder, { backgroundColor: theme.card }]}>
                         <Text style={styles.textPreview} numberOfLines={4}>
@@ -560,6 +604,18 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                                     <Text style={styles.mediaTypeText}>Video</Text>
                                 </View>
                             </>
+                        ) : selectedType === 'IMAGE' ? (
+                            <>
+                                <Image
+                                    source={{ uri: selectedMedia.path || selectedMedia.uri }}
+                                    style={styles.previewImage}
+                                    resizeMode="cover"
+                                />
+                                <View style={styles.mediaTypeOverlay}>
+                                    <Ionicons name="image" size={20} color="#FFFFFF" />
+                                    <Text style={styles.mediaTypeText}>Image</Text>
+                                </View>
+                            </>
                         ) : null}
                         <TouchableOpacity
                             style={styles.removeMedia}
@@ -604,6 +660,22 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             { color: theme.subText },
                             selectedType === 'VIDEO' && styles.typeTextActive
                         ]}>{t('dka_video')}</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.typeButton,
+                            { backgroundColor: theme.inputBg, borderColor: theme.border },
+                            selectedType === 'IMAGE' && styles.typeButtonActive
+                        ]}
+                        onPress={pickImage}
+                    >
+                        <Ionicons name="image" size={24} color={selectedType === 'IMAGE' ? '#3B82F6' : theme.subText} />
+                        <Text style={[
+                            styles.typeText,
+                            { color: theme.subText },
+                            selectedType === 'IMAGE' && styles.typeTextActive
+                        ]}>Image</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -666,6 +738,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                 </View>
             ) : (
                 <FlatList
+                    key="posts-grid"
                     data={posts}
                     renderItem={renderPostItem}
                     keyExtractor={item => item.id}
@@ -685,6 +758,106 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             <Ionicons name="camera-outline" size={64} color={theme.subText} />
                             <Text style={[styles.emptyTitle, { color: theme.text }]}>{t('dka_noPosts')}</Text>
                             <Text style={styles.emptySubtitle}>{t('dka_shareFirst')}</Text>
+                        </View>
+                    }
+                />
+            )}
+        </View>
+    );
+
+
+    const handleDeleteComment = (comment: any) => {
+        showDialog(
+            'Delete Comment',
+            'Are you sure you want to delete this comment?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await DriverKiAwazService.deleteComment(comment.id);
+                            Alert.alert('Success', 'Comment deleted');
+                            // Optimistic update
+                            setMyComments(prev => prev.filter(c => c.id !== comment.id));
+                            // Also refresh full data
+                            handleRefresh();
+                        } catch (error) {
+                            console.error('Delete comment error:', error);
+                            Alert.alert('Error', 'Failed to delete comment');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleCommentPress = (comment: any) => {
+        // Find the full post data from 'posts' if available, otherwise construct minimal viewing data
+        // The dashboard API returns posts array, so we might need to search or just rely on what we have.
+        // The comment item has 'postId', we can try to find the post in 'posts' state.
+        const post = posts.find(p => p.id === comment.postId.toString());
+
+        if (post) {
+            setViewingPost(post);
+        } else {
+            // Construct a temporary viewing post if real one not found in current list (rare in this tab logic but possible)
+            // Ideally we should fetch the specific post, but for now let's just show what we can or fetch it?
+            // Since we don't have a 'getPost(id)' service readily used here, and 'dashboard' gives everything...
+            // We'll rely on the fact that if it's in my dashboard, the post should be there too unless deleted.
+            // If post not found, we cannot show much. But let's assume it's there.
+            Alert.alert('Post not available', 'Could not find the original post for this comment.');
+        }
+    };
+
+    const renderMyCommentsTab = () => (
+        <View style={styles.flex}>
+            {loading && myComments.length === 0 ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#3B82F6" />
+                </View>
+            ) : (
+                <FlatList
+                    key="comments-list"
+                    data={myComments}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={[styles.commentCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+                            onPress={() => handleCommentPress(item)}
+                            onLongPress={() => handleDeleteComment(item)}
+                            delayLongPress={300}
+                        >
+                            <View style={styles.commentHeader}>
+                                <Image
+                                    source={{ uri: item.mediaUrl }}
+                                    style={styles.commentPostThumbnail}
+                                    resizeMode="cover"
+                                />
+                                <View style={styles.commentInfo}>
+                                    <View style={styles.commentTopRow}>
+                                        <Text style={[styles.commentDate, { color: theme.subText }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+                                        <Ionicons name="ellipsis-horizontal" size={16} color={theme.subText} />
+                                    </View>
+                                    <Text style={[styles.commentText, { color: theme.text }]} numberOfLines={3}>{item.comment}</Text>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.listContent}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={handleRefresh}
+                            tintColor="#3B82F6"
+                        />
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="chatbubbles-outline" size={64} color={theme.subText} />
+                            <Text style={[styles.emptyTitle, { color: theme.text }]}>No Comments</Text>
+                            <Text style={styles.emptySubtitle}>You haven't commented on any posts yet.</Text>
                         </View>
                     }
                 />
@@ -757,10 +930,23 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                         {t('dka_myPosts')}
                     </Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.tab, activeScreenTab === 'myComments' && { borderBottomColor: theme.activeTab, borderBottomWidth: 2 }]}
+                    onPress={() => setActiveScreenTab('myComments')}
+                >
+                    <Ionicons
+                        name="chatbox-ellipses-outline"
+                        size={22}
+                        color={activeScreenTab === 'myComments' ? theme.activeTab : theme.tabText}
+                    />
+                    <Text style={[styles.tabText, { color: activeScreenTab === 'myComments' ? theme.activeTab : theme.tabText }]}>
+                        Comments
+                    </Text>
+                </TouchableOpacity>
             </View>
 
             {/* Content */}
-            {activeScreenTab === 'create' ? renderCreateTab() : renderMyPostsTab()}
+            {activeScreenTab === 'create' ? renderCreateTab() : activeScreenTab === 'myPosts' ? renderMyPostsTab() : renderMyCommentsTab()}
 
             {/* Edit Modal */}
             <Modal
@@ -816,9 +1002,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                         <TouchableOpacity
                             onPress={() => {
                                 if (viewingPost) {
-                                    setViewingPost(null);
-                                    // Small delay to allow modal to close before showing options
-                                    setTimeout(() => showPostOptions(viewingPost), 300);
+                                    showPostOptions(viewingPost);
                                 }
                             }}
                             style={styles.previewButton}
@@ -837,6 +1021,12 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                                 repeat
                             // controls={true} // Optional: Add controls if needed
                             />
+                        ) : viewingPost?.mediaType === 'image' ? (
+                            <Image
+                                source={{ uri: viewingPost.mediaUrl }}
+                                style={styles.fullScreenMedia}
+                                resizeMode="contain"
+                            />
                         ) : (
                             <View style={styles.textPreviewContainer}>
                                 <Text style={styles.textPostContent}>{viewingPost?.caption}</Text>
@@ -844,8 +1034,8 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                         )}
                     </View>
 
-                    {/* Footer / Caption Overlay (If video) */}
-                    {viewingPost?.mediaType === 'video' && (
+                    {/* Footer / Caption Overlay (If video or image) */}
+                    {(viewingPost?.mediaType === 'video' || viewingPost?.mediaType === 'image') && (
                         <View style={styles.previewFooter}>
                             <Text style={styles.previewCaption} numberOfLines={3}>
                                 {viewingPost.caption}
@@ -1388,6 +1578,43 @@ const styles = StyleSheet.create({
         borderRadius: 28,
         backgroundColor: '#EF4444',
     },
+    // Comment Tab Styles
+    commentCard: {
+        borderRadius: 12,
+        marginBottom: 12,
+        borderWidth: 1,
+        overflow: 'hidden',
+    },
+    commentHeader: {
+        flexDirection: 'row',
+        padding: 12,
+    },
+    commentPostThumbnail: {
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        marginRight: 12,
+        backgroundColor: '#2D2D2D',
+    },
+    commentInfo: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    commentTopRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    commentDate: {
+        fontSize: 12,
+    },
+    commentText: {
+        fontSize: 14,
+        lineHeight: 20,
+    },
+    listContent: {
+        paddingBottom: 100,
+    }
 });
 
 export default CreatePostScreen;

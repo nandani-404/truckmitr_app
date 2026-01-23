@@ -5,7 +5,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
-import { END_POINTS } from '@truckmitr/utils/config/index';
+import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
 
 // Reusing definition for clarity
 type Driver = {
@@ -170,7 +170,7 @@ const ForemanDriverDetails = () => {
                     addedDate: driverParam.addedDate
                 });
 
-                console.log("Driver Details", details);
+                console.log("Full Image URL:", `${BASE_URL}public/${apiData.images}`);
 
             } else {
                 setError(response?.data?.message || 'Failed to fetch driver details');
@@ -236,7 +236,7 @@ const ForemanDriverDetails = () => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#0F172A" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Driver Details</Text>
+                <Text style={styles.headerTitle}>Driver Profile</Text>
                 <View style={{ width: 24 }}>
                     {details && (
                         <TouchableOpacity onPress={fetchDetails}>
@@ -294,7 +294,7 @@ const ForemanDriverDetails = () => {
                                     />
                                 </Svg>
                                 <View style={styles.profileImageInner}>
-                                    <Image source={{ uri: details.image }} style={styles.profileImage} />
+                                    <Image source={{ uri: `${BASE_URL}public/${details.image}` }} style={styles.profileImage} />
                                 </View>
                                 <View style={[
                                     styles.completionPercentBadge,
@@ -393,7 +393,7 @@ const ForemanDriverDetails = () => {
 
                     {/* Financial Details */}
                     <View style={styles.sectionContainer}>
-                        {renderSectionHeader('Financial Details', 'cash-outline', '#10B981', '#ECFDF5')}
+                        {renderSectionHeader('Monthly Income Details', 'cash-outline', '#10B981', '#ECFDF5')}
                         <View style={styles.detailsGrid}>
                             {renderDetailItem('Current Salary', details.currentSalary, 'wallet-outline', '#10B981', '#ECFDF5')}
                             {renderDetailItem('Expected Salary', details.expectedSalary, 'trending-up-outline', '#10B981', '#ECFDF5')}

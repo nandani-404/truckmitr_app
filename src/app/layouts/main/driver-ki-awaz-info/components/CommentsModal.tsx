@@ -95,10 +95,16 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
 
         return (
             <View style={styles.commentItem}>
-                <Image
-                    source={{ uri: avatarUrl }}
-                    style={styles.avatar}
-                />
+                {avatarUrl && avatarUrl !== 'https://via.placeholder.com/150' ? (
+                    <Image
+                        source={{ uri: avatarUrl }}
+                        style={styles.avatar}
+                    />
+                ) : (
+                    <View style={[styles.avatar, { backgroundColor: '#2C2C2E', alignItems: 'center', justifyContent: 'center' }]}>
+                        <Ionicons name="person" size={20} color="#9CA3AF" />
+                    </View>
+                )}
                 <View style={styles.commentContent}>
                     <Text style={styles.userName}>{userName}</Text>
                     <Text style={styles.commentText}>{item.comment}</Text>
@@ -146,10 +152,9 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
                     )}
 
                     <View style={styles.inputContainer}>
-                        <Image
-                            source={{ uri: 'https://via.placeholder.com/150' }} // Ideally current user avatar
-                            style={styles.inputAvatar}
-                        />
+                        <View style={[styles.inputAvatar, { backgroundColor: '#2C2C2E', alignItems: 'center', justifyContent: 'center' }]}>
+                            <Ionicons name="person" size={18} color="#9CA3AF" />
+                        </View>
                         <TextInput
                             style={styles.input}
                             placeholder="Add a comment..."

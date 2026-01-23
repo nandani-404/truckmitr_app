@@ -463,12 +463,20 @@ export default function ForemanProfile() {
                         onPress={() => { }}
                     />
                     <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
-                    <MenuItem
+                    {/* <MenuItem
                         icon={<MaterialCommunityIcons name="account-group-outline" size={20} color="#059669" />}
                         title={t('myDrivers') || 'My Drivers'}
                         onPress={() =>
                             //  navigation.navigate(STACKS.FOREMAN_MY_PILOTS)
                             console.log('My Drivers')
+                        }
+                    /> */}
+                    <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
+                    <MenuItem
+                        icon={<MaterialCommunityIcons name="bank-outline" size={20} color="#D97706" />}
+                        title={t('bankDetails') || 'Bank Details'}
+                        onPress={() =>
+                            navigation.navigate(STACKS.FOREMAN_BANK_DETAILS)
                         }
                     />
                 </CardContainer>

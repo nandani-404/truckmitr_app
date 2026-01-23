@@ -6,7 +6,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
-import { END_POINTS } from '@truckmitr/utils/config/index';
+import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
 
 // API Response Driver Type
 type ApiDriver = {
@@ -230,7 +230,7 @@ export default function ForemanMyPilots() {
                             />
                         </Svg>
                         <View style={styles.profileImageContainerInner}>
-                            <Image source={{ uri: driver.image }} style={styles.profileImage} />
+                            <Image source={{ uri: `${BASE_URL}public/${driver.image}` }} style={styles.profileImage} />
                         </View>
                         {/* Status Checkmark or Percentage Badge */}
                         <View style={[
@@ -329,7 +329,7 @@ export default function ForemanMyPilots() {
                 activeOpacity={0.8}
                 onPress={() => (navigation as any).navigate(STACKS.FOREMAN_DRIVER_DETAILS, { driver })}
             >
-                <Text style={styles.viewDetailText}>View Detail</Text>
+                <Text style={styles.viewDetailText}>View Profile</Text>
                 <Ionicons name="arrow-forward" size={14} color="#3B82F6" />
             </TouchableOpacity>
         </View>
