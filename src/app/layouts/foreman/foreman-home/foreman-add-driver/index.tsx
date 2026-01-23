@@ -1035,7 +1035,7 @@ export default function ForemanAddDriver() {
                 </TouchableOpacity>
 
                 {/* Debug Button - Log AsyncStorage */}
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     onPress={async () => {
                         try {
                             const keys = await AsyncStorage.getAllKeys();
@@ -1065,7 +1065,7 @@ export default function ForemanAddDriver() {
                     <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
                         🐛 Log AsyncStorage Data
                     </Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 {/* Debug Button - Log Redux State */}
                 {/* <TouchableOpacity

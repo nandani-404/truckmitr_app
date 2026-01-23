@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import ForemanBottom from './tabs/foreman-bottom';
-import { Settings, Notification, ContactUs, Privacy, LanguageMain, PreferredColor } from '@truckmitr/layouts/index';
+import { Settings, Notification, ContactUs, Privacy, LanguageMain, PreferredColor, PaymentSuccess } from '@truckmitr/layouts/index';
 import { setupFirebaseNotifications, initializeNotificationChannel } from '@truckmitr/src/utils/notification';
 import { useSelector } from 'react-redux';
 import ForemanDashboard from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-dashboard';
@@ -94,6 +94,7 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.FOREMAN_BANK_DETAILS} component={BankDetails} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.PROFILE_OVERVIEW} component={ProfileOverView} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_PROFILE_COMPLETION} component={ForemanProfileEdit} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.PAYMENT_SUCCESS} component={PaymentSuccess} options={{ animation: 'fade_from_bottom' }} />
         </Stack.Navigator>
     )
 }

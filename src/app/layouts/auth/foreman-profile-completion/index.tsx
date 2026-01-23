@@ -127,10 +127,10 @@ export default function ProfileCompletionForeman() {
 
             dispatch(userEditAction({
                 ...userEdit,
-                DOB: user?.DOB ? new Date(user.DOB) : null,
+                DOB: user?.DOB ? (typeof user.DOB === 'string' ? user.DOB : new Date(user.DOB).toISOString()) : null,
                 driving_experience: mappedExperience || userEdit?.driving_experience,
                 license_number: user?.License_Number || userEdit?.license_number,
-                expiry_date: user?.Expiry_date_of_License ? new Date(user.Expiry_date_of_License) : null,
+                expiry_date: user?.Expiry_date_of_License ? (typeof user.Expiry_date_of_License === 'string' ? user.Expiry_date_of_License : new Date(user.Expiry_date_of_License).toISOString()) : null,
                 pan_number: user?.PAN_Number || userEdit?.pan_number,
             }));
         }
@@ -212,7 +212,7 @@ export default function ProfileCompletionForeman() {
                 formData.append('driving_experience', numericExp);
             }
 
-            if (userEdit?.license_number) formData.append('License_Number', userEdit?.license_number);
+            if (userEdit?.license_number) formData.append('license_number', userEdit?.license_number);
             if (userEdit?.expiry_date) formData.append('expiry_date_of_license', moment(userEdit.expiry_date).format('DD-MM-YYYY'));
             if (userEdit?.pan_number) formData.append('pan_number', userEdit?.pan_number);
 
@@ -272,7 +272,7 @@ export default function ProfileCompletionForeman() {
                                     <DatePicker
                                         theme="light"
                                         date={userEdit?.DOB ? new Date(userEdit.DOB) : new Date(moment().subtract(25, 'years').format())}
-                                        onDateChange={(date) => dispatch(userEditAction({ ...userEdit, DOB: date }))}
+                                        onDateChange={(date) => dispatch(userEditAction({ ...userEdit, DOB: date.toISOString() }))}
                                         mode="date"
                                         maximumDate={new Date(moment().subtract(18, 'years').format())}
                                         minimumDate={new Date(moment().subtract(100, 'years').format())}
@@ -353,7 +353,7 @@ export default function ProfileCompletionForeman() {
                                         mode="date"
                                         theme="light"
                                         date={userEdit?.expiry_date ? new Date(userEdit.expiry_date) : new Date()}
-                                        onDateChange={(d) => dispatch(userEditAction({ ...userEdit, expiry_date: d }))}
+                                        onDateChange={(d) => dispatch(userEditAction({ ...userEdit, expiry_date: d.toISOString() }))}
                                         minimumDate={new Date()}
                                         maximumDate={new Date(moment().add(20, 'years').format())}
                                     />

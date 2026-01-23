@@ -12,6 +12,7 @@ import {
     StatusBar,
     RefreshControl,
 } from 'react-native';
+import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -24,7 +25,7 @@ import { NavigatorParams } from '@truckmitr/stacks/stacks';
 import Svg, { Circle, Path, Defs, LinearGradient as SvgGradient, Stop, G } from 'react-native-svg';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
@@ -142,6 +143,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function ForemanHome() {
     const { t } = useTranslation();
+    const dispatch = useDispatch();
     const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
     const [activeTab, setActiveTab] = React.useState('categories');
@@ -150,13 +152,31 @@ export default function ForemanHome() {
     const { shadow } = useShadow();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
 
-    const { user, profileCompletion } = useSelector((state: RootState) => state.user);
+    const { user, profileCompletion, subscriptionDetails } = useSelector((state: RootState) => state.user);
 
     const foremanName = user?.name || 'User';
     const dynamicTMID = user?.unique_id || 'TMID';
     const dynamicProfileCompletion = Number(profileCompletion) || 0;
     const star_rating = user?.star_rating || 0;
     const rank = user?.rank || 'No Rank';
+
+    // Check if Foreman is Pro (Active Subscription)
+    // Checking is_active flag, specific plan_id (11) or payment_type for Foreman Pro
+    const isForemanPro =
+        user?.is_active === 1 ||
+        user?.plan_id === 11 ||
+        user?.subscription_plan_id === '11' ||
+        user?.payment_type === 'foreman_pro' ||
+        user?.subscription_status === 'active' ||
+        (subscriptionDetails?.hasActiveSubscription && (subscriptionDetails?.payment_type === 'foreman_pro' || subscriptionDetails?.subscription_plan_id == 11));
+
+    const handleFeatureAccess = (action: () => void) => {
+        if (isForemanPro) {
+            action();
+        } else {
+            dispatch(subscriptionModalAction(true));
+        }
+    };
 
     // Dashboard API data state
     const [dashboardData, setDashboardData] = useState({
@@ -206,7 +226,11 @@ export default function ForemanHome() {
     useFocusEffect(
         useCallback(() => {
             fetchDashboardData();
-        }, [fetchDashboardData])
+            // Open payment modal if not Pro regarding USER REQUEST
+            if (!isForemanPro) {
+                dispatch(subscriptionModalAction(true));
+            }
+        }, [fetchDashboardData, isForemanPro])
     );
 
     // Pull to refresh handler
@@ -371,7 +395,9 @@ export default function ForemanHome() {
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`${t('hello')}, ${foremanName} 👋`}</Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{dynamicTMID}</Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>{rank}</Text>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>{t('certifiedPartner')}</Text>
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>
+                                    {isForemanPro ? 'Foreman Pro 👷' : t('certifiedPartner')}
+                                </Text>
                             </View>
 
                             <TouchableOpacity style={{ alignItems: 'center' }}
@@ -439,7 +465,7 @@ export default function ForemanHome() {
                         {/* Dashboard Card */}
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={() => navigation.navigate(STACKS.FOREMAN_DASHBOARD as any)}
+                            onPress={() => handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_DASHBOARD as any))}
                             style={{
                                 width: '48%',
                                 backgroundColor: '#F5A623',
@@ -473,7 +499,7 @@ export default function ForemanHome() {
                         {/* Add Driver Card */}
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={() => navigation.navigate(STACKS.FOREMAN_ADD_DRIVER as any)}
+                            onPress={() => handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_ADD_DRIVER as any))}
                             style={{
                                 width: '48%',
                                 backgroundColor: '#6E7CF5',
@@ -511,7 +537,7 @@ export default function ForemanHome() {
                     <View style={{ marginBottom: 32 }}>
                         <TouchableOpacity
                             activeOpacity={0.7}
-                            onPress={() => navigation.navigate(STACKS.FOREMAN_MY_EARNINGS as any)}
+                            onPress={() => handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_MY_EARNINGS as any))}
                             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -703,11 +729,11 @@ export default function ForemanHome() {
                                     titleStyle={{ fontSize: 10, textAlign: 'center', marginTop: 0, lineHeight: 14 }}
                                     onPress={() => {
                                         if (item.id === 1) {
-                                            navigation.navigate(STACKS.FOREMAN_MY_PILOTS as any);
+                                            handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_MY_PILOTS as any));
                                         } else if (item.id === 2) {
-                                            navigation.navigate(STACKS.FOREMAN_VERIFIED_DRIVERS as any);
+                                            handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_VERIFIED_DRIVERS as any));
                                         } else if (item.id === 3) {
-                                            navigation.navigate(STACKS.FOREMAN_TRUSTED_DRIVERS as any);
+                                            handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_TRUSTED_DRIVERS as any));
                                         } else {
                                             console.log(item.title);
                                         }
@@ -733,11 +759,11 @@ export default function ForemanHome() {
                                     titleStyle={{ fontSize: 10, textAlign: 'center', marginTop: 4, lineHeight: 14 }}
                                     onPress={() => {
                                         if (item.id === 4) {
-                                            navigation.navigate(STACKS.FOREMAN_JOBS_LIST as any);
+                                            handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_JOBS_LIST as any));
                                         } else if (item.id === 5) {
-                                            navigation.navigate(STACKS.FOREMAN_APPLICATIONS as any);
+                                            handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_APPLICATIONS as any));
                                         } else if (item.id === 6) {
-                                            navigation.navigate(STACKS.FOREMAN_RECRUITMENTS as any);
+                                            handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_RECRUITMENTS as any));
                                         } else {
                                             console.log(item.title);
                                         }
