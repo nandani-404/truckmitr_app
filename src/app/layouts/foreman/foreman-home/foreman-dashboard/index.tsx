@@ -113,7 +113,16 @@ export default function ForemanDashboard() {
     const { responsiveFontSize } = useResponsiveScale();
     const { shadow } = useShadow();
 
-    const { user, profileCompletion } = useSelector((state: RootState) => state.user);
+    const { user, profileCompletion, subscriptionDetails } = useSelector((state: RootState) => state.user);
+
+    // Check if Foreman is Pro (Active Subscription)
+    const isForemanPro =
+        user?.is_active === 1 ||
+        user?.plan_id === 11 ||
+        user?.subscription_plan_id === '11' ||
+        user?.payment_type === 'foreman_pro' ||
+        user?.subscription_status === 'active' ||
+        (subscriptionDetails?.hasActiveSubscription && (subscriptionDetails?.payment_type === 'foreman_pro' || subscriptionDetails?.subscription_plan_id == 11));
 
     const [loading, setLoading] = useState(true);
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -201,8 +210,8 @@ export default function ForemanDashboard() {
                             <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>
                                 {dashboardData?.referral_code || user?.unique_id || 'TMID'}
                             </Text>
-                            <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>
-                                {t('foreman')}
+                            <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8), fontStyle: 'italic' }}>
+                                {isForemanPro ? 'Foreman Pro 👷' : t('foreman')}
                             </Text>
                         </View>
                     )}
