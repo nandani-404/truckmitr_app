@@ -20,7 +20,8 @@ const initialState = {
     },
     paymentVerificationModal: false,
     referral: null,
-    whatsapp_link: null
+    whatsapp_link: null,
+    popupData: null
 }
 
 const userReducer = (state = initialState, action: any) => {
@@ -250,6 +251,11 @@ const userReducer = (state = initialState, action: any) => {
             return {
                 ...state,
                 paymentVerificationModal: payload
+            }
+        case TYPES['SET_POPUP_DATA']:
+            return {
+                ...state,
+                popupData: payload
             }
         default: return { ...state }
     }

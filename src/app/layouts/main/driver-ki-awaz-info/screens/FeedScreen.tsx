@@ -221,9 +221,7 @@ const PostCard: React.FC<{
                     <Text style={styles.actionCount}>{formatCount(post.shareCount)}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionBtn}>
-                    <Ionicons name="bookmark-outline" size={20} color="#64748B" />
-                </TouchableOpacity>
+
             </View>
         </View>
     );

@@ -369,6 +369,19 @@ export default function Routes() {
           await AsyncStorage.removeItem('app_session_active');
           dispatch(userAuthenticatedAction(false));
         }
+
+        // Fetch Popup Data (Pre-load for splash)
+        try {
+          const popupRes = await axiosInstance.get(END_POINTS.MOBILE_POPUP, {
+            headers: { 'X-Skip-Global-Logout': 'true' }
+          });
+          if (popupRes?.data?.status && popupRes?.data?.data) {
+            dispatch({ type: TYPES.SET_POPUP_DATA, payload: popupRes.data.data });
+          }
+        } catch (e) {
+          console.log('Error fetching popup data during init:', e);
+        }
+
       } finally {
         hasInitialized.current = true;
         setIsInitializing(false);

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Linking, ActivityIndicator } from 'react-native';
 import Modal from 'react-native-modal';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import Video from 'react-native-video';
 import axiosInstance from '../config/axiosInstance';
 import { END_POINTS, BASE_URL } from '../config';
 import { useColor, useResponsiveScale } from '../../app/hooks';
@@ -18,37 +19,58 @@ const TopClassPopup = () => {
     const navigation = useNavigation<any>();
     const colors = useColor();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
-    const { user, isDriver, isTransporter } = useSelector((state: any) => state?.user || {});
+    const { user, isDriver, isTransporter, popupData: reduxPopupData } = useSelector((state: any) => state?.user || {});
+    const [videoLoaded, setVideoLoaded] = useState(false);
 
     useEffect(() => {
-        fetchPopup();
-    }, []);
+        if (reduxPopupData) {
+            checkAndShowPopup(reduxPopupData);
+        } else {
+            // Fallback: fetch locally if not in Redux (e.g. hot reload or init failed)
+            fetchPopup();
+        }
+    }, [reduxPopupData]);
 
     const fetchPopup = async () => {
         try {
             const response = await axiosInstance.get(END_POINTS.MOBILE_POPUP);
             if (response.data && response.data.status && response.data.data) {
-                const data = response.data.data;
-
-                // Filter by user role if applicable
-                let shouldShow = false;
-                if (!data.user_type || data.user_type.length === 0) {
-                    shouldShow = true;
-                } else {
-                    if (isDriver && data.user_type.includes('driver')) shouldShow = true;
-                    if (isTransporter && data.user_type.includes('transporter')) shouldShow = true;
-                    // If user type includes both or specific roles
-                }
-
-                if (shouldShow) {
-                    setPopupData(data);
-                    setIsVisible(true);
-                }
+                checkAndShowPopup(response.data.data);
             }
         } catch (error) {
-            console.log('Error fetching mobile popup:', error);
+            console.log('Error fetching mobile popup locally:', error);
         }
     };
+
+    const checkAndShowPopup = (data: any) => {
+        // Filter by user role if applicable
+        let shouldShow = false;
+        const userRole = user?.role || user?.data?.role;
+
+        if (!data.user_type || data.user_type.length === 0) {
+            shouldShow = true;
+        } else {
+            if (isDriver && data.user_type.includes('driver')) shouldShow = true;
+            if (isTransporter && data.user_type.includes('transporter')) shouldShow = true;
+
+            // Foreman check
+            if (userRole === 'foreman' && data.user_type.includes('foreman')) shouldShow = true;
+
+            // Association/Associate check
+            if ((userRole === 'associate' || userRole === 'association') &&
+                (data.user_type.includes('associate') || data.user_type.includes('association'))) {
+                shouldShow = true;
+            }
+        }
+
+        if (shouldShow) {
+            setPopupData(data);
+            setVideoLoaded(false);
+            setIsVisible(true);
+        }
+    };
+
+
 
     const handleClose = () => {
         setIsVisible(false);
@@ -74,13 +96,8 @@ const TopClassPopup = () => {
     if (!popupData) return null;
 
     const imageUrl = popupData.media_url ? `${BASE_URL.replace(/\/$/, '')}${popupData.media_url.startsWith('/') ? '' : '/'}${popupData.media_url}` : null;
-    // Check if user provided base url in prompt "https://devtruckmitr.in/public"
-    // The JSON sample shows "/mobile_popups/images/..."
-    // If BASE_URL is https://devtruckmitr.in/, then https://devtruckmitr.in/mobile_popups... might be wrong if "public" is needed.
-    // User said: "image base url https://devtruckmitr.in/public"
-    // So distinct handling:
     const fullImageUrl = popupData.media_url ? `https://devtruckmitr.in/public${popupData.media_url.startsWith('/') ? '' : '/'}${popupData.media_url}` : null;
-
+    const isVideo = popupData.media_type === 'video';
 
     return (
         <Modal
@@ -109,30 +126,50 @@ const TopClassPopup = () => {
                     onPress={handlePress}
                     style={styles.card}
                 >
-                    <LinearGradient
-                        colors={[colors.white, '#F8F9FA']}
-                        style={styles.gradientContainer}
-                    >
-                        {/* Image */}
-                        {fullImageUrl && (
-                            <FastImage
-                                source={{ uri: fullImageUrl }}
-                                style={styles.image}
-                                resizeMode={FastImage.resizeMode.cover}
-                            />
-                        )}
-
-                        {/* Content Overlay (if needed, but usually image has text) */}
-                        {(!fullImageUrl) && (
-                            <View style={styles.textContainer}>
-                                <Text style={[styles.title, { color: colors.text }]}>{popupData.title}</Text>
-                                <Text style={[styles.description, { color: colors.text }]}>{popupData.description}</Text>
+                    <View style={[styles.gradientContainer, { backgroundColor: fullImageUrl ? 'transparent' : colors.white }]}>
+                        {/* Media Content (Image/GIF or Video) */}
+                        {fullImageUrl ? (
+                            <View style={styles.mediaContainer}>
+                                {isVideo ? (
+                                    <>
+                                        <Video
+                                            source={{ uri: fullImageUrl }}
+                                            style={[styles.image, { opacity: videoLoaded ? 1 : 0 }]}
+                                            resizeMode="contain"
+                                            repeat={true}
+                                            controls={false}
+                                            paused={false}
+                                            muted={true}
+                                            playInBackground={false}
+                                            playWhenInactive={false}
+                                            onLoad={() => setVideoLoaded(true)}
+                                        />
+                                        {!videoLoaded && (
+                                            <View style={[styles.image, styles.loaderContainer]}>
+                                                <ActivityIndicator size="large" color="#2E5BFF" />
+                                            </View>
+                                        )}
+                                    </>
+                                ) : (
+                                    <FastImage
+                                        source={{ uri: fullImageUrl }}
+                                        style={styles.image}
+                                        resizeMode={FastImage.resizeMode.contain}
+                                    />
+                                )}
                             </View>
+                        ) : (
+                            <LinearGradient
+                                colors={[colors.white, '#F8F9FA']}
+                                style={styles.gradientContainer}
+                            >
+                                <View style={styles.textContainer}>
+                                    <Text style={[styles.title, { color: colors.text }]}>{popupData.title}</Text>
+                                    <Text style={[styles.description, { color: colors.text }]}>{popupData.description}</Text>
+                                </View>
+                            </LinearGradient>
                         )}
-
-                        {/* Call to Action Button Indicator if clickable */}
-
-                    </LinearGradient>
+                    </View>
                 </TouchableOpacity>
             </View>
         </Modal>
@@ -151,7 +188,8 @@ const styles = StyleSheet.create({
     },
     card: {
         width: '100%',
-        backgroundColor: '#FFF',
+
+        backgroundColor: 'transparent',
         borderRadius: 20,
         overflow: 'hidden',
         shadowColor: "#000",
@@ -161,7 +199,8 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.3,
         shadowRadius: 20,
-        elevation: 15,
+        elevation: 0, // Remove shadow from card container to avoid box shadow around transparent image
+
     },
     gradientContainer: {
         width: '100%',
@@ -170,8 +209,23 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '100%',
-        height: width * 0.9 * 1.5, // Enlarge image
-        backgroundColor: '#f0f0f0'
+        height: height * 0.65, // User nearly 65% of screen height
+        backgroundColor: 'transparent',
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    mediaContainer: {
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'transparent',
+    },
+    loaderContainer: {
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'transparent',
+        zIndex: 1
     },
     closeButton: {
         position: 'absolute',
