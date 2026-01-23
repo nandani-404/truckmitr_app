@@ -499,7 +499,7 @@ export default function ForemanHome() {
                         {/* Add Driver Card */}
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={() => handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_ADD_DRIVER as any))}
+                            onPress={() => navigation.navigate(STACKS.FOREMAN_ADD_DRIVER as any)}
                             style={{
                                 width: '48%',
                                 backgroundColor: '#6E7CF5',
@@ -634,7 +634,7 @@ export default function ForemanHome() {
                             {/* Card 1: Pending Profile */}
                             <TouchableOpacity
                                 activeOpacity={0.8}
-                                onPress={() => navigation.navigate(STACKS.FOREMAN_PENDING_PROFILES as any)}
+                                onPress={() => handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_PENDING_PROFILES as any))}
                                 style={{ width: '48%', backgroundColor: '#FFF7ED', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -653,7 +653,7 @@ export default function ForemanHome() {
                             {/* Card 2: Pending Subscription */}
                             <TouchableOpacity
                                 activeOpacity={0.8}
-                                onPress={() => navigation.navigate(STACKS.FOREMAN_PENDING_SUBSCRIPTION as any)}
+                                onPress={() => handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_PENDING_SUBSCRIPTION as any))}
                                 style={{ width: '48%', backgroundColor: '#fff', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -675,7 +675,7 @@ export default function ForemanHome() {
                             {/* Card 3: Pending Training */}
                             <TouchableOpacity
                                 activeOpacity={0.8}
-                                onPress={() => navigation.navigate(STACKS.FOREMAN_PENDING_TRAINING as any)}
+                                onPress={() => handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_PENDING_TRAINING as any))}
                                 style={{ width: '48%', backgroundColor: '#fff', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -694,7 +694,7 @@ export default function ForemanHome() {
                             {/* Card 4: Expiring Documents */}
                             <TouchableOpacity
                                 activeOpacity={0.8}
-                                onPress={() => navigation.navigate(STACKS.FOREMAN_EXPIRING_DOCUMENTS as any)}
+                                onPress={() => handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_EXPIRING_DOCUMENTS as any))}
                                 style={{ width: '48%', backgroundColor: '#FEF2F2', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>

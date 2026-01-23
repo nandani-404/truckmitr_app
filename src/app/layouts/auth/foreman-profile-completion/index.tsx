@@ -228,12 +228,24 @@ export default function ProfileCompletionForeman() {
             });
 
             if (response?.data?.status || response?.data?.success) {
+                // Fetch complete user profile to ensure Redux has all fields
+                try {
+                    const profileResponse = await axiosInstance.get(END_POINTS?.GET_PROFILE);
+                    if (profileResponse?.data?.status && profileResponse?.data?.data) {
+                        dispatch(userAction(profileResponse.data.data));
+                        console.log('✅ Complete user profile fetched and dispatched to Redux');
+                    } else {
+                        // Fallback to partial update if GET_PROFILE fails
+                        dispatch(userAction({ ...user, ...response?.data?.data }));
+                    }
+                } catch (profileError) {
+                    console.warn('Failed to fetch complete profile, using partial update:', profileError);
+                    dispatch(userAction({ ...user, ...response?.data?.data }));
+                }
+
+                dispatch(userAuthenticatedAction(true));
                 setFinishing(false);
                 showToast(t('profileSubmittedSuccessfully'));
-
-                // Update redux user data
-                dispatch(userAction({ ...user, ...response?.data?.data }));
-                dispatch(userAuthenticatedAction(true));
             } else {
                 throw new Error(response?.data?.message || 'Failed');
             }

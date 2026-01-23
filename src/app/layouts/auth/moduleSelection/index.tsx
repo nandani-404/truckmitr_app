@@ -220,14 +220,14 @@ export default function ModuleSelection() {
             gradient: ['#FF6B6B', '#FF8E8E'],
             module: 'foreman'
         },
-        {
-            role: 'associate',
-            title: t('associate'),
-            subtitle: t('associateSubtitle'),
-            icon: 'account-group',
-            gradient: ['#845EC2', '#A178DF'],
-            module: 'associate'
-        },
+        // {
+        //     role: 'associate',
+        //     title: t('associate'),
+        //     subtitle: t('associateSubtitle'),
+        //     icon: 'account-group',
+        //     gradient: ['#845EC2', '#A178DF'],
+        //     module: 'associate'
+        // },
     ];
 
     const handleContinue = async () => {

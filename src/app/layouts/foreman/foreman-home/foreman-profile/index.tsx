@@ -149,7 +149,16 @@ export default function ForemanProfile() {
     const { t } = useTranslation();
     const dispatch = useDispatch();
     useStatusBarStyle('dark-content');
-    const { user, profileCompletion } = useSelector((state: any) => state?.user) || {};
+    const { user, profileCompletion, subscriptionDetails } = useSelector((state: any) => state?.user) || {};
+
+    // Check if Foreman is Pro (Active Subscription)
+    const isForemanPro =
+        user?.is_active === 1 ||
+        user?.plan_id === 11 ||
+        user?.subscription_plan_id === '11' ||
+        user?.payment_type === 'foreman_pro' ||
+        user?.subscription_status === 'active' ||
+        (subscriptionDetails?.hasActiveSubscription && (subscriptionDetails?.payment_type === 'foreman_pro' || subscriptionDetails?.subscription_plan_id == 11));
     const colors = useColor();
     const safeAreaInsets = useSafeAreaInsets();
     const { shadow } = useShadow();
@@ -368,7 +377,7 @@ export default function ForemanProfile() {
                                     fontSize: responsiveFontSize(1.4),
                                 }
                             ]}>
-                                {t('foreman')}
+                                {isForemanPro ? 'Foreman Pro 👷' : t('foreman')}
                             </Text>
                         </View>
                     </View>

@@ -146,6 +146,7 @@ export type NavigatorParams = {
     foremanMyEarnings: undefined;
     foremanProfile: undefined;
     foremanProfileCompletion: { stepId?: string | number } | undefined;
+    foremanProfileEdit: { stepId: string | number };
     foremanDriverKiAwaz: undefined;
     foremanBankDetails: undefined;
 };
@@ -304,6 +305,7 @@ export const STACKS = {
     FOREMAN_MY_EARNINGS: 'foremanMyEarnings',
     FOREMAN_PROFILE: 'foremanProfile',
     FOREMAN_PROFILE_COMPLETION: 'foremanProfileCompletion',
+    FOREMAN_PROFILE_EDIT: 'foremanProfileEdit',
     FOREMAN_DASHBOARD: 'foremanDashboard',
     FOREMAN_MY_PILOTS: 'foremanMyPilots',
     FOREMAN_PENDING_PROFILES: 'foremanPendingProfiles',

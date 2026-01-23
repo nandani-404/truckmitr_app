@@ -93,7 +93,7 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.FOREMAN_RECRUITMENTS} component={ForemanRecruitments} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_BANK_DETAILS} component={BankDetails} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.PROFILE_OVERVIEW} component={ProfileOverView} options={{ animation: 'fade' }} />
-            <Stack.Screen name={STACKS.FOREMAN_PROFILE_COMPLETION} component={ForemanProfileEdit} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.FOREMAN_PROFILE_EDIT} component={ForemanProfileEdit} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name={STACKS.PAYMENT_SUCCESS} component={PaymentSuccess} options={{ animation: 'fade_from_bottom' }} />
         </Stack.Navigator>
     )

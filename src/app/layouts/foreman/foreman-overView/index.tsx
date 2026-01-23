@@ -134,7 +134,7 @@ const ProfileOverView = () => {
     );
 
     const navigateToEdit = (stepId: number | string) => {
-        navigation.navigate(STACKS.FOREMAN_PROFILE_COMPLETION, { stepId });
+        navigation.navigate(STACKS.FOREMAN_PROFILE_EDIT, { stepId });
     };
 
     const formatDate = (date: any) => date ? moment(date).format('DD MMM YYYY') : 'Not Provided';
