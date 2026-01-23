@@ -14,6 +14,7 @@ import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
 import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import moment from 'moment';
+import { useTranslation } from 'react-i18next';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -49,8 +50,8 @@ const DRIVERS_DATA = [
 ];
 
 // Format salary range
-const formatSalary = (salaryRange: string): string => {
-    if (!salaryRange) return 'Not specified';
+const formatSalary = (salaryRange: string, t: any): string => {
+    if (!salaryRange) return t('notSpecified');
     const parts = salaryRange.split('-');
     if (parts.length === 2) {
         return `₹${parseInt(parts[0]).toLocaleString('en-IN')} - ₹${parseInt(parts[1]).toLocaleString('en-IN')}`;
@@ -65,7 +66,9 @@ const formatDate = (dateStr: string): string => {
     if (dateStr.includes('-')) {
         const parts = dateStr.split('-');
         if (parts.length === 3 && parts[0].length <= 2) {
-            // DD-MM-YYYY format
+            // Check if it matches expected DD-MM-YYYY format or similar
+            // For general date formatting, using a library or simple logic is fine
+            // Returning dateStr or formatted for now, localization of months is better handled with library but simple map works
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             return `${parts[0]} ${months[parseInt(parts[1]) - 1]} ${parts[2]}`;
         }
@@ -74,7 +77,7 @@ const formatDate = (dateStr: string): string => {
 };
 
 // Calculate time ago
-const getTimeAgo = (dateStr: string): string => {
+const getTimeAgo = (dateStr: string, t: any): string => {
     if (!dateStr) return '';
     try {
         const date = new Date(dateStr);
@@ -83,12 +86,12 @@ const getTimeAgo = (dateStr: string): string => {
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 
-        if (diffHours < 1) return 'Just now';
-        if (diffHours < 24) return `${diffHours} hrs ago`;
-        if (diffDays === 1) return '1 day ago';
-        if (diffDays < 7) return `${diffDays} days ago`;
-        if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-        return `${Math.floor(diffDays / 30)} months ago`;
+        if (diffHours < 1) return t('justNow');
+        if (diffHours < 24) return t('hoursAgo', { count: diffHours });
+        if (diffDays === 1) return t('dayAgo');
+        if (diffDays < 7) return t('daysAgo', { count: diffDays });
+        if (diffDays < 30) return t('weeksAgo', { count: Math.floor(diffDays / 7) });
+        return t('monthsAgo', { count: Math.floor(diffDays / 30) });
     } catch {
         return '';
     }
@@ -174,6 +177,7 @@ const ShimmerJobCard = () => (
 );
 
 const ForemanJobsList = () => {
+    const { t } = useTranslation();
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
 
@@ -206,12 +210,13 @@ const ForemanJobsList = () => {
             if (response?.data?.status) {
                 setJobs(response.data.data || []);
             } else {
-                setError(response?.data?.message || 'Failed to fetch jobs');
+                setError(response?.data?.message || t('errorFetchingData'));
                 setJobs([]);
             }
         } catch (err: any) {
             console.error('Error fetching jobs:', err);
-            setError(err?.response?.data?.message || err?.message || 'Something went wrong');
+            console.error('Error fetching jobs:', err);
+            setError(err?.response?.data?.message || err?.message || t('somethingWentWrong'));
             setJobs([]);
         } finally {
             setLoading(false);
@@ -268,11 +273,11 @@ const ForemanJobsList = () => {
 
     const handleShareConfirm = () => {
         if (selectedDrivers.length === 0) {
-            showToast('Please select at least one driver');
+            showToast(t('pleaseSelectDriver'));
             return;
         }
         setShowShareModal(false);
-        showToast(`Job shared with ${selectedDrivers.length} drivers successfully!`);
+        showToast(t('jobShared', { count: selectedDrivers.length }));
     };
 
     const renderBackdrop = useCallback(
@@ -306,7 +311,7 @@ const ForemanJobsList = () => {
                 </View>
                 <View style={styles.detailBadge}>
                     <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>Deadline: {formatDate(item.Application_Deadline)}</Text>
+                    <Text style={styles.detailText}>{t('deadline')}: {formatDate(item.Application_Deadline)}</Text>
                 </View>
             </View>
 
@@ -317,7 +322,7 @@ const ForemanJobsList = () => {
                 </View>
                 <View style={styles.infoTag}>
                     <Ionicons name="time-outline" size={12} color="#6366F1" />
-                    <Text style={styles.infoTagText}>{item.Required_Experience} yrs exp</Text>
+                    <Text style={styles.infoTagText}>{item.Required_Experience} {t('yearsSuffix')}</Text>
                 </View>
                 <View style={styles.infoTag}>
                     <Ionicons name="card-outline" size={12} color="#6366F1" />
@@ -326,15 +331,15 @@ const ForemanJobsList = () => {
             </View>
 
             <View style={styles.salaryRow}>
-                <Text style={styles.salaryText}>{formatSalary(item.Salary_Range)}</Text>
-                <Text style={styles.postedText}>{getTimeAgo(item.Created_at)}</Text>
+                <Text style={styles.salaryText}>{formatSalary(item.Salary_Range, t)}</Text>
+                <Text style={styles.postedText}>{getTimeAgo(item.Created_at, t)}</Text>
             </View>
 
             <TouchableOpacity
                 style={styles.viewDetailsButton}
                 onPress={() => handleViewDetails(item)}
             >
-                <Text style={styles.viewDetailsText}>View Details</Text>
+                <Text style={styles.viewDetailsText}>{t('viewDetails')}</Text>
                 <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
             </TouchableOpacity>
         </View>
@@ -387,11 +392,11 @@ const ForemanJobsList = () => {
     const renderEmptyState = () => (
         <View style={styles.emptyContainer}>
             <Ionicons name="briefcase-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyTitle}>No Jobs Available</Text>
-            <Text style={styles.emptySubtitle}>Check back later for new job postings</Text>
+            <Text style={styles.emptyTitle}>{t('noJobsAvailable')}</Text>
+            <Text style={styles.emptySubtitle}>{t('checkBackLater')}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={() => fetchJobs()}>
                 <Ionicons name="refresh" size={18} color="#fff" />
-                <Text style={styles.retryText}>Refresh</Text>
+                <Text style={styles.retryText}>{t('refresh')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -399,11 +404,11 @@ const ForemanJobsList = () => {
     const renderErrorState = () => (
         <View style={styles.emptyContainer}>
             <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
-            <Text style={styles.emptyTitle}>Something went wrong</Text>
+            <Text style={styles.emptyTitle}>{t('somethingWentWrong')}</Text>
             <Text style={styles.emptySubtitle}>{error}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={() => fetchJobs()}>
                 <Ionicons name="refresh" size={18} color="#fff" />
-                <Text style={styles.retryText}>Try Again</Text>
+                <Text style={styles.retryText}>{t('tryAgain')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -419,7 +424,7 @@ const ForemanJobsList = () => {
             <BottomSheetScrollView style={styles.sheetContent} showsVerticalScrollIndicator={false}>
                 {/* Header with Title and Close Button */}
                 <View style={styles.sheetHeader}>
-                    <Text style={styles.sheetHeaderTitle}>Job Details</Text>
+                    <Text style={styles.sheetHeaderTitle}>{t('jobDetails')}</Text>
                     <TouchableOpacity style={styles.closeSheetButton} onPress={handleCloseBottomSheet}>
                         <Ionicons name="close-circle" size={28} color="#64748B" />
                     </TouchableOpacity>
@@ -435,7 +440,7 @@ const ForemanJobsList = () => {
                             style={styles.premiumGradient}
                         >
                             <MaterialCommunityIcons name="crown" size={18} color="#FFD700" />
-                            <Text style={styles.superPremiumText}>SUPER PREMIUM JOB</Text>
+                            <Text style={styles.superPremiumText}>{t('superPremiumJob')}</Text>
                         </LinearGradient>
                     </View>
                 )}
@@ -448,7 +453,7 @@ const ForemanJobsList = () => {
                             style={styles.premiumGradient}
                         >
                             <MaterialCommunityIcons name="crown" size={16} color="#5C4300" />
-                            <Text style={styles.premiumText}>PREMIUM JOB</Text>
+                            <Text style={styles.premiumText}>{t('premiumJob')}</Text>
                         </LinearGradient>
                     </View>
                 )}
@@ -464,10 +469,10 @@ const ForemanJobsList = () => {
 
                 {/* Salary Section */}
                 <View style={styles.sheetSalarySection}>
-                    <Text style={styles.sheetSalaryLabel}>Monthly Salary</Text>
-                    <Text style={styles.sheetSalaryValue}>{formatSalary(selectedJob.Salary_Range)}</Text>
+                    <Text style={styles.sheetSalaryLabel}>{t('monthlySalary')}</Text>
+                    <Text style={styles.sheetSalaryValue}>{formatSalary(selectedJob.Salary_Range, t)}</Text>
                     {selectedJob.Additional_Benefits && (
-                        <Text style={styles.sheetBenefits}>Benefits: {selectedJob.Additional_Benefits}</Text>
+                        <Text style={styles.sheetBenefits}>{t('benefits')}: {selectedJob.Additional_Benefits}</Text>
                     )}
                 </View>
 
@@ -475,19 +480,19 @@ const ForemanJobsList = () => {
                 <View style={styles.sheetDetailsSection}>
                     <View style={styles.sheetSectionHeader}>
                         <MaterialCommunityIcons name="briefcase-outline" size={20} color="#3B82F6" />
-                        <Text style={styles.sheetSectionTitle}>Job Details</Text>
+                        <Text style={styles.sheetSectionTitle}>{t('jobDetails')}</Text>
                     </View>
 
                     <View style={styles.detailsGrid}>
                         <View style={styles.detailsRow}>
                             <DetailItem
                                 icon={<MaterialCommunityIcons name="card-account-details-outline" size={16} color="#3B82F6" />}
-                                label="Job ID"
+                                label={t('jobIdLabel')}
                                 value={selectedJob.job_id}
                             />
                             <DetailItem
                                 icon={<FontAwesome name="calendar" size={14} color="#3B82F6" />}
-                                label="Posted On"
+                                label={t('postedOn')}
                                 value={moment(selectedJob.Created_at).format("DD MMM YYYY")}
                             />
                         </View>
@@ -495,12 +500,12 @@ const ForemanJobsList = () => {
                         <View style={styles.detailsRow}>
                             <DetailItem
                                 icon={<FontAwesome6 name="location-dot" size={14} color="#3B82F6" />}
-                                label="Location"
+                                label={t('location')}
                                 value={selectedJob.job_location}
                             />
                             <DetailItem
                                 icon={<FontAwesome6 name="users" size={14} color="#3B82F6" />}
-                                label="Open Positions"
+                                label={t('openPositions')}
                                 value={selectedJob.number_of_drivers_required || '-'}
                             />
                         </View>
@@ -508,12 +513,12 @@ const ForemanJobsList = () => {
                         <View style={styles.detailsRow}>
                             <DetailItem
                                 icon={<FontAwesome name="star" size={14} color="#3B82F6" />}
-                                label="Experience Required"
-                                value={`${selectedJob.Required_Experience} Years`}
+                                label={t('experienceRequired')}
+                                value={`${selectedJob.Required_Experience} ${t('yearsSuffix')}`}
                             />
                             <DetailItem
                                 icon={<MaterialCommunityIcons name="license" size={16} color="#3B82F6" />}
-                                label="License Type"
+                                label={t('licenseType')}
                                 value={selectedJob.Type_of_License?.toUpperCase()}
                             />
                         </View>
@@ -521,12 +526,12 @@ const ForemanJobsList = () => {
                         <View style={styles.detailsRow}>
                             <DetailItem
                                 icon={<MaterialCommunityIcons name="truck" size={16} color="#3B82F6" />}
-                                label="Vehicle Type"
+                                label={t('vehicleType')}
                                 value={selectedJob.vehicle_type}
                             />
                             <DetailItem
                                 icon={<FontAwesome name="calendar-check-o" size={14} color="#3B82F6" />}
-                                label="Application Deadline"
+                                label={t('applicationDeadline')}
                                 value={formatDate(selectedJob.Application_Deadline)}
                             />
                         </View>
@@ -535,7 +540,7 @@ const ForemanJobsList = () => {
                             <View style={styles.detailsRow}>
                                 <DetailItem
                                     icon={<MaterialCommunityIcons name="domain" size={16} color="#3B82F6" />}
-                                    label="Industry"
+                                    label={t('industry')}
                                     value={selectedJob.Industry}
                                 />
                                 <View style={{ flex: 1 }} />
@@ -547,7 +552,7 @@ const ForemanJobsList = () => {
                 {/* Job Description */}
                 {selectedJob.Job_Description && (
                     <View style={styles.sheetDescriptionSection}>
-                        <Text style={styles.sheetDescriptionTitle}>Job Description</Text>
+                        <Text style={styles.sheetDescriptionTitle}>{t('jobDescription')}</Text>
                         <Text style={styles.sheetDescriptionText}>{selectedJob.Job_Description}</Text>
                     </View>
                 )}
@@ -555,7 +560,7 @@ const ForemanJobsList = () => {
                 {/* Preferred Skills */}
                 {selectedJob.Preferred_Skills && parseSkills(selectedJob.Preferred_Skills).length > 0 && (
                     <View style={styles.sheetSkillsSection}>
-                        <Text style={styles.sheetSkillsTitle}>Preferred Skills</Text>
+                        <Text style={styles.sheetSkillsTitle}>{t('preferredSkills')}</Text>
                         <View style={styles.skillsTagsContainer}>
                             {parseSkills(selectedJob.Preferred_Skills).map((skill, index) => (
                                 <View key={index} style={styles.skillTag}>
@@ -575,7 +580,7 @@ const ForemanJobsList = () => {
                     }}
                 >
                     <Ionicons name="share-social-outline" size={20} color="#fff" />
-                    <Text style={styles.shareJobButtonText}>Share with Drivers</Text>
+                    <Text style={styles.shareJobButtonText}>{t('shareWithDrivers')}</Text>
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />
@@ -590,9 +595,9 @@ const ForemanJobsList = () => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#0F172A" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Available Jobs</Text>
+                <Text style={styles.headerTitle}>{t('availableJobs')}</Text>
                 <View style={styles.headerRight}>
-                    <Text style={styles.jobCount}>{jobs.length} jobs</Text>
+                    <Text style={styles.jobCount}>{jobs.length} {t('jobsLowercase')}</Text>
                 </View>
             </View>
 
@@ -637,19 +642,19 @@ const ForemanJobsList = () => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Share Job Details to Drivers</Text>
+                            <Text style={styles.modalTitle}>{t('shareJob')}</Text>
                             <TouchableOpacity onPress={() => setShowShareModal(false)}>
                                 <Ionicons name="close" size={24} color="#64748B" />
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.modalSubtitle}>Select drivers from your list to share this job.</Text>
+                        <Text style={styles.modalSubtitle}>{t('selectDriversToShare')}</Text>
 
                         {/* Search and Select All Row */}
                         <View style={styles.searchRow}>
                             <View style={styles.searchContainer}>
                                 <Ionicons name="search" size={18} color="#64748B" />
                                 <TextInput
-                                    placeholder="Search drivers..."
+                                    placeholder={t('searchDrivers')}
                                     style={styles.searchInput}
                                     placeholderTextColor="#94A3B8"
                                     value={searchQuery}
@@ -658,7 +663,7 @@ const ForemanJobsList = () => {
                             </View>
                             <TouchableOpacity onPress={toggleSelectAll} style={styles.selectAllButton}>
                                 <Text style={styles.selectAllText}>
-                                    {selectedDrivers.length === filteredDrivers.length && filteredDrivers.length > 0 ? 'Deselect All' : 'Select All'}
+                                    {selectedDrivers.length === filteredDrivers.length && filteredDrivers.length > 0 ? t('deselectAll') : t('selectAll')}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -673,7 +678,7 @@ const ForemanJobsList = () => {
                                 onPress={handleShareConfirm}
                                 disabled={selectedDrivers.length === 0}
                             >
-                                <Text style={styles.shareConfirmText}>Share ({selectedDrivers.length})</Text>
+                                <Text style={styles.shareConfirmText}>{t('shareAction')} ({selectedDrivers.length})</Text>
                                 <Ionicons name="send" size={16} color="#fff" style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>

@@ -153,8 +153,8 @@ export default function ForemanPendingTraining() {
                         <Ionicons name="arrow-back" size={24} color="#1F2937" />
                     </TouchableOpacity>
                     <View>
-                        <Text style={styles.headerTitle}>Pending Training</Text>
-                        <Text style={styles.headerSubtitle}>Loading...</Text>
+                        <Text style={styles.headerTitle}>{t('pendingTraining')}</Text>
+                        <Text style={styles.headerSubtitle}>{t('loading')}</Text>
                     </View>
                 </View>
                 <View style={styles.loadingContainer}>
@@ -174,8 +174,8 @@ export default function ForemanPendingTraining() {
                     <Ionicons name="arrow-back" size={24} color="#1F2937" />
                 </TouchableOpacity>
                 <View>
-                    <Text style={styles.headerTitle}>Pending Training</Text>
-                    <Text style={styles.headerSubtitle}>{pendingCount} drivers have incomplete training</Text>
+                    <Text style={styles.headerTitle}>{t('pendingTraining')}</Text>
+                    <Text style={styles.headerSubtitle}>{t('driversIncompleteTraining', { count: pendingCount })}</Text>
                 </View>
             </View>
 
@@ -188,8 +188,8 @@ export default function ForemanPendingTraining() {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Ionicons name="checkmark-circle-outline" size={64} color="#22C55E" />
-                        <Text style={styles.emptyTitle}>All Caught Up!</Text>
-                        <Text style={styles.emptySubtitle}>No drivers with pending training</Text>
+                        <Text style={styles.emptyTitle}>{t('allCaughtUp')}</Text>
+                        <Text style={styles.emptySubtitle}>{t('noDriversPendingTraining')}</Text>
                     </View>
                 }
             />

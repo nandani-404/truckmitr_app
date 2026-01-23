@@ -178,17 +178,17 @@ export default function ForemanRecruitments() {
     const getStatusStyle = (status: RecruitmentStatus) => {
         switch (status) {
             case 'Selected':
-                return { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD' };
+                return { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD', label: t('selected') };
             case 'Joined':
-                return { bg: '#D1FAE5', text: '#059669', border: '#6EE7B7' };
+                return { bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', label: t('joined') };
             case 'Active':
-                return { bg: '#D1FAE5', text: '#059669', border: '#6EE7B7' };
+                return { bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', label: t('active') };
             case 'Completed':
-                return { bg: '#F3F4F6', text: '#6B7280', border: '#D1D5DB' };
+                return { bg: '#F3F4F6', text: '#6B7280', border: '#D1D5DB', label: t('completed') };
             case 'Dropped':
-                return { bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5' };
+                return { bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', label: t('dropped') };
             default:
-                return { bg: '#F3F4F6', text: '#6B7280', border: '#D1D5DB' };
+                return { bg: '#F3F4F6', text: '#6B7280', border: '#D1D5DB', label: status };
         }
     };
 
@@ -286,7 +286,7 @@ export default function ForemanRecruitments() {
                                             paddingVertical: 2,
                                             borderRadius: 6
                                         }}>
-                                            <Text style={{ fontSize: 9, fontWeight: '700', color: '#FFFFFF' }}>TRUSTED</Text>
+                                            <Text style={{ fontSize: 9, fontWeight: '700', color: '#FFFFFF' }}>{t('trusted')}</Text>
                                         </View>
                                     )}
                                 </View>
@@ -304,7 +304,7 @@ export default function ForemanRecruitments() {
                                 borderWidth: 1,
                                 borderColor: statusStyle.border,
                             }}>
-                                <Text style={{ fontSize: 10, fontWeight: '700', color: statusStyle.text }}>{item.status}</Text>
+                                <Text style={{ fontSize: 10, fontWeight: '700', color: statusStyle.text }}>{statusStyle.label || item.status}</Text>
                             </View>
                         </View>
 
@@ -341,7 +341,7 @@ export default function ForemanRecruitments() {
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Ionicons name="calendar-outline" size={14} color="#64748B" />
                         <Text style={{ fontSize: 12, color: '#64748B', marginLeft: 4 }}>
-                            Joined: {moment(item.joining_date).format('DD MMM YYYY')}
+                            {t('joined')}: {moment(item.joining_date).format('DD MMM YYYY')}
                         </Text>
                     </View>
                 </View>
@@ -362,7 +362,7 @@ export default function ForemanRecruitments() {
                         }}
                     >
                         <Text style={{ color: '#2563EB', fontWeight: '600', fontSize: responsiveFontSize(1.6) }}>
-                            View Recruitment Details
+                            {t('viewRecruitmentDetails')}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -385,10 +385,10 @@ export default function ForemanRecruitments() {
                 <MaterialCommunityIcons name="account-group-outline" size={48} color={colors.royalBlue} />
             </View>
             <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '600', color: colors.black, textAlign: 'center', marginBottom: 8 }}>
-                No Recruitments Yet
+                {t('noRecruitments')}
             </Text>
             <Text style={{ fontSize: responsiveFontSize(1.5), color: colors.blackOpacity(0.6), textAlign: 'center', lineHeight: 22 }}>
-                Select drivers from Applications to start hiring.
+                {t('startHiringPrompt')}
             </Text>
         </View>
     );
@@ -403,7 +403,7 @@ export default function ForemanRecruitments() {
                         <Ionicons name="chevron-back" size={22} color={colors.royalBlue} />
                     </TouchableOpacity>
                     <Text style={{ flex: 1, fontSize: responsiveFontSize(2.2), color: colors.royalBlue, fontWeight: 'bold', textAlign: 'center', marginRight: 40 }}>
-                        Recruitments
+                        {t('recruitments')}
                     </Text>
                 </View>
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -423,15 +423,15 @@ export default function ForemanRecruitments() {
                     <Ionicons name="chevron-back" size={22} color={colors.royalBlue} />
                 </TouchableOpacity>
                 <Text style={{ flex: 1, fontSize: responsiveFontSize(2.2), color: colors.royalBlue, fontWeight: 'bold', textAlign: 'center', marginRight: 40 }}>
-                    Recruitments
+                    {t('recruitments')}
                 </Text>
             </View>
 
             {/* Summary Section */}
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: responsiveWidth(4), marginBottom: 16 }}>
-                <SummaryPill label="Total" value={stats.total} color="#2563EB" />
-                <SummaryPill label="Active" value={stats.active} color="#16A34A" />
-                <SummaryPill label="Completed" value={stats.completed} color="#6B7280" />
+                <SummaryPill label={t('total')} value={stats.total} color="#2563EB" />
+                <SummaryPill label={t('active')} value={stats.active} color="#16A34A" />
+                <SummaryPill label={t('completed')} value={stats.completed} color="#6B7280" />
             </View>
 
             {/* Recruitment List */}
@@ -477,7 +477,7 @@ export default function ForemanRecruitments() {
                         >
                             <Ionicons name="chevron-back" size={26} color="#0F172A" />
                         </TouchableOpacity>
-                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#0F172A' }}>Recruitment Details</Text>
+                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#0F172A' }}>{t('recruitmentDetails')}</Text>
                     </View>
 
                     <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -522,7 +522,7 @@ export default function ForemanRecruitments() {
                                             <Text style={{ fontSize: 22, fontWeight: '700', color: '#0F172A' }}>{driver.name}</Text>
                                             {driver.is_trusted && (
                                                 <View style={{ marginLeft: 8, backgroundColor: '#7C3AED', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
-                                                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFFFFF' }}>TRUSTED</Text>
+                                                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFFFFF' }}>{t('trusted')}</Text>
                                                 </View>
                                             )}
                                         </View>
@@ -536,21 +536,21 @@ export default function ForemanRecruitments() {
                                             paddingVertical: 6,
                                             borderRadius: 20,
                                         }}>
-                                            <Text style={{ fontSize: 13, fontWeight: '600', color: statusStyle.text }}>{selectedRecruitment.status}</Text>
+                                            <Text style={{ fontSize: 13, fontWeight: '600', color: statusStyle.text }}>{statusStyle.label || selectedRecruitment.status}</Text>
                                         </View>
                                     </View>
 
                                     {/* Job Details Section */}
                                     <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#F1F5F9' }}>
-                                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 16 }}>Job Assignment</Text>
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 16 }}>{t('jobAssignment')}</Text>
                                         <View style={{ gap: 16 }}>
                                             {[
-                                                ['Job Title', job.title],
-                                                ['Route', job.route],
-                                                ['Truck Type', job.truck_type],
-                                                ['Salary', job.salary],
-                                                ['Joining Date', moment(selectedRecruitment.joining_date).format('DD MMM YYYY')],
-                                                ['Contract', selectedRecruitment.contract_duration || 'Open-ended'],
+                                                [t('jobTitle'), job.title],
+                                                [t('route'), job.route],
+                                                [t('truckType'), job.truck_type],
+                                                [t('salary'), job.salary],
+                                                [t('joiningDate'), moment(selectedRecruitment.joining_date).format('DD MMM YYYY')],
+                                                [t('contract'), selectedRecruitment.contract_duration || t('openEnded')],
                                             ].map(([label, value]) => (
                                                 <View key={label as string} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                                     <Text style={{ fontSize: 14, color: '#64748B' }}>{label}</Text>
@@ -567,7 +567,7 @@ export default function ForemanRecruitments() {
                                             backgroundColor: '#16A34A', paddingVertical: 14, borderRadius: 12, gap: 8
                                         }}>
                                             <Ionicons name="call" size={20} color="#FFFFFF" />
-                                            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 15 }}>Call Driver</Text>
+                                            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 15 }}>{t('callDriver')}</Text>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity onPress={() => handleMessage(driver.mobile, driver.name)} style={{
@@ -576,7 +576,7 @@ export default function ForemanRecruitments() {
                                             borderWidth: 1, borderColor: '#25D366'
                                         }}>
                                             <FontAwesome name="whatsapp" size={20} color="#25D366" />
-                                            <Text style={{ color: '#25D366', fontWeight: '700', fontSize: 15 }}>WhatsApp</Text>
+                                            <Text style={{ color: '#25D366', fontWeight: '700', fontSize: 15 }}>{t('whatsapp')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>

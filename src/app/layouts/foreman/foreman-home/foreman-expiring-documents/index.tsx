@@ -154,10 +154,10 @@ export default function ForemanExpiringDocuments() {
     };
 
     const filters: { key: FilterType; label: string; color: string }[] = [
-        { key: 'All', label: 'All', color: COLORS.primary },
-        { key: 'Critical', label: 'Critical', color: COLORS.error },
-        { key: 'Warning', label: 'Warning', color: COLORS.warning },
-        { key: 'Attention', label: 'Attention', color: '#EA580C' },
+        { key: 'All', label: t('all'), color: COLORS.primary },
+        { key: 'Critical', label: t('critical'), color: COLORS.error },
+        { key: 'Warning', label: t('warning'), color: COLORS.warning },
+        { key: 'Attention', label: t('attention'), color: '#EA580C' },
     ];
 
     const renderDriverCard = ({ item }: { item: DriverWithExpiringDocs }) => {
@@ -193,7 +193,7 @@ export default function ForemanExpiringDocuments() {
 
                 {/* Expiring Documents */}
                 <View style={styles.documentsContainer}>
-                    <Text style={styles.documentsTitle}>Expiring Documents</Text>
+                    <Text style={styles.documentsTitle}>{t('expiringDocuments')}</Text>
                     {item.documents.map((doc, index) => {
                         const docStyle = getStatusStyle(doc.status);
                         return (
@@ -219,7 +219,7 @@ export default function ForemanExpiringDocuments() {
                 {/* Action Button */}
                 <TouchableOpacity style={styles.notifyButton}>
                     <Ionicons name="notifications-outline" size={16} color={COLORS.primary} />
-                    <Text style={styles.notifyButtonText}>Notify Driver</Text>
+                    <Text style={styles.notifyButtonText}>{t('remindDriver')}</Text>
                 </TouchableOpacity>
             </TouchableOpacity>
         );
@@ -273,8 +273,8 @@ export default function ForemanExpiringDocuments() {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <MaterialCommunityIcons name="file-check" size={64} color="#CBD5E1" />
-                        <Text style={styles.emptyTitle}>No Expiring Documents</Text>
-                        <Text style={styles.emptySubtitle}>All driver documents are up to date</Text>
+                        <Text style={styles.emptyTitle}>{t('noExpiringDocuments', 'No Expiring Documents')}</Text>
+                        <Text style={styles.emptySubtitle}>{t('allDriverDocumentsUpToDate', 'All driver documents are up to date')}</Text>
                     </View>
                 }
             />

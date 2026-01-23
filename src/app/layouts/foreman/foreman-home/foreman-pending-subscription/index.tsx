@@ -140,7 +140,7 @@ const DriverCard = ({ driver }: { driver: Driver }) => {
                     {/* Status Badge */}
                     <View style={styles.statusRow}>
                         <View style={styles.statusBadge}>
-                            <Text style={styles.statusText}>No Subscription</Text>
+                            <Text style={styles.statusText}>{t('noSubscriptionText')}</Text>
                         </View>
                     </View>
                 </View>
@@ -172,7 +172,7 @@ const DriverCard = ({ driver }: { driver: Driver }) => {
             {/* Added Date Row */}
             <View style={styles.addedDateRow}>
                 <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                <Text style={styles.addedDateLabel}>Added on:</Text>
+                <Text style={styles.addedDateLabel}>{t('addedOnLabel')}</Text>
                 <Text style={styles.addedDateValue}>{formatDate(driver.createdAt)}</Text>
             </View>
         </View>
@@ -196,7 +196,7 @@ export default function ForemanPendingSubscription() {
 
     const fetchDrivers = useCallback(async (isRefresh = false) => {
         if (!foremanId) {
-            setError('User not authenticated');
+            setError(t('userNotAuthenticated'));
             setLoading(false);
             return;
         }
@@ -243,7 +243,7 @@ export default function ForemanPendingSubscription() {
         return (
             <View style={styles.centerContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.loadingText}>Loading drivers...</Text>
+                <Text style={styles.loadingText}>{t('loading')}</Text>
             </View>
         );
     }
@@ -252,7 +252,7 @@ export default function ForemanPendingSubscription() {
         return (
             <View style={styles.centerContainer}>
                 <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
-                <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+                <Text style={styles.errorTitle}>{t('somethingWentWrong')}</Text>
                 <Text style={styles.errorSubtitle}>{error}</Text>
                 <TouchableOpacity style={styles.retryButton} onPress={() => fetchDrivers()}>
                     <Text style={styles.retryText}>Try Again</Text>
@@ -271,8 +271,8 @@ export default function ForemanPendingSubscription() {
                     <Ionicons name="arrow-back" size={24} color="#1F2937" />
                 </TouchableOpacity>
                 <View style={styles.headerTitleContainer}>
-                    <Text style={styles.headerTitle}>Pending Subscription</Text>
-                    <Text style={styles.headerSubtitle}>{totalDrivers} drivers without subscription</Text>
+                    <Text style={styles.headerTitle}>{t('pendingSubscription')}</Text>
+                    <Text style={styles.headerSubtitle}>{totalDrivers} {t('driversWithoutSubscription')}</Text>
                 </View>
             </View>
 

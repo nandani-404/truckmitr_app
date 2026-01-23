@@ -145,7 +145,7 @@ export default function ForemanTrustedDrivers() {
             }
         } catch (err: any) {
             console.error('Error fetching trusted drivers:', err);
-            setError(err?.response?.data?.message || err?.message || 'Failed to fetch trusted drivers');
+            setError(err?.response?.data?.message || err?.message || t('failedToFetchTrustedDrivers'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -176,10 +176,10 @@ export default function ForemanTrustedDrivers() {
     };
 
     const filters: { key: FilterType; label: string; color: string }[] = [
-        { key: 'All', label: 'All', color: COLORS.primary },
-        { key: 'Active', label: 'Active', color: COLORS.trusted },
-        { key: 'Expiring', label: 'Expiring', color: COLORS.warning },
-        { key: 'Expired', label: 'Expired', color: COLORS.error },
+        { key: 'All', label: t('all'), color: COLORS.primary },
+        { key: 'Active', label: t('active'), color: COLORS.trusted },
+        { key: 'Expiring', label: t('expiring'), color: COLORS.warning },
+        { key: 'Expired', label: t('expired'), color: COLORS.error },
     ];
 
     const renderDriverCard = ({ item }: { item: TrustedDriver }) => (
@@ -248,17 +248,17 @@ export default function ForemanTrustedDrivers() {
                             {item.status === 'Expiring' ? (
                                 <View style={styles.pendingBadge}>
                                     <Ionicons name="time" size={12} color={COLORS.warning} />
-                                    <Text style={styles.pendingText}>Expiring Soon</Text>
+                                    <Text style={styles.pendingText}>{t('expiringSoon')}</Text>
                                 </View>
                             ) : item.status === 'Expired' ? (
                                 <View style={styles.rejectedBadge}>
                                     <Ionicons name="alert-circle" size={12} color={COLORS.error} />
-                                    <Text style={styles.rejectedText}>Expired</Text>
+                                    <Text style={styles.rejectedText}>{t('expired')}</Text>
                                 </View>
                             ) : (
                                 <View style={styles.trustedBadge}>
                                     <Ionicons name="shield-checkmark" size={12} color={COLORS.trusted} />
-                                    <Text style={styles.trustedText}>Trusted Driver • ₹{item.amount}</Text>
+                                    <Text style={styles.trustedText}>{t('trustedDriver')} • ₹{item.amount}</Text>
                                 </View>
                             )}
                         </View>
@@ -297,12 +297,12 @@ export default function ForemanTrustedDrivers() {
             {(item.status === 'Trusted' || item.status === 'Expiring') && (
                 <View style={styles.expiryBarContainer}>
                     <View style={styles.expiryBarRow}>
-                        <Text style={styles.expiryLabel}>Subscription Validity</Text>
+                        <Text style={styles.expiryLabel}>{t('subscriptionValidity')}</Text>
                         <Text style={[
                             styles.expiryValue,
                             item.daysRemaining < 30 ? { color: COLORS.warning } : { color: COLORS.trusted }
                         ]}>
-                            {item.daysRemaining} days left
+                            {item.daysRemaining} {t('daysLeft')}
                         </Text>
                     </View>
                     <View style={styles.progressBarBg}>
@@ -327,7 +327,7 @@ export default function ForemanTrustedDrivers() {
                         activeOpacity={0.8}
                     >
                         <MaterialCommunityIcons name="refresh" size={16} color={COLORS.warning} />
-                        <Text style={[styles.viewDetailText, { color: COLORS.warning }]}>Renew Subscription</Text>
+                        <Text style={[styles.viewDetailText, { color: COLORS.warning }]}>{t('renewSubscription')}</Text>
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity
@@ -348,7 +348,7 @@ export default function ForemanTrustedDrivers() {
                             }
                         })}
                     >
-                        <Text style={[styles.viewDetailText, { color: COLORS.trusted }]}>View Profile</Text>
+                        <Text style={[styles.viewDetailText, { color: COLORS.trusted }]}>{t('viewProfile')}</Text>
                         <Ionicons name="arrow-forward" size={14} color={COLORS.trusted} />
                     </TouchableOpacity>
                 )}
@@ -360,7 +360,7 @@ export default function ForemanTrustedDrivers() {
         return (
             <View style={styles.centerContainer}>
                 <ActivityIndicator size="large" color={COLORS.trusted} />
-                <Text style={styles.loadingText}>Loading trusted drivers...</Text>
+                <Text style={styles.loadingText}>{t('loadingTrustedDrivers')}</Text>
             </View>
         );
     }
@@ -369,10 +369,10 @@ export default function ForemanTrustedDrivers() {
         return (
             <View style={styles.centerContainer}>
                 <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
-                <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+                <Text style={styles.errorTitle}>{t('oopsSomethingWentWrong')}</Text>
                 <Text style={styles.errorSubtitle}>{error}</Text>
                 <TouchableOpacity style={styles.retryButton} onPress={() => fetchDrivers()}>
-                    <Text style={styles.retryText}>Try Again</Text>
+                    <Text style={styles.retryText}>{t('tryAgain')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -390,12 +390,12 @@ export default function ForemanTrustedDrivers() {
                 </TouchableOpacity>
                 <View style={styles.headerTitleContainer}>
                     <View style={styles.headerTitleRow}>
-                        <Text style={styles.headerTitle}>{t('trustedDrivers', 'Trusted Drivers')}</Text>
+                        <Text style={styles.headerTitle}>{t('trustedDrivers')}</Text>
                         <View style={styles.subscriptionBadge}>
                             <Text style={styles.subscriptionBadgeText}>₹499</Text>
                         </View>
                     </View>
-                    <Text style={styles.headerSubtitle}>{drivers.length} {t('driversWithSubscription', 'drivers with active subscription')}</Text>
+                    <Text style={styles.headerSubtitle}>{drivers.length} {t('driversWithSubscription')}</Text>
                 </View>
                 <View style={{ width: 40 }} />
             </View>
@@ -452,8 +452,8 @@ export default function ForemanTrustedDrivers() {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <MaterialCommunityIcons name="shield-check" size={64} color="#CBD5E1" />
-                        <Text style={styles.emptyTitle}>No Drivers Found</Text>
-                        <Text style={styles.emptySubtitle}>No trusted drivers matching this filter</Text>
+                        <Text style={styles.emptyTitle}>{t('noDriversFound')}</Text>
+                        <Text style={styles.emptySubtitle}>{t('noTrustedDriversMatch')}</Text>
                     </View>
                 }
             />

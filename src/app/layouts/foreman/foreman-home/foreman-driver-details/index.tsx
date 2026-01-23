@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -123,6 +124,7 @@ const parseJsonArrayField = (value: string | null | undefined, isVehicleType: bo
 };
 
 const ForemanDriverDetails = () => {
+    const { t } = useTranslation();
     const navigation = useNavigation();
     const route = useRoute<RouteProp<{ params: Params }, 'params'>>();
     const driverParam = route.params?.driver;
@@ -134,7 +136,7 @@ const ForemanDriverDetails = () => {
 
     const fetchDetails = useCallback(async () => {
         if (!driverParam?.id) {
-            setError('Driver ID is missing. Cannot fetch details.');
+            setError(t('driverIdMissing'));
             setLoading(false);
             return;
         }
@@ -173,10 +175,10 @@ const ForemanDriverDetails = () => {
                 console.log("Full Image URL:", `${BASE_URL}public/${apiData.images}`);
 
             } else {
-                setError(response?.data?.message || 'Failed to fetch driver details');
+                setError(response?.data?.message || t('failedToFetchDriverDetails'));
             }
         } catch (err: any) {
-            setError(err?.response?.data?.message || err?.message || 'Something went wrong');
+            setError(err?.response?.data?.message || err?.message || t('somethingWentWrong'));
         } finally {
             setLoading(false);
         }
@@ -236,7 +238,7 @@ const ForemanDriverDetails = () => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#0F172A" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Driver Profile</Text>
+                <Text style={styles.headerTitle}>{t('driverProfile')}</Text>
                 <View style={{ width: 24 }}>
                     {details && (
                         <TouchableOpacity onPress={fetchDetails}>
@@ -249,7 +251,7 @@ const ForemanDriverDetails = () => {
             {loading ? (
                 <View style={styles.centerContainer}>
                     <ActivityIndicator size="large" color="#3B82F6" />
-                    <Text style={styles.loadingText}>Fetching details...</Text>
+                    <Text style={styles.loadingText}>{t('fetchingDetails')}</Text>
                 </View>
             ) : error ? (
                 <View style={styles.centerContainer}>
@@ -257,14 +259,14 @@ const ForemanDriverDetails = () => {
                     <Text style={styles.errorTitle}>Error</Text>
                     <Text style={styles.errorText}>{error}</Text>
                     <TouchableOpacity style={styles.retryButton} onPress={fetchDetails}>
-                        <Text style={styles.retryText}>Try Again</Text>
+                        <Text style={styles.retryText}>{t('tryAgain', 'Try Again')}</Text>
                     </TouchableOpacity>
                 </View>
             ) : !details ? (
                 <View style={styles.centerContainer}>
                     <Ionicons name="document-text-outline" size={48} color="#94A3B8" />
-                    <Text style={styles.errorTitle}>No Data Found</Text>
-                    <Text style={styles.errorText}>We couldn't find any details for this driver.</Text>
+                    <Text style={styles.errorTitle}>{t('noDataFound')}</Text>
+                    <Text style={styles.errorText}>{t('noDriverDetailsFound')}</Text>
                 </View>
             ) : (
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -319,32 +321,32 @@ const ForemanDriverDetails = () => {
                                     {details.status === 'No Subscription' ? (
                                         <View style={styles.noSubscriptionBadge}>
                                             <Ionicons name="alert-circle-outline" size={12} color="#64748B" />
-                                            <Text style={styles.noSubscriptionText}>No Subscription</Text>
+                                            <Text style={styles.noSubscriptionText}>{t('noSubscription')}</Text>
                                         </View>
                                     ) : details.status === 'Pending' ? (
                                         <View style={styles.pendingBadge}>
                                             <Ionicons name="time" size={12} color="#92400E" />
-                                            <Text style={styles.pendingText}>Pending</Text>
+                                            <Text style={styles.pendingText}>{t('pending')}</Text>
                                         </View>
                                     ) : details.status === 'Rejected' ? (
                                         <View style={styles.rejectedBadge}>
                                             <Ionicons name="close-circle" size={12} color="#991B1B" />
-                                            <Text style={styles.rejectedText}>Rejected</Text>
+                                            <Text style={styles.rejectedText}>{t('rejected')}</Text>
                                         </View>
                                     ) : details.status.toLowerCase().includes('trusted') ? (
                                         <View style={styles.trustedBadge}>
                                             <Ionicons name="shield-checkmark" size={12} color="#7E22CE" />
-                                            <Text style={styles.trustedText}>Trusted Driver</Text>
+                                            <Text style={styles.trustedText}>{t('trustedDriver')}</Text>
                                         </View>
                                     ) : details.status.toLowerCase().includes('verified') ? (
                                         <View style={styles.verifiedBadge}>
                                             <Ionicons name="checkmark-circle" size={12} color="#166534" />
-                                            <Text style={styles.verifiedText}>Verified Driver</Text>
+                                            <Text style={styles.verifiedText}>{t('verifiedDriver')}</Text>
                                         </View>
                                     ) : (details.status.toLowerCase().includes('job ready') || details.status.toLowerCase().includes('job_ready')) ? (
                                         <View style={styles.jobReadyBadge}>
                                             <Ionicons name="briefcase" size={12} color="#1D4ED8" />
-                                            <Text style={styles.jobReadyText}>Job Ready Driver</Text>
+                                            <Text style={styles.jobReadyText}>{t('jobReadyDriver')}</Text>
                                         </View>
                                     ) : (
                                         <View style={styles.verifiedBadge}>
@@ -357,7 +359,7 @@ const ForemanDriverDetails = () => {
                                         <Text style={styles.stateText}>{details.state}</Text>
                                     </View>
                                 </View>
-                                {details.addedDate && <Text style={styles.addedDate}>Added: {details.addedDate}</Text>}
+                                {details.addedDate && <Text style={styles.addedDate}>{t('addedOn')}{details.addedDate}</Text>}
                             </View>
                         </View>
                         <View style={styles.contactRow}>
@@ -370,41 +372,41 @@ const ForemanDriverDetails = () => {
 
                     {/* Personal Details */}
                     <View style={styles.sectionContainer}>
-                        {renderSectionHeader('Personal Details', 'person', '#3B82F6', '#EFF6FF')}
+                        {renderSectionHeader(t('personalDetails'), 'person', '#3B82F6', '#EFF6FF')}
                         <View style={styles.detailsGrid}>
-                            {renderDetailItem('Email ID', details.email, 'mail-outline', '#3B82F6', '#EFF6FF')}
-                            {renderDetailItem('Date of Birth', details.dob, 'calendar-outline', '#3B82F6', '#EFF6FF')}
-                            {renderDetailItem('Gender', details.gender, 'male-female-outline', '#3B82F6', '#EFF6FF')}
-                            {renderDetailItem('Highest Education', details.education, 'school-outline', '#3B82F6', '#EFF6FF')}
+                            {renderDetailItem(t('email'), details.email, 'mail-outline', '#3B82F6', '#EFF6FF')}
+                            {renderDetailItem(t('dateOfBirth'), details.dob, 'calendar-outline', '#3B82F6', '#EFF6FF')}
+                            {renderDetailItem(t('gender'), details.gender, 'male-female-outline', '#3B82F6', '#EFF6FF')}
+                            {renderDetailItem(t('highestEducation'), details.education, 'school-outline', '#3B82F6', '#EFF6FF')}
                         </View>
                     </View>
 
                     {/* Professional Details */}
                     <View style={styles.sectionContainer}>
-                        {renderSectionHeader('Professional Details', 'ribbon-outline', '#8B5CF6', '#F5F3FF')}
+                        {renderSectionHeader(t('professionalDetails'), 'ribbon-outline', '#8B5CF6', '#F5F3FF')}
                         <View style={styles.detailsGrid}>
-                            {renderDetailItem('Vehicle Type', details.vehicleType, 'car-sport-outline', '#8B5CF6', '#F5F3FF')}
-                            {renderDetailItem('Driving Experience', details.drivingExp, 'time-outline', '#8B5CF6', '#F5F3FF')}
-                            {renderDetailItem('License Number', details.licenseNo, 'card-outline', '#8B5CF6', '#F5F3FF')}
-                            {renderDetailItem('License Expiry', details.licenseExpiry, 'calendar-number-outline', '#EF4444', '#FEF2F2')}
-                            {renderDetailItem('Endorsements', details.licenseEndorsement, 'alert-circle-outline', '#8B5CF6', '#F5F3FF')}
+                            {renderDetailItem(t('vehicleType'), details.vehicleType, 'car-sport-outline', '#8B5CF6', '#F5F3FF')}
+                            {renderDetailItem(t('drivingExperience'), details.drivingExp, 'time-outline', '#8B5CF6', '#F5F3FF')}
+                            {renderDetailItem(t('licenseNumber'), details.licenseNo, 'card-outline', '#8B5CF6', '#F5F3FF')}
+                            {renderDetailItem(t('expiryDateOfLicense'), details.licenseExpiry, 'calendar-number-outline', '#EF4444', '#FEF2F2')}
+                            {renderDetailItem(t('endorsements'), details.licenseEndorsement, 'alert-circle-outline', '#8B5CF6', '#F5F3FF')}
                         </View>
                     </View>
 
                     {/* Financial Details */}
                     <View style={styles.sectionContainer}>
-                        {renderSectionHeader('Monthly Income Details', 'cash-outline', '#10B981', '#ECFDF5')}
+                        {renderSectionHeader(t('monthlyIncomeDetails'), 'cash-outline', '#10B981', '#ECFDF5')}
                         <View style={styles.detailsGrid}>
-                            {renderDetailItem('Current Salary', details.currentSalary, 'wallet-outline', '#10B981', '#ECFDF5')}
-                            {renderDetailItem('Expected Salary', details.expectedSalary, 'trending-up-outline', '#10B981', '#ECFDF5')}
+                            {renderDetailItem(t('currentSalary'), details.currentSalary, 'wallet-outline', '#10B981', '#ECFDF5')}
+                            {renderDetailItem(t('expectedSalary'), details.expectedSalary, 'trending-up-outline', '#10B981', '#ECFDF5')}
                         </View>
                     </View>
 
                     {/* Subscription Details */}
                     <View style={styles.sectionContainer}>
-                        {renderSectionHeader('Subscription Status', 'card-outline', '#F59E0B', '#FFFBEB')}
+                        {renderSectionHeader(t('subscriptionStatus'), 'card-outline', '#F59E0B', '#FFFBEB')}
                         <View style={styles.detailsGrid}>
-                            {renderDetailItem('Subscription End', details.subscriptionEndDate, 'calendar-outline', '#F59E0B', '#FFFBEB')}
+                            {renderDetailItem(t('subscriptionEnd'), details.subscriptionEndDate, 'calendar-outline', '#F59E0B', '#FFFBEB')}
                         </View>
                     </View>
                     <View style={{ height: 40 }} />

@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
+import { useTranslation } from 'react-i18next';
 
 // API Response Driver Type
 type ApiDriver = {
@@ -61,6 +62,8 @@ const formatDate = (dateString: string): string => {
     try {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        // NOTE: For full localization, Consider using date.toLocaleDateString(i18n.language, ...) if available or a library like moment/date-fns within the component where t is available.
+        // For now keeping en-IN format as requested but this function can be enhanced.
     } catch {
         return dateString;
     }
@@ -136,6 +139,7 @@ const mapApiDriverToDriver = (apiDriver: ApiDriver): Driver => {
 };
 
 export default function ForemanMyPilots() {
+    const { t } = useTranslation();
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
 
@@ -168,14 +172,14 @@ export default function ForemanMyPilots() {
                 setDrivers(mappedDrivers);
                 setTotalDrivers(response?.data?.total || 0);
             } else {
-                const errorMessage = response?.data?.message || 'Failed to fetch drivers';
+                const errorMessage = response?.data?.message || t('errorFetchingData');
                 setError(errorMessage);
                 setDrivers([]);
                 setTotalDrivers(0);
             }
         } catch (err: any) {
             console.log('Error fetching drivers:', err);
-            const errorMessage = err?.response?.data?.message || err?.message || 'Something went wrong';
+            const errorMessage = err?.response?.data?.message || err?.message || t('somethingWentWrong');
             setError(errorMessage);
             setDrivers([]);
             setTotalDrivers(0);
@@ -263,32 +267,32 @@ export default function ForemanMyPilots() {
                             {driver.status === 'No Subscription' ? (
                                 <View style={styles.noSubscriptionBadge}>
                                     <Ionicons name="alert-circle-outline" size={12} color="#64748B" />
-                                    <Text style={styles.noSubscriptionText}>No Subscription</Text>
+                                    <Text style={styles.noSubscriptionText}>{t('noSubscriptionText')}</Text>
                                 </View>
                             ) : driver.status === 'Pending' ? (
                                 <View style={styles.pendingBadge}>
                                     <Ionicons name="time" size={12} color="#92400E" />
-                                    <Text style={styles.pendingText}>Pending</Text>
+                                    <Text style={styles.pendingText}>{t('pending')}</Text>
                                 </View>
                             ) : driver.status === 'Rejected' ? (
                                 <View style={styles.rejectedBadge}>
                                     <Ionicons name="close-circle" size={12} color="#991B1B" />
-                                    <Text style={styles.rejectedText}>Rejected</Text>
+                                    <Text style={styles.rejectedText}>{t('rejected')}</Text>
                                 </View>
                             ) : driver.status.toLowerCase().includes('trusted') ? (
                                 <View style={styles.trustedBadge}>
                                     <Ionicons name="shield-checkmark" size={12} color="#7E22CE" />
-                                    <Text style={styles.trustedText}>Trusted Driver • ₹{driver.amount}</Text>
+                                    <Text style={styles.trustedText}>{t('trustedDriver')} • ₹{driver.amount}</Text>
                                 </View>
                             ) : driver.status.toLowerCase().includes('verified') ? (
                                 <View style={styles.verifiedBadge}>
                                     <Ionicons name="checkmark-circle" size={12} color="#166534" />
-                                    <Text style={styles.verifiedText}>Verified Driver • ₹{driver.amount}</Text>
+                                    <Text style={styles.verifiedText}>{t('verifiedDriver')} • ₹{driver.amount}</Text>
                                 </View>
                             ) : (driver.status.toLowerCase().includes('job ready') || driver.status.toLowerCase().includes('job_ready')) ? (
                                 <View style={styles.jobReadyBadge}>
                                     <Ionicons name="briefcase" size={12} color="#1D4ED8" />
-                                    <Text style={styles.jobReadyText}>Job Ready Driver • ₹{driver.amount}</Text>
+                                    <Text style={styles.jobReadyText}>{t('jobReadyDriver')} • ₹{driver.amount}</Text>
                                 </View>
                             ) : (
                                 <View style={styles.verifiedBadge}>
@@ -313,12 +317,12 @@ export default function ForemanMyPilots() {
             <View style={styles.additionalInfoContainer}>
                 <View style={styles.additionalInfoItem}>
                     <Ionicons name="location-outline" size={14} color="#64748B" />
-                    <Text style={styles.additionalInfoLabel}>State:</Text>
+                    <Text style={styles.additionalInfoLabel}>{t('state')}:</Text>
                     <Text style={styles.additionalInfoValue}>{driver.state}</Text>
                 </View>
                 <View style={styles.additionalInfoItem}>
                     <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                    <Text style={styles.additionalInfoLabel}>Added:</Text>
+                    <Text style={styles.additionalInfoLabel}>{t('addedOnLabel')} </Text>
                     <Text style={styles.additionalInfoValue}>{driver.addedDate}</Text>
                 </View>
             </View>
@@ -329,7 +333,7 @@ export default function ForemanMyPilots() {
                 activeOpacity={0.8}
                 onPress={() => (navigation as any).navigate(STACKS.FOREMAN_DRIVER_DETAILS, { driver })}
             >
-                <Text style={styles.viewDetailText}>View Profile</Text>
+                <Text style={styles.viewDetailText}>{t('viewProfile')}</Text>
                 <Ionicons name="arrow-forward" size={14} color="#3B82F6" />
             </TouchableOpacity>
         </View>
@@ -466,7 +470,7 @@ export default function ForemanMyPilots() {
     const renderLoading = () => (
         <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={styles.loadingText}>Loading drivers...</Text>
+            <Text style={styles.loadingText}>{t('loading')}</Text>
         </View>
     );
 
@@ -476,11 +480,11 @@ export default function ForemanMyPilots() {
             <View style={styles.errorIconContainer}>
                 <Ionicons name="alert-circle" size={48} color="#EF4444" />
             </View>
-            <Text style={styles.errorTitle}>Something went wrong</Text>
+            <Text style={styles.errorTitle}>{t('somethingWentWrong')}</Text>
             <Text style={styles.errorMessage}>{error}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={() => fetchDrivers()}>
                 <Ionicons name="refresh" size={18} color="#fff" />
-                <Text style={styles.retryButtonText}>Try Again</Text>
+                <Text style={styles.retryButtonText}>{t('tryAgain')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -491,14 +495,14 @@ export default function ForemanMyPilots() {
             <View style={styles.emptyIconContainer}>
                 <Ionicons name="people-outline" size={48} color="#94A3B8" />
             </View>
-            <Text style={styles.emptyTitle}>No Pilots Yet</Text>
-            <Text style={styles.emptyMessage}>You haven't added any drivers yet. Start adding drivers to see them here.</Text>
+            <Text style={styles.emptyTitle}>{t('noPilotsYet')}</Text>
+            <Text style={styles.emptyMessage}>{t('startAddingDrivers')}</Text>
             <TouchableOpacity
                 style={styles.addDriverButton}
                 onPress={() => (navigation as any).navigate(STACKS.FOREMAN_BOTTOM_TAB, { screen: STACKS.FOREMAN_ADD_DRIVER })}
             >
                 <Ionicons name="add" size={18} color="#fff" />
-                <Text style={styles.addDriverButtonText}>Add Driver</Text>
+                <Text style={styles.addDriverButtonText}>{t('addDriver')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -512,7 +516,7 @@ export default function ForemanMyPilots() {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#1E293B" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Pilots {totalDrivers > 0 ? `(${totalDrivers})` : ''}</Text>
+                <Text style={styles.headerTitle}>{t('myPilots')} {totalDrivers > 0 ? `(${totalDrivers})` : ''}</Text>
                 <TouchableOpacity onPress={() => fetchDrivers()} style={styles.refreshButton}>
                     <Ionicons name="refresh" size={22} color="#3B82F6" />
                 </TouchableOpacity>

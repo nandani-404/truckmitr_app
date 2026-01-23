@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -106,6 +107,7 @@ const DashboardStatsCard = ({ icon, count, title, loading }: { icon: any, count:
 };
 
 export default function ForemanDashboard() {
+    const { t } = useTranslation();
     const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation();
     const { responsiveFontSize } = useResponsiveScale();
@@ -169,7 +171,7 @@ export default function ForemanDashboard() {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ position: 'absolute', left: 20, top: safeAreaInsets.top + 10, zIndex: 10 }}>
                     <Ionicons name="arrow-back" size={24} color="#1E293B" />
                 </TouchableOpacity>
-                <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: 'bold', color: '#1E293B' }}>Dashboard</Text>
+                <Text style={{ fontSize: responsiveFontSize(2.2), fontWeight: 'bold', color: '#1E293B' }}>{t('dashboard')}</Text>
             </View>
 
             <ScrollView contentContainerStyle={[styles.content, { paddingBottom: safeAreaInsets.bottom + 20 }]} showsVerticalScrollIndicator={false}>
@@ -194,13 +196,13 @@ export default function ForemanDashboard() {
                     ) : (
                         <View>
                             <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>
-                                {`Hello, ${dashboardData?.forman_name || user?.name || 'User'} 👋`}
+                                {t('helloUser', { name: dashboardData?.forman_name || user?.name || 'User' })}
                             </Text>
                             <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>
                                 {dashboardData?.referral_code || user?.unique_id || 'TMID'}
                             </Text>
                             <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>
-                                Foreman
+                                {t('foreman')}
                             </Text>
                         </View>
                     )}
@@ -230,7 +232,7 @@ export default function ForemanDashboard() {
                             </Svg>
                             <Image
                                 style={{ height: 58 - 4, width: 58 - 4, borderRadius: 100, backgroundColor: '#fff' }}
-                                source={{ uri: user?.images || user?.avatar || 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}
+                                source={{ uri: user?.images ? `https://devtruckmitr.in/public/${user.images}` : (user?.avatar || 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png') }}
                             />
                             <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
                                 <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${progress}%`}</Text>
@@ -242,25 +244,25 @@ export default function ForemanDashboard() {
                 {/* Work Overview */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 16 }}>
                     <Ionicons name="briefcase-outline" size={18} color="#1E293B" style={{ marginRight: 8 }} />
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>Work Overview</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>{t('workOverview')}</Text>
                 </View>
                 <View style={styles.cardRow}>
                     <DashboardStatsCard
                         icon={ICONS.pilots}
                         count={loading ? 0 : (dashboardData?.total_drivers || 0)}
-                        title="My Pilots"
+                        title={t('myPilots')}
                         loading={loading}
                     />
                     <DashboardStatsCard
                         icon={ICONS.application}
                         count={5}
-                        title="Job Application"
+                        title={t('jobApplication')}
                         loading={loading}
                     />
                     <DashboardStatsCard
                         icon={ICONS.jobs}
                         count={8}
-                        title="Jobs"
+                        title={t('jobs')}
                         loading={loading}
                     />
                 </View>
@@ -268,25 +270,25 @@ export default function ForemanDashboard() {
                 {/* Driver Readiness Status */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 16 }}>
                     <Ionicons name="checkmark-circle-outline" size={18} color="#1E293B" style={{ marginRight: 8 }} />
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>Driver Readiness Status</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>{t('driverReadinessStatus')}</Text>
                 </View>
                 <View style={styles.cardRow}>
                     <DashboardStatsCard
                         icon={ICONS.subscription}
                         count={loading ? '₹ 0' : getTotalSubscription()}
-                        title="Commission"
+                        title={t('commission')}
                         loading={loading}
                     />
                     <DashboardStatsCard
                         icon={ICONS.training}
                         count={loading ? 0 : (dashboardData?.training?.complete || 0)}
-                        title="Complete Training"
+                        title={t('completeTraining')}
                         loading={loading}
                     />
                     <DashboardStatsCard
                         icon={ICONS.profile}
                         count={loading ? 0 : (dashboardData?.completed_profiles_count || 0)}
-                        title="Profile Completed"
+                        title={t('profileCompleted')}
                         loading={loading}
                     />
                 </View>
@@ -294,25 +296,25 @@ export default function ForemanDashboard() {
                 {/* Subscription */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 16 }}>
                     <Ionicons name="card-outline" size={18} color="#1E293B" style={{ marginRight: 8 }} />
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>Subscription</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>{t('subscription')}</Text>
                 </View>
                 <View style={styles.cardRow}>
                     <DashboardStatsCard
                         icon={ICONS.jobReady}
                         count={loading ? 0 : (dashboardData?.counts?.job_ready || 0)}
-                        title="Job Ready"
+                        title={t('jobReady')}
                         loading={loading}
                     />
                     <DashboardStatsCard
                         icon={ICONS.verified}
                         count={loading ? 0 : (dashboardData?.counts?.verified || 0)}
-                        title="Verified"
+                        title={t('verified')}
                         loading={loading}
                     />
                     <DashboardStatsCard
                         icon={ICONS.trusted}
                         count={loading ? 0 : (dashboardData?.counts?.trusted || 0)}
-                        title="Trusted"
+                        title={t('trusted')}
                         loading={loading}
                     />
                 </View>
