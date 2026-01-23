@@ -5,6 +5,11 @@
 export interface UserBadgeParams {
   user: {
     role?: string;
+    plan_id?: number | string;
+    subscription_plan_id?: string | number;
+    payment_type?: string;
+    is_active?: number | boolean;
+    subscription_status?: string;
   };
   subscriptionDetails?: {
     id?: string;
@@ -15,6 +20,8 @@ export interface UserBadgeParams {
     payment_details?: {
       amount?: number;
     };
+    payment_type?: string;
+    subscription_plan_id?: string | number;
   };
   isDriver?: boolean;
 }
@@ -103,6 +110,23 @@ export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBa
     return userRole;
   }
 
+  if (role === 'foreman') {
+    // Foreman logic
+    // Check amounts or explicit plan indicators
+    const isPro =
+      paidAmount === 999 ||
+      user?.plan_id == 11 ||
+      user?.subscription_plan_id == 11 ||
+      user?.payment_type === 'foreman_pro' ||
+      subscriptionDetails?.payment_type === 'foreman_pro' ||
+      subscriptionDetails?.subscription_plan_id == 11;
+
+    if (isPro) {
+      return 'Foreman Pro';
+    }
+    return userRole;
+  }
+
   // Fallback for unknown roles
   return userRole;
 };
@@ -110,7 +134,7 @@ export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBa
 /**
  * Get user tier type for internal use
  */
-export type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'LEGACY' | 'TRANSPORTER PRO';
+export type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'LEGACY' | 'TRANSPORTER PRO' | 'FOREMAN PRO';
 
 export const getUserTier = ({ user, subscriptionDetails, isDriver }: UserBadgeParams): TierType => {
   const hasSub = subscriptionDetails && (subscriptionDetails?.id || subscriptionDetails?.payment_id);
@@ -145,6 +169,13 @@ export const getUserTier = ({ user, subscriptionDetails, isDriver }: UserBadgePa
     return 'JOB READY';
   }
 
+  if (role === 'foreman') {
+    if (paidAmount === 999) {
+      return 'FOREMAN PRO';
+    }
+    return 'JOB READY';
+  }
+
   return 'JOB READY';
 };
 
@@ -171,6 +202,10 @@ export const shouldShowMembershipCard = ({ user, subscriptionDetails, isDriver }
     return Boolean(hasActiveSubscription && hasSub);
   }
 
+  if (role === 'foreman') {
+    return Boolean(hasActiveSubscription && hasSub);
+  }
+
   return false;
 };
 
@@ -194,6 +229,7 @@ export const getMembershipShareText = (params: UserBadgeParams, language: 'en' |
   const badgeText = getUserBadgeText(params);
   const role = params.user?.role?.toLowerCase();
   const isDriver = role === 'driver';
+  const isForeman = role === 'foreman';
 
   if (language === 'hi') {
     if (isDriver) {
@@ -216,6 +252,20 @@ TruckMitr ने मुझे एक Digital Driver Card दिया है, �
 📲 https://play.google.com/store/apps/details?id=com.truckmitr
 
 TruckMitr – ड्राइवर का साथी, हर सफर में भरोसा 🚚💪`;
+    } else if (isForeman) {
+      return `👷 मुझे TruckMitr के साथ एक ${badgeText} होने पर गर्व है! 🇮🇳
+
+अब मैं सिर्फ एक फोरमैन नहीं, बल्कि एक प्रोफेशनल और विश्वसनीय लीडर हूँ।
+TruckMitr ने मुझे एक Digital Pro Card दिया है।
+
+✅ बेहतर प्रोजेक्ट अवसर
+✅ पेशेवर पहचान
+✅ विशेष टूल्स तक पहुंच
+✅ बेहतर कमाई
+
+यदि आप भी एक फोरमैन हैं और आगे बढ़ना चाहते हैं,
+तो आज ही TruckMitr App डाउनलोड करें 👇
+📲 https://play.google.com/store/apps/details?id=com.truckmitr`;
     } else {
       // Transporter
       return `🚛 मुझे TruckMitr के साथ एक ${badgeText} होने पर गर्व है! 🇮🇳
@@ -261,6 +311,20 @@ then download the TruckMitr App today 👇
 📲 https://play.google.com/store/apps/details?id=com.truckmitr
 
 TruckMitr – A Driver's Companion, Trust for Every Journey 🚚💪`;
+  } else if (isForeman) {
+    return `👷 I am proud to be a ${badgeText} with TruckMitr! 🇮🇳
+
+I am not just a foreman anymore, but a professional and trusted leader.
+TruckMitr has given me a Digital Pro Card.
+
+✅ Better project opportunities
+✅ Professional recognition
+✅ Access to exclusive tools
+✅ Higher earnings
+
+If you are also a foreman and want to grow,
+download the TruckMitr App today 👇
+📲 https://play.google.com/store/apps/details?id=com.truckmitr`;
   } else {
     // Transporter
     return `🚛 I am proud to be a ${badgeText} with TruckMitr! 🇮🇳
@@ -327,6 +391,27 @@ export const getMembershipCardConfig = (params: UserBadgeParams): MembershipCard
           backgroundColor: '#1976d2', // Blue
           textColor: '#ffffff',
           borderColor: '#42a5f5'
+        };
+    }
+  }
+
+  if (role === 'foreman') {
+    switch (tier) {
+      case 'FOREMAN PRO':
+        return {
+          tier,
+          displayName: 'Foreman Pro',
+          backgroundColor: '#374151', // Dark Gray
+          textColor: '#ffffff',
+          borderColor: '#FCD34D' // Amber
+        };
+      default:
+        return {
+          tier: 'JOB READY',
+          displayName: 'Foreman',
+          backgroundColor: '#4B5563',
+          textColor: '#ffffff',
+          borderColor: '#9CA3AF'
         };
     }
   }

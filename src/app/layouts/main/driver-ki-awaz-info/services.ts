@@ -156,24 +156,24 @@ export const DriverKiAwazService = {
         return { data: JSON.parse(text) };
     },
 
-    deleteComment: async (id: string) => {
-        const userId = await getUserId();
-        console.log('[DriverKiAwaz] Deleting comment:', id);
+    // deleteComment: async (id: string) => {
+    //     const userId = await getUserId();
+    //     console.log('[DriverKiAwaz] Deleting comment:', id);
 
-        const response = await fetch(END_POINTS.DKA_DELETE_COMMENT(id), {
-            method: 'DELETE',
-            headers: {
-                'x-user-id': userId,
-                'Accept': 'application/json'
-            }
-        });
+    //     const response = await fetch(END_POINTS.DKA_DELETE_COMMENT(id), {
+    //         method: 'DELETE',
+    //         headers: {
+    //             'x-user-id': userId,
+    //             'Accept': 'application/json'
+    //         }
+    //     });
 
-        if (!response.ok) {
-            const text = await response.text();
-            throw new Error(`Delete comment failed with status ${response.status}: ${text}`);
-        }
-        return { data: { success: true } };
-    },
+    //     if (!response.ok) {
+    //         const text = await response.text();
+    //         throw new Error(`Delete comment failed with status ${response.status}: ${text}`);
+    //     }
+    //     return { data: { success: true } };
+    // },
 
     getComments: async (id: string) => {
         const userId = await getUserId();
