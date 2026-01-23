@@ -116,6 +116,9 @@ export const END_POINTS = {
     RESPOND_INVITE: `api/driver/respond-invite`,
     TRANSPORTER_INVITES: `api/transporter/accepted-drivers`,
     POPUP_MESSAGE: `api/popup-messages`,
+    MOBILE_POPUP: `api/mobile-popup`,
+    GET_ACTIVE_SURVEY: (role: any) => `api/surveys/active?role=${role}`,
+    SUBMIT_SURVEY_RESPONSE: `api/surveys/submit-response`,
 
     CREATE_ORDER: 'api/payment/create-order',
     PAYMENT_DETAIL: 'api/orders/payments_details',

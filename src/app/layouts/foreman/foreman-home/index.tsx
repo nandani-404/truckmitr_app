@@ -28,6 +28,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import PollSurveyModal from '@truckmitr/src/utils/poll-survey';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -137,7 +138,10 @@ const verifiedDriverIcon = require('../../../../assets/verified_driver.png');
 const trustedDriverIcon = require('../../../../assets/trusted_driver.png');
 const jobApplicationIcon = require('../../../../assets/job_application.png');
 
+import { useTranslation } from 'react-i18next';
+
 export default function ForemanHome() {
+    const { t } = useTranslation();
     const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
     const [activeTab, setActiveTab] = React.useState('categories');
@@ -224,7 +228,7 @@ export default function ForemanHome() {
     // Calculate progress towards next level
     const getLevelProgress = () => {
         const currentDrivers = dashboardData.driverCount;
-        const currentLevelName = dashboardData.levelName || 'Bronze';
+        const currentLevelName = dashboardData.levelName || 'Bronze'; // Localization if needed for fallback, but API returns it.
 
         // Find current level index based on driver count
         let currentLevelIndex = LEVEL_TIERS.findIndex(tier =>
@@ -285,48 +289,48 @@ export default function ForemanHome() {
     const categories: CategoryData[] = [
         {
             id: 1,
-            title: 'My\nPilots',
-            subtitle: 'View all pilots',
+            title: t('myPilots').replace(' ', '\n'), // Assuming My Pilots in en, mapped keys need flexibility
+            subtitle: t('viewAllPilots'),
             icon: myPilotsIcon,
             iconType: 'localImage',
             iconColor: '#4A90D9',
         },
         {
             id: 2,
-            title: 'Verified\nDriver',
-            subtitle: 'Verified drivers',
+            title: t('verifiedDrivers').replace(' ', '\n'),
+            subtitle: t('verifiedDrivers'),
             icon: verifiedDriverIcon,
             iconType: 'localImage',
             iconColor: '#22C55E',
         },
         {
             id: 3,
-            title: 'Trusted\nDriver',
-            subtitle: 'Trusted drivers',
+            title: t('trustedDrivers').replace(' ', '\n'),
+            subtitle: t('trustedDrivers'),
             icon: trustedDriverIcon,
             iconType: 'localImage',
             iconColor: '#3B82F6',
         },
         {
             id: 4,
-            title: 'Jobs',
-            subtitle: 'Available jobs',
+            title: t('jobs'),
+            subtitle: t('availableJobs'),
             icon: jobsIcon,
             iconType: 'localImage',
             iconColor: '#27AE60',
         },
         {
             id: 5,
-            title: 'Applications',
-            subtitle: 'View applications',
+            title: t('applications'),
+            subtitle: t('viewApplications'),
             icon: jobApplicationIcon,
             iconType: 'localImage',
             iconColor: '#9B59B6',
         },
         {
             id: 6,
-            title: 'Recruitments',
-            subtitle: 'Hire new pilots',
+            title: t('recruitments'),
+            subtitle: t('hireNewPilots'),
             icon: 'https://cdn-icons-png.flaticon.com/512/3207/3207604.png',
             iconType: 'image',
             iconColor: '#9B59B6',
@@ -335,6 +339,7 @@ export default function ForemanHome() {
 
     return (
         <View style={styles.container}>
+            <PollSurveyModal />
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
             <ScrollView
@@ -363,10 +368,10 @@ export default function ForemanHome() {
                     <View style={{ paddingTop: safeAreaInsets.top, paddingHorizontal: responsiveWidth(3) }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <View>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`Hello, ${foremanName} 👋`}</Text>
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`${t('hello')}, ${foremanName} 👋`}</Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{dynamicTMID}</Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>{rank}</Text>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>Certified TruckMitr Partner</Text>
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>{t('certifiedPartner')}</Text>
                             </View>
 
                             <TouchableOpacity style={{ alignItems: 'center' }}
@@ -418,7 +423,7 @@ export default function ForemanHome() {
 
                     {/* Search Bar */}
                     <TouchableOpacity activeOpacity={1} style={{ position: 'absolute', bottom: -responsiveHeight(1.5), width: responsiveWidth(92), flexDirection: 'row', height: responsiveHeight(6), alignSelf: 'center', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'space-between', borderColor: '#000', borderWidth: 1.5, borderRadius: 100, paddingHorizontal: responsiveWidth(3), ...shadow, zIndex: 100, elevation: 10 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.6), color: 'rgba(0,0,0,0.9)', fontWeight: '500' }}>Search Drivers</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.6), color: 'rgba(0,0,0,0.9)', fontWeight: '500' }}>{t('searchDrivers')}</Text>
                         <Feather name={'search'} size={18} color={colors.royalBlue} />
                     </TouchableOpacity>
                 </View>
@@ -428,7 +433,7 @@ export default function ForemanHome() {
                     {/* Quick Action Section */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, marginTop: 0 }}>
                         <Ionicons name="flash-outline" size={18} color="#1E293B" style={{ marginRight: 8 }} />
-                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>Quick Action</Text>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>{t('quickAction')}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 32 }}>
                         {/* Dashboard Card */}
@@ -460,7 +465,7 @@ export default function ForemanHome() {
                                         <Path d="M13 9h8V3h-8v6z" fill="#FBBC05" />
                                     </Svg>
                                 </View>
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>Dashboard</Text>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{t('dashboard')}</Text>
                             </View>
                             <Feather name="chevron-right" size={16} color="#fff" />
                         </TouchableOpacity>
@@ -496,7 +501,7 @@ export default function ForemanHome() {
                                         <Path d="M6 10V7H4v3H1v2h3v3h2v-3h3v-2H6z" fill="#34A853" />
                                     </Svg>
                                 </View>
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>Add Driver</Text>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>{t('addDriver')}</Text>
                             </View>
                             <Feather name="chevron-right" size={16} color="#fff" />
                         </TouchableOpacity>
@@ -511,7 +516,7 @@ export default function ForemanHome() {
                         >
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Ionicons name="wallet-outline" size={18} color="#1E293B" style={{ marginRight: 8 }} />
-                                <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>My Earnings</Text>
+                                <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>{t('earning')}</Text>
                             </View>
                             <Feather name="chevron-right" size={20} color="#64748B" />
                         </TouchableOpacity>
@@ -525,8 +530,8 @@ export default function ForemanHome() {
                                         <Image source={todaysEarningIcon} style={{ width: 24, height: 24 }} resizeMode="contain" />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Today's</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Earning</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('todays')}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('earning')}</Text>
                                     </View>
                                 </View>
                                 <Text style={{ fontSize: 20, fontWeight: '700', color: '#22C55E' }}>{dashboardData.todayEarning || '₹ 0'}</Text>
@@ -539,8 +544,8 @@ export default function ForemanHome() {
                                         <Image source={thisMonthEarningIcon} style={{ width: 24, height: 24 }} resizeMode="contain" />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>This Month</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Earning</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('thisMonth')}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('earning')}</Text>
                                     </View>
                                 </View>
                                 <Text style={{ fontSize: 20, fontWeight: '700', color: '#3B82F6' }}>{dashboardData.thisMonthEarning || '₹ 0'}</Text>
@@ -569,11 +574,11 @@ export default function ForemanHome() {
                             {/* Driver Count & Status */}
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                                 <Text style={{ fontSize: 11, color: '#92400E' }}>
-                                    {dashboardData.driverCount} drivers
+                                    {dashboardData.driverCount} {t('drivers')}
                                 </Text>
                                 {!levelProgress.isMaxLevel && (
                                     <Text style={{ fontSize: 11, fontWeight: '600', color: '#92400E' }}>
-                                        {levelProgress.driversNeeded} more for {levelProgress.nextLevel}
+                                        {levelProgress.driversNeeded} {t('moreFor')} {levelProgress.nextLevel}
                                     </Text>
                                 )}
                             </View>
@@ -581,11 +586,11 @@ export default function ForemanHome() {
                             {/* Bonus Info */}
                             {!levelProgress.isMaxLevel ? (
                                 <Text style={{ fontSize: 11, fontWeight: '600', color: '#B45309', marginTop: 4 }}>
-                                    🎁 Reach {levelProgress.nextLevel} to earn +{levelProgress.nextBonus}% bonus
+                                    🎁 {t('reachLevelBonus', { level: levelProgress.nextLevel, bonus: levelProgress.nextBonus })}
                                 </Text>
                             ) : (
                                 <Text style={{ fontSize: 11, fontWeight: '600', color: '#16A34A', marginTop: 4 }}>
-                                    🏆 You've reached the highest level!
+                                    🏆 {t('highestLevel')}
                                 </Text>
                             )}
                         </View>
@@ -595,7 +600,7 @@ export default function ForemanHome() {
                     <View style={{ marginBottom: 32 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                             <Ionicons name="warning-outline" size={18} color="#1E293B" style={{ marginRight: 8 }} />
-                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>Action Required</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>{t('actionRequired')}</Text>
                         </View>
 
                         {/* Row 1 */}
@@ -611,12 +616,12 @@ export default function ForemanHome() {
                                         <Image source={pendingProfileIcon} style={{ width: 28, height: 28 }} resizeMode="contain" />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Pending</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Profile</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('pending')}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('profile')}</Text>
                                     </View>
                                     <Feather name="chevron-right" size={16} color="#F59E0B" />
                                 </View>
-                                <Text style={{ fontSize: 12, color: '#64748B' }}>{dashboardData.incompleteProfileCount ? `${dashboardData.incompleteProfileCount} profiles need review` : 'Loading...'}</Text>
+                                <Text style={{ fontSize: 12, color: '#64748B' }}>{dashboardData.incompleteProfileCount ? `${dashboardData.incompleteProfileCount} ${t('profilesNeedReview')}` : t('loading')}</Text>
                             </TouchableOpacity>
 
                             {/* Card 2: Pending Subscription */}
@@ -630,12 +635,12 @@ export default function ForemanHome() {
                                         <Image source={pendingSubscriptionIcon} style={{ width: 28, height: 28 }} resizeMode="contain" />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Pending</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Subscription</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('pending')}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('subscription')}</Text>
                                     </View>
                                     <Feather name="chevron-right" size={16} color="#6366F1" />
                                 </View>
-                                <Text style={{ fontSize: 12, color: '#64748B' }}>Renewal due soon</Text>
+                                <Text style={{ fontSize: 12, color: '#64748B' }}>{t('renewalDueSoon')}</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -652,12 +657,12 @@ export default function ForemanHome() {
                                         <Image source={pendingTrainingIcon} style={{ width: 28, height: 28 }} resizeMode="contain" />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Pending</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Training</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('pending')}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('training')}</Text>
                                     </View>
                                     <Feather name="chevron-right" size={16} color="#6366F1" />
                                 </View>
-                                <Text style={{ fontSize: 12, color: '#64748B' }}>{dashboardData.pendingTrainingCount ? `${dashboardData.pendingTrainingCount} trainings pending` : 'Loading...'}</Text>
+                                <Text style={{ fontSize: 12, color: '#64748B' }}>{dashboardData.pendingTrainingCount ? `${dashboardData.pendingTrainingCount} ${t('trainingsPending')}` : t('loading')}</Text>
                             </TouchableOpacity>
 
                             {/* Card 4: Expiring Documents */}
@@ -671,12 +676,12 @@ export default function ForemanHome() {
                                         <Image source={expiringDocumentsIcon} style={{ width: 28, height: 28 }} resizeMode="contain" />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Expiring</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>Documents</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('expiring')}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', lineHeight: 16 }}>{t('documents')}</Text>
                                     </View>
                                     <Feather name="chevron-right" size={16} color="#EF4444" />
                                 </View>
-                                <Text style={{ fontSize: 12, color: '#64748B' }}>{dashboardData.licenseExpiringCount ? `${dashboardData.licenseExpiringCount} documents expiring soon` : 'Loading...'}</Text>
+                                <Text style={{ fontSize: 12, color: '#64748B' }}>{dashboardData.licenseExpiringCount ? `${dashboardData.licenseExpiringCount} ${t('documentsExpiringSoon')}` : t('loading')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -686,7 +691,7 @@ export default function ForemanHome() {
                     <View style={{ marginBottom: 32 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                             <Ionicons name="shield-checkmark-outline" size={18} color={colors.royalBlue} style={{ marginRight: 8 }} />
-                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>My Drivers</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>{t('myDrivers')}</Text>
                         </View>
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
                             {categories.slice(0, 3).map((item) => (
@@ -716,7 +721,7 @@ export default function ForemanHome() {
                     <View style={{ marginBottom: 32 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                             <Ionicons name="briefcase-outline" size={18} color={colors.royalBlue} style={{ marginRight: 8 }} />
-                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>Jobs & Recruitments</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1E293B' }}>{t('jobsAndRecruitments')}</Text>
                         </View>
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
                             {categories.slice(3, 6).map((item) => (

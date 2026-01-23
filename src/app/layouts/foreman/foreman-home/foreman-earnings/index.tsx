@@ -27,7 +27,7 @@ type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorP
 const SUBSCRIPTION_TYPES = {
     JOB_READY: {
         id: 'JOB_READY',
-        name: 'Job Ready Driver',
+        name: 'jobReadyDriver',
         color: '#22C55E',
         bgColor: '#F0FDF4',
         borderColor: '#BBF7D0',
@@ -36,7 +36,7 @@ const SUBSCRIPTION_TYPES = {
     },
     VERIFIED: {
         id: 'VERIFIED',
-        name: 'Verified Driver',
+        name: 'verifiedDriver',
         color: '#3B82F6',
         bgColor: '#EFF6FF',
         borderColor: '#BFDBFE',
@@ -45,7 +45,7 @@ const SUBSCRIPTION_TYPES = {
     },
     TRUSTED: {
         id: 'TRUSTED',
-        name: 'Trusted Driver',
+        name: 'trustedDriver',
         color: '#8B5CF6',
         bgColor: '#F5F3FF',
         borderColor: '#DDD6FE',
@@ -68,75 +68,20 @@ interface Driver {
     jobType: 'REGULAR' | 'PREMIUM' | 'SUPER_PREMIUM';
 }
 
-// Mock data for drivers - Replace with API call
-const MOCK_DRIVERS: Driver[] = [
-    {
-        id: '1',
-        name: 'Ramesh Kumar',
-        tmId: 'TM2503UPDR00001',
-        mobile: '+91 98765 43210',
-        profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
-        subscriptionType: 'JOB_READY',
-        subscriptionDate: '2026-01-05',
-        hiringDate: '2026-01-01',
-        jobType: 'REGULAR',
-    },
-    {
-        id: '2',
-        name: 'Suresh Singh',
-        tmId: 'TM2503UPDR00002',
-        mobile: '+91 98765 43211',
-        profileImage: 'https://randomuser.me/api/portraits/men/2.jpg',
-        subscriptionType: 'VERIFIED',
-        subscriptionDate: '2026-01-03',
-        hiringDate: '2025-12-28',
-        jobType: 'PREMIUM',
-    },
-    {
-        id: '3',
-        name: 'Mahesh Yadav',
-        tmId: 'TM2503UPDR00003',
-        mobile: '+91 98765 43212',
-        profileImage: 'https://randomuser.me/api/portraits/men/3.jpg',
-        subscriptionType: 'TRUSTED',
-        subscriptionDate: '2026-01-08',
-        hiringDate: '2026-01-02',
-        jobType: 'SUPER_PREMIUM',
-    },
-    {
-        id: '4',
-        name: 'Rajesh Sharma',
-        tmId: 'TM2503UPDR00004',
-        mobile: '+91 98765 43213',
-        profileImage: 'https://randomuser.me/api/portraits/men/4.jpg',
-        subscriptionType: 'JOB_READY',
-        subscriptionDate: '2026-01-06',
-        hiringDate: '2026-01-04',
-        jobType: 'REGULAR',
-    },
-    {
-        id: '5',
-        name: 'Anil Verma',
-        tmId: 'TM2503UPDR00005',
-        mobile: '+91 98765 43214',
-        profileImage: 'https://randomuser.me/api/portraits/men/5.jpg',
-        subscriptionType: 'VERIFIED',
-        subscriptionDate: '2026-01-07',
-        hiringDate: '2026-01-03',
-        jobType: 'PREMIUM',
-    },
-    {
-        id: '6',
-        name: 'Dinesh Gupta',
-        tmId: 'TM2503UPDR00006',
-        mobile: '+91 98765 43215',
-        profileImage: 'https://randomuser.me/api/portraits/men/6.jpg',
-        subscriptionType: null, // No subscription yet
-        subscriptionDate: null,
-        hiringDate: '2026-01-09',
-        jobType: 'REGULAR',
-    },
-];
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/utils/config/index';
+
+type ApiDriver = {
+    id: number;
+    name: string;
+    unique_id: string;
+    mobile: string;
+    images: string | null;
+    state_name: string;
+    created_at: string;
+    payment_type: string | null;
+    profile_completion_percentage: number | string;
+};
 
 interface DriverCardProps {
     driver: Driver;
@@ -144,6 +89,7 @@ interface DriverCardProps {
 }
 
 const DriverCard = ({ driver, onPress }: DriverCardProps) => {
+    const { t } = useTranslation();
     const colors = useColor();
     const { responsiveFontSize } = useResponsiveScale();
 
@@ -156,9 +102,9 @@ const DriverCard = ({ driver, onPress }: DriverCardProps) => {
 
     const getJobTypeLabel = (type: string) => {
         switch (type) {
-            case 'PREMIUM': return { label: 'Premium Job', color: '#F59E0B', bg: '#FFFBEB' };
-            case 'SUPER_PREMIUM': return { label: 'Super Premium', color: '#7C3AED', bg: '#F5F3FF' };
-            default: return { label: 'Hiring', color: '#64748B', bg: '#F1F5F9' };
+            case 'PREMIUM': return { label: t('premiumJobLabel'), color: '#F59E0B', bg: '#FFFBEB' };
+            case 'SUPER_PREMIUM': return { label: t('superPremium'), color: '#7C3AED', bg: '#F5F3FF' };
+            default: return { label: t('hiring'), color: '#64748B', bg: '#F1F5F9' };
         }
     };
 
@@ -166,76 +112,76 @@ const DriverCard = ({ driver, onPress }: DriverCardProps) => {
 
     return (
         <TouchableOpacity
-            style={styles.driverCard}
+            style={driverCardStyles.driverCard}
             activeOpacity={0.8}
             onPress={onPress}
         >
             {/* Driver Info Row */}
-            <View style={styles.driverInfoRow}>
+            <View style={driverCardStyles.driverInfoRow}>
                 {/* Profile Image */}
                 <Image
                     source={{ uri: driver.profileImage }}
-                    style={styles.driverImage}
+                    style={driverCardStyles.driverImage}
                 />
 
                 {/* Driver Details */}
-                <View style={styles.driverDetails}>
-                    <View style={styles.nameRow}>
-                        <Text style={styles.driverName}>{driver.name}</Text>
+                <View style={driverCardStyles.driverDetails}>
+                    <View style={driverCardStyles.nameRow}>
+                        <Text style={driverCardStyles.driverName}>{driver.name}</Text>
                         {/* Job Type Badge */}
                         {driver.jobType !== 'REGULAR' && (
-                            <View style={[styles.miniBadge, { backgroundColor: jobTypeInfo.bg }]}>
-                                <Text style={[styles.miniBadgeText, { color: jobTypeInfo.color }]}>
+                            <View style={[driverCardStyles.miniBadge, { backgroundColor: jobTypeInfo.bg }]}>
+                                <Text style={[driverCardStyles.miniBadgeText, { color: jobTypeInfo.color }]}>
                                     {jobTypeInfo.label}
                                 </Text>
                             </View>
                         )}
                     </View>
-                    <Text style={styles.driverId}>{driver.tmId}</Text>
-                    <Text style={styles.driverMobile}>{driver.mobile}</Text>
+                    <Text style={driverCardStyles.driverId}>{driver.tmId}</Text>
+                    <Text style={driverCardStyles.driverMobile}>{driver.mobile}</Text>
                 </View>
 
                 {/* Subscription Badge */}
                 {subscription && (
                     <View style={[
-                        styles.subscriptionBadge,
+                        driverCardStyles.subscriptionBadge,
                         {
                             backgroundColor: subscription.bgColor,
                             borderColor: subscription.borderColor,
                         }
                     ]}>
-                        <Text style={[styles.subscriptionBadgeText, { color: subscription.color }]}>
-                            {subscription.name}
+                        <Text style={[driverCardStyles.subscriptionBadgeText, { color: subscription.color }]}>
+                            {t(subscription.name)}
                         </Text>
                     </View>
                 )}
             </View>
 
             {/* Divider */}
-            <View style={styles.divider} />
+            <View style={driverCardStyles.divider} />
 
             {/* Commission Details */}
-            <View style={styles.commissionSection}>
-                <Text style={styles.commissionTitle}>Commission Earned</Text>
+            <View style={driverCardStyles.commissionSection}>
+                <Text style={driverCardStyles.commissionTitle}>{t('commissionEarned')}</Text>
 
-                <View style={styles.commissionRow}>
+                <View style={driverCardStyles.commissionRow}>
                     {/* Hiring Commission */}
-                    <View style={styles.commissionItem}>
-                        <View style={[styles.commissionIcon, { backgroundColor: '#FEF3C7' }]}>
+                    <View style={driverCardStyles.commissionItem}>
+                        <View style={[driverCardStyles.commissionIcon, { backgroundColor: '#FEF3C7' }]}>
                             <Ionicons name="person-add" size={14} color="#F59E0B" />
                         </View>
                         <View>
-                            <Text style={styles.commissionLabel}>Hiring</Text>
-                            <Text style={[styles.commissionAmount, { color: '#F59E0B' }]}>
+                            <Text style={driverCardStyles.commissionLabel}>{t('hiring')}</Text>
+                            <Text style={[driverCardStyles.commissionAmount, { color: '#F59E0B' }]}>
                                 ₹{HIRING_COMMISSION}
                             </Text>
                         </View>
                     </View>
 
                     {/* Subscription Commission */}
-                    <View style={styles.commissionItem}>
+                    <View style={driverCardStyles.commissionItem}>
                         <View style={[
-                            styles.commissionIcon,
+                            driverCardStyles.commissionIcon,
                             { backgroundColor: subscription ? subscription.bgColor : '#F1F5F9' }
                         ]}>
                             <Ionicons
@@ -245,9 +191,9 @@ const DriverCard = ({ driver, onPress }: DriverCardProps) => {
                             />
                         </View>
                         <View>
-                            <Text style={styles.commissionLabel}>Subscription</Text>
+                            <Text style={driverCardStyles.commissionLabel}>{t('subscription')}</Text>
                             <Text style={[
-                                styles.commissionAmount,
+                                driverCardStyles.commissionAmount,
                                 { color: subscription ? subscription.color : '#94A3B8' }
                             ]}>
                                 {subscription ? `₹${subscriptionCommission}` : 'N/A'}
@@ -256,13 +202,13 @@ const DriverCard = ({ driver, onPress }: DriverCardProps) => {
                     </View>
 
                     {/* Total Commission */}
-                    <View style={styles.commissionItem}>
-                        <View style={[styles.commissionIcon, { backgroundColor: '#ECFDF5' }]}>
+                    <View style={driverCardStyles.commissionItem}>
+                        <View style={[driverCardStyles.commissionIcon, { backgroundColor: '#ECFDF5' }]}>
                             <Ionicons name="wallet" size={14} color="#10B981" />
                         </View>
                         <View>
-                            <Text style={styles.commissionLabel}>Total</Text>
-                            <Text style={[styles.commissionAmount, { color: '#10B981', fontWeight: '700' }]}>
+                            <Text style={driverCardStyles.commissionLabel}>{t('total')}</Text>
+                            <Text style={[driverCardStyles.commissionAmount, { color: '#10B981', fontWeight: '700' }]}>
                                 ₹{subscription ? totalCommission : HIRING_COMMISSION}
                             </Text>
                         </View>
@@ -273,6 +219,132 @@ const DriverCard = ({ driver, onPress }: DriverCardProps) => {
     );
 };
 
+const driverCardStyles = StyleSheet.create({
+    driverCard: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    driverInfoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    driverImage: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#F1F5F9',
+    },
+    driverDetails: {
+        flex: 1,
+        marginLeft: 12,
+    },
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    driverName: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#1E293B',
+    },
+    miniBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    miniBadgeText: {
+        fontSize: 10,
+        fontWeight: '600',
+    },
+    driverId: {
+        fontSize: 12,
+        color: '#64748B',
+        marginTop: 2,
+    },
+    driverMobile: {
+        fontSize: 12,
+        color: '#94A3B8',
+    },
+    subscriptionBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        borderWidth: 1,
+    },
+    subscriptionBadgeText: {
+        fontSize: 10,
+        fontWeight: '600',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#E2E8F0',
+        marginVertical: 12,
+    },
+    commissionSection: {},
+    commissionTitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#64748B',
+        marginBottom: 8,
+    },
+    commissionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    commissionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    commissionIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    commissionLabel: {
+        fontSize: 10,
+        color: '#94A3B8',
+    },
+    commissionAmount: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+});
+const mapApiDriverToDriver = (apiDriver: ApiDriver): Driver => {
+    const paymentType = apiDriver.payment_type;
+    let subscriptionType: Driver['subscriptionType'] = null;
+    let jobType: Driver['jobType'] = 'REGULAR'; // Default as we don't have this from API yet
+
+    if (paymentType) {
+        if (paymentType.toLowerCase().includes('trusted')) {
+            subscriptionType = 'TRUSTED';
+        } else if (paymentType.toLowerCase().includes('verified')) {
+            subscriptionType = 'VERIFIED';
+        } else if (paymentType.toLowerCase().includes('job ready') || paymentType.toLowerCase().includes('job_ready')) {
+            subscriptionType = 'JOB_READY';
+        }
+    }
+
+    return {
+        id: String(apiDriver.id),
+        name: apiDriver.name || 'Unknown',
+        tmId: apiDriver.unique_id || '',
+        mobile: apiDriver.mobile || '',
+        profileImage: apiDriver.images || 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png',
+        subscriptionType: subscriptionType,
+        subscriptionDate: apiDriver.created_at, // Using created_at as proxy
+        hiringDate: apiDriver.created_at, // Using created_at as proxy
+        jobType: jobType,
+    };
+};
+
 export default function ForemanEarnings() {
     const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
@@ -281,22 +353,35 @@ export default function ForemanEarnings() {
     const { t } = useTranslation();
 
     const [loading, setLoading] = useState(false);
-    const [drivers, setDrivers] = useState<Driver[]>(MOCK_DRIVERS);
+    const [drivers, setDrivers] = useState<Driver[]>([]);
 
     // Filter states
     const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'SUBSCRIPTION' | 'HIRING' | 'PREMIUM' | 'SUPER_PREMIUM'>('ALL');
     const [selectedSubscription, setSelectedSubscription] = useState<'ALL' | 'JOB_READY' | 'VERIFIED' | 'TRUSTED'>('ALL');
 
-    // Fetch drivers on focus
+    // Fetch drivers
+    const fetchDrivers = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get(END_POINTS.FOREMAN_MY_PILOTS);
+            if (response?.data?.success) {
+                const apiDrivers: ApiDriver[] = response.data.drivers || [];
+                const mappedDrivers = apiDrivers.map(mapApiDriverToDriver);
+                setDrivers(mappedDrivers);
+            }
+        } catch (error) {
+            console.error('Error fetching earnings data:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useFocusEffect(
         useCallback(() => {
-            setLoading(true);
-            setTimeout(() => {
-                setDrivers(MOCK_DRIVERS);
-                setLoading(false);
-            }, 500);
-        }, [])
+            fetchDrivers();
+        }, [fetchDrivers])
     );
+
 
     const goBack = () => {
         navigation.goBack();
@@ -338,18 +423,18 @@ export default function ForemanEarnings() {
     const totalCommission = totalHiringCommission + totalSubscriptionCommission;
 
     const categories = [
-        { id: 'ALL', label: 'All' },
-        { id: 'SUBSCRIPTION', label: 'Subscription' },
-        { id: 'HIRING', label: 'Hiring' },
-        { id: 'PREMIUM', label: 'Premium Jobs' },
-        { id: 'SUPER_PREMIUM', label: 'Super Premium' },
+        { id: 'ALL', label: t('all') },
+        { id: 'SUBSCRIPTION', label: t('subscription') },
+        { id: 'HIRING', label: t('hiring') },
+        { id: 'PREMIUM', label: t('premiumJob') },
+        { id: 'SUPER_PREMIUM', label: t('superPremium') },
     ];
 
     const subCategories = [
-        { id: 'ALL', label: 'All Types' },
-        { id: 'JOB_READY', label: 'Job Ready' },
-        { id: 'VERIFIED', label: 'Verified' },
-        { id: 'TRUSTED', label: 'Trusted' },
+        { id: 'ALL', label: t('allTypes') },
+        { id: 'JOB_READY', label: t('jobReady') },
+        { id: 'VERIFIED', label: t('verified') },
+        { id: 'TRUSTED', label: t('trusted') },
     ];
 
     return (
@@ -367,7 +452,7 @@ export default function ForemanEarnings() {
                     <Ionicons name="chevron-back" size={24} color={colors.royalBlue} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.royalBlue }]}>
-                    My Earnings
+                    {t('myEarnings')}
                 </Text>
                 <View style={{ width: 40 }} />
             </View>
@@ -379,7 +464,7 @@ export default function ForemanEarnings() {
                         <View style={[styles.summaryCard, { backgroundColor: '#EFF6FF' }]}>
                             <Ionicons name="people" size={24} color="#3B82F6" />
                             <Text style={styles.summaryValue}>{drivers.length}</Text>
-                            <Text style={styles.summaryLabel}>Total Drivers</Text>
+                            <Text style={styles.summaryLabel}>{t('totalDrivers')}</Text>
                         </View>
 
                         <View style={[styles.summaryCard, { backgroundColor: '#ECFDF5' }]}>
@@ -387,14 +472,14 @@ export default function ForemanEarnings() {
                             <Text style={[styles.summaryValue, { color: '#10B981' }]}>
                                 ₹{totalCommission.toLocaleString()}
                             </Text>
-                            <Text style={styles.summaryLabel}>Total Earnings</Text>
+                            <Text style={styles.summaryLabel}>{t('totalEarnings')}</Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Filter Section - Fixed at top of list */}
                 <View style={styles.filterSection}>
-                    <Text style={styles.sectionTitle}>Filter By</Text>
+                    <Text style={styles.sectionTitle}>{t('filterBy')}</Text>
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -468,7 +553,7 @@ export default function ForemanEarnings() {
                         !loading ? (
                             <View style={styles.emptyContainer}>
                                 <Ionicons name="filter-outline" size={48} color="#94A3B8" />
-                                <Text style={styles.emptyText}>No drivers found for this filter</Text>
+                                <Text style={styles.emptyText}>{t('noDriversFoundFilter')}</Text>
                             </View>
                         ) : null
                     }

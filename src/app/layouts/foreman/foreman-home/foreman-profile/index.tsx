@@ -367,7 +367,7 @@ export default function ForemanProfile() {
                                     fontSize: responsiveFontSize(1.4),
                                 }
                             ]}>
-                                {t('foreman') || 'Foreman'}
+                                {t('foreman')}
                             </Text>
                         </View>
                     </View>
@@ -474,7 +474,7 @@ export default function ForemanProfile() {
                     <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
                     <MenuItem
                         icon={<MaterialCommunityIcons name="bank-outline" size={20} color="#D97706" />}
-                        title={t('bankDetails') || 'Bank Details'}
+                        title={t('bankDetails')}
                         onPress={() =>
                             navigation.navigate(STACKS.FOREMAN_BANK_DETAILS)
                         }

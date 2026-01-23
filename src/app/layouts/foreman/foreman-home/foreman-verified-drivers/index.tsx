@@ -146,7 +146,7 @@ export default function ForemanVerifiedDrivers() {
             }
         } catch (err: any) {
             console.error('Error fetching verified drivers:', err);
-            setError(err?.response?.data?.message || err?.message || 'Failed to fetch verified drivers');
+            setError(err?.response?.data?.message || err?.message || t('failedToFetchVerifiedDrivers'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -177,10 +177,10 @@ export default function ForemanVerifiedDrivers() {
     };
 
     const filters: { key: FilterType; label: string; color: string }[] = [
-        { key: 'All', label: 'All', color: COLORS.primary },
-        { key: 'Active', label: 'Active', color: COLORS.verified },
-        { key: 'Expiring', label: 'Expiring', color: COLORS.warning },
-        { key: 'Expired', label: 'Expired', color: COLORS.error },
+        { key: 'All', label: t('all'), color: COLORS.primary },
+        { key: 'Active', label: t('active'), color: COLORS.verified },
+        { key: 'Expiring', label: t('expiring'), color: COLORS.warning },
+        { key: 'Expired', label: t('expired'), color: COLORS.error },
     ];
 
     const renderDriverCard = ({ item }: { item: VerifiedDriver }) => (
@@ -249,17 +249,17 @@ export default function ForemanVerifiedDrivers() {
                             {item.status === 'Expiring' ? (
                                 <View style={styles.pendingBadge}>
                                     <Ionicons name="time" size={12} color={COLORS.warning} />
-                                    <Text style={styles.pendingText}>Expiring Soon</Text>
+                                    <Text style={styles.pendingText}>{t('expiringSoon')}</Text>
                                 </View>
                             ) : item.status === 'Expired' ? (
                                 <View style={styles.rejectedBadge}>
                                     <Ionicons name="alert-circle" size={12} color={COLORS.error} />
-                                    <Text style={styles.rejectedText}>Expired</Text>
+                                    <Text style={styles.rejectedText}>{t('expired')}</Text>
                                 </View>
                             ) : (
                                 <View style={styles.verifiedBadge}>
                                     <Ionicons name="checkmark-circle" size={12} color="#166534" />
-                                    <Text style={styles.verifiedText}>Verified Driver • ₹{item.amount}</Text>
+                                    <Text style={styles.verifiedText}>{t('verifiedDriver')} • ₹{item.amount}</Text>
                                 </View>
                             )}
                         </View>
@@ -298,12 +298,12 @@ export default function ForemanVerifiedDrivers() {
             {(item.status === 'Verified' || item.status === 'Expiring') && (
                 <View style={styles.expiryBarContainer}>
                     <View style={styles.expiryBarRow}>
-                        <Text style={styles.expiryLabel}>Subscription Validity</Text>
+                        <Text style={styles.expiryLabel}>{t('subscriptionValidity')}</Text>
                         <Text style={[
                             styles.expiryValue,
                             item.daysRemaining < 30 ? { color: COLORS.warning } : { color: COLORS.verified }
                         ]}>
-                            {item.daysRemaining} days left
+                            {item.daysRemaining} {t('daysLeft')}
                         </Text>
                     </View>
                     <View style={styles.progressBarBg}>
@@ -328,7 +328,7 @@ export default function ForemanVerifiedDrivers() {
                         activeOpacity={0.8}
                     >
                         <MaterialCommunityIcons name="refresh" size={16} color={COLORS.warning} />
-                        <Text style={[styles.viewDetailText, { color: COLORS.warning }]}>Renew Subscription</Text>
+                        <Text style={[styles.viewDetailText, { color: COLORS.warning }]}>{t('renewSubscription')}</Text>
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity
@@ -349,7 +349,7 @@ export default function ForemanVerifiedDrivers() {
                             }
                         })}
                     >
-                        <Text style={styles.viewDetailText}>View Profile</Text>
+                        <Text style={styles.viewDetailText}>{t('viewProfile')}</Text>
                         <Ionicons name="arrow-forward" size={14} color="#0284C7" />
                     </TouchableOpacity>
                 )}
@@ -361,7 +361,7 @@ export default function ForemanVerifiedDrivers() {
         return (
             <View style={styles.centerContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.loadingText}>Loading verified drivers...</Text>
+                <Text style={styles.loadingText}>{t('loadingVerifiedDrivers')}</Text>
             </View>
         );
     }
@@ -370,10 +370,10 @@ export default function ForemanVerifiedDrivers() {
         return (
             <View style={styles.centerContainer}>
                 <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
-                <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+                <Text style={styles.errorTitle}>{t('oopsSomethingWentWrong')}</Text>
                 <Text style={styles.errorSubtitle}>{error}</Text>
                 <TouchableOpacity style={styles.retryButton} onPress={() => fetchDrivers()}>
-                    <Text style={styles.retryText}>Try Again</Text>
+                    <Text style={styles.retryText}>{t('tryAgain')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -391,12 +391,12 @@ export default function ForemanVerifiedDrivers() {
                 </TouchableOpacity>
                 <View style={styles.headerTitleContainer}>
                     <View style={styles.headerTitleRow}>
-                        <Text style={styles.headerTitle}>{t('verifiedDrivers', 'Verified Drivers')}</Text>
+                        <Text style={styles.headerTitle}>{t('verifiedDrivers')}</Text>
                         <View style={styles.subscriptionBadge}>
                             <Text style={styles.subscriptionBadgeText}>₹199</Text>
                         </View>
                     </View>
-                    <Text style={styles.headerSubtitle}>{filteredDrivers.length} {t('driversWithSubscription', 'drivers with active subscription')}</Text>
+                    <Text style={styles.headerSubtitle}>{filteredDrivers.length} {t('driversWithSubscription')}</Text>
                 </View>
                 <View style={{ width: 40 }} />
             </View>
@@ -453,8 +453,8 @@ export default function ForemanVerifiedDrivers() {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <MaterialCommunityIcons name="account-check" size={64} color="#CBD5E1" />
-                        <Text style={styles.emptyTitle}>No Drivers Found</Text>
-                        <Text style={styles.emptySubtitle}>No verified drivers matching this filter</Text>
+                        <Text style={styles.emptyTitle}>{t('noDriversFound')}</Text>
+                        <Text style={styles.emptySubtitle}>{t('noVerifiedDriversMatch')}</Text>
                     </View>
                 }
             />

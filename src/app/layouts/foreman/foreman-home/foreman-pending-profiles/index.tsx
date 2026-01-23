@@ -59,13 +59,13 @@ interface PendingDriver {
 
 const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
 
-const mapApiToPendingDriver = (apiDriver: ApiPendingDriver): PendingDriver => {
+const mapApiToPendingDriver = (apiDriver: ApiPendingDriver, t: any): PendingDriver => {
     // Determine pending reason based on missing data
-    let reason = 'Profile incomplete';
-    if (!apiDriver.images) reason = 'Profile photo missing';
-    else if (!apiDriver.License_Number) reason = 'DL details missing';
-    else if (!apiDriver.DOB) reason = 'DOB not provided';
-    else if (apiDriver.profile_completion_percentage < 50) reason = 'Many fields pending';
+    let reason = t('profileIncomplete');
+    if (!apiDriver.images) reason = t('profilePhotoMissing');
+    else if (!apiDriver.License_Number) reason = t('dlDetailsMissing');
+    else if (!apiDriver.DOB) reason = t('dobNotProvided');
+    else if (apiDriver.profile_completion_percentage < 50) reason = t('manyFieldsPending');
 
     // Format date if possible
     let formattedDate = apiDriver.created_at;
@@ -106,7 +106,7 @@ const PendingDriverCard = ({ driver }: { driver: PendingDriver }) => {
     };
 
     const handleShare = async () => {
-        const shareMessage = `Download TruckMitr App to get started. Use the below ID & Mobile No. to login:\n\nTM ID: ${driver.tmId}\nMobile: ${driver.mobileNumber}`;
+        const shareMessage = t('downloadAppMessage', { tmId: driver.tmId, mobile: driver.mobileNumber });
         try {
             await Share.share({
                 message: shareMessage,
@@ -117,7 +117,7 @@ const PendingDriverCard = ({ driver }: { driver: PendingDriver }) => {
     };
 
     const handleWhatsAppShare = () => {
-        const shareMessage = `Download TruckMitr App to get started. Use the below ID & Mobile No. to login:\n\nTM ID: ${driver.tmId}\nMobile: ${driver.mobileNumber}`;
+        const shareMessage = t('downloadAppMessage', { tmId: driver.tmId, mobile: driver.mobileNumber });
         const encodedMessage = encodeURIComponent(shareMessage);
 
         // Format mobile number for WhatsApp link (wa.me expects international format without +)
@@ -132,7 +132,7 @@ const PendingDriverCard = ({ driver }: { driver: PendingDriver }) => {
                 if (supported) {
                     return Linking.openURL(whatsappUrl);
                 } else {
-                    showToast(t('whatsAppNotInstalled', 'WhatsApp is not installed'));
+                    showToast(t('whatsAppNotInstalled'));
                 }
             })
             .catch((err) => {
@@ -143,7 +143,7 @@ const PendingDriverCard = ({ driver }: { driver: PendingDriver }) => {
 
     const handleCopy = () => {
         Clipboard.setString(`TM ID: ${driver.tmId}\nMobile: ${driver.mobileNumber}`);
-        showToast(t('copiedToClipboard', 'Copied to clipboard!'));
+        showToast(t('copiedToClipboard'));
     };
 
     // Profile circle calculations
@@ -238,7 +238,7 @@ const PendingDriverCard = ({ driver }: { driver: PendingDriver }) => {
                     activeOpacity={0.8}
                 >
                     <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" />
-                    <Text style={styles.whatsappButtonText}>WhatsApp</Text>
+                    <Text style={styles.whatsappButtonText}>{t('whatsapp')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -247,7 +247,7 @@ const PendingDriverCard = ({ driver }: { driver: PendingDriver }) => {
                     activeOpacity={0.8}
                 >
                     <Ionicons name="share-social" size={18} color="#6366F1" />
-                    <Text style={styles.shareButtonText}>Share</Text>
+                    <Text style={styles.shareButtonText}>{t('share')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -282,7 +282,7 @@ export default function ForemanPendingProfiles() {
 
     const fetchDrivers = useCallback(async (isRefresh = false) => {
         if (!foremanId) {
-            setError('User not authenticated');
+            setError(t('userNotAuthenticated'));
             setLoading(false);
             return;
         }
@@ -297,14 +297,14 @@ export default function ForemanPendingProfiles() {
 
             if (response?.data?.drivers) {
                 const apiDrivers: ApiPendingDriver[] = response.data.drivers;
-                const mapped = apiDrivers.map(mapApiToPendingDriver);
+                const mapped = apiDrivers.map((driver) => mapApiToPendingDriver(driver, t));
                 setDrivers(mapped);
             } else {
                 setDrivers([]);
             }
         } catch (err: any) {
             console.error('Error fetching pending profiles:', err);
-            setError(err?.response?.data?.message || err?.message || 'Failed to fetch pending profiles');
+            setError(err?.response?.data?.message || err?.message || t('somethingWentWrong'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -323,7 +323,7 @@ export default function ForemanPendingProfiles() {
         return (
             <View style={styles.centerContainer}>
                 <ActivityIndicator size="large" color="#6366F1" />
-                <Text style={styles.loadingText}>Loading profiles...</Text>
+                <Text style={styles.loadingText}>{t('loading')}</Text>
             </View>
         );
     }
@@ -332,10 +332,10 @@ export default function ForemanPendingProfiles() {
         return (
             <View style={styles.centerContainer}>
                 <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
-                <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+                <Text style={styles.errorTitle}>{t('somethingWentWrong')}</Text>
                 <Text style={styles.errorSubtitle}>{error}</Text>
                 <TouchableOpacity style={styles.retryButton} onPress={() => fetchDrivers()}>
-                    <Text style={styles.retryText}>Try Again</Text>
+                    <Text style={styles.retryText}>{t('tryAgain')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -354,7 +354,7 @@ export default function ForemanPendingProfiles() {
                 >
                     <Ionicons name="arrow-back" size={24} color="#1F2937" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Pending Profiles</Text>
+                <Text style={styles.headerTitle}>{t('pendingProfiles')}</Text>
                 <View style={styles.headerBadge}>
                     <Text style={styles.headerBadgeText}>{drivers.length}</Text>
                 </View>
@@ -366,7 +366,7 @@ export default function ForemanPendingProfiles() {
                     <Ionicons name="information-circle" size={20} color="#3B82F6" />
                 </View>
                 <Text style={styles.infoBannerText}>
-                    Share login credentials with drivers to help them complete their profile
+                    {t('shareLoginCredentials')}
                 </Text>
             </View>
 
@@ -383,8 +383,8 @@ export default function ForemanPendingProfiles() {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <MaterialCommunityIcons name="account-check-outline" size={80} color="#CBD5E1" />
-                        <Text style={styles.emptyTitle}>All caught up!</Text>
-                        <Text style={styles.emptySubtitle}>No pending profiles found for your pilots.</Text>
+                        <Text style={styles.emptyTitle}>{t('allCaughtUp')}</Text>
+                        <Text style={styles.emptySubtitle}>{t('noPendingProfilesFound')}</Text>
                     </View>
                 }
             />

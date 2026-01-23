@@ -299,10 +299,10 @@ export default function ForemanAddDriver() {
                 const granted = await PermissionsAndroid.request(
                     PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
                     {
-                        title: t('contactPermissionTitle', 'Allow access to contacts?'),
-                        message: t('contactPermissionMessage', 'We only use this to add driver details faster.'),
-                        buttonPositive: t('allow', 'Allow'),
-                        buttonNegative: t('notNow', 'Not now'),
+                        title: t('contactPermissionTitle'),
+                        message: t('contactPermissionMessage'),
+                        buttonPositive: t('allow'),
+                        buttonNegative: t('notNow'),
                     }
                 );
                 return granted === PermissionsAndroid.RESULTS.GRANTED;
@@ -395,13 +395,13 @@ export default function ForemanAddDriver() {
                 setLoadingContacts(false);
 
                 if (contactsWithPhones.length === 0) {
-                    showToast(t('noContactsWithPhone', 'No contacts with phone numbers found'));
+                    showToast(t('noContactsWithPhone'));
                 }
             })
             .catch((e) => {
                 console.log('Error getting contacts:', e);
                 setLoadingContacts(false);
-                showToast(t('errorAccessingContacts', 'Error accessing contacts'));
+                showToast(t('errorAccessingContacts'));
             });
     };
 
@@ -573,7 +573,7 @@ export default function ForemanAddDriver() {
             applyContactData(name, validNumbers[0] as string, emailAddress);
             setShowContactListModal(false);
         } else {
-            showToast(t('noPhoneNumber', 'Contact has no valid phone number'));
+            showToast(t('noPhoneNumber'));
         }
     };
 
@@ -584,7 +584,7 @@ export default function ForemanAddDriver() {
         setIsImportedFromContacts(true);
         setIsOtpVerified(phone.length > 0);
         setErrors({});
-        showToast(t('contactImported', '✔ Contact imported successfully'));
+        showToast(t('contactImported'));
     };
 
     const handlePhoneNumberSelected = (phone: string) => {
@@ -600,25 +600,25 @@ export default function ForemanAddDriver() {
         const newErrors: { [key: string]: string } = {};
 
         if (!fullName.trim()) {
-            newErrors.fullName = t('nameRequired', 'Name is required');
+            newErrors.fullName = t('nameRequired');
             valid = false;
         }
         if (!mobileNumber.trim()) {
-            newErrors.mobileNumber = t('mobileNumberRequired', 'Mobile number is required');
+            newErrors.mobileNumber = t('mobileNumberRequired');
             valid = false;
         } else if (mobileNumber.length < 10) {
-            newErrors.mobileNumber = t('mobileNumber_10_digits', 'Mobile must be 10 digits');
+            newErrors.mobileNumber = t('mobileNumber_10_digits');
             valid = false;
         }
         if (email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                newErrors.email = t('invalidEmailFormat', 'Invalid email format');
+                newErrors.email = t('invalidEmailFormat');
                 valid = false;
             }
         }
         if (!state) {
-            newErrors.state = t('stateRequired', 'State is required');
+            newErrors.state = t('stateRequired');
             valid = false;
         }
 
@@ -668,10 +668,10 @@ export default function ForemanAddDriver() {
                     });
                     // Show OTP modal
                     setShowOtpModal(true);
-                    showToast(response?.data?.message || t('otpSent', 'OTP sent successfully'));
+                    showToast(response?.data?.message || t('otpSent'));
                 } else {
                     // Driver added successfully without OTP
-                    const successMessage = response?.data?.message || t('driverAddedSuccessfully', 'Driver added successfully!');
+                    const successMessage = response?.data?.message || t('driverAddedSuccessfully');
                     showToast(`${successMessage}`);
                     console.log('Driver added successfully:', response?.data);
 
@@ -687,13 +687,13 @@ export default function ForemanAddDriver() {
                 }
             } else {
                 // Backend returned status: false
-                const errorMessage = response?.data?.message || t('failedToAddDriver', 'Failed to add driver');
+                const errorMessage = response?.data?.message || t('failedToAddDriver');
                 showToast(`${errorMessage}`);
             }
         } catch (error: any) {
             console.log('Error adding driver:', error);
             // Show error toast with backend message or fallback
-            const errorMessage = error?.response?.data?.message || error?.message || t('somethingWentWrong', 'Something went wrong');
+            const errorMessage = error?.response?.data?.message || error?.message || t('oopsSomethingWentWrong');
             showToast(`${errorMessage}`);
         } finally {
             setLoading(false);
@@ -703,12 +703,12 @@ export default function ForemanAddDriver() {
     // OTP Verification Handler
     const handleVerifyOtp = async () => {
         if (!otp || otp.length < 4) {
-            setOtpError(t('pleaseEnterValidOtp', 'Please enter a valid OTP'));
+            setOtpError(t('pleaseEnterValidOtp'));
             return;
         }
 
         if (!pendingDriverData) {
-            setOtpError(t('somethingWentWrong', 'Something went wrong'));
+            setOtpError(t('oopsSomethingWentWrong'));
             return;
         }
 
@@ -725,7 +725,7 @@ export default function ForemanAddDriver() {
 
             if (response?.data?.status || response?.data?.success) {
                 // OTP verified - driver was already added when OTP was sent
-                const successMessage = response?.data?.message || t('driverAddedSuccessfully', 'Driver added successfully!');
+                const successMessage = response?.data?.message || t('driverAddedSuccessfully');
                 showToast(`${successMessage}`);
 
                 // Reset everything
@@ -742,12 +742,12 @@ export default function ForemanAddDriver() {
                 setIsOtpVerified(false);
                 setErrors({});
             } else {
-                const errorMessage = response?.data?.message || t('invalidOtp', 'Invalid OTP');
+                const errorMessage = response?.data?.message || t('invalidOtp');
                 setOtpError(errorMessage);
             }
         } catch (error: any) {
             console.log('Error verifying OTP:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || t('otpVerificationFailed', 'OTP verification failed');
+            const errorMessage = error?.response?.data?.message || error?.message || t('otpVerificationFailed');
             setOtpError(errorMessage);
         } finally {
             setOtpLoading(false);
@@ -784,7 +784,7 @@ export default function ForemanAddDriver() {
                 <TouchableOpacity onPress={goBack} hitSlop={hitSlop(10)} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={22} color={COLORS.textDark} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('addDriver', 'Add Driver')}</Text>
+                <Text style={styles.headerTitle}>{t('addDriver')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -805,7 +805,7 @@ export default function ForemanAddDriver() {
                     <View style={styles.stepNumber}>
                         <Text style={styles.stepNumberText}>1</Text>
                     </View>
-                    <Text style={styles.stepTitle}>{t('basicDetails', 'BASIC DETAILS')}</Text>
+                    <Text style={styles.stepTitle}>{t('basicDetails')}</Text>
                 </LinearGradient> */}
 
                 {/* Contact Import Card - Primary CTA */}
@@ -820,17 +820,17 @@ export default function ForemanAddDriver() {
                         </View>
                         <View style={styles.contactImportTextContainer}>
                             <Text style={styles.contactImportTitle}>
-                                {t('addDriversFromContacts', 'Add Drivers from Contacts')}
+                                {t('addDriversFromContacts')}
                             </Text>
                             <Text style={styles.contactImportSubtitle}>
-                                {t('bulkImportSubtitle', 'Quickly add multiple drivers from phone contacts')}
+                                {t('bulkImportSubtitle')}
                             </Text>
                         </View>
                     </View>
                     <View style={styles.selectContactButton}>
                         <MaterialCommunityIcons name="contacts" size={16} color={COLORS.primary} />
                         <Text style={styles.selectContactButtonText}>
-                            {t('selectContacts', 'Select Contacts')}
+                            {t('selectContacts')}
                         </Text>
                     </View>
                 </TouchableOpacity>
@@ -841,7 +841,7 @@ export default function ForemanAddDriver() {
                     <View style={styles.fieldContainer}>
                         <View style={styles.fieldLabelRow}>
                             <Ionicons name="person-outline" size={14} color={COLORS.textMuted} style={styles.fieldIcon} />
-                            <Text style={styles.fieldLabel}>{t('fullName', 'Full Name')}<Text style={styles.required}>*</Text></Text>
+                            <Text style={styles.fieldLabel}>{t('fullName')}<Text style={styles.required}>*</Text></Text>
                         </View>
                         <View style={[styles.inputWrapper, errors.fullName && styles.inputWrapperError]}>
                             <View style={styles.inputIconContainer}>
@@ -856,13 +856,13 @@ export default function ForemanAddDriver() {
                                         setIsImportedFromContacts(false);
                                     }
                                 }}
-                                placeholder={t('driverFullName', 'Driver full name')}
+                                placeholder={t('driverFullName')}
                                 placeholderTextColor={COLORS.textLight}
                                 style={styles.textInput}
                             />
                         </View>
                         {isImportedFromContacts && fullName && (
-                            <Text style={styles.importedLabel}>{t('importedFromContacts', 'Imported from Contacts')}</Text>
+                            <Text style={styles.importedLabel}>{t('importedFromContacts')}</Text>
                         )}
                         {errors.fullName && (
                             <Text style={styles.errorText}>{errors.fullName}</Text>
@@ -873,7 +873,7 @@ export default function ForemanAddDriver() {
                     <View style={styles.fieldContainer}>
                         <View style={styles.fieldLabelRow}>
                             <Ionicons name="phone-portrait-outline" size={14} color={COLORS.textMuted} style={styles.fieldIcon} />
-                            <Text style={styles.fieldLabel}>{t('mobileNo', 'Mobile No.')}<Text style={styles.required}>*</Text></Text>
+                            <Text style={styles.fieldLabel}>{t('mobileNo')}<Text style={styles.required}>*</Text></Text>
                         </View>
                         <View style={[styles.inputWrapper, errors.mobileNumber && styles.inputWrapperError]}>
                             <View style={[styles.countryCodeContainer, { borderRightWidth: 1, borderRightColor: COLORS.border }]}>
@@ -894,7 +894,7 @@ export default function ForemanAddDriver() {
                                         setIsImportedFromContacts(false);
                                     }
                                 }}
-                                placeholder={t('driverMobileNumber', 'Driver mobile number')}
+                                placeholder={t('driverMobileNumber')}
                                 placeholderTextColor={COLORS.textLight}
                                 keyboardType="phone-pad"
                                 maxLength={10}
@@ -902,7 +902,7 @@ export default function ForemanAddDriver() {
                             />
                         </View>
                         {isImportedFromContacts && mobileNumber && (
-                            <Text style={styles.importedLabel}>{t('importedFromContacts', 'Imported from Contacts')}</Text>
+                            <Text style={styles.importedLabel}>{t('importedFromContacts')}</Text>
                         )}
                         {errors.mobileNumber && (
                             <Text style={styles.errorText}>{errors.mobileNumber}</Text>
@@ -913,7 +913,7 @@ export default function ForemanAddDriver() {
                     <View style={styles.fieldContainer}>
                         <View style={styles.fieldLabelRow}>
                             <Ionicons name="mail-outline" size={14} color={COLORS.textMuted} style={styles.fieldIcon} />
-                            <Text style={styles.fieldLabel}>{t('emailId', 'Email ID')} <Text style={styles.optional}>({t('optional', 'Optional')})</Text></Text>
+                            <Text style={styles.fieldLabel}>{t('emailId')} <Text style={styles.optional}>({t('optional')})</Text></Text>
                         </View>
                         <View style={[styles.inputWrapper, errors.email && styles.inputWrapperError]}>
                             <View style={styles.inputIconContainer}>
@@ -925,7 +925,7 @@ export default function ForemanAddDriver() {
                                     setEmail(text.toLowerCase());
                                     setErrors(prev => ({ ...prev, email: undefined }));
                                 }}
-                                placeholder={t('enterEmailAddress', 'Enter email address')}
+                                placeholder={t('enterEmailAddress')}
                                 placeholderTextColor={COLORS.textLight}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
@@ -941,7 +941,7 @@ export default function ForemanAddDriver() {
                     <View style={styles.fieldContainer}>
                         <View style={styles.fieldLabelRow}>
                             <Ionicons name="location-outline" size={14} color={COLORS.textMuted} style={styles.fieldIcon} />
-                            <Text style={styles.fieldLabel}>{t('state', 'State')}<Text style={styles.required}>*</Text></Text>
+                            <Text style={styles.fieldLabel}>{t('state')}<Text style={styles.required}>*</Text></Text>
                         </View>
                         <TouchableOpacity
                             onPress={() => setIsStateModalVisible(true)}
@@ -951,7 +951,7 @@ export default function ForemanAddDriver() {
                             <View style={styles.stateSelectorLeft}>
                                 <Ionicons name="location" size={16} color={COLORS.textLight} />
                                 <Text style={selectedStateName ? styles.stateSelectorText : styles.stateSelectorPlaceholder}>
-                                    {selectedStateName || t('selectState', 'Select State')}
+                                    {selectedStateName || t('selectState')}
                                 </Text>
                             </View>
                             <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
@@ -1006,7 +1006,7 @@ export default function ForemanAddDriver() {
                         <Ionicons name="add" size={16} color="#fff" />
                     </View>
                     <Text style={styles.additionalDetailsTitle}>
-                        {t('addMoreDetails', 'Add more details to complete profile')}
+                        {t('addMoreDetails')}
                     </Text>
                     <Ionicons
                         name="chevron-forward"
@@ -1030,7 +1030,7 @@ export default function ForemanAddDriver() {
                     {loading ? (
                         <ActivityIndicator color="#fff" size="small" />
                     ) : (
-                        <Text style={styles.submitButtonText}>{t('submit', 'Submit')}</Text>
+                        <Text style={styles.submitButtonText}>{t('submit')}</Text>
                     )}
                 </TouchableOpacity>
 
@@ -1125,12 +1125,12 @@ export default function ForemanAddDriver() {
 
                         {/* Title */}
                         <Text style={styles.otpTitle}>
-                            {t('verifyOtp', 'Verify OTP')}
+                            {t('verifyOtp')}
                         </Text>
 
                         {/* Subtitle with phone number */}
                         <Text style={styles.otpSubtitle}>
-                            {t('pleaseEnterOtpFor', 'Please enter OTP sent to')}{'\n'}
+                            {t('pleaseEnterOtpFor')}{'\n'}
                             <Text style={styles.otpPhoneNumber}>+91 {pendingDriverData?.mobile}</Text>
                         </Text>
 
@@ -1142,7 +1142,7 @@ export default function ForemanAddDriver() {
                                     setOtp(text.replace(/[^0-9]/g, ''));
                                     if (otpError) setOtpError('');
                                 }}
-                                placeholder={t('enterOtp', 'Enter OTP')}
+                                placeholder={t('enterOtp')}
                                 placeholderTextColor={COLORS.textLight}
                                 keyboardType="number-pad"
                                 maxLength={6}
@@ -1171,7 +1171,7 @@ export default function ForemanAddDriver() {
                                 <ActivityIndicator color="#fff" size="small" />
                             ) : (
                                 <Text style={styles.otpVerifyButtonText}>
-                                    {t('verifyAndAdd', 'Verify & Add Driver')}
+                                    {t('verifyAndAdd')}
                                 </Text>
                             )}
                         </TouchableOpacity>
@@ -1188,7 +1188,7 @@ export default function ForemanAddDriver() {
                             disabled={loading}
                         >
                             <Text style={styles.resendOtpText}>
-                                {t('didntReceiveOtp', "Didn't receive OTP?")} <Text style={styles.resendOtpLink}>{t('resend', 'Resend')}</Text>
+                                {t('didntReceiveOtp')} <Text style={styles.resendOtpLink}>{t('resend')}</Text>
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -1217,7 +1217,7 @@ export default function ForemanAddDriver() {
                             <Ionicons name="close" size={24} color={COLORS.textDark} />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>
-                            {t('selectState', 'Select State')}
+                            {t('selectState')}
                         </Text>
                         <View style={{ width: 40 }} />
                     </View>
@@ -1229,7 +1229,7 @@ export default function ForemanAddDriver() {
                             <TextInput
                                 value={stateSearchText}
                                 onChangeText={setStateSearchText}
-                                placeholder={t('searchState', 'Search State')}
+                                placeholder={t('searchState')}
                                 placeholderTextColor={COLORS.textLight}
                                 style={styles.searchInput}
                                 autoFocus={false}
@@ -1293,7 +1293,7 @@ export default function ForemanAddDriver() {
                             <View style={styles.emptyStateContainer}>
                                 <Ionicons name="location-outline" size={48} color="#CBD5E1" />
                                 <Text style={styles.emptyStateText}>
-                                    {t('noStatesFound', 'No states found')}
+                                    {t('noStatesFound')}
                                 </Text>
                             </View>
                         }
@@ -1319,17 +1319,17 @@ export default function ForemanAddDriver() {
                             <MaterialCommunityIcons name="contacts" size={48} color={COLORS.primary} />
                         </View>
                         <Text style={styles.permissionTitle}>
-                            {t('allowContactAccess', 'Allow access to contacts?')}
+                            {t('allowContactAccess')}
                         </Text>
                         <Text style={styles.permissionMessage}>
-                            {t('contactPermissionReason', 'We only use this to add driver details faster.')}
+                            {t('contactPermissionReason')}
                         </Text>
                         <View style={styles.permissionButtonsRow}>
                             <TouchableOpacity
                                 onPress={() => setShowPermissionSheet(false)}
                                 style={styles.permissionSecondaryButton}
                             >
-                                <Text style={styles.permissionSecondaryButtonText}>{t('notNow', 'Not now')}</Text>
+                                <Text style={styles.permissionSecondaryButtonText}>{t('notNow')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={async () => {
@@ -1339,7 +1339,7 @@ export default function ForemanAddDriver() {
                                 }}
                                 style={styles.permissionPrimaryButton}
                             >
-                                <Text style={styles.permissionPrimaryButtonText}>{t('allow', 'Allow')}</Text>
+                                <Text style={styles.permissionPrimaryButtonText}>{t('allow')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -1361,7 +1361,7 @@ export default function ForemanAddDriver() {
                     <View style={styles.bottomSheetContainer}>
                         <View style={styles.bottomSheetHandle} />
                         <Text style={styles.multipleNumbersTitle}>
-                            {t('chooseMobileNumber', 'Choose mobile number')}
+                            {t('chooseMobileNumber')}
                         </Text>
                         {contactPhoneNumbers.map((phone, index) => (
                             <TouchableOpacity
@@ -1400,7 +1400,7 @@ export default function ForemanAddDriver() {
                             <Ionicons name="close" size={22} color={COLORS.textDark} />
                         </TouchableOpacity>
                         <Text style={styles.contactModalTitle}>
-                            {t('selectContacts', 'Select Contacts')}
+                            {t('selectContacts')}
                         </Text>
                         <View style={{ width: 32 }} />
                     </View>
@@ -1412,7 +1412,7 @@ export default function ForemanAddDriver() {
                             <TextInput
                                 value={contactSearchText}
                                 onChangeText={setContactSearchText}
-                                placeholder={t('searchContact', 'Search by name or number')}
+                                placeholder={t('searchContact')}
                                 placeholderTextColor={COLORS.textLight}
                                 style={styles.contactSearchInput}
                                 autoFocus={false}
@@ -1428,13 +1428,13 @@ export default function ForemanAddDriver() {
                     {/* Contact Count - Minimal */}
                     <View style={styles.contactCountRow}>
                         <Text style={styles.contactCountLabel}>
-                            {filteredContacts.length} {t('contacts', 'Contacts')}
+                            {filteredContacts.length} {t('contacts')}
                         </Text>
                         {selectedContactIds.length > 0 && (
                             <View style={styles.selectedBadge}>
                                 <Ionicons name="checkmark-circle" size={12} color={COLORS.success} />
                                 <Text style={styles.selectedBadgeText}>
-                                    {selectedContactIds.length} {t('selected', 'Selected')}
+                                    {selectedContactIds.length} {t('selected')}
                                 </Text>
                             </View>
                         )}
@@ -1444,7 +1444,7 @@ export default function ForemanAddDriver() {
                     {loadingContacts ? (
                         <View style={styles.loadingContainer}>
                             <ActivityIndicator size="large" color={COLORS.primary} />
-                            <Text style={styles.loadingText}>{t('loadingContacts', 'Loading contacts...')}</Text>
+                            <Text style={styles.loadingText}>{t('loadingContacts')}</Text>
                         </View>
                     ) : (
                         <FlatList
@@ -1500,7 +1500,7 @@ export default function ForemanAddDriver() {
                                 <View style={styles.emptyStateContainer}>
                                     <MaterialCommunityIcons name="account-search" size={48} color="#D1D5DB" />
                                     <Text style={styles.emptyStateText}>
-                                        {t('noContactsFound', 'No contacts found')}
+                                        {t('noContactsFound')}
                                     </Text>
                                 </View>
                             }
@@ -1550,8 +1550,8 @@ export default function ForemanAddDriver() {
                             <Ionicons name="arrow-back" size={22} color={COLORS.textDark} />
                         </TouchableOpacity>
                         <View style={styles.reviewHeaderText}>
-                            <Text style={styles.reviewModalTitle}>{t('reviewDrivers', 'Review Drivers')}</Text>
-                            <Text style={styles.reviewModalSubtitle}>{t('verifyDetails', 'Verify details before adding')}</Text>
+                            <Text style={styles.reviewModalTitle}>{t('reviewDrivers')}</Text>
+                            <Text style={styles.reviewModalSubtitle}>{t('verifyDetails')}</Text>
                         </View>
                     </View>
 
@@ -1582,7 +1582,7 @@ export default function ForemanAddDriver() {
                                             {item.isValid ? (
                                                 <View style={styles.reviewStatusDot}>
                                                     <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
-                                                    <Text style={styles.reviewStatusText}>{t('ready', 'Ready')}</Text>
+                                                    <Text style={styles.reviewStatusText}>{t('ready')}</Text>
                                                 </View>
                                             ) : (
                                                 <View style={styles.reviewStatusDotWarning}>
@@ -1593,7 +1593,7 @@ export default function ForemanAddDriver() {
                                         <Text style={styles.reviewDriverPhone}>+91 {item.phone}</Text>
                                         {!item.isValid && (
                                             <Text style={styles.reviewMissingText}>
-                                                {!item.state ? t('stateRequired', 'State required') : t('incompleteDetails', 'Incomplete')}
+                                                {!item.state ? t('stateRequired') : t('incompleteDetails')}
                                             </Text>
                                         )}
                                     </View>
@@ -1621,7 +1621,7 @@ export default function ForemanAddDriver() {
                         ListEmptyComponent={
                             <View style={styles.emptyStateContainer}>
                                 <MaterialCommunityIcons name="account-group" size={48} color="#D1D5DB" />
-                                <Text style={styles.emptyStateText}>{t('noDriversSelected', 'No drivers selected')}</Text>
+                                <Text style={styles.emptyStateText}>{t('noDriversSelected')}</Text>
                             </View>
                         }
                     />
@@ -1630,7 +1630,7 @@ export default function ForemanAddDriver() {
                     {bulkDrivers.length > 0 && (
                         <View style={[styles.reviewFooterMinimal, { paddingBottom: safeAreaInsets.bottom + 16 }]}>
                             <Text style={styles.reviewFooterCount}>
-                                {validDriverCount}/{bulkDrivers.length} {t('driversReady', 'ready')}
+                                {validDriverCount}/{bulkDrivers.length} {t('ready')}
                             </Text>
                             <TouchableOpacity
                                 onPress={handleBulkSubmit}
@@ -1647,7 +1647,7 @@ export default function ForemanAddDriver() {
                                     <>
                                         <Ionicons name="people" size={16} color={COLORS.white} />
                                         <Text style={styles.reviewSubmitText}>
-                                            {t('addAllDrivers', `Add ${bulkDrivers.length} Driver${bulkDrivers.length > 1 ? 's' : ''}`)}
+                                            {t('addAllDrivers', { count: bulkDrivers.length })}
                                         </Text>
                                     </>
                                 )}
@@ -1668,27 +1668,27 @@ export default function ForemanAddDriver() {
                     <TouchableOpacity style={styles.bottomSheetBackdrop} onPress={() => setShowEditDriverSheet(false)} />
                     <View style={[styles.bottomSheetContainer, { paddingBottom: safeAreaInsets.bottom + 16 }]}>
                         <View style={styles.bottomSheetHandle} />
-                        <Text style={styles.editSheetTitle}>{t('editDriverDetails', 'Edit Driver Details')}</Text>
+                        <Text style={styles.editSheetTitle}>{t('editDriverDetails')}</Text>
 
                         {/* Name */}
                         <View style={styles.editFieldContainer}>
-                            <Text style={styles.editFieldLabel}>{t('fullName', 'Full Name')}</Text>
+                            <Text style={styles.editFieldLabel}>{t('fullName')}</Text>
                             <TextInput
                                 value={editDriverName}
                                 onChangeText={setEditDriverName}
                                 style={styles.editFieldInput}
-                                placeholder={t('enterName', 'Enter name')}
+                                placeholder={t('enterName')}
                             />
                         </View>
 
                         {/* Phone */}
                         <View style={styles.editFieldContainer}>
-                            <Text style={styles.editFieldLabel}>{t('mobileNo', 'Mobile No.')}</Text>
+                            <Text style={styles.editFieldLabel}>{t('mobileNo')}</Text>
                             <TextInput
                                 value={editDriverPhone}
                                 onChangeText={setEditDriverPhone}
                                 style={styles.editFieldInput}
-                                placeholder={t('enterPhone', 'Enter phone')}
+                                placeholder={t('enterPhone')}
                                 keyboardType="phone-pad"
                                 maxLength={10}
                             />
@@ -1696,25 +1696,25 @@ export default function ForemanAddDriver() {
 
                         {/* Email */}
                         <View style={styles.editFieldContainer}>
-                            <Text style={styles.editFieldLabel}>{t('email', 'Email')} ({t('optional', 'optional')})</Text>
+                            <Text style={styles.editFieldLabel}>{t('email')} ({t('optional')})</Text>
                             <TextInput
                                 value={editDriverEmail}
                                 onChangeText={setEditDriverEmail}
                                 style={styles.editFieldInput}
-                                placeholder={t('enterEmail', 'Enter email')}
+                                placeholder={t('enterEmail')}
                                 keyboardType="email-address"
                             />
                         </View>
 
                         {/* State */}
                         <View style={styles.editFieldContainer}>
-                            <Text style={styles.editFieldLabel}>{t('state', 'State')} <Text style={{ color: COLORS.error }}>*</Text></Text>
+                            <Text style={styles.editFieldLabel}>{t('state')} <Text style={{ color: COLORS.error }}>*</Text></Text>
                             <TouchableOpacity
                                 style={styles.editStateSelector}
                                 onPress={() => { setIsEditingDriverState(true); setIsStateModalVisible(true); }}
                             >
                                 <Text style={editDriverStateName ? styles.editStateSelectorText : styles.editStateSelectorPlaceholder}>
-                                    {editDriverStateName || t('selectState', 'Select State')}
+                                    {editDriverStateName || t('selectState')}
                                 </Text>
                                 <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
                             </TouchableOpacity>
@@ -1723,10 +1723,10 @@ export default function ForemanAddDriver() {
                         {/* Buttons */}
                         <View style={styles.editSheetButtons}>
                             <TouchableOpacity style={styles.editCancelButton} onPress={() => setShowEditDriverSheet(false)}>
-                                <Text style={styles.editCancelButtonText}>{t('cancel', 'Cancel')}</Text>
+                                <Text style={styles.editCancelButtonText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.editSaveButton} onPress={saveEditedDriver}>
-                                <Text style={styles.editSaveButtonText}>{t('save', 'Save')}</Text>
+                                <Text style={styles.editSaveButtonText}>{t('save')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -1770,11 +1770,11 @@ export default function ForemanAddDriver() {
                         </Animated.View>
 
                         <Text style={styles.successTitleMinimal}>
-                            {successCount > 1 ? t('driversAdded', 'Drivers Added!') : t('driverAdded', 'Driver Added!')}
+                            {successCount > 1 ? t('driversAdded') : t('driverAdded')}
                         </Text>
                         <Text style={styles.successSubtitleMinimal}>
-                            {successCount} {successCount > 1 ? t('driversText', 'drivers') : t('driverText', 'driver')} {t('addedSuccessfully', 'added successfully')}
-                            {failCount > 0 ? ` · ${failCount} ${t('failed', 'failed')}` : ''}
+                            {successCount} {successCount > 1 ? t('driversText') : t('driverText')} {t('addedSuccessfully')}
+                            {failCount > 0 ? ` · ${failCount} ${t('failed')}` : ''}
                         </Text>
                     </Animated.View>
 
@@ -1787,7 +1787,7 @@ export default function ForemanAddDriver() {
                         }
                     ]}>
                         <Text style={styles.successListTitle}>
-                            {t('newlyAddedDrivers', 'Newly Added Drivers')}
+                            {t('newlyAddedDrivers')}
                         </Text>
                         <FlatList
                             data={successDrivers}
@@ -1829,7 +1829,7 @@ export default function ForemanAddDriver() {
                         >
                             <Ionicons name="people" size={18} color={COLORS.white} />
                             <Text style={styles.successPrimaryBtnText}>
-                                {t('viewMyPilots', 'View My Pilots')}
+                                {t('viewMyPilots')}
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -1838,7 +1838,7 @@ export default function ForemanAddDriver() {
                             activeOpacity={0.7}
                         >
                             <Text style={styles.successSecondaryBtnText}>
-                                {t('addMoreDrivers', 'Add More Drivers')}
+                                {t('addMoreDrivers')}
                             </Text>
                         </TouchableOpacity>
                     </Animated.View>
