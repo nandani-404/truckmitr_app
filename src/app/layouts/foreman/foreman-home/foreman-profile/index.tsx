@@ -265,6 +265,7 @@ export default function ForemanProfile() {
                     <TouchableOpacity
                         activeOpacity={0.9}
                         style={styles.avatarContainer}
+                        onPress={() => navigation.navigate(STACKS.PROFILE_OVERVIEW)}
                     >
                         <Svg width={size} height={size} style={styles.progressRing}>
                             <Defs>
@@ -379,6 +380,7 @@ export default function ForemanProfile() {
                             styles.editButton,
                             { backgroundColor: colors.blackOpacity(0.05) }
                         ]}
+                        onPress={() => navigation.navigate(STACKS.PROFILE_OVERVIEW)}
                     >
                         <Feather name="edit-2" size={18} color={colors.blackOpacity(0.6)} />
                     </TouchableOpacity>
@@ -436,6 +438,7 @@ export default function ForemanProfile() {
                                         styles.completeButton,
                                         { backgroundColor: colors.royalBlue }
                                     ]}
+                                    onPress={() => navigation.navigate(STACKS.PROFILE_OVERVIEW)}
                                 >
                                     <Text style={[
                                         styles.completeButtonText,
@@ -460,7 +463,7 @@ export default function ForemanProfile() {
                     <MenuItem
                         icon={<Feather name="user" size={20} color={colors.royalBlue} />}
                         title={t('profile')}
-                        onPress={() => { }}
+                        onPress={() => navigation.navigate(STACKS.PROFILE_OVERVIEW)}
                     />
                     <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
                     {/* <MenuItem
@@ -484,11 +487,11 @@ export default function ForemanProfile() {
                 {/* General Section */}
                 <SectionHeader title={t('general')} />
                 <CardContainer>
-                    <MenuItem
+                    {/* <MenuItem
                         icon={<FontAwesome name="star-o" size={20} color="#FFD700" />}
                         title={t('rateUs')}
                         onPress={() => navigation.navigate(STACKS.RATING)}
-                    />
+                    /> */}
                     <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
                     <MenuItem
                         icon={<AntDesign name="customerservice" size={20} color="#34C759" />}

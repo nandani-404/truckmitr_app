@@ -10,6 +10,10 @@ import {
     Platform,
     StatusBar,
     ActivityIndicator,
+    Alert,
+    Modal,
+    TouchableWithoutFeedback,
+    Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -19,6 +23,14 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/utils/config/index';
+import { showToast } from '@truckmitr/src/app/hooks/toast';
+
+const DRIVER_COUNT_OPTIONS = [
+    { label: '1–10', value: '1-10' },
+    { label: '11–25', value: '11-25' },
+    { label: '26–50', value: '26-50' },
+    { label: '50+', value: '50+' },
+];
 
 const BankDetails = () => {
     const navigation = useNavigation();
@@ -32,6 +44,9 @@ const BankDetails = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
+    const [showDriverCountModal, setShowDriverCountModal] = useState(false);
     const [bankData, setBankData] = useState({
         account_number: user?.account_number || '',
         account_holder_name: user?.account_holder_name || '',
@@ -39,16 +54,24 @@ const BankDetails = () => {
         branch_name: user?.branch_name || '',
         ifsc_code: user?.ifsc_code || '',
         account_type: user?.account_type || '',
+        driver_poll_size: user?.foreman_bank_detail?.driver_poll_size || user?.drivers_managed || '',
     });
 
     // Fetch bank details from API
     const fetchBankDetails = useCallback(async () => {
-        if (!userId) return;
+        if (!userId) {
+            setError('User not found. Please log in again.');
+            setLoading(false);
+            return;
+        }
         try {
             setLoading(true);
-            const response = await axiosInstance.get(END_POINTS.GET_PROFILE);
-            if (response?.data?.status) {
-                const data = response.data.user;
+            setError(null);
+            const response = await axiosInstance.get(END_POINTS.FOREMAN_BANK_DETAILS_FETCH(userId));
+
+            if (response?.data?.success) {
+                const data = response?.data?.bank_details || response?.data?.user || response?.data;
+                const workDetails = response?.data?.user || user;
                 setBankData({
                     account_number: data?.account_number || '',
                     account_holder_name: data?.account_holder_name || '',
@@ -56,10 +79,15 @@ const BankDetails = () => {
                     branch_name: data?.branch_name || '',
                     ifsc_code: data?.ifsc_code || '',
                     account_type: data?.account_type || '',
+                    driver_poll_size: workDetails?.foreman_bank_detail?.driver_poll_size || workDetails?.drivers_managed || '',
                 });
+            } else {
+                showToast(response?.data?.message || 'Failed to fetch bank details');
             }
-        } catch (error) {
-            console.error('Error fetching bank details:', error);
+        } catch (err: any) {
+            console.error('Error fetching bank details:', err);
+            const errorMessage = err?.response?.data?.message || err?.message || 'Something went wrong. Please try again.';
+            showToast(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -70,16 +98,51 @@ const BankDetails = () => {
     }, [fetchBankDetails]);
 
     const handleSave = async () => {
+        // Validation
+        const requiredFields = {
+            account_holder_name: 'Account Holder Name',
+            account_number: 'Account Number',
+            bank_name: 'Bank Name',
+            branch_name: 'Branch Name',
+            ifsc_code: 'IFSC Code',
+            account_type: 'Account Type',
+            driver_poll_size: 'Drivers Managed',
+        };
+
+        for (const [key, label] of Object.entries(requiredFields)) {
+            if (!bankData[key as keyof typeof bankData]) {
+                showToast(`Please fill the ${label}`);
+                return;
+            }
+        }
+
         try {
             setSaving(true);
-            const response = await axiosInstance.post(END_POINTS.UPDATE_PROFILE_FOREMAN, bankData);
-            if (response?.data?.status) {
-                console.log('Successfully saved bank data');
+            const payload = {
+                ...bankData,
+                user_id: userId,
+                unique_id: user?.unique_id || '',
+            };
+            const response = await axiosInstance.post(END_POINTS.FOREMAN_BANK_DETAILS_UPDATE, payload);
+
+            // Also update work details if they are managed by a separate endpoint or if this one handles them
+            // Based on earlier logic, driver_poll_size and routes were sent to UPDATE_PROFILE_FOREMAN
+            const workPayload = {
+                driver_poll_size: bankData.driver_poll_size,
+            };
+            await axiosInstance.post(END_POINTS.UPDATE_PROFILE_FOREMAN, workPayload);
+
+            if (response?.data?.success) {
+                showToast('Details updated successfully!');
                 setIsEditing(false);
                 fetchBankDetails(); // Refresh data
+            } else {
+                showToast(response?.data?.message || 'Failed to update details. Please try again.');
             }
-        } catch (error) {
-            console.error('Error saving bank details:', error);
+        } catch (err: any) {
+            console.error('Error saving details:', err);
+            const errorMessage = err?.response?.data?.message || err?.message || 'Something went wrong. Please try again.';
+            showToast(errorMessage);
         } finally {
             setSaving(false);
         }
@@ -97,23 +160,51 @@ const BankDetails = () => {
                 {label.toUpperCase()}
             </Text>
             {isEditing ? (
-                <TextInput
-                    style={[
-                        styles.input,
-                        {
-                            backgroundColor: colors.blackOpacity(0.04),
-                            color: colors.black,
+                key === 'account_type' || key === 'driver_poll_size' ? (
+                    <Pressable
+                        style={[
+                            styles.input,
+                            {
+                                backgroundColor: colors.blackOpacity(0.04),
+                                paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                            }
+                        ]}
+                        onPress={() => key === 'account_type' ? setShowAccountTypeModal(true) : setShowDriverCountModal(true)}
+                    >
+                        <Text style={{
+                            color: value ? colors.black : colors.blackOpacity(0.3),
                             fontSize: responsiveFontSize(1.8),
-                            paddingVertical: Platform.OS === 'ios' ? 12 : 8,
-                        }
-                    ]}
-                    value={value}
-                    onChangeText={(text) => setBankData({ ...bankData, [key]: text })}
-                    keyboardType={keyboardType}
-                    autoCapitalize={autoCapitalize}
-                    placeholder={`Enter ${label}`}
-                    placeholderTextColor={colors.blackOpacity(0.3)}
-                />
+                            fontWeight: '500',
+                        }}>
+                            {key === 'driver_poll_size'
+                                ? DRIVER_COUNT_OPTIONS.find(o => o.value === value)?.label || `Select ${label}`
+                                : value || `Select ${label}`
+                            }
+                        </Text>
+                        <Ionicons name="chevron-down" size={20} color={colors.blackOpacity(0.4)} />
+                    </Pressable>
+                ) : (
+                    <TextInput
+                        style={[
+                            styles.input,
+                            {
+                                backgroundColor: colors.blackOpacity(0.04),
+                                color: colors.black,
+                                fontSize: responsiveFontSize(1.8),
+                                paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+                            }
+                        ]}
+                        value={value}
+                        onChangeText={(text) => setBankData({ ...bankData, [key]: text })}
+                        keyboardType={keyboardType}
+                        autoCapitalize={autoCapitalize}
+                        placeholder={`Enter ${label}`}
+                        placeholderTextColor={colors.blackOpacity(0.3)}
+                    />
+                )
             ) : (
                 <View style={styles.valueContainer}>
                     <Text style={[styles.value, { color: colors.black, fontSize: responsiveFontSize(1.9) }]}>
@@ -122,6 +213,100 @@ const BankDetails = () => {
                 </View>
             )}
         </View>
+    );
+
+    const renderAccountTypeModal = () => (
+        <Modal
+            visible={showAccountTypeModal}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowAccountTypeModal(false)}
+        >
+            <TouchableWithoutFeedback onPress={() => setShowAccountTypeModal(false)}>
+                <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback>
+                        <View style={[styles.modalContent, { backgroundColor: colors.white }]}>
+                            <View style={styles.modalHeader}>
+                                <Text style={[styles.modalTitle, { color: colors.black }]}>Select Account Type</Text>
+                                <TouchableOpacity onPress={() => setShowAccountTypeModal(false)}>
+                                    <Ionicons name="close" size={24} color={colors.black} />
+                                </TouchableOpacity>
+                            </View>
+                            {['Savings', 'Current'].map((type) => (
+                                <TouchableOpacity
+                                    key={type}
+                                    style={[
+                                        styles.optionItem,
+                                        bankData.account_type === type && { backgroundColor: colors.royalBlue + '10' }
+                                    ]}
+                                    onPress={() => {
+                                        setBankData({ ...bankData, account_type: type });
+                                        setShowAccountTypeModal(false);
+                                    }}
+                                >
+                                    <Text style={[
+                                        styles.optionText,
+                                        { color: bankData.account_type === type ? colors.royalBlue : colors.black }
+                                    ]}>
+                                        {type}
+                                    </Text>
+                                    {bankData.account_type === type && (
+                                        <Ionicons name="checkmark" size={20} color={colors.royalBlue} />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </TouchableWithoutFeedback>
+                </View>
+            </TouchableWithoutFeedback>
+        </Modal>
+    );
+
+    const renderDriverCountModal = () => (
+        <Modal
+            visible={showDriverCountModal}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowDriverCountModal(false)}
+        >
+            <TouchableWithoutFeedback onPress={() => setShowDriverCountModal(false)}>
+                <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback>
+                        <View style={[styles.modalContent, { backgroundColor: colors.white }]}>
+                            <View style={styles.modalHeader}>
+                                <Text style={[styles.modalTitle, { color: colors.black }]}>Select Driver Pool Size</Text>
+                                <TouchableOpacity onPress={() => setShowDriverCountModal(false)}>
+                                    <Ionicons name="close" size={24} color={colors.black} />
+                                </TouchableOpacity>
+                            </View>
+                            {DRIVER_COUNT_OPTIONS.map((opt) => (
+                                <TouchableOpacity
+                                    key={opt.value}
+                                    style={[
+                                        styles.optionItem,
+                                        bankData.driver_poll_size === opt.value && { backgroundColor: colors.royalBlue + '10' }
+                                    ]}
+                                    onPress={() => {
+                                        setBankData({ ...bankData, driver_poll_size: opt.value });
+                                        setShowDriverCountModal(false);
+                                    }}
+                                >
+                                    <Text style={[
+                                        styles.optionText,
+                                        { color: bankData.driver_poll_size === opt.value ? colors.royalBlue : colors.black }
+                                    ]}>
+                                        {opt.label}
+                                    </Text>
+                                    {bankData.driver_poll_size === opt.value && (
+                                        <Ionicons name="checkmark" size={20} color={colors.royalBlue} />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </TouchableWithoutFeedback>
+                </View>
+            </TouchableWithoutFeedback>
+        </Modal>
     );
 
     if (loading) {
@@ -135,6 +320,8 @@ const BankDetails = () => {
             </View>
         );
     }
+
+    /** Skip error screen, use toasts instead as per requirement */
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -162,10 +349,12 @@ const BankDetails = () => {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
                 >
                     <View style={styles.flatContainer}>
                         {renderInput('Account Holder Name', bankData.account_holder_name, 'account_holder_name')}
@@ -179,6 +368,14 @@ const BankDetails = () => {
                         {renderInput('IFSC Code', bankData.ifsc_code, 'ifsc_code', 'default', 'characters')}
                         <View style={styles.divider} />
                         {renderInput('Account Type', bankData.account_type, 'account_type')}
+
+                        <View style={[styles.sectionTitleContainer, { backgroundColor: colors.blackOpacity(0.02) }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.blackOpacity(0.4), fontSize: responsiveFontSize(1.3) }]}>
+                                WORK DETAILS
+                            </Text>
+                        </View>
+
+                        {renderInput('Drivers Managed', bankData.driver_poll_size, 'driver_poll_size')}
                     </View>
 
                     {isEditing && (
@@ -206,6 +403,8 @@ const BankDetails = () => {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+            {renderAccountTypeModal()}
+            {renderDriverCountModal()}
         </View>
     );
 };
@@ -312,6 +511,88 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#065F46',
         lineHeight: 18,
+    },
+    errorTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        marginTop: 20,
+        textAlign: 'center',
+    },
+    errorMessage: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginTop: 10,
+        paddingHorizontal: 40,
+        lineHeight: 22,
+    },
+    retryButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginTop: 30,
+    },
+    retryButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
+    },
+    goBackButton: {
+        marginTop: 20,
+        padding: 10,
+    },
+    goBackText: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        width: '100%',
+        borderRadius: 16,
+        paddingTop: 16,
+        overflow: 'hidden',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+    },
+    optionItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.03)',
+    },
+    optionText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    sectionTitleContainer: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        marginTop: 10,
+    },
+    sectionTitle: {
+        fontWeight: '700',
+        letterSpacing: 1,
     },
 });
 

@@ -18,6 +18,8 @@ import ForemanDriverDetails from '@truckmitr/src/app/layouts/foreman/foreman-hom
 import ForemanApplications from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-applications';
 import ForemanRecruitments from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-recruitments';
 import BankDetails from '@truckmitr/src/app/layouts/foreman/foreman-home/bank-detils';
+import ProfileOverView from '@truckmitr/src/app/layouts/foreman/foreman-overView';
+import ForemanProfileEdit from '@truckmitr/src/app/layouts/foreman/foreman-profile-edit';
 
 const Stack = createNativeStackNavigator();
 
@@ -90,6 +92,8 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.FOREMAN_APPLICATIONS} component={ForemanApplications} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_RECRUITMENTS} component={ForemanRecruitments} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_BANK_DETAILS} component={BankDetails} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.PROFILE_OVERVIEW} component={ProfileOverView} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_PROFILE_COMPLETION} component={ForemanProfileEdit} options={{ animation: 'slide_from_right' }} />
         </Stack.Navigator>
     )
 }

@@ -145,6 +145,7 @@ export type NavigatorParams = {
     foremanMyPilots: undefined;
     foremanMyEarnings: undefined;
     foremanProfile: undefined;
+    foremanProfileCompletion: { stepId?: string | number } | undefined;
     foremanDriverKiAwaz: undefined;
     foremanBankDetails: undefined;
 };

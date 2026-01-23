@@ -116,6 +116,9 @@ export const END_POINTS = {
     RESPOND_INVITE: `api/driver/respond-invite`,
     TRANSPORTER_INVITES: `api/transporter/accepted-drivers`,
     POPUP_MESSAGE: `api/popup-messages`,
+    MOBILE_POPUP: `api/mobile-popup`,
+    GET_ACTIVE_SURVEY: (role: any) => `api/surveys/active?role=${role}`,
+    SUBMIT_SURVEY_RESPONSE: `api/surveys/submit-response`,
 
     CREATE_ORDER: 'api/payment/create-order',
     PAYMENT_DETAIL: 'api/orders/payments_details',
@@ -184,6 +187,8 @@ export const END_POINTS = {
     PENDING_TRAINING: (foreman_id: any) => `api/foreman/${foreman_id}/pending-training`,
     FOREMAN_HOME_DASHBOARD: (foreman_id: any) => `api/foreman/${foreman_id}/commission-summary`,
     FOREMAN_DASHBOARD: (foreman_id: any) => `api/foreman/dashboard-counts/${foreman_id}`,
+    FOREMAN_BANK_DETAILS_UPDATE: `api/foreman/bank-details`,
+    FOREMAN_BANK_DETAILS_FETCH: (foreman_id: any) => `api/foreman/account-details/${foreman_id}`,
     // Driver Ki Awaz
     DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
     DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,
