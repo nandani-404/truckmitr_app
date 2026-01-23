@@ -124,7 +124,8 @@ const userReducer = (state = initialState, action: any) => {
                 'Job Ready',
                 'JOB READY',
                 'VERIFIED',
-                'TRUSTED'
+                'TRUSTED',
+                'foreman_pro'
             ];
 
             // Filter for subscription records - handle all payment types

@@ -614,6 +614,189 @@ const TransporterSubscriptionModal = ({
   );
 };
 
+// --- Foreman Subscription Modal Component ---
+const ForemanSubscriptionModal = ({
+  visible,
+  onClose,
+  onSubscribe,
+  isLoading,
+  safeAreaInsets,
+  responsiveFontSize,
+  consentChecked,
+  onConsentToggle,
+  onOpenConsent,
+  t,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSubscribe: () => void;
+  isLoading: boolean;
+  safeAreaInsets: { top: number; bottom: number };
+  responsiveFontSize: (s: number) => number;
+  consentChecked: boolean;
+  onConsentToggle: () => void;
+  onOpenConsent: () => void;
+  t: (key: string) => string;
+}) => {
+  const benefits = [
+    {
+      icon: '✔',
+      title: t('foremanFeatureProBadge') || 'Foreman Pro Badge',
+      desc: t('foremanFeatureProBadgeDesc') || 'Get recognized as a Pro Foreman.',
+    },
+    {
+      icon: '✔',
+      title: t('foremanFeatureHigherEarnings') || 'Higher Earnings',
+      desc: t('foremanFeatureHigherEarningsDesc') || 'Unlock potential for increased revenue.',
+    },
+    {
+      icon: '✔',
+      title: t('foremanFeaturePrioritySupport') || 'Priority Support',
+      desc: t('foremanFeaturePrioritySupportDesc') || 'Get dedicated support for your operations.',
+    },
+    {
+      icon: '✔',
+      title: t('foremanFeatureAdvancedTools') || 'Advanced Tools',
+      desc: t('foremanFeatureAdvancedToolsDesc') || 'Access advanced dashboard and reporting tools.',
+    },
+  ];
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={false}
+      visible={visible}
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <View style={[tStyles.container, { paddingTop: safeAreaInsets.top }]}>
+        {/* Close Button */}
+        <TouchableOpacity
+          onPress={onClose}
+          style={tStyles.closeButton}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="close" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+
+        <ScrollView
+          contentContainerStyle={[tStyles.scrollContent, { paddingBottom: safeAreaInsets.bottom + 100 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={tStyles.header}>
+            <Text style={[tStyles.badge, { fontSize: responsiveFontSize(1.8), color: COLORS.primary }]}>👷 {t('foremanProBadge') || 'FOREMAN PRO'}</Text>
+            <Text style={[tStyles.title, { fontSize: responsiveFontSize(2.8) }]}>
+              {t('foremanHeroSubtitle') || 'Upgrade to Foreman Pro'}
+            </Text>
+            <View style={tStyles.priceRow}>
+              <Text style={[tStyles.price, { fontSize: responsiveFontSize(4.2), color: COLORS.primary }]}>₹999</Text>
+              <Text style={[tStyles.duration, { fontSize: responsiveFontSize(1.8) }]}> / {t('sixMonths') || '6 Months'}</Text>
+            </View>
+            <Text style={[tStyles.tagline, { fontSize: responsiveFontSize(1.6) }]}>
+              {t('foremanTagline') || 'Unlock exclusive features and maximize your efficiency.'}
+            </Text>
+          </View>
+
+          {/* What You Get Section */}
+          <View style={tStyles.section}>
+            <Text style={[tStyles.sectionTitle, { fontSize: responsiveFontSize(2.2) }]}>
+              🚀 {t('foremanWhatYouGet') || 'What You Get'}
+            </Text>
+
+            {benefits.map((item, index) => (
+              <View key={index} style={tStyles.benefitRow}>
+                <Text style={[tStyles.checkIcon, { fontSize: responsiveFontSize(1.8), color: COLORS.primary }]}>{item.icon}</Text>
+                <View style={tStyles.benefitContent}>
+                  <Text style={[tStyles.benefitTitle, { fontSize: responsiveFontSize(1.8) }]}>{item.title}</Text>
+                  <Text style={[tStyles.benefitDesc, { fontSize: responsiveFontSize(1.5) }]}>{item.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Additional Benefits */}
+          <View style={tStyles.section}>
+            <View style={tStyles.benefitRow}>
+              <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
+              <Text style={[tStyles.simpleBenefit, { fontSize: responsiveFontSize(1.7) }]}>
+                {t('foremanBenefit1') || 'Stand out from the crowd'}
+              </Text>
+            </View>
+            <View style={tStyles.benefitRow}>
+              <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
+              <Text style={[tStyles.simpleBenefit, { fontSize: responsiveFontSize(1.7) }]}>
+                {t('foremanBenefit2') || 'Exclusive access to future updates'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Trust Section */}
+          <View style={[tStyles.trustBox, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
+            <Text style={[tStyles.trustTitle, { fontSize: responsiveFontSize(1.8), color: '#0369A1' }]}>
+              ⭐ {t('foremanTrustTitle') || 'Join the Pro Community'}
+            </Text>
+            <Text style={[tStyles.trustDesc, { fontSize: responsiveFontSize(1.5), color: '#0C4A6E' }]}>
+              {t('foremanTrustDesc') || 'Become a top-rated foreman with verified status.'}
+            </Text>
+          </View>
+
+          {/* Consent */}
+          <View style={tStyles.consentRow}>
+            <TouchableOpacity onPress={onConsentToggle} activeOpacity={0.7}>
+              <View style={[tStyles.checkbox, consentChecked && tStyles.checkboxChecked]}>
+                {consentChecked && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
+              </View>
+            </TouchableOpacity>
+            <Text style={[tStyles.consentText, { fontSize: responsiveFontSize(1.5) }]}>
+              {t('subForemanConsentText') || 'I agree to the '}{' '}
+              <Text style={tStyles.consentLink} onPress={onOpenConsent}>
+                {t('subTermsAndConditions') || 'subscription terms and disclaimer'}
+              </Text>
+              {' '}{t('subAuthorizePayments') || 'and authorize payments'}
+            </Text>
+          </View>
+        </ScrollView>
+
+        {/* CTA Button */}
+        <View style={[tStyles.ctaContainer, { paddingBottom: safeAreaInsets.bottom + 16 }]}>
+          <TouchableOpacity
+            onPress={onSubscribe}
+            activeOpacity={consentChecked ? 0.9 : 1}
+            disabled={!consentChecked || isLoading}
+            style={[tStyles.ctaButton, { opacity: consentChecked ? 1 : 0.5 }]}
+          >
+            <LinearGradient
+              colors={[COLORS.primary, '#818CF8']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={tStyles.ctaGradient}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <Text style={[tStyles.ctaText, { fontSize: responsiveFontSize(2.0) }]}>
+                  👉 {t('foremanSubscribeNow') || 'Upgrade to Pro'}
+                </Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <View style={tStyles.secureRow}>
+            <Ionicons name="shield-checkmark" size={18} color={COLORS.success} />
+            <Text style={[tStyles.secureText, { fontSize: responsiveFontSize(1.4) }]}>
+              {t('subSecurePayment') || 'Secure payment powered by Razorpay'}
+            </Text>
+          </View>
+        </View>
+
+        <LoadingOverlay visible={isLoading} t={t} />
+      </View>
+    </Modal>
+  );
+};
+
 // --- Clean Transporter Modal Styles ---
 const tStyles = StyleSheet.create({
   container: {
@@ -1085,7 +1268,11 @@ export default function Subscription({ }: any) {
       const role = user?.role || 'driver';
       console.log('Fetching subscription plans for role:', role);
 
-      const response = await axiosInstance.get(END_POINTS.PAYMENT_SUBSCRIPTION_UPDATE(role));
+      const endpoint = role === 'foreman'
+        ? END_POINTS.SUBSCRIPTION_PLANS(role)
+        : END_POINTS.PAYMENT_SUBSCRIPTION_UPDATE(role);
+
+      const response = await axiosInstance.get(endpoint);
       console.log('Subscription plans API response:', JSON.stringify(response?.data, null, 2));
 
       if (response?.data?.success && Array.isArray(response?.data?.data)) {
@@ -1115,6 +1302,12 @@ export default function Subscription({ }: any) {
             bgColor = COLORS.verifiedBg;
             gradient = ['#10B981', '#34D399'];
             badge = '✅';
+          } else if (planName.includes('foreman') || amount >= 900) {
+            tier = 'trusted'; // Re-using styles for Foreman Pro
+            color = COLORS.primary;
+            bgColor = '#F5F3FF';
+            gradient = ['#4F46E5', '#818CF8'];
+            badge = '👷';
           }
 
           // Special override for 99 Plan to be "JOB READY"
@@ -1466,6 +1659,18 @@ export default function Subscription({ }: any) {
     if (transporterPlan) {
       await handleSelectPlan(transporterPlan);
     }
+    if (transporterPlan) {
+      await handleSelectPlan(transporterPlan);
+    }
+  }, [dynamicPlans]);
+
+  // Handle foreman subscription
+  const handleForemanSubscribe = useCallback(async () => {
+    // Find the 999 plan for foreman
+    const foremanPlan = dynamicPlans.find(plan => plan.price === 999) || dynamicPlans[0];
+    if (foremanPlan) {
+      await handleSelectPlan(foremanPlan);
+    }
   }, [dynamicPlans]);
 
   // Show TransporterSubscriptionModal for transporter role
@@ -1476,6 +1681,31 @@ export default function Subscription({ }: any) {
           visible={subscriptionModal}
           onClose={() => dispatch(subscriptionModalAction(false))}
           onSubscribe={handleTransporterSubscribe}
+          isLoading={isLoading}
+          safeAreaInsets={safeAreaInsets}
+          responsiveFontSize={responsiveFontSize}
+          consentChecked={consentChecked}
+          onConsentToggle={() => setConsentChecked(!consentChecked)}
+          onOpenConsent={() => setConsentModalVisible(true)}
+          t={t}
+        />
+        <ConsentModal
+          visible={consentModalVisible}
+          onClose={() => setConsentModalVisible(false)}
+          safeAreaInsets={safeAreaInsets}
+        />
+      </>
+    );
+  }
+
+  // Show ForemanSubscriptionModal for foreman role
+  if (user?.role === 'foreman') {
+    return (
+      <>
+        <ForemanSubscriptionModal
+          visible={subscriptionModal}
+          onClose={() => dispatch(subscriptionModalAction(false))}
+          onSubscribe={handleForemanSubscribe}
           isLoading={isLoading}
           safeAreaInsets={safeAreaInsets}
           responsiveFontSize={responsiveFontSize}

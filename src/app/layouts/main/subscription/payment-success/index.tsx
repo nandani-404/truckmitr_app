@@ -176,8 +176,41 @@ const TRANSPORTER_TIER_CONFIG: Record<number, {
     },
 };
 
+// Plan tier configurations with benefits - FOREMAN plans
+const FOREMAN_TIER_CONFIG: Record<number, {
+    color: string;
+    gradient: string[];
+    icon: string;
+    label: string;
+    benefitKeys: string[];
+    noteKeys: string[];
+    ctaKey: string;
+}> = {
+    999: {
+        color: '#4F46E5',
+        gradient: ['#4F46E5', '#818CF8'],
+        icon: '👷',
+        label: 'Foreman Pro',
+        benefitKeys: [
+            'foremanBenefitCreateProfile',
+            'foremanBenefitBrowseJobs',
+            'foremanBenefitVerifiedBadge',
+            'foremanBenefitTraining',
+            'foremanBenefitPriority',
+        ],
+        noteKeys: [
+            'subFooterDigitalProcess',
+            'subFooterImproveConfidence',
+        ],
+        ctaKey: 'foremanSubscribeNow',
+    },
+};
+
 // Helper function to get tier config based on role and amount
-const getTierConfig = (isDriver: boolean, amount: number) => {
+const getTierConfig = (isDriver: boolean, isForeman: boolean, amount: number) => {
+    if (isForeman) {
+        return FOREMAN_TIER_CONFIG[999];
+    }
     if (isDriver) {
         // For drivers: Map exact amounts or fallback to closest tier
         if (amount <= 99) return DRIVER_TIER_CONFIG[99];
@@ -202,16 +235,16 @@ export default function PaymentSuccess() {
     const [emailPopupVisible, setEmailPopupVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    const { user, isDriver, subscriptionDetails } = useSelector((state: any) => state?.user);
+    const { user, isDriver, isForeman, subscriptionDetails } = useSelector((state: any) => state?.user);
     const [email, setEmail] = useState(user?.email || '');
 
     // Extract plan data
     const plan = route?.params?.plan;
-    const planPrice = plan?.price || (isDriver ? 199 : 499);
-    const planName = plan?.name || (isDriver ? 'VERIFIED' : 'STANDARD');
-    const originalPrice = plan?.price === 99 ? 249 : plan?.price === 199 ? 499 : plan?.price === 499 ? 999 : 499;
+    const planPrice = plan?.price || (isForeman ? 999 : (isDriver ? 199 : 499));
+    const planName = plan?.name || (isForeman ? 'Foreman Pro' : (isDriver ? 'VERIFIED' : 'STANDARD'));
+    const originalPrice = plan?.price === 99 ? 249 : plan?.price === 199 ? 499 : plan?.price === 499 ? 999 : (plan?.price === 999 ? 1999 : 499);
 
-    const tierConfig = getTierConfig(isDriver, planPrice);
+    const tierConfig = getTierConfig(isDriver, isForeman, planPrice);
 
     // Check if driver should verify their license (for 199 or 499 plans)
     const showDLVerification = isDriver && (planPrice === 199 || planPrice === 499);
