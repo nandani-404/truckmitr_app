@@ -22,6 +22,7 @@ import ForemanApplications from '@truckmitr/src/app/layouts/foreman/foreman-home
 import ForemanRecruitments from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-recruitments';
 import BankDetails from '@truckmitr/src/app/layouts/foreman/foreman-home/bank-detils';
 import ForemanSearchScreen from '@truckmitr/src/app/layouts/foreman/foreman-home/search-screen';
+import ForemanEarningsInfo from '@truckmitr/src/app/layouts/foreman/foreman-home/earninig';
 
 const Stack = createNativeStackNavigator();
 
@@ -119,6 +120,7 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.FOREMAN_RECRUITMENTS} component={ForemanRecruitments} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_BANK_DETAILS} component={BankDetails} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_SEARCH} component={ForemanSearchScreen} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_EARNINGS_INFO} component={ForemanEarningsInfo} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.PAYMENT_SUCCESS} component={PaymentSuccess} options={{ animation: 'fade_from_bottom' }} />
         </Stack.Navigator>
     )

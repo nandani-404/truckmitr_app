@@ -938,6 +938,132 @@ export default function ForemanProfile() {
                     );
                 })()}
 
+                {/* Earnings & Commission Section */}
+                <SectionHeader title={t('myEarnings') || 'My Earnings'} />
+
+                {/* Earnings Info Button Card */}
+                <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate(STACKS.FOREMAN_EARNINGS_INFO as any)}
+                    style={{
+                        marginHorizontal: responsiveFontSize(2),
+                        borderRadius: 14,
+                        overflow: 'hidden',
+                        marginBottom: responsiveFontSize(2),
+                        backgroundColor: colors.white,
+                        ...shadow,
+                        shadowColor: colors.blackOpacity(0.08),
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 1,
+                        shadowRadius: 8,
+                        elevation: 3,
+                        borderWidth: 1,
+                        borderColor: colors.blackOpacity(0.05),
+                    }}
+                >
+                    <View style={{ padding: responsiveFontSize(2) }}>
+                        <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                        }}>
+                            <View style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 12,
+                                backgroundColor: '#FFF7ED',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <MaterialCommunityIcons name="cash-multiple" size={26} color="#EA580C" />
+                            </View>
+                            <View style={{ marginLeft: responsiveFontSize(1.5), flex: 1 }}>
+                                <Text style={{
+                                    color: colors.black,
+                                    fontSize: responsiveFontSize(2),
+                                    fontWeight: '600',
+                                }}>
+                                    {t('commission') || 'Hiring Commission'}
+                                </Text>
+                                <Text style={{
+                                    color: colors.blackOpacity(0.5),
+                                    fontSize: responsiveFontSize(1.4),
+                                    marginTop: 2,
+                                }}>
+                                    View earnings, levels & commission rates
+                                </Text>
+                            </View>
+                            <View style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 16,
+                                backgroundColor: colors.royalBlueOpacity(0.1),
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <Ionicons name="chevron-forward" size={18} color={colors.royalBlue} />
+                            </View>
+                        </View>
+
+                        {/* Quick Stats Row */}
+                        <View style={{
+                            flexDirection: 'row',
+                            marginTop: responsiveFontSize(1.5),
+                            gap: responsiveFontSize(1),
+                        }}>
+                            <View style={{
+                                flex: 1,
+                                backgroundColor: '#F0FDF4',
+                                borderRadius: 10,
+                                paddingVertical: 10,
+                                paddingHorizontal: 12,
+                                borderWidth: 1,
+                                borderColor: '#BBF7D0',
+                                alignItems: 'center',
+                            }}>
+                                <Text style={{
+                                    color: '#16A34A',
+                                    fontSize: responsiveFontSize(1.8),
+                                    fontWeight: '700',
+                                }}>
+                                    ₹300 - ₹600
+                                </Text>
+                                <Text style={{
+                                    color: '#64748B',
+                                    fontSize: responsiveFontSize(1.2),
+                                    marginTop: 2,
+                                }}>
+                                    Per Hiring
+                                </Text>
+                            </View>
+                            <View style={{
+                                flex: 1,
+                                backgroundColor: '#FEF3C7',
+                                borderRadius: 10,
+                                paddingVertical: 10,
+                                paddingHorizontal: 12,
+                                borderWidth: 1,
+                                borderColor: '#FCD34D',
+                                alignItems: 'center',
+                            }}>
+                                <Text style={{
+                                    color: '#D97706',
+                                    fontSize: responsiveFontSize(1.8),
+                                    fontWeight: '700',
+                                }}>
+                                    ₹20 - ₹150
+                                </Text>
+                                <Text style={{
+                                    color: '#64748B',
+                                    fontSize: responsiveFontSize(1.2),
+                                    marginTop: 2,
+                                }}>
+                                    Per Subscription
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+
                 {/* Account Section */}
                 <SectionHeader title={t('account')} />
                 <CardContainer>
