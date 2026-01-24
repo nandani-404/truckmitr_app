@@ -2479,5 +2479,19 @@
     "foremanTrustTitle": "प्रो समुदाय में शामिल हों",
     "foremanTrustDesc": "सत्यापित स्थिति के साथ टॉप-रेटेड फोरमैन बनें।",
     "foremanSubscribeNow": "प्रो में अपग्रेड करें",
-    "subForemanConsentText": "मैं सहमत हूं "
+    "subForemanConsentText": "मैं सहमत हूं ",
+    "applicationTitle": "आवेदन",
+    "noApplicationsFound": "कोई आवेदन नहीं मिला।",
+    "applicant": "आवेदक",
+    "viewDriverDetail": "ड्राइवर विवरण देखें",
+    "driverDetails": "ड्राइवर विवरण",
+    "personalAndLicenseDetails": "व्यक्तिगत और लाइसेंस विवरण",
+    "contactInformation": "संपर्क जानकारी",
+    "mobileNumber": "मोबाइल नंबर",
+    "emailID": "ईमेल आईडी",
+    "rejectThis": "अस्वीकार करें",
+    "acceptThis": "स्वीकार करें",
+    "year": "वर्ष",
+    "years": "वर्ष",
+    "legacy": "लेगेसी"
 }
