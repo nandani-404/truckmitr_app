@@ -54,9 +54,10 @@ const BACKGROUND_VERIFIED = require('@truckmitr/src/assets/membership-card/membe
 const BACKGROUND_TRUSTED = require('@truckmitr/src/assets/membership-card/membershipcardbg2.png');
 const BACKGROUND_JOB_READY = require('@truckmitr/src/assets/membership-card/membershipcard3.png');
 const BACKGROUND_TRANSPORTER_PRO = require('@truckmitr/src/assets/membership-card/TransporterPro.png');
+const BACKGROUND_FOREMAN_PRO = require('@truckmitr/src/assets/membership-card/foremancardnew.jpeg');
 
 // Card tier configurations
-type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO' | 'LEGACY TRANSPORTER';
+type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO' | 'LEGACY TRANSPORTER' | 'FOREMAN PRO';
 
 interface TierConfig {
   background: any;
@@ -149,6 +150,18 @@ const getTierConfigs = (t: any): Record<TierType, TierConfig> => ({
       { offset: '1', color: '#DEB887' },
     ],
     categoryText: t('cardLegacyTransporter'),
+  },
+  'FOREMAN PRO': {
+    background: BACKGROUND_FOREMAN_PRO,
+    borderColors: ['#1F2937', '#4B5563', '#9CA3AF', '#4B5563', '#1F2937'],
+    chromeGradient: [
+      { offset: '0', color: '#E0E3E7' },
+      { offset: '0.25', color: '#BFC5CC' },
+      { offset: '0.5', color: '#9AA0A6' },
+      { offset: '0.75', color: '#BFC5CC' },
+      { offset: '1', color: '#E0E3E7' },
+    ],
+    categoryText: t('foremanProBadge') || 'FOREMAN PRO',
   },
 });
 
@@ -672,7 +685,7 @@ export default function Profile() {
         // Get dynamic share text based on user badge and language
         const currentLang = i18n.language === 'hi' ? 'hi' : 'en';
         const shareMessage = getMembershipShareText({ user, subscriptionDetails, isDriver }, currentLang);
-        
+
         // Share the membership card
         const shareOptions = {
           title: t('truckMitrMembershipCard'),

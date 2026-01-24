@@ -46,7 +46,7 @@ const TrainingCard = ({ driver }: { driver: PendingTrainingDriver }) => {
     };
 
     const profileImage = driver.images
-        ? `${BASE_URL}${driver.images}`
+        ? `${BASE_URL}public/${driver.images}`
         : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
     return (

@@ -27,6 +27,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/utils/config/index';
+import moment from 'moment';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -70,8 +71,7 @@ const mapApiToPendingDriver = (apiDriver: ApiPendingDriver, t: any): PendingDriv
     // Format date if possible
     let formattedDate = apiDriver.created_at;
     try {
-        const date = new Date(apiDriver.created_at);
-        formattedDate = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+        formattedDate = moment(apiDriver.created_at).format('DD-MMM-YY').toLowerCase();
     } catch (e) { }
 
     return {

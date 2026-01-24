@@ -22,7 +22,8 @@ import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
-import { END_POINTS } from '@truckmitr/utils/config/index';
+import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
+import moment from 'moment';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -67,7 +68,7 @@ const mapApiToDriver = (apiDriver: ApiDriver): Driver => {
         tmId: apiDriver.unique_id || 'N/A',
         mobile: apiDriver.mobile || 'N/A',
         image: apiDriver.images
-            ? (apiDriver.images.startsWith('http') ? apiDriver.images : `https://devtruckmitr.in/${apiDriver.images}`)
+            ? (apiDriver.images.startsWith('http') ? apiDriver.images : `${BASE_URL}public/${apiDriver.images}`)
             : DEFAULT_AVATAR,
         state: apiDriver.state_name || 'N/A',
         createdAt: apiDriver.created_at || '',
@@ -78,12 +79,7 @@ const mapApiToDriver = (apiDriver: ApiDriver): Driver => {
 const formatDate = (dateStr: string): string => {
     if (!dateStr) return 'N/A';
     try {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        });
+        return moment(dateStr).format('DD-MMM-YY').toLowerCase();
     } catch {
         return dateStr;
     }

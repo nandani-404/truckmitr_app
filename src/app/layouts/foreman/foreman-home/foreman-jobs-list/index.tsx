@@ -313,6 +313,10 @@ const ForemanJobsList = () => {
                     <Ionicons name="calendar-outline" size={14} color="#64748B" />
                     <Text style={styles.detailText}>{t('deadline')}: {formatDate(item.Application_Deadline)}</Text>
                 </View>
+                <View style={styles.detailBadge}>
+                    <Ionicons name="calendar-outline" size={14} color="#64748B" />
+                    <Text style={styles.detailText}>{t('noOfDriversRequired')}: {item.number_of_drivers_required}</Text>
+                </View>
             </View>
 
             <View style={styles.infoTagsRow}>
@@ -332,7 +336,7 @@ const ForemanJobsList = () => {
 
             <View style={styles.salaryRow}>
                 <Text style={styles.salaryText}>{formatSalary(item.Salary_Range, t)}</Text>
-                <Text style={styles.postedText}>{getTimeAgo(item.Created_at, t)}</Text>
+                <Text style={styles.postedText}>{moment(item.Created_at).format('DD-MMM-YY').toLowerCase()}</Text>
             </View>
 
             <TouchableOpacity
@@ -505,7 +509,7 @@ const ForemanJobsList = () => {
                             />
                             <DetailItem
                                 icon={<FontAwesome6 name="users" size={14} color="#3B82F6" />}
-                                label={t('openPositions')}
+                                label={t('noOfDriversRequired')}
                                 value={selectedJob.number_of_drivers_required || '-'}
                             />
                         </View>
@@ -595,7 +599,7 @@ const ForemanJobsList = () => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#0F172A" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('availableJobs')}</Text>
+                <Text style={styles.headerTitle}>{t('allAvailableJobs')}</Text>
                 <View style={styles.headerRight}>
                     <Text style={styles.jobCount}>{jobs.length} {t('jobsLowercase')}</Text>
                 </View>

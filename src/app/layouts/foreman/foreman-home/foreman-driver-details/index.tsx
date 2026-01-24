@@ -8,6 +8,8 @@ import Svg, { Circle } from 'react-native-svg';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
 
+const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
+
 // Reusing definition for clarity
 type Driver = {
     id: string;
@@ -296,7 +298,15 @@ const ForemanDriverDetails = () => {
                                     />
                                 </Svg>
                                 <View style={styles.profileImageInner}>
-                                    <Image source={{ uri: `${BASE_URL}public/${details.image}` }} style={styles.profileImage} />
+                                    <Image
+                                        source={{
+                                            uri: details.image && details.image !== 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png'
+                                                ? (details.image.startsWith('http') ? details.image : `${BASE_URL}public/${details.image}`)
+                                                : DEFAULT_AVATAR
+                                        }}
+                                        style={styles.profileImage}
+                                        defaultSource={{ uri: DEFAULT_AVATAR }}
+                                    />
                                 </View>
                                 <View style={[
                                     styles.completionPercentBadge,

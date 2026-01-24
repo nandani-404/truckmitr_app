@@ -8,6 +8,7 @@ import Svg, { Circle } from 'react-native-svg';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
 import { useTranslation } from 'react-i18next';
+import moment from 'moment';
 
 // API Response Driver Type
 type ApiDriver = {
@@ -29,7 +30,7 @@ type Driver = {
     tmId: string;
     mobile: string;
     status: string;
-    image: string;
+    images: string;
     isNew: boolean;
     state: string;
     addedDate: string;
@@ -60,10 +61,8 @@ const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png'
 // Helper function to format date
 const formatDate = (dateString: string): string => {
     try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        // NOTE: For full localization, Consider using date.toLocaleDateString(i18n.language, ...) if available or a library like moment/date-fns within the component where t is available.
-        // For now keeping en-IN format as requested but this function can be enhanced.
+        if (!dateString) return 'N/A';
+        return moment(dateString).format('DD-MMM-YY').toLowerCase();
     } catch {
         return dateString;
     }
@@ -111,7 +110,7 @@ const mapApiDriverToDriver = (apiDriver: ApiDriver): Driver => {
         tmId: apiDriver.unique_id || '',
         mobile: apiDriver.mobile || '',
         status: status,
-        image: apiDriver.images || DEFAULT_AVATAR,
+        images: apiDriver.images || '',
         isNew: isNewDriver(apiDriver.created_at),
         state: apiDriver.state_name || 'N/A',
         addedDate: formatDate(apiDriver.created_at),
@@ -234,7 +233,15 @@ export default function ForemanMyPilots() {
                             />
                         </Svg>
                         <View style={styles.profileImageContainerInner}>
-                            <Image source={{ uri: `${BASE_URL}public/${driver.image}` }} style={styles.profileImage} />
+                            <Image
+                                source={{
+                                    uri: driver.images
+                                        ? (driver.images.startsWith('http') ? driver.images : `${BASE_URL}public/${driver.images}`)
+                                        : DEFAULT_AVATAR
+                                }}
+                                style={styles.profileImage}
+                                defaultSource={{ uri: DEFAULT_AVATAR }}
+                            />
                         </View>
                         {/* Status Checkmark or Percentage Badge */}
                         <View style={[

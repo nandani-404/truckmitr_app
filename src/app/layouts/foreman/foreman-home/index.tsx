@@ -27,7 +27,7 @@ import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hook
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
-import { END_POINTS } from '@truckmitr/src/utils/config';
+import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import PollSurveyModal from '@truckmitr/src/utils/poll-survey';
 
@@ -162,6 +162,8 @@ export default function ForemanHome() {
 
     // Check if Foreman is Pro (Active Subscription)
     // Checking is_active flag, specific plan_id (11) or payment_type for Foreman Pro
+    // console.log("user unique_id", user?.unique_id);
+
     const isForemanPro =
         user?.is_active === 1 ||
         user?.plan_id === 11 ||
@@ -394,14 +396,14 @@ export default function ForemanHome() {
                             <View>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`${t('hello')}, ${foremanName} 👋`}</Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{dynamicTMID}</Text>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>{rank}</Text>
+                                {/* <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>{rank}</Text> */}
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>
                                     {isForemanPro ? 'Foreman Pro 👷' : t('certifiedPartner')}
                                 </Text>
                             </View>
 
                             <TouchableOpacity style={{ alignItems: 'center' }}
-                            //  onPress={() => navigation.navigate(STACKS.PROFILE_EDIT_FOREMAN as any)}
+                                onPress={() => navigation.navigate(STACKS.FOREMAN_PROFILE as any)}
                             >
                                 <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
                                     <Svg width={size} height={size} style={{ position: "absolute", top: 0, left: 0 }}>
@@ -427,7 +429,7 @@ export default function ForemanHome() {
                                     </Svg>
                                     <Image
                                         style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }}
-                                        source={{ uri: user?.images ? `https://devtruckmitr.in/public/${user.images}` : (user?.avatar || 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png') }}
+                                        source={{ uri: user?.images ? `${BASE_URL}/public/${user.images}` : (user?.avatar || 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png') }}
                                     />
                                     <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
                                         <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${dynamicProfileCompletion}%`}</Text>

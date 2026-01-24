@@ -766,32 +766,32 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
     );
 
 
-    const handleDeleteComment = (comment: any) => {
-        showDialog(
-            'Delete Comment',
-            'Are you sure you want to delete this comment?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await DriverKiAwazService.deleteComment(comment.id);
-                            Alert.alert('Success', 'Comment deleted');
-                            // Optimistic update
-                            setMyComments(prev => prev.filter(c => c.id !== comment.id));
-                            // Also refresh full data
-                            handleRefresh();
-                        } catch (error) {
-                            console.error('Delete comment error:', error);
-                            Alert.alert('Error', 'Failed to delete comment');
-                        }
-                    }
-                }
-            ]
-        );
-    };
+    // const handleDeleteComment = (comment: any) => {
+    //     showDialog(
+    //         'Delete Comment',
+    //         'Are you sure you want to delete this comment?',
+    //         [
+    //             { text: 'Cancel', style: 'cancel' },
+    //             {
+    //                 text: 'Delete',
+    //                 style: 'destructive',
+    //                 onPress: async () => {
+    //                     try {
+    //                         await DriverKiAwazService.deleteComment(comment.id);
+    //                         Alert.alert('Success', 'Comment deleted');
+    //                         // Optimistic update
+    //                         setMyComments(prev => prev.filter(c => c.id !== comment.id));
+    //                         // Also refresh full data
+    //                         handleRefresh();
+    //                     } catch (error) {
+    //                         console.error('Delete comment error:', error);
+    //                         Alert.alert('Error', 'Failed to delete comment');
+    //                     }
+    //                 }
+    //             }
+    //         ]
+    //     );
+    // };
 
     const handleCommentPress = (comment: any) => {
         // Find the full post data from 'posts' if available, otherwise construct minimal viewing data
@@ -825,7 +825,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                         <TouchableOpacity
                             style={[styles.commentCard, { backgroundColor: theme.card, borderColor: theme.border }]}
                             onPress={() => handleCommentPress(item)}
-                            onLongPress={() => handleDeleteComment(item)}
+                            // onLongPress={() => handleDeleteComment(item)}
                             delayLongPress={300}
                         >
                             <View style={styles.commentHeader}>

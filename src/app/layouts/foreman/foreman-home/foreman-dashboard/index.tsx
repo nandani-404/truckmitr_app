@@ -9,7 +9,7 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import LinearGradientLib from 'react-native-linear-gradient';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
-import { END_POINTS } from '@truckmitr/utils/config/index';
+import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
 import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 
@@ -208,7 +208,7 @@ export default function ForemanDashboard() {
                                 {t('helloUser', { name: dashboardData?.forman_name || user?.name || 'User' })}
                             </Text>
                             <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>
-                                {dashboardData?.referral_code || user?.unique_id || 'TMID'}
+                                {user?.unique_id || 'TMID'}
                             </Text>
                             <Text style={{ color: '#6E7CF5', fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8), fontStyle: 'italic' }}>
                                 {isForemanPro ? 'Foreman Pro 👷' : t('foreman')}
@@ -241,7 +241,7 @@ export default function ForemanDashboard() {
                             </Svg>
                             <Image
                                 style={{ height: 58 - 4, width: 58 - 4, borderRadius: 100, backgroundColor: '#fff' }}
-                                source={{ uri: user?.images ? `https://devtruckmitr.in/public/${user.images}` : (user?.avatar || 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png') }}
+                                source={{ uri: user?.images ? `${BASE_URL}/public/${user.images}` : (user?.avatar || 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png') }}
                             />
                             <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
                                 <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${progress}%`}</Text>
