@@ -64,6 +64,11 @@ interface DashboardData {
         complete: number;
         pending: number;
     };
+    jobs?: {
+        total_jobs: number;
+        total_job_applications?: number;
+    };
+
 }
 
 // Shimmer Card Component
@@ -264,13 +269,13 @@ export default function ForemanDashboard() {
                     />
                     <DashboardStatsCard
                         icon={ICONS.application}
-                        count={5}
+                        count={loading ? 0 : (dashboardData?.jobs?.total_job_applications || 0)}
                         title={t('jobApplication')}
                         loading={loading}
                     />
                     <DashboardStatsCard
                         icon={ICONS.jobs}
-                        count={8}
+                        count={loading ? 0 : (dashboardData?.jobs?.total_jobs || 0)}
                         title={t('jobs')}
                         loading={loading}
                     />

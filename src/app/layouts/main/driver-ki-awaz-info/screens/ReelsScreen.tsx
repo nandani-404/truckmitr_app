@@ -28,7 +28,7 @@ import Orientation from 'react-native-orientation-locker';
 import CommentsModal from '../components/CommentsModal';
 
 import { DriverKiAwazService } from '../services';
-import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
+import { DRIVER_KI_AWAZ_BASE, AWAZ_URL } from '@truckmitr/src/utils/config';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 40; // Approximate tab bar height
@@ -421,7 +421,7 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }>
                             const cleanAvatarPath = rawAvatar && rawAvatar.startsWith('/') ? rawAvatar.substring(1) : rawAvatar;
                             const finalAvatarUrl = !rawAvatar
                                 ? 'https://via.placeholder.com/150'
-                                : (hasAvatarHttp ? rawAvatar : `https://devtruckmitr.in/public/${cleanAvatarPath}`);
+                                : (hasAvatarHttp ? rawAvatar : `${AWAZ_URL}public/${cleanAvatarPath}`);
 
                             return {
                                 id: item.id.toString(),

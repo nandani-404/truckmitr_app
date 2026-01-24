@@ -16,6 +16,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { useTranslation } from 'react-i18next';
 import { Space } from '@truckmitr/src/app/components';
+import { useSelector } from 'react-redux';
+import { RootState } from '@truckmitr/redux/store';
+import { END_POINTS, BASE_URL } from '@truckmitr/src/utils/config';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { ActivityIndicator } from 'react-native';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -56,61 +61,8 @@ interface DriverWithExpiringDocs {
 }
 
 // Sample data - drivers with expiring documents
-const DRIVERS_WITH_EXPIRING_DOCS: DriverWithExpiringDocs[] = [
-    {
-        id: '1',
-        name: 'Rajesh Kumar',
-        tmId: 'TM2503UDPR00001',
-        mobile: '+91 98765 43210',
-        image: 'https://randomuser.me/api/portraits/men/1.jpg',
-        documents: [
-            { type: 'Driving License', expiryDate: '2026-01-18', daysLeft: 3, status: 'critical' },
-            { type: 'Vehicle Insurance', expiryDate: '2026-01-25', daysLeft: 10, status: 'warning' },
-        ],
-    },
-    {
-        id: '2',
-        name: 'Suresh Yadav',
-        tmId: 'TM2503UDPR00002',
-        mobile: '+91 87654 32109',
-        image: 'https://randomuser.me/api/portraits/men/2.jpg',
-        documents: [
-            { type: 'RC Book', expiryDate: '2026-01-20', daysLeft: 5, status: 'critical' },
-        ],
-    },
-    {
-        id: '3',
-        name: 'Amit Singh',
-        tmId: 'TM2503UDPR00003',
-        mobile: '+91 76543 21098',
-        image: 'https://randomuser.me/api/portraits/men/3.jpg',
-        documents: [
-            { type: 'Pollution Certificate', expiryDate: '2026-01-22', daysLeft: 7, status: 'warning' },
-            { type: 'Fitness Certificate', expiryDate: '2026-01-28', daysLeft: 13, status: 'warning' },
-        ],
-    },
-    {
-        id: '4',
-        name: 'Vikram Patel',
-        tmId: 'TM2503UDPR00004',
-        mobile: '+91 65432 10987',
-        image: 'https://randomuser.me/api/portraits/men/4.jpg',
-        documents: [
-            { type: 'Driving License', expiryDate: '2026-02-01', daysLeft: 17, status: 'attention' },
-        ],
-    },
-    {
-        id: '5',
-        name: 'Manoj Sharma',
-        tmId: 'TM2503UDPR00005',
-        mobile: '+91 54321 09876',
-        image: 'https://randomuser.me/api/portraits/men/5.jpg',
-        documents: [
-            { type: 'Vehicle Insurance', expiryDate: '2026-01-30', daysLeft: 15, status: 'warning' },
-            { type: 'Road Tax', expiryDate: '2026-02-05', daysLeft: 21, status: 'attention' },
-        ],
-    },
-];
+// Empty initial state as we fetch from API
+const INITIAL_DRIVERS: DriverWithExpiringDocs[] = [];
 
 // Filter type
 type FilterType = 'All' | 'Critical' | 'Warning' | 'Attention';
@@ -121,8 +73,55 @@ export default function ForemanExpiringDocuments() {
     const safeAreaInsets = useSafeAreaInsets();
 
     const [activeFilter, setActiveFilter] = useState<FilterType>('All');
+    const [drivers, setDrivers] = useState<DriverWithExpiringDocs[]>([]);
+    const [loading, setLoading] = useState(true);
+    const { user } = useSelector((state: RootState) => state.user);
 
     const goBack = () => navigation.goBack();
+
+    // Fetch Drivers
+    React.useEffect(() => {
+        const fetchExpiringDocuments = async () => {
+            if (!user?.id) return;
+            try {
+                setLoading(true);
+                const response = await axiosInstance.get(END_POINTS.FOREMAN_EXPIRING_DOCUMENTS(user.id));
+                // const response = await axiosInstance.get(END_POINTS.FOREMAN_EXPIRING_DOCUMENTS(26452)); // Debug hardcoded
+
+                if (response.data && response.data.success && response.data.drivers) {
+                    const mappedDrivers: DriverWithExpiringDocs[] = response.data.drivers.map((driver: any) => {
+                        // Determine status based on remaining days
+                        let status: 'critical' | 'warning' | 'attention' = 'attention';
+                        if (driver.remaining_days <= 7) status = 'critical';
+                        else if (driver.remaining_days <= 15) status = 'warning';
+
+                        return {
+                            id: driver.id?.toString(),
+                            name: driver.name,
+                            tmId: driver.unique_id,
+                            mobile: driver.mobile,
+                            image: driver.images ? (driver.images.startsWith('http') ? driver.images : `${BASE_URL}public/${driver.images}`) : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png',
+                            documents: [
+                                {
+                                    type: 'drivingLicense', // Primary doc from this API
+                                    expiryDate: driver.licence_expiry_date,
+                                    daysLeft: driver.remaining_days,
+                                    status: status
+                                }
+                            ]
+                        };
+                    });
+                    setDrivers(mappedDrivers);
+                }
+            } catch (error) {
+                console.error('Error fetching expiring documents:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchExpiringDocuments();
+    }, [user?.id]);
 
     // Get status styling
     const getStatusStyle = (status: 'critical' | 'warning' | 'attention') => {
@@ -140,17 +139,17 @@ export default function ForemanExpiringDocuments() {
 
     // Filter drivers
     const filteredDrivers = activeFilter === 'All'
-        ? DRIVERS_WITH_EXPIRING_DOCS
-        : DRIVERS_WITH_EXPIRING_DOCS.filter(driver =>
+        ? drivers
+        : drivers.filter(driver =>
             driver.documents.some(doc => doc.status.toLowerCase() === activeFilter.toLowerCase())
         );
 
     // Filter counts
     const filterCounts = {
-        All: DRIVERS_WITH_EXPIRING_DOCS.length,
-        Critical: DRIVERS_WITH_EXPIRING_DOCS.filter(d => d.documents.some(doc => doc.status === 'critical')).length,
-        Warning: DRIVERS_WITH_EXPIRING_DOCS.filter(d => d.documents.some(doc => doc.status === 'warning')).length,
-        Attention: DRIVERS_WITH_EXPIRING_DOCS.filter(d => d.documents.some(doc => doc.status === 'attention')).length,
+        All: drivers.length,
+        Critical: drivers.filter(d => d.documents.some(doc => doc.status === 'critical')).length,
+        Warning: drivers.filter(d => d.documents.some(doc => doc.status === 'warning')).length,
+        Attention: drivers.filter(d => d.documents.some(doc => doc.status === 'attention')).length,
     };
 
     const filters: { key: FilterType; label: string; color: string }[] = [
@@ -186,7 +185,7 @@ export default function ForemanExpiringDocuments() {
                             color={statusStyle.color}
                         />
                         <Text style={[styles.urgencyText, { color: statusStyle.color }]}>
-                            {mostCriticalDoc.daysLeft} days
+                            {t('daysCount', { count: mostCriticalDoc.daysLeft })}
                         </Text>
                     </View>
                 </View>
@@ -204,11 +203,11 @@ export default function ForemanExpiringDocuments() {
                                         size={16}
                                         color={docStyle.color}
                                     />
-                                    <Text style={styles.documentType}>{doc.type}</Text>
+                                    <Text style={styles.documentType}>{t(doc.type)}</Text>
                                 </View>
                                 <View style={[styles.expiryBadge, { backgroundColor: docStyle.bg }]}>
                                     <Text style={[styles.expiryText, { color: docStyle.color }]}>
-                                        {doc.daysLeft <= 7 ? `${doc.daysLeft}d left` : `${doc.daysLeft} days`}
+                                        {doc.daysLeft <= 7 ? t('daysLeftShort', { count: doc.daysLeft }) : t('daysCount', { count: doc.daysLeft })}
                                     </Text>
                                 </View>
                             </View>
@@ -264,20 +263,26 @@ export default function ForemanExpiringDocuments() {
             </View>
 
             {/* Driver List */}
-            <FlatList
-                data={filteredDrivers}
-                keyExtractor={(item) => item.id}
-                renderItem={renderDriverCard}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <MaterialCommunityIcons name="file-check" size={64} color="#CBD5E1" />
-                        <Text style={styles.emptyTitle}>{t('noExpiringDocuments', 'No Expiring Documents')}</Text>
-                        <Text style={styles.emptySubtitle}>{t('allDriverDocumentsUpToDate', 'All driver documents are up to date')}</Text>
-                    </View>
-                }
-            />
+            {loading ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredDrivers}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderDriverCard}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <MaterialCommunityIcons name="file-check" size={64} color="#CBD5E1" />
+                            <Text style={styles.emptyTitle}>{t('noExpiringDocuments', 'No Expiring Documents')}</Text>
+                            <Text style={styles.emptySubtitle}>{t('allDriverDocumentsUpToDate', 'All driver documents are up to date')}</Text>
+                        </View>
+                    }
+                />
+            )}
         </View>
     );
 }

@@ -24,7 +24,7 @@ import { STACKS } from '@truckmitr/src/stacks/stacks';
 
 import CommentsModal from '../components/CommentsModal';
 import { DriverKiAwazService } from '../services';
-import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
+import { DRIVER_KI_AWAZ_BASE, AWAZ_URL } from '@truckmitr/src/utils/config';
 import Video from 'react-native-video';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
@@ -281,7 +281,7 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
                             const cleanAvatarPath = rawAvatar && rawAvatar.startsWith('/') ? rawAvatar.substring(1) : rawAvatar;
                             const finalAvatarUrl = !rawAvatar
                                 ? 'https://via.placeholder.com/150'
-                                : (hasAvatarHttp ? rawAvatar : `https://devtruckmitr.in/public/${cleanAvatarPath}`);
+                                : (hasAvatarHttp ? rawAvatar : `${AWAZ_URL}public/${cleanAvatarPath}`);
 
                             let postType: 'VOICE' | 'TEXT' | 'VIDEO' | 'IMAGE' = 'TEXT';
                             if (item.media_type === 'audio') postType = 'VOICE';

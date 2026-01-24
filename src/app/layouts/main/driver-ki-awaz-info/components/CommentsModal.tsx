@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { DriverKiAwazService } from '../services';
+import { AWAZ_URL } from '@truckmitr/src/utils/config';
 
 interface Comment {
     id: string | number;
@@ -86,9 +87,9 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
     };
 
     const renderItem = ({ item }: { item: Comment }) => {
-        // Construct avatar URL from images field - use devtruckmitr.in/public/ as base
+        // Construct avatar URL from images field - use AWAZ_URL + public/ as base
         const avatarUrl = item.images
-            ? (item.images.startsWith('http') ? item.images : `https://devtruckmitr.in/public/${item.images}`)
+            ? (item.images.startsWith('http') ? item.images : `${AWAZ_URL}public/${item.images}`)
             : item.user?.avatar || 'https://via.placeholder.com/150';
 
         const userName = item.name || item.user?.name || `User ${item.user_id}`;
