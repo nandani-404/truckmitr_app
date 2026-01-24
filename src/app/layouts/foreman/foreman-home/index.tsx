@@ -441,7 +441,7 @@ export default function ForemanHome() {
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{dynamicTMID}</Text>
                                 {/* <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>{rank}</Text> */}
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>
-                                    {isForemanPro ? 'Foreman Pro 👷' : t('certifiedPartner')}
+                                    {isForemanPro ? 'Foreman Pro 👷' : 'foreman'}
                                 </Text>
                             </View>
 

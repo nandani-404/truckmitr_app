@@ -525,7 +525,7 @@ export default function ForemanProfile() {
                                     fontSize: responsiveFontSize(1.4),
                                 }
                             ]}>
-                                {badgeText.toUpperCase()}
+                                {badgeText.toLowerCase()}
                             </Text>
                         </View>
                     </View>
