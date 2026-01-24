@@ -231,9 +231,23 @@ export default function ProfileCompletionForeman() {
                 setFinishing(false);
                 showToast(t('profileSubmittedSuccessfully'));
 
-                // Update redux user data
+                // Update redux based on response
                 dispatch(userAction({ ...user, ...response?.data?.data }));
                 dispatch(userAuthenticatedAction(true));
+
+                // 2. IMPORTANT: Force a profile refresh to grab the updated ROLE immediately
+                // This ensures "instant foreman role getting" as requested
+                try {
+                    console.log('🔄 Fetching fresh profile to update role...');
+                    const profileRes = await axiosInstance.get(END_POINTS.GET_PROFILE);
+                    if (profileRes.data && profileRes.data.data) {
+                        console.log('✅ Fresh profile fetched:', profileRes.data.data.role);
+                        dispatch(userAction({ ...user, ...profileRes.data.data }));
+                    }
+                } catch (fetchErr) {
+                    console.error('Failed to fetch fresh profile:', fetchErr);
+                }
+
             } else {
                 throw new Error(response?.data?.message || 'Failed');
             }

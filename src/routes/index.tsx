@@ -778,16 +778,16 @@ export default function Routes() {
       {/* <ZegoCallInvitationDialog /> */}
       {!isAuthenticated ? (
         <Auth />
-      ) : profileRequiredFieldsStatus === false || profileRequiredFieldsStatus === null ? (
+      ) : profileRequiredFieldsStatus === false ? (
         // Module-specific profile completion
-        selectedModule === 'foreman' ? (
+        user?.data?.role?.toLowerCase() === 'foreman' || user?.role?.toLowerCase() === 'foreman' ? (
           <ForemanProfileCompletionStack />
         ) : selectedModule === 'associate' ? (
           <AssociateProfileCompletionStack />
         ) : (
           <ProfileCompletionStack />
         )
-      ) : selectedModule === 'foreman' ? (
+      ) : user?.data?.role?.toLowerCase() === 'foreman' || user?.role?.toLowerCase() === 'foreman' ? (
         <ForemanMain />
       ) : selectedModule === 'associate' ? (
         <AssociateMain />

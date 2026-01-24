@@ -4,7 +4,10 @@ import { STACKS } from '@truckmitr/stacks/stacks';
 import ForemanBottom from './tabs/foreman-bottom';
 import { Settings, Notification, ContactUs, Privacy, LanguageMain, PreferredColor, PaymentSuccess } from '@truckmitr/layouts/index';
 import { setupFirebaseNotifications, initializeNotificationChannel } from '@truckmitr/src/utils/notification';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/src/utils/config';
+import * as TYPES from '@truckmitr/redux/actions/types';
 import ForemanDashboard from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-dashboard';
 import ForemanMyPilots from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-my-pilots';
 import ForemanPendingProfiles from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-pending-profiles';
@@ -25,6 +28,7 @@ export default function ForemanMain() {
     const hasSetupNotifications = React.useRef(false);
     const [isMounted, setIsMounted] = React.useState(false);
     const { user, isAuthenticated } = useSelector((state: any) => state.user);
+    const dispatch = useDispatch();
 
     console.log('🔧 ForemanMain - user:', user?.name);
 
@@ -39,6 +43,29 @@ export default function ForemanMain() {
 
     useEffect(() => {
         if (!isMounted) return;
+
+        // Fetch fresh profile data when Foreman Main stack loads
+        const fetchProfile = async () => {
+            try {
+                const response = await axiosInstance.get(END_POINTS.GET_PROFILE);
+                if (response.data && response.data.data) {
+                    console.log('🔧 ForemanMain: Profile fetched successfully', response.data.data);
+                    dispatch({
+                        type: TYPES.FETCH_USER,
+                        payload: {
+                            user: response.data.data,
+                            // Add other necessary payload fields if available in response
+                            profile_completion: response.data.profile_completion,
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('🔧 ForemanMain: Error fetching profile:', error);
+            }
+        };
+
+        fetchProfile();
+
         if (hasSetupNotifications.current) return;
 
         const initializeNotifications = async () => {
@@ -61,7 +88,7 @@ export default function ForemanMain() {
         }, 1500);
 
         return () => clearTimeout(timeoutId);
-    }, [isMounted]);
+    }, [isMounted, dispatch]);
 
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
