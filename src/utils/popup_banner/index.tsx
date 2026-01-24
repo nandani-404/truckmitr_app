@@ -96,7 +96,7 @@ const TopClassPopup = () => {
     if (!popupData) return null;
 
     const imageUrl = popupData.media_url ? `${BASE_URL.replace(/\/$/, '')}${popupData.media_url.startsWith('/') ? '' : '/'}${popupData.media_url}` : null;
-    const fullImageUrl = popupData.media_url ? `https://devtruckmitr.in/public${popupData.media_url.startsWith('/') ? '' : '/'}${popupData.media_url}` : null;
+    const fullImageUrl = popupData.media_url ? `${BASE_URL}${popupData.media_url.startsWith('/') ? '' : '/'}${popupData.media_url}` : null;
     const isVideo = popupData.media_type === 'video';
 
     return (
