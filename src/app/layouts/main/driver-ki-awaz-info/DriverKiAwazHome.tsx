@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     View,
     Text,
@@ -24,6 +25,7 @@ type TabType = 'reels' | 'feed' | 'create';
 
 const DriverKiAwazHome: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
+    const { t } = useTranslation();
     const isFocused = useIsFocused();
     const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab] = useState<TabType>('reels');
@@ -89,7 +91,7 @@ const DriverKiAwazHome: React.FC = () => {
                             >
                                 <Ionicons name="arrow-back" size={24} color="#1E293B" />
                             </TouchableOpacity>
-                            <Text style={styles.headerTitle}>Driver Ki Feed</Text>
+                            <Text style={styles.headerTitle}>{t('driverKiFeed')}</Text>
                             <View style={styles.placeholder} />
                         </View>
                         <FeedScreen />
@@ -107,11 +109,11 @@ const DriverKiAwazHome: React.FC = () => {
                                 onPress={handleOpenFeed}
                             >
                                 <Ionicons name="layers-outline" size={28} color="#FFFFFF" />
-                                <Text style={styles.iconLabel}>Feed</Text>
+                                <Text style={styles.iconLabel}>{t('feed')}</Text>
                             </TouchableOpacity>
 
                             {/* Title (Center) */}
-                            <Text style={styles.overlayTitle}>Driver Ki Aawaz</Text>
+                            <Text style={styles.overlayTitle}>{t('driverKiAawaz')}</Text>
 
                             {/* Create Button (Top Right) */}
                             <TouchableOpacity
@@ -119,7 +121,7 @@ const DriverKiAwazHome: React.FC = () => {
                                 onPress={handleCreatePost}
                             >
                                 <Ionicons name="add-circle-outline" size={30} color="#FFFFFF" />
-                                <Text style={styles.iconLabel}>Create</Text>
+                                <Text style={styles.iconLabel}>{t('create')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

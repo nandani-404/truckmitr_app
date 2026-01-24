@@ -11,6 +11,7 @@ import {
     TouchableWithoutFeedback,
     StatusBar,
     RefreshControl,
+    ActivityIndicator,
 } from 'react-native';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -190,6 +191,7 @@ export default function ForemanHome() {
         licenseExpiringCount: '',
     });
     const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     // Format currency
     const formatCurrency = (amount: number) => {
@@ -225,11 +227,34 @@ export default function ForemanHome() {
 
     useFocusEffect(
         useCallback(() => {
-            fetchDashboardData();
-            // Open payment modal if not Pro regarding USER REQUEST
+            let isMounted = true;
+            setLoading(true);
+
+            const fetchData = async () => {
+                const startTime = Date.now();
+                await fetchDashboardData();
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                // If data fetch was faster than 1000ms, wait out the remaining time
+                // to prevent flashing. If it was slower, don't wait extra.
+                const delay = duration < 1000 ? 1000 - duration : 0;
+
+                if (isMounted) {
+                    setTimeout(() => {
+                        if (isMounted) setLoading(false);
+                    }, delay);
+                }
+            };
+
+            fetchData();
+
+            // Open payment modal if not Pro regarding USER REQUES
             if (!isForemanPro) {
                 dispatch(subscriptionModalAction(true));
             }
+
+            return () => { isMounted = false; };
         }, [fetchDashboardData, isForemanPro])
     );
 
@@ -361,6 +386,24 @@ export default function ForemanHome() {
         },
     ];
 
+    // Effect to refetch when user ID becomes available if fetch was missed
+    React.useEffect(() => {
+        if (user?.id) {
+            console.log('User ID now available, triggering dashboard fetch');
+            fetchDashboardData();
+        }
+    }, [user?.id]);
+
+    // if (loading) {
+    //     return (
+    //         <View style={{ flex: 1, backgroundColor: '#f5f5f5', justifyContent: 'center', alignItems: 'center' }}>
+    //             <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+    //             <ActivityIndicator size="large" color={colors.primary || '#6E7CF5'} />
+    //             <Text style={{ marginTop: 10, color: '#666', fontSize: 14 }}>{t('loading')}</Text>
+    //         </View>
+    //     );
+    // }
+
     return (
         <View style={styles.container}>
             <PollSurveyModal />
@@ -448,9 +491,42 @@ export default function ForemanHome() {
                     </View>
 
                     {/* Search Bar */}
-                    <TouchableOpacity activeOpacity={1} style={{ position: 'absolute', bottom: -responsiveHeight(1.5), width: responsiveWidth(92), flexDirection: 'row', height: responsiveHeight(6), alignSelf: 'center', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'space-between', borderColor: '#000', borderWidth: 1.5, borderRadius: 100, paddingHorizontal: responsiveWidth(3), ...shadow, zIndex: 100, elevation: 10 }}>
-                        <Text style={{ fontSize: responsiveFontSize(1.6), color: 'rgba(0,0,0,0.9)', fontWeight: '500' }}>{t('searchDrivers')}</Text>
-                        <Feather name={'search'} size={18} color={colors.royalBlue} />
+                    {/* Search Bar - Floating with cleaner UI */}
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={() => navigation.navigate(STACKS.FOREMAN_SEARCH as any)}
+                        style={{
+                            position: 'absolute',
+                            bottom: -28, // Adjusted to float nicely
+                            left: responsiveWidth(4),
+                            right: responsiveWidth(4),
+                            flexDirection: 'row',
+                            height: 56, // Standard touch height
+                            backgroundColor: colors.white,
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            borderRadius: 16, // Smoother corners
+                            paddingHorizontal: 16,
+                            // Soft shadow for elevation
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 12,
+                            elevation: 5,
+                            borderWidth: 1,
+                            borderColor: '#F1F5F9', // Very subtle border
+                            zIndex: 100,
+                        }}
+                    >
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Ionicons name="search" size={20} color="#64748B" style={{ marginRight: 12 }} />
+                            <Text style={{ fontSize: 16, color: '#94A3B8', fontWeight: '400' }}>
+                                {t('searchProDrivers') || "Search drivers by name, ID..."}
+                            </Text>
+                        </View>
+                        <View style={{ backgroundColor: '#F1F5F9', padding: 6, borderRadius: 8 }}>
+                            <Ionicons name="options-outline" size={18} color={colors.royalBlue} />
+                        </View>
                     </TouchableOpacity>
                 </View>
 

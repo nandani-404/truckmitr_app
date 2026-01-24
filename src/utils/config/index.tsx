@@ -187,6 +187,7 @@ export const END_POINTS = {
     PENDING_TRAINING: (foreman_id: any) => `api/foreman/${foreman_id}/pending-training`,
     FOREMAN_HOME_DASHBOARD: (foreman_id: any) => `api/foreman/${foreman_id}/commission-summary`,
     FOREMAN_DASHBOARD: (foreman_id: any) => `api/foreman/dashboard-counts/${foreman_id}`,
+    FOREMAN_SEARCH_DRIVERS: (query: string) => `api/foreman/drivers/search?search=${query}`,
     // Driver Ki Awaz
     DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
     DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,
