@@ -100,6 +100,7 @@
     "@react-native/typescript-config": "0.81.1",
     "@types/base-64": "^1.0.2",
     "@types/jest": "^29.5.13",
+    "@types/lodash.debounce": "^4.0.9",
     "@types/react": "^19.1.0",
     "@types/react-native-razorpay": "^2.2.6",
     "@types/react-native-vector-icons": "^6.4.18",

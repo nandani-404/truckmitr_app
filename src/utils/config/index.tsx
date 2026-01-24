@@ -189,6 +189,7 @@ export const END_POINTS = {
     FOREMAN_DASHBOARD: (foreman_id: any) => `api/foreman/dashboard-counts/${foreman_id}`,
     FOREMAN_BANK_DETAILS_UPDATE: `api/foreman/bank-details`,
     FOREMAN_BANK_DETAILS_FETCH: (foreman_id: any) => `api/foreman/account-details/${foreman_id}`,
+    FOREMAN_SEARCH_DRIVERS: (query: string) => `api/foreman/drivers/search?search=${query}`,
     // Driver Ki Awaz
     DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
     DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,

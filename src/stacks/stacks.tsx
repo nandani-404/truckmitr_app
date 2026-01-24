@@ -149,6 +149,7 @@ export type NavigatorParams = {
     foremanProfileEdit: { stepId: string | number };
     foremanDriverKiAwaz: undefined;
     foremanBankDetails: undefined;
+    foremanSearch: undefined;
 };
 
 export const STACKS = {
@@ -319,6 +320,7 @@ export const STACKS = {
     FOREMAN_APPLICATIONS: 'foremanApplications',
     FOREMAN_RECRUITMENTS: 'foremanRecruitments',
     FOREMAN_BANK_DETAILS: 'foremanBankDetails',
+    FOREMAN_SEARCH: 'foremanSearch',
 
     // ASSOCIATE MODULE
     ASSOCIATE_BOTTOM_TAB: 'associateBottomTab',

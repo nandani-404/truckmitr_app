@@ -1673,8 +1673,33 @@ export default function Subscription({ }: any) {
     }
   }, [dynamicPlans]);
 
-  // Show TransporterSubscriptionModal for transporter role
-  if (user?.role === 'transporter') {
+  // Debug logging
+  useEffect(() => {
+    if (subscriptionModal) {
+      console.log('=== SUBSCRIPTION MODAL OPEN ===');
+      console.log('User Role (redux):', user?.role);
+      console.log('User ID:', user?.id);
+    }
+  }, [subscriptionModal, user]);
+
+  // Loading state if user data isn't ready but modal is open
+  if (subscriptionModal && !user?.role) {
+    return (
+      <Modal
+        visible={subscriptionModal}
+        transparent={false}
+        statusBarTranslucent
+      >
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </Modal>
+    );
+  }
+
+  // Handle transporter subscription - Robust check
+  const role = user?.role ? String(user.role).trim().toLowerCase() : '';
+  if (role === 'transporter') {
     return (
       <>
         <TransporterSubscriptionModal
@@ -1698,8 +1723,8 @@ export default function Subscription({ }: any) {
     );
   }
 
-  // Show ForemanSubscriptionModal for foreman role
-  if (user?.role === 'foreman') {
+  // Show ForemanSubscriptionModal for foreman role - Robust check
+  if (role === 'foreman') {
     return (
       <>
         <ForemanSubscriptionModal

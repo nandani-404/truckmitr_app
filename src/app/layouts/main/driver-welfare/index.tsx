@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, StatusBar, TouchableOpacity, Animated, BackHandler, Dimensions, Image } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, StatusBar, TouchableOpacity, Animated, BackHandler, Dimensions, Image, Linking, Switch, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -356,6 +356,9 @@ const DriverWelfare = () => {
     };
 
     const PMSBYDetailView = ({ scheme }: { scheme: any }) => {
+        const [isCovered, setIsCovered] = useState(false);
+        const [showWhyExpanded, setShowWhyExpanded] = useState(true);
+
         return (
             <View style={styles.flex1}>
                 {/* Header */}
@@ -363,242 +366,333 @@ const DriverWelfare = () => {
                     <TouchableOpacity onPress={() => setCurrentScreen('list')} style={styles.detailBackBtn}>
                         <Ionicons name="chevron-back" size={24} color={COLORS.textDark} />
                     </TouchableOpacity>
-                    <Text style={styles.detailHeaderTitle}>PMSBY Protection</Text>
+                    <Text style={styles.detailHeaderTitle}>PMSBY Insurance</Text>
                     <View style={{ width: 44 }} />
                 </View>
 
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-                    {/* 1. HERO BANNER */}
-                    <LinearGradient
-                        colors={['#059669', '#3B82F6']} // Green -> Blue
-                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                        style={styles.pmsbyHero}
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
+
+                    {/* 1. HERO SECTION (Feature Style) */}
+                    <View style={{ backgroundColor: '#EAF3FF', margin: 16, borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden' }}>
+                        <View style={{ position: 'absolute', right: -20, top: -20, opacity: 0.1 }}>
+                            <Ionicons name="shield-checkmark" size={120} color="#2563EB" />
+                        </View>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+                            <View style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <Ionicons name="shield-checkmark" size={14} color="#2563EB" />
+                                <Text style={{ fontSize: 11, fontWeight: '700', color: '#1E40AF' }}>GOVT. SCHEME</Text>
+                            </View>
+                            <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                                <Text style={{ fontSize: 11, fontWeight: '700', color: '#D97706' }}>₹2L COVER</Text>
+                            </View>
+                        </View>
+
+                        <Text style={{ fontSize: 22, fontWeight: '800', color: '#1E3A5F', marginBottom: 6, lineHeight: 28 }}>
+                            PMSBY – Driver Accident Insurance
+                        </Text>
+                        <Text style={{ fontSize: 15, color: '#334155', lineHeight: 22, marginBottom: 16 }}>
+                            Sirf <Text style={{ fontWeight: '700', color: '#2563EB' }}>₹20 mein</Text> parivaar ke liye ₹2 lakh ki suraksha.
+                        </Text>
+
+                        <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(37,99,235,0.1)', paddingTop: 12, marginTop: 4 }}>
+                            <Text style={{ fontSize: 12, color: '#475569', fontStyle: 'italic' }}>
+                                Central Government ki accident insurance yojana specially useful for truck drivers.
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 2. WHY PMSBY (Expandable) */}
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => setShowWhyExpanded(!showWhyExpanded)}
+                        style={{ marginHorizontal: 16, marginBottom: 20, backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#F1F5F9', overflow: 'hidden' }}
                     >
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <View>
-                                <Text style={styles.pmsbyHeroPrice}>₹20 / Year</Text>
-                                <Text style={styles.pmsbyHeroTitle}>₹2,00,000 Accident Cover</Text>
-                                <Text style={styles.pmsbyHeroSubtitle}>Truck drivers ke parivaar ke liye suraksha</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#F8FAFC' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Ionicons name="help-circle" size={20} color="#2563EB" />
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B' }}>Why PMSBY?</Text>
                             </View>
-                            <View style={styles.pmsbyHeroBadge}>
-                                <Ionicons name="shield-checkmark" size={24} color="#FFF" />
-                            </View>
+                            <Ionicons name={showWhyExpanded ? "chevron-up" : "chevron-down"} size={20} color="#64748B" />
                         </View>
 
-                        <TouchableOpacity style={styles.pmsbyHeroCta}>
-                            <Text style={styles.pmsbyHeroCtaText}>✅ CHECK IF I’M COVERED</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.pmsbyHeroTime}>2–3 seconds only</Text>
-
-                        <View style={styles.pmsbyTrustRow}>
-                            <View style={styles.pmsbyTrustItem}>
-                                <Ionicons name="ellipse" size={8} color="#4ADE80" />
-                                <Text style={styles.pmsbyTrustText}>Government of India Scheme</Text>
-                            </View>
-                            <View style={styles.pmsbyTrustItem}>
-                                <Ionicons name="ellipse" size={8} color="#4ADE80" />
-                                <Text style={styles.pmsbyTrustText}>Bank se direct linked</Text>
-                            </View>
-                        </View>
-                    </LinearGradient>
-
-                    {/* 2. QUICK ACTION BAR */}
-                    <View style={styles.quickActionBar}>
-                        <View style={styles.quickActionItem}>
-                            <View style={[styles.quickActionIcon, { backgroundColor: '#EFF6FF' }]}>
-                                <Ionicons name="shield-outline" size={20} color="#3B82F6" />
-                            </View>
-                            <Text style={styles.quickActionText}>Coverage</Text>
-                        </View>
-                        <View style={styles.quickActionItem}>
-                            <View style={[styles.quickActionIcon, { backgroundColor: '#F0FDF4' }]}>
-                                <Ionicons name="call-outline" size={20} color="#16A34A" />
-                            </View>
-                            <Text style={styles.quickActionText}>Apply Help</Text>
-                        </View>
-                        <View style={styles.quickActionItem}>
-                            <View style={[styles.quickActionIcon, { backgroundColor: '#FAF5FF' }]}>
-                                <Ionicons name="headset-outline" size={20} color="#9333EA" />
-                            </View>
-                            <Text style={styles.quickActionText}>Voice</Text>
-                        </View>
-                        <View style={styles.quickActionItem}>
-                            <View style={[styles.quickActionIcon, { backgroundColor: '#FFFBEB' }]}>
-                                <Ionicons name="notifications-outline" size={20} color="#F59E0B" />
-                            </View>
-                            <Text style={styles.quickActionText}>Reminder</Text>
-                        </View>
-                    </View>
-
-                    {/* 3. FEATURE CARDS */}
-                    <View style={styles.featureCardsContainer}>
-                        {/* Am I Covered */}
-                        <View style={styles.featureCard}>
-                            <View style={styles.featureCardHeader}>
-                                <Ionicons name="shield-checkmark-outline" size={22} color="#10B981" />
-                                <Text style={styles.featureCardTitle}>Am I Covered?</Text>
-                            </View>
-                            <Text style={styles.featureCardDesc}>Instant insurance status</Text>
-                            <View style={styles.featureCardResultRow}>
-                                <View style={styles.featurePill}><Text style={styles.featurePillText}>Yes / No Result</Text></View>
-                            </View>
-                            <TouchableOpacity style={styles.featureBtn}>
-                                <Text style={styles.featureBtnText}>CHECK NOW</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Apply with Help */}
-                        <View style={styles.featureCard}>
-                            <View style={styles.featureCardHeader}>
-                                <Ionicons name="people-outline" size={22} color="#3B82F6" />
-                                <Text style={styles.featureCardTitle}>Apply with Help</Text>
-                            </View>
-                            <Text style={styles.featureCardDesc}>We guide you step-by-step</Text>
-                            <View style={styles.featureTags}>
-                                <Text style={styles.featureTag}>📞 Call Support</Text>
-                                <Text style={styles.featureTag}>📲 Callback</Text>
-                            </View>
-                            <TouchableOpacity style={[styles.featureBtn, { backgroundColor: '#EFF6FF' }]}>
-                                <Text style={[styles.featureBtnText, { color: '#3B82F6' }]}>GET HELP</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Voice Explanation */}
-                        <LinearGradient colors={['#7E22CE', '#A855F7']} style={styles.voiceCard}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <View>
-                                    <Text style={styles.voiceTitle}>Voice Explanation</Text>
-                                    <Text style={styles.voiceSub}>30 sec Hindi audio • Samjho bina padhe</Text>
+                        {showWhyExpanded && (
+                            <View style={{ padding: 16 }}>
+                                <Text style={{ fontSize: 14, color: '#334155', lineHeight: 22, marginBottom: 12 }}>
+                                    Truck driving ek high-risk profession hai. Road accident mein death ya permanent disability hone par parivaar ko financial support milta hai.
+                                </Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F0FDF4', padding: 10, borderRadius: 8 }}>
+                                    <Ionicons name="bulb" size={16} color="#16A34A" />
+                                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#15803D', flex: 1 }}>
+                                        ₹20 ka kharcha, parivaar ke liye ₹2 lakh ki suraksha
+                                    </Text>
                                 </View>
-                                <Ionicons name="mic-circle" size={40} color="#FFF" />
                             </View>
-                            <TouchableOpacity style={styles.voiceBtn}>
-                                <Ionicons name="play" size={16} color="#7E22CE" />
-                                <Text style={styles.voiceBtnText}>PLAY AUDIO</Text>
+                        )}
+                    </TouchableOpacity>
+
+                    {/* 3. SCHEME DETAILS (2x2 Grid) */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
+                        <Text style={styles.sectionHeaderSmall}>Scheme Details</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                            {/* Card 1 */}
+                            <View style={{ width: '48%', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1 }}>
+                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                                    <Ionicons name="shield-checkmark" size={18} color="#2563EB" />
+                                </View>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Insurance Cover</Text>
+                                <Text style={{ fontSize: 11, color: '#64748B' }}>Accident death / disability</Text>
+                                <Text style={{ fontSize: 14, fontWeight: '800', color: '#2563EB', marginTop: 4 }}>₹2,00,000</Text>
+                            </View>
+                            {/* Card 2 */}
+                            <View style={{ width: '48%', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1 }}>
+                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F0FDF4', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                                    <Ionicons name="cash" size={18} color="#16A34A" />
+                                </View>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Premium</Text>
+                                <Text style={{ fontSize: 11, color: '#64748B' }}>Sirf ₹20 / year</Text>
+                                <Text style={{ fontSize: 14, fontWeight: '800', color: '#16A34A', marginTop: 4 }}>₹20 Only</Text>
+                            </View>
+                            {/* Card 3 */}
+                            <View style={{ width: '48%', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1 }}>
+                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                                    <Ionicons name="person" size={18} color="#EA580C" />
+                                </View>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Age Limit</Text>
+                                <Text style={{ fontSize: 11, color: '#64748B' }}>Eligibility criteria</Text>
+                                <Text style={{ fontSize: 14, fontWeight: '800', color: '#EA580C', marginTop: 4 }}>18 - 70 Years</Text>
+                            </View>
+                            {/* Card 4 */}
+                            <View style={{ width: '48%', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1 }}>
+                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F5F3FF', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                                    <Ionicons name="business" size={18} color="#7C3AED" />
+                                </View>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Bank Linked</Text>
+                                <Text style={{ fontSize: 11, color: '#64748B' }}>Auto-debit facility</Text>
+                                <Text style={{ fontSize: 14, fontWeight: '800', color: '#7C3AED', marginTop: 4 }}>Yearly Renewal</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* 4. WHO CAN APPLY & WHY NEEDED (Tabs style) */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24, gap: 16 }}>
+                        {/* Who Can Apply */}
+                        <View style={{ backgroundColor: '#FFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 12 }}>Kaun apply kar sakta hai?</Text>
+                            <View style={{ gap: 10 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={{ fontSize: 13, color: '#334155' }}>Active bank account</Text>
+                                </View>
+                                <View style={{ height: 1, backgroundColor: '#F1F5F9' }} />
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={{ fontSize: 13, color: '#334155' }}>Aadhaar bank se linked</Text>
+                                </View>
+                                <View style={{ height: 1, backgroundColor: '#F1F5F9' }} />
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={{ fontSize: 13, color: '#334155' }}>Mobile number bank se linked</Text>
+                                </View>
+                                <View style={{ height: 1, backgroundColor: '#F1F5F9' }} />
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={{ fontSize: 13, color: '#334155' }}>Age 18–70 saal</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Why Truck Drivers Needed */}
+                        <View style={{ backgroundColor: '#FFF7ED', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#FFEDD5' }}>
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#9A3412', marginBottom: 12 }}>Truck drivers ke liye kyun zaroori?</Text>
+                            <View style={{ gap: 8 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                                    <Ionicons name="warning" size={16} color="#EA580C" style={{ marginTop: 2 }} />
+                                    <Text style={{ fontSize: 13, color: '#7C2D12', flex: 1 }}>Roz highway par high risk profession</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                                    <Ionicons name="alert-circle" size={16} color="#EA580C" style={{ marginTop: 2 }} />
+                                    <Text style={{ fontSize: 13, color: '#7C2D12', flex: 1 }}>Accident ke baad family ki income ruk jaati hai</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                                    <Ionicons name="shield" size={16} color="#EA580C" style={{ marginTop: 2 }} />
+                                    <Text style={{ fontSize: 13, color: '#7C2D12', flex: 1 }}>Sirf ₹20 mein family ko financial security</Text>
+                                </View>
+                            </View>
+                            <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(234,88,12,0.2)' }}>
+                                <Text style={{ fontSize: 14, fontWeight: '700', color: '#C2410C', textAlign: 'center' }}>Aaj ka ₹20, kal ke liye suraksha.</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* 5. CLAIM PROCESS */}
+                    <View style={styles.claimSectionSimple}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <Text style={styles.sectionHeaderSmall}>Claim Process</Text>
+                            <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                                <Text style={{ color: '#4F46E5', fontSize: 11, fontWeight: '700' }}>3 STEPS</Text>
+                            </View>
+                        </View>
+
+                        <View style={{ paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: '#E2E8F0', marginLeft: 10 }}>
+                            {/* Step 1 */}
+                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, marginLeft: -18 }}>
+                                <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF', borderWidth: 2, borderColor: '#2563EB', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#2563EB' }}>1</Text>
+                                </View>
+                                <View style={{ marginLeft: 12, flex: 1 }}>
+                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Inform Bank</Text>
+                                    <Text style={{ fontSize: 12, color: '#64748B' }}>Accident hone par family / nominee bank ko inform kare</Text>
+                                </View>
+                            </View>
+
+                            {/* Step 2 */}
+                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, marginLeft: -18 }}>
+                                <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF', borderWidth: 2, borderColor: '#64748B', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#64748B' }}>2</Text>
+                                </View>
+                                <View style={{ marginLeft: 12, flex: 1 }}>
+                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Submit Documents</Text>
+                                    <Text style={{ fontSize: 12, color: '#64748B' }}>Required documents submit kare (Death cert, FIR, etc.)</Text>
+                                </View>
+                            </View>
+
+                            {/* Step 3 */}
+                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginLeft: -18 }}>
+                                <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF', borderWidth: 2, borderColor: '#16A34A', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Ionicons name="checkmark" size={20} color="#16A34A" />
+                                </View>
+                                <View style={{ marginLeft: 12, flex: 1 }}>
+                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Claim Credited</Text>
+                                    <Text style={{ fontSize: 12, color: '#64748B' }}>Claim amount directly bank account mein aata hai</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <View style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', padding: 12, borderRadius: 12, gap: 10 }}>
+                            <Ionicons name="information-circle" size={24} color="#2563EB" />
+                            <Text style={{ fontSize: 12, color: '#475569', flex: 1 }}>TruckMitr app mein <Text style={{ fontWeight: '700', color: '#2563EB' }}>Claim Checklist + Help Call</Text> available hai.</Text>
+                        </View>
+                    </View>
+
+                    {/* 6. SMART APP FEATURES */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
+                        <Text style={styles.sectionHeaderSmall}>TruckMitr Smart Features</Text>
+
+                        {/* 6.1 Am I Covered? */}
+                        <View style={{ backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16, elevation: 2 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#DBEAFE', justifyContent: 'center', alignItems: 'center' }}>
+                                        <Ionicons name="shield-half" size={20} color="#2563EB" />
+                                    </View>
+                                    <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B' }}>Am I Covered?</Text>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => Alert.alert('Coming Soon', 'This feature is currently under development.')}
+                                    style={{ backgroundColor: '#2563EB', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 }}
+                                >
+                                    <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '700' }}>Check Status</Text>
+                                </TouchableOpacity>
+                            </View>
+
+
+                        </View>
+
+                        {/* 6.2 Apply with Help */}
+                        <View style={{ backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 12 }}>Apply with Help</Text>
+                            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+                                <TouchableOpacity style={{ flex: 1, backgroundColor: '#EFF6FF', paddingVertical: 10, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#BFDBFE' }}>
+                                    <Ionicons name="call" size={20} color="#2563EB" style={{ marginBottom: 4 }} />
+                                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#1E40AF' }}>Call Support</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={{ flex: 1, backgroundColor: '#F0FDF4', paddingVertical: 10, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#BBF7D0' }}>
+                                    <Ionicons name="logo-whatsapp" size={20} color="#16A34A" style={{ marginBottom: 4 }} />
+                                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#15803D' }}>Callback</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={{ fontSize: 11, color: '#64748B', textAlign: 'center' }}>
+                                Telecaller step-by-step apply karne mein madad karega
+                            </Text>
+                        </View>
+
+                        {/* 6.3 Voice & Auto Reminder (Row) */}
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            {/* Voice */}
+                            <TouchableOpacity style={{ flex: 1, backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
+                                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3E8FF', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                                    <Ionicons name="mic" size={24} color="#9333EA" />
+                                </View>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B' }}>Voice Help</Text>
+                                <Text style={{ fontSize: 10, color: '#64748B', textAlign: 'center', marginTop: 2 }}>Listen in Hindi</Text>
                             </TouchableOpacity>
-                        </LinearGradient>
 
-                        {/* Auto Reminder */}
-                        <View style={[styles.featureCard, { borderColor: '#FCD34D', borderStyle: 'dashed', borderWidth: 1.5 }]}>
-                            <View style={styles.featureCardHeader}>
-                                <Ionicons name="alarm-outline" size={22} color="#F59E0B" />
-                                <Text style={styles.featureCardTitle}>Auto Reminder</Text>
-                            </View>
-                            <Text style={styles.featureCardDesc}>Never miss renewal • ₹20 balance alert</Text>
-                            <TouchableOpacity style={[styles.featureBtn, { backgroundColor: '#FFFBEB' }]}>
-                                <Text style={[styles.featureBtnText, { color: '#B45309' }]}>ENABLE</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Driver Safety Badge */}
-                        <View style={styles.badgeCard}>
-                            <View style={styles.badgeIcon}>
-                                <Ionicons name="ribbon" size={28} color="#FFF" />
-                            </View>
-                            <View style={{ flex: 1, paddingLeft: 12 }}>
-                                <Text style={styles.badgeTitle}>Driver Safety Badge</Text>
-                                <Text style={styles.badgeSub}>“Surakshit Driver – PMSBY Enabled”</Text>
-                                <Text style={styles.badgeSub}>Profile par show hota hai</Text>
-                            </View>
-                            <TouchableOpacity>
-                                <Text style={styles.badgeLink}>VIEW</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* 4. WHY PMSBY STRIP */}
-                    <View style={styles.highlightStrip}>
-                        <Text style={styles.highlightStripText}>💡 ₹20 ka kharcha</Text>
-                        <Ionicons name="arrow-forward" size={16} color="#FFF" style={{ marginHorizontal: 8 }} />
-                        <Text style={[styles.highlightStripText, { fontWeight: '800' }]}>₹2,00,000 ki suraksha</Text>
-                    </View>
-                    <View style={styles.highlightPoints}>
-                        <Text style={styles.hPoint}>✔ Accident ke baad family secure</Text>
-                        <Text style={styles.hPoint}>✔ Highway drivers ke liye zaroori</Text>
-                    </View>
-
-                    {/* 5. QUICK INFO */}
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickInfoScroll}>
-                        <View style={styles.quickInfoCard}>
-                            <Text style={styles.qiLabel}>🛡️ Cover</Text>
-                            <Text style={styles.qiValue}>₹2,00,000</Text>
-                            <Text style={styles.qiSub}>Death / Disability</Text>
-                        </View>
-                        <View style={styles.quickInfoCard}>
-                            <Text style={styles.qiLabel}>👤 Eligibility</Text>
-                            <Text style={styles.qiValue}>18–70 yrs</Text>
-                            <Text style={styles.qiSub}>Bank + Aadhaar</Text>
-                        </View>
-                        <View style={styles.quickInfoCard}>
-                            <Text style={styles.qiLabel}>🏦 Payment</Text>
-                            <Text style={styles.qiValue}>Auto-debit</Text>
-                            <Text style={styles.qiSub}>Once per year</Text>
-                        </View>
-                    </ScrollView>
-
-                    {/* 6. CLAIM FLOW */}
-                    <View style={styles.cardSection}>
-                        <SectionTitle title="Claim Flow" />
-                        <View style={styles.claimFlowRow}>
-                            <View style={styles.claimStep}>
-                                <View style={[styles.claimIcon, { backgroundColor: '#FEE2E2' }]}>
-                                    <Ionicons name="alert" size={16} color="#EF4444" />
+                            {/* Reminder */}
+                            <View style={{ flex: 1, backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
+                                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                                    <Ionicons name="alarm" size={24} color="#EA580C" />
                                 </View>
-                                <Text style={styles.claimText}>Accident</Text>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B' }}>Auto-Remind</Text>
+                                <Text style={{ fontSize: 10, color: '#64748B', textAlign: 'center', marginTop: 2 }}>For ₹20 renewal</Text>
                             </View>
-                            <View style={styles.claimArrow} />
-                            <View style={styles.claimStep}>
-                                <View style={[styles.claimIcon, { backgroundColor: '#FFEDD5' }]}>
-                                    <Ionicons name="call" size={16} color="#F97316" />
-                                </View>
-                                <Text style={styles.claimText}>Inform Bank</Text>
-                            </View>
-                            <View style={styles.claimArrow} />
-                            <View style={styles.claimStep}>
-                                <View style={[styles.claimIcon, { backgroundColor: '#FEF3C7' }]}>
-                                    <Ionicons name="document-text" size={16} color="#F59E0B" />
-                                </View>
-                                <Text style={styles.claimText}>Documents</Text>
-                            </View>
-                            <View style={styles.claimArrow} />
-                            <View style={styles.claimStep}>
-                                <View style={[styles.claimIcon, { backgroundColor: '#DCFCE7' }]}>
-                                    <Ionicons name="cash" size={16} color="#22C55E" />
-                                </View>
-                                <Text style={styles.claimText}>Credit</Text>
-                            </View>
-                        </View>
-                        <TouchableOpacity style={styles.claimHelpBtn}>
-                            <Text style={styles.claimHelpText}>GET CLAIM HELP</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* 7. TRUST SECTION */}
-                    <View style={styles.pmsbyTrustSection}>
-                        <View style={styles.trustRow}>
-                            <Ionicons name="checkmark-circle" size={18} color="#059669" />
-                            <Text style={styles.trustRowText}>Government of India ki scheme</Text>
-                        </View>
-                        <View style={styles.trustRow}>
-                            <Ionicons name="checkmark-circle" size={18} color="#059669" />
-                            <Text style={styles.trustRowText}>Bank ke through operate hoti hai</Text>
-                        </View>
-                        <View style={styles.trustRow}>
-                            <Ionicons name="checkmark-circle" size={18} color="#059669" />
-                            <Text style={styles.trustRowText}>No agent, no middleman</Text>
                         </View>
                     </View>
 
-                    {/* 8. FOOTER CTA */}
-                    <View style={styles.pmsbyFooter}>
-                        <Text style={styles.pmsbyFooterTitle}>TruckMitr Cares for Drivers</Text>
-                        <Text style={styles.pmsbyFooterSub}>Sirf load nahi, driver ki zindagi bhi.</Text>
-                        <TouchableOpacity style={styles.pmsbyFooterBtn}>
-                            <Text style={styles.pmsbyFooterBtnText}>SECURE MY FAMILY</Text>
-                        </TouchableOpacity>
+                    {/* 7. GOVERNMENT TRUST */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24, backgroundColor: '#F8FAFC', padding: 16, borderRadius: 16, borderLeftWidth: 4, borderLeftColor: '#475569' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                            <Ionicons name="business" size={24} color="#475569" />
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#334155' }}>Government Trust</Text>
+                        </View>
+                        <View style={{ gap: 8 }}>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                <Ionicons name="ellipse" size={8} color="#94A3B8" style={{ marginTop: 6 }} />
+                                <Text style={{ fontSize: 13, color: '#475569', flex: 1 }}>PMSBY Government of India ki yojana hai</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                <Ionicons name="ellipse" size={8} color="#94A3B8" style={{ marginTop: 6 }} />
+                                <Text style={{ fontSize: 13, color: '#475569', flex: 1 }}>Bank ke through operate hoti hai - No agent needed</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                <Ionicons name="shield-checkmark" size={14} color="#94A3B8" style={{ marginTop: 4 }} />
+                                <Text style={{ fontSize: 13, color: '#475569', flex: 1, fontStyle: 'italic' }}>TruckMitr safe: Data safe, no spam calling</Text>
+                            </View>
+                        </View>
                     </View>
+
+                    {/* Footer Positioning Line */}
+                    <Text style={{ textAlign: 'center', fontSize: 13, fontWeight: '600', color: '#94A3B8', marginBottom: 20 }}>
+                        “TruckMitr sirf loads nahi,{'\n'}driver ki suraksha bhi dekhta hai.”
+                    </Text>
 
                 </ScrollView>
+
+                {/* BOTTOM STICKY CTA */}
+                <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 12 }]}>
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={() => Linking.openURL('tel:18001024558')}
+                        style={styles.stickyCtaTouch}
+                    >
+                        <LinearGradient
+                            colors={['#059669', '#047857']} // Deep Green (Standard for Call)
+                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                            style={styles.stickyCtaGradient}
+                        >
+                            <View style={styles.stickyTextContainer}>
+                                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: '600', marginBottom: 2 }}>For more information</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                    <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '500' }}>Call our Toll Free number</Text>
+                                    <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '800' }}>1800 102 4558</Text>
+                                </View>
+                            </View>
+                            <View style={styles.callIconBubble}>
+                                <Ionicons name="call" size={20} color="#059669" />
+                            </View>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     };
@@ -783,77 +877,83 @@ const styles = StyleSheet.create({
     secondaryCta: { height: 50, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
     secondaryCtaText: { fontSize: 14, fontWeight: '600' },
 
-    // PMSBY Specific Styles
-    pmsbyHero: { padding: 20, paddingBottom: 24, borderRadius: 0, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, marginBottom: 20 },
-    pmsbyHeroPrice: { fontSize: 14, color: '#FEF08A', fontWeight: '700', marginBottom: 4 },
-    pmsbyHeroTitle: { fontSize: 22, fontWeight: '800', color: '#FFF', marginBottom: 4 },
-    pmsbyHeroSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.9)', marginBottom: 16 },
-    pmsbyHeroBadge: { backgroundColor: 'rgba(255,255,255,0.2)', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-    pmsbyHeroCta: { backgroundColor: '#FFF', paddingVertical: 12, borderRadius: 30, alignItems: 'center', width: '100%', marginBottom: 6 },
-    pmsbyHeroCtaText: { fontSize: 15, fontWeight: '800', color: '#1E3A5F' },
-    pmsbyHeroTime: { color: 'rgba(255,255,255,0.8)', fontSize: 11, textAlign: 'center', marginBottom: 16 },
-    pmsbyTrustRow: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
-    pmsbyTrustItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    pmsbyTrustText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+    // PMSBY Specific Styles (NEW & REDESIGNED - Compact)
+    pmsbyNewHero: { margin: 16, padding: 20, borderRadius: 20, position: 'relative' },
+    govtBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 8, gap: 4 },
+    govtBadgeText: { color: '#FFF', fontSize: 11, fontWeight: '600' },
+    pmsbyNewHeroAmount: { fontSize: 26, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 },
+    pmsbyNewHeroTitle: { fontSize: 18, fontWeight: '600', color: 'rgba(255,255,255,0.9)', marginBottom: 6 },
+    pmsbyNewHeroSub: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginBottom: 16 },
+    pmsbyNewMainCta: { backgroundColor: '#FFF', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+    pmsbyNewMainCtaText: { color: '#0F766E', fontSize: 13, fontWeight: '700' },
 
-    quickActionBar: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 16, marginBottom: 24 },
-    quickActionItem: { alignItems: 'center' },
-    quickActionIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-    quickActionText: { fontSize: 11, color: '#4B5563', fontWeight: '600' },
+    actionButtonsContainer: { paddingHorizontal: 16, gap: 12, marginBottom: 20 },
+    actionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 14, borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9', gap: 12 },
+    actionIconCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+    actionCardTitle: { fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 2 },
+    actionCardSub: { fontSize: 11, color: '#64748B' },
 
-    featureCardsContainer: { paddingHorizontal: 16, marginBottom: 24, gap: 16 },
-    featureCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#F3F4F6', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4 },
-    featureCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-    featureCardTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginLeft: 8 },
-    featureCardDesc: { fontSize: 13, color: '#6B7280', marginLeft: 30, marginBottom: 12 },
-    featureCardResultRow: { marginLeft: 30, marginBottom: 12 },
-    featurePill: { backgroundColor: '#F3F4F6', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start' },
-    featurePillText: { fontSize: 12, color: '#4B5563', fontWeight: '600' },
-    featureBtn: { backgroundColor: '#10B981', paddingVertical: 10, borderRadius: 8, alignItems: 'center', marginTop: 4 },
-    featureBtnText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
-    featureTags: { flexDirection: 'row', marginLeft: 30, gap: 8, marginBottom: 12 },
-    featureTag: { fontSize: 12, color: '#4B5563', backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+    voiceActionCard: { marginBottom: 0, borderRadius: 16, overflow: 'hidden' },
+    voiceActionGradient: { padding: 16 },
+    flexRow: { flexDirection: 'row', alignItems: 'center' },
+    voiceActionTitle: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+    playIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center' },
 
-    voiceCard: { borderRadius: 16, padding: 16, elevation: 4 },
-    voiceTitle: { fontSize: 16, fontWeight: '700', color: '#FFF', marginBottom: 2 },
-    voiceSub: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginBottom: 12 },
-    voiceBtn: { backgroundColor: '#FFF', flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 6 },
-    voiceBtnText: { color: '#7E22CE', fontWeight: '700', fontSize: 12 },
+    trustContainer: { marginHorizontal: 16, padding: 16, backgroundColor: '#F0FDF4', borderRadius: 16, gap: 12, marginBottom: 24, borderLeftWidth: 4, borderLeftColor: '#059669' },
+    trustItem: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    trustText: { fontSize: 13, color: '#064E3B', fontWeight: '500' },
 
-    badgeCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0F172A', padding: 16, borderRadius: 16 },
-    badgeIcon: { width: 40, height: 40, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-    badgeTitle: { fontSize: 15, fontWeight: '700', color: '#FFF' },
-    badgeSub: { fontSize: 11, color: '#94A3B8' },
-    badgeLink: { color: '#38BDF8', fontSize: 12, fontWeight: '700' },
+    badgeGamifiedCard: { marginHorizontal: 16, borderRadius: 24, overflow: 'hidden', marginBottom: 24, elevation: 8, shadowColor: '#F59E0B', shadowOpacity: 0.2, shadowRadius: 10 },
+    badgeBackdrop: { padding: 3 },
+    badgeGoldBorder: { borderRadius: 21, padding: 2, backgroundColor: '#FCD34D' },
+    badgeGoldCard: { borderRadius: 19, padding: 16 },
+    badgeInnerContent: { flexDirection: 'row', alignItems: 'center' },
+    badgeMedalContainer: { width: 56, height: 56, justifyContent: 'center', alignItems: 'center', position: 'relative' },
+    badgeMedalBg: { position: 'absolute', width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF', opacity: 0.8 },
+    starBadge: { position: 'absolute', top: 0, right: 0, backgroundColor: '#EA580C', width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFF' },
+    badgeLevelText: { fontSize: 10, fontWeight: '800', color: '#B45309', letterSpacing: 0.5, marginBottom: 2 },
+    badgeMainTitle: { fontSize: 18, fontWeight: '800', color: '#78350F', marginBottom: 4 },
+    badgeTagRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.6)', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+    badgeTagText: { fontSize: 11, fontWeight: '700', color: '#B45309' },
+    badgeActionBtn: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 4 },
+    badgeActionBtnText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
 
-    highlightStrip: { backgroundColor: '#1E3A5F', paddingVertical: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginHorizontal: 16, borderRadius: 8, marginBottom: 12 },
-    highlightStripText: { color: '#FFF', fontSize: 14 },
-    highlightPoints: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 24, paddingHorizontal: 16, flexWrap: 'wrap' },
-    hPoint: { fontSize: 12, color: '#4B5563', fontWeight: '500' },
+    claimSectionSimple: { marginHorizontal: 16, padding: 20, backgroundColor: '#FFF', borderRadius: 24, borderWidth: 1, borderColor: '#E0E7FF', marginBottom: 16, elevation: 2, shadowColor: '#4F46E5', shadowOpacity: 0.05, shadowRadius: 10 },
+    sectionHeaderSmall: { fontSize: 16, fontWeight: '800', color: '#1E1B4B' },
+    claimTimelineBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingHorizontal: 12 },
+    claimNode: { alignItems: 'center', gap: 8, zIndex: 1 },
+    claimDotActive: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' },
+    claimDotInactive: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' },
+    claimLine: { flex: 1, height: 2, backgroundColor: '#E2E8F0', marginTop: 15, marginHorizontal: -4, zIndex: 0 },
+    claimLabel: { fontSize: 12, color: '#475569', fontWeight: '600', textAlign: 'center' },
+    claimHelpLink: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#EEF2FF', borderRadius: 20 },
+    claimHelpLinkText: { color: '#4F46E5', fontSize: 13, fontWeight: '700' },
 
-    quickInfoScroll: { paddingLeft: 16, marginBottom: 24 },
-    quickInfoCard: { width: 120, height: 90, backgroundColor: '#F8FAFC', borderRadius: 12, padding: 12, marginRight: 12, justifyContent: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
-    qiLabel: { fontSize: 11, color: '#64748B', marginBottom: 4 },
-    qiValue: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
-    qiSub: { fontSize: 10, color: '#94A3B8' },
+    stickyFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9', padding: 8, elevation: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: -2 } },
+    stickyCtaTouch: { borderRadius: 12, overflow: 'hidden', elevation: 2, shadowColor: '#4F46E5', shadowOpacity: 0.2, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+    stickyCtaGradient: { paddingVertical: 8, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    stickyTextContainer: { flex: 1 },
+    stickyLabel: { color: 'rgba(255,255,255,0.9)', fontSize: 10, marginBottom: 0, fontWeight: '500' },
+    stickyNumberRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    stickyNumber: { color: '#FFF', fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
+    callIconBubble: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center' },
 
-    claimFlowRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-    claimStep: { alignItems: 'center', flex: 1 },
-    claimIcon: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
-    claimText: { fontSize: 10, color: '#4B5563', textAlign: 'center' },
-    claimArrow: { width: 20, height: 1, backgroundColor: '#E2E8F0', marginBottom: 16 },
-    claimHelpBtn: { alignItems: 'center' },
-    claimHelpText: { color: '#3B82F6', fontSize: 13, fontWeight: '700' },
+    enhancedReminderCard: { padding: 16, borderRadius: 16, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E2E8F0', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4 },
+    eReminderTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+    eReminderSub: { fontSize: 13, color: '#64748B' },
+    eReminderFooter: { flexDirection: 'row', alignItems: 'center', marginTop: 14, backgroundColor: '#FFF', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, alignSelf: 'flex-start', gap: 6, elevation: 1 },
+    eReminderFooterText: { fontSize: 11, fontWeight: '700', color: '#C2410C' },
+    recommendedBadge: { backgroundColor: '#FFF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 8 },
+    recommendedText: { fontSize: 9, fontWeight: '800', color: '#EA580C' },
 
-    pmsbyTrustSection: { backgroundColor: '#F0FDF4', margin: 16, padding: 16, borderRadius: 12, borderLeftWidth: 4, borderLeftColor: '#22C55E' },
-    trustRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
-    trustRowText: { fontSize: 13, color: '#166534', fontWeight: '500' },
-
-    pmsbyFooter: { padding: 24, alignItems: 'center', backgroundColor: '#F8FAFC', borderTopWidth: 1, borderTopColor: '#E2E8F0' },
-    pmsbyFooterTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 4 },
-    pmsbyFooterSub: { fontSize: 13, color: '#64748B', marginBottom: 16, fontStyle: 'italic' },
-    pmsbyFooterBtn: { backgroundColor: '#DC2626', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 30, elevation: 4 },
-    pmsbyFooterBtnText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
+    pmsbyTrustSection: { backgroundColor: '#FFF', marginHorizontal: 16, marginBottom: 24, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8 },
+    trustHeaderStripe: { paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    trustHeaderTitle: { color: '#FFF', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
+    trustContent: { padding: 16 },
+    trustRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    trustRowTitle: { fontSize: 14, fontWeight: '700', color: '#450A0A' },
+    trustRowSub: { fontSize: 12, color: '#7F1D1D', marginTop: 1 },
+    trustDivider: { height: 1, backgroundColor: '#FEF2F2', marginVertical: 12 },
 });
 
 export default DriverWelfare;
