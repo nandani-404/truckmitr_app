@@ -644,7 +644,7 @@ export default function ForemanProfile() {
                             >
                                 <TouchableOpacity
                                     activeOpacity={0.9}
-                                    onPress={() => { }}
+                                    onPress={() => navigation.navigate(STACKS.FOREMAN_MEMBERSHIP_CARD as any)}
                                 >
                                     {/* Card with metallic border */}
                                     <LinearGradient

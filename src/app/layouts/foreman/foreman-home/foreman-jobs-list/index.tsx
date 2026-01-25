@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions, Modal } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -12,7 +12,6 @@ import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/utils/config/index';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
-import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import moment from 'moment';
 import { useTranslation } from 'react-i18next';
 
@@ -43,10 +42,10 @@ interface Job {
 // Mock Data for Drivers (Pilots)
 const DRIVERS_DATA = [
     { id: '1', name: 'Ramesh Kumar', tmId: 'TM2301DR0012', status: 'Trusted Driver', image: 'https://randomuser.me/api/portraits/men/32.jpg' },
-    { id: '2', name: 'Vikas Verma', tmId: 'TM2301DR0045', status: 'Verified Driver', image: 'https://randomuser.me/api/portraits/men/45.jpg' },
-    { id: '3', name: 'Suresh Singh', tmId: 'TM2301DR0089', status: 'Job Ready Driver', image: 'https://randomuser.me/api/portraits/men/12.jpg' },
-    { id: '4', name: 'Rajesh Yadav', tmId: 'TM2301DR0112', status: 'Verified Driver', image: 'https://randomuser.me/api/portraits/men/67.jpg' },
-    { id: '5', name: 'Amit Sharma', tmId: 'TM2301DR0156', status: 'Job Ready Driver', image: 'https://randomuser.me/api/portraits/men/22.jpg' },
+    // { id: '2', name: 'Vikas Verma', tmId: 'TM2301DR0045', status: 'Verified Driver', image: 'https://randomuser.me/api/portraits/men/45.jpg' },
+    // { id: '3', name: 'Suresh Singh', tmId: 'TM2301DR0089', status: 'Job Ready Driver', image: 'https://randomuser.me/api/portraits/men/12.jpg' },
+    // { id: '4', name: 'Rajesh Yadav', tmId: 'TM2301DR0112', status: 'Verified Driver', image: 'https://randomuser.me/api/portraits/men/67.jpg' },
+    // { id: '5', name: 'Amit Sharma', tmId: 'TM2301DR0156', status: 'Job Ready Driver', image: 'https://randomuser.me/api/portraits/men/22.jpg' },
 ];
 
 // Format salary range
@@ -187,10 +186,9 @@ const ForemanJobsList = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Bottom Sheet State
-    const bottomSheetRef = useRef<BottomSheet>(null);
+    // Job Details Modal State
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-    const snapPoints = useMemo(() => ['80%'], []);
 
     // Share Modal State
     const [showShareModal, setShowShareModal] = useState(false);
@@ -236,11 +234,11 @@ const ForemanJobsList = () => {
 
     const handleViewDetails = (job: Job) => {
         setSelectedJob(job);
-        bottomSheetRef.current?.expand();
+        setShowDetailsModal(true);
     };
 
-    const handleCloseBottomSheet = () => {
-        bottomSheetRef.current?.close();
+    const handleCloseDetailsModal = () => {
+        setShowDetailsModal(false);
         setSelectedJob(null);
     };
 
@@ -280,26 +278,22 @@ const ForemanJobsList = () => {
         showToast(t('jobShared', { count: selectedDrivers.length }));
     };
 
-    const renderBackdrop = useCallback(
-        (props: any) => (
-            <BottomSheetBackdrop
-                {...props}
-                disappearsOnIndex={-1}
-                appearsOnIndex={0}
-                opacity={0.5}
-            />
-        ),
-        []
-    );
 
     const renderJobItem = ({ item }: { item: Job }) => (
         <View style={styles.jobCard}>
             <View style={styles.jobHeader}>
                 <View style={styles.jobInfo}>
                     <Text style={styles.jobTitle} numberOfLines={2}>{item.job_title}</Text>
-                    <Text style={styles.jobId}>{item.job_id}</Text>
+                    <View style={styles.jobIdRow}>
+                        <Text style={styles.jobId}>{item.job_id}</Text>
+                        <Text style={styles.jobDateTime}>{moment(item.Created_at).format('DD-MMM-YY')}</Text>
+                    </View>
                 </View>
-                <TouchableOpacity onPress={() => handleSharePress(item)} style={styles.shareButton}>
+                <TouchableOpacity
+                    onPress={() => handleSharePress(item)}
+                    style={styles.shareButton}
+                    activeOpacity={0.7}
+                >
                     <Ionicons name="share-social-outline" size={20} color="#3B82F6" />
                 </TouchableOpacity>
             </View>
@@ -322,7 +316,7 @@ const ForemanJobsList = () => {
                 </View>
                 <View style={styles.infoTag}>
                     <Ionicons name="time-outline" size={12} color="#6366F1" />
-                    <Text style={styles.infoTagText}>{item.Required_Experience} {t('yearsSuffix')}</Text>
+                    <Text style={styles.infoTagText}>{t('experience')}: {item.Required_Experience} years</Text>
                 </View>
                 <View style={styles.infoTag}>
                     <Ionicons name="card-outline" size={12} color="#6366F1" />
@@ -332,12 +326,12 @@ const ForemanJobsList = () => {
 
             <View style={styles.salaryRow}>
                 <Text style={styles.salaryText}>{formatSalary(item.Salary_Range, t)}</Text>
-                <Text style={styles.postedText}>{getTimeAgo(item.Created_at, t)}</Text>
             </View>
 
             <TouchableOpacity
                 style={styles.viewDetailsButton}
                 onPress={() => handleViewDetails(item)}
+                activeOpacity={0.7}
             >
                 <Text style={styles.viewDetailsText}>{t('viewDetails')}</Text>
                 <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
@@ -421,11 +415,11 @@ const ForemanJobsList = () => {
         const isPremium = selectedJob?.subscription_plan_name === 'premium_job';
 
         return (
-            <BottomSheetScrollView style={styles.sheetContent} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.sheetContent} showsVerticalScrollIndicator={false}>
                 {/* Header with Title and Close Button */}
                 <View style={styles.sheetHeader}>
                     <Text style={styles.sheetHeaderTitle}>{t('jobDetails')}</Text>
-                    <TouchableOpacity style={styles.closeSheetButton} onPress={handleCloseBottomSheet}>
+                    <TouchableOpacity style={styles.closeSheetButton} onPress={handleCloseDetailsModal}>
                         <Ionicons name="close-circle" size={28} color="#64748B" />
                     </TouchableOpacity>
                 </View>
@@ -575,7 +569,7 @@ const ForemanJobsList = () => {
                 <TouchableOpacity
                     style={styles.shareJobButton}
                     onPress={() => {
-                        handleCloseBottomSheet();
+                        handleCloseDetailsModal();
                         setTimeout(() => handleSharePress(selectedJob), 300);
                     }}
                 >
@@ -584,7 +578,7 @@ const ForemanJobsList = () => {
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />
-            </BottomSheetScrollView>
+            </ScrollView>
         );
     };
 
@@ -614,6 +608,10 @@ const ForemanJobsList = () => {
                     keyExtractor={item => String(item.id)}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    initialNumToRender={5}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
@@ -624,21 +622,27 @@ const ForemanJobsList = () => {
                 />
             )}
 
-            {/* Job Details Bottom Sheet */}
-            <BottomSheet
-                ref={bottomSheetRef}
-                index={-1}
-                snapPoints={snapPoints}
-                enablePanDownToClose={true}
-                backdropComponent={renderBackdrop}
-                backgroundStyle={styles.sheetBackground}
-                handleIndicatorStyle={styles.sheetIndicator}
+            {/* Job Details Modal */}
+            <Modal
+                visible={showDetailsModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={handleCloseDetailsModal}
             >
-                {renderJobDetailsSheet()}
-            </BottomSheet>
+                <View style={styles.detailsModalOverlay}>
+                    <View style={styles.detailsModalContent}>
+                        {renderJobDetailsSheet()}
+                    </View>
+                </View>
+            </Modal>
 
-            {/* Share Driver Selection Modal - kept as simple overlay */}
-            {showShareModal && (
+            {/* Share Driver Selection Modal */}
+            <Modal
+                visible={showShareModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowShareModal(false)}
+            >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
@@ -684,7 +688,7 @@ const ForemanJobsList = () => {
                         </View>
                     </View>
                 </View>
-            )}
+            </Modal>
         </View>
     );
 };
@@ -763,6 +767,16 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6366F1',
         fontWeight: '600',
+    },
+    jobIdRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    jobDateTime: {
+        fontSize: 11,
+        color: '#94A3B8',
+        fontWeight: '500',
     },
     shareButton: {
         padding: 8,
@@ -844,7 +858,19 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#3B82F6',
     },
-    // Bottom Sheet Styles
+    // Details Modal Styles
+    detailsModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    detailsModalContent: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        maxHeight: '85%',
+    },
+    // Bottom Sheet Styles (kept for legacy)
     sheetBackground: {
         backgroundColor: '#fff',
         borderTopLeftRadius: 24,
@@ -858,8 +884,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     sheetContent: {
-        flex: 1,
         paddingHorizontal: 20,
+        paddingBottom: 20,
     },
     sheetHeader: {
         flexDirection: 'row',
@@ -1085,11 +1111,7 @@ const styles = StyleSheet.create({
     },
     // Modal Styles
     modalOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'flex-end',
     },

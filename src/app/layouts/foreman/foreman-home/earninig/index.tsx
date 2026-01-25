@@ -48,7 +48,7 @@ export default function ForemanEarningsInfo() {
                     <Ionicons name="chevron-back" size={24} color={colors.royalBlue} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.royalBlue }]}>
-                    {t('myEarnings') || 'My Earnings'}
+                    {t('earningsChart') || 'Earnings Chart'}
                 </Text>
                 <View style={{ width: 40 }} />
             </View>
@@ -65,26 +65,26 @@ export default function ForemanEarningsInfo() {
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.sectionTitle}>
-                                Hiring Commission
+                                {t('hiringCommission')}
                             </Text>
                             <Text style={styles.sectionSubtitle}>
-                                Premium & Super Premium Jobs
+                                {t('premiumAndSuperPremiumJobs')}
                             </Text>
                         </View>
                     </View>
 
                     {/* Job Pricing Table */}
                     <View style={styles.tableContainer}>
-                        <Text style={styles.tableTitle}>Job Pricing</Text>
+                        <Text style={styles.tableTitle}>{t('jobPricing')}</Text>
                         <View style={styles.table}>
                             <View style={styles.tableHeader}>
-                                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Job Type</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>Price</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1 }]}>{t('jobType')}</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>{t('price')}</Text>
                             </View>
                             <View style={styles.tableRow}>
                                 <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                     <View style={[styles.badge, { backgroundColor: '#F3E8FF' }]}>
-                                        <Text style={[styles.badgeText, { color: '#9333EA' }]}>PREMIUM</Text>
+                                        <Text style={[styles.badgeText, { color: '#9333EA' }]}>{t('premiumLabel')}</Text>
                                     </View>
                                 </View>
                                 <Text style={[styles.tableValue, { flex: 1, textAlign: 'right' }]}>₹1,999</Text>
@@ -94,7 +94,7 @@ export default function ForemanEarningsInfo() {
                                 <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                     <View style={[styles.badge, { backgroundColor: '#FEF3C7' }]}>
                                         <MaterialCommunityIcons name="crown" size={12} color="#D97706" />
-                                        <Text style={[styles.badgeText, { color: '#D97706', marginLeft: 4 }]}>SUPER PREMIUM</Text>
+                                        <Text style={[styles.badgeText, { color: '#D97706', marginLeft: 4 }]}>{t('superPremiumLabel')}</Text>
                                     </View>
                                 </View>
                                 <Text style={[styles.tableValue, { flex: 1, textAlign: 'right', color: '#D97706', fontWeight: '700' }]}>₹2,999</Text>
@@ -104,15 +104,15 @@ export default function ForemanEarningsInfo() {
 
                     {/* Commission Rates Table */}
                     <View style={styles.tableContainer}>
-                        <Text style={styles.tableTitle}>Your Commission (High Motivation)</Text>
+                        <Text style={styles.tableTitle}>{t('yourCommissionHighMotivation')}</Text>
                         <View style={styles.table}>
                             <View style={styles.tableHeader}>
-                                <Text style={[styles.tableHeaderText, { flex: 1.2 }]}>Job Type</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }]}>Rate</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>Commission</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1.2 }]}>{t('jobType')}</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }]}>{t('rate')}</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>{t('commission')}</Text>
                             </View>
                             <View style={styles.tableRow}>
-                                <Text style={[styles.tableValue, { flex: 1.2 }]}>Premium Job</Text>
+                                <Text style={[styles.tableValue, { flex: 1.2 }]}>{t('premiumJobType')}</Text>
                                 <View style={{ flex: 0.8, alignItems: 'center' }}>
                                     <View style={[styles.rateBadge, { backgroundColor: '#DCFCE7' }]}>
                                         <Text style={[styles.rateBadgeText, { color: '#16A34A' }]}>15%</Text>
@@ -122,7 +122,7 @@ export default function ForemanEarningsInfo() {
                             </View>
                             <View style={styles.tableDivider} />
                             <View style={styles.tableRow}>
-                                <Text style={[styles.tableValue, { flex: 1.2 }]}>Super Premium</Text>
+                                <Text style={[styles.tableValue, { flex: 1.2 }]}>{t('superPremium')}</Text>
                                 <View style={{ flex: 0.8, alignItems: 'center' }}>
                                     <View style={[styles.rateBadge, { backgroundColor: '#FEF3C7' }]}>
                                         <Text style={[styles.rateBadgeText, { color: '#D97706' }]}>20%</Text>
@@ -137,15 +137,15 @@ export default function ForemanEarningsInfo() {
                     <View style={styles.benefitsContainer}>
                         <View style={styles.benefitItem}>
                             <Text style={styles.benefitIcon}>📌</Text>
-                            <Text style={styles.benefitText}>Paid only when hiring is successful</Text>
+                            <Text style={styles.benefitText}>{t('paidWhenSuccessful')}</Text>
                         </View>
                         <View style={styles.benefitItem}>
                             <Text style={styles.checkIcon}>✔️</Text>
-                            <Text style={styles.benefitText}>Prevents fake postings</Text>
+                            <Text style={styles.benefitText}>{t('preventsFakePostings')}</Text>
                         </View>
                         <View style={styles.benefitItem}>
                             <Text style={styles.checkIcon}>✔️</Text>
-                            <Text style={styles.benefitText}>Encourages quality matchmaking</Text>
+                            <Text style={styles.benefitText}>{t('encouragesQualityMatchmaking')}</Text>
                         </View>
                     </View>
                 </View>
@@ -158,22 +158,22 @@ export default function ForemanEarningsInfo() {
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.sectionTitle}>
-                                Foreman Motivation System
+                                {t('foremanMotivationSystem')}
                             </Text>
                             <Text style={styles.sectionSubtitle}>
-                                GAMIFICATION – MVP LIGHT
+                                {t('gamificationMvpLight')}
                             </Text>
                         </View>
                     </View>
 
                     {/* Levels Table */}
                     <View style={styles.tableContainer}>
-                        <Text style={styles.tableTitle}>Foreman Levels</Text>
+                        <Text style={styles.tableTitle}>{t('foremanLevels')}</Text>
                         <View style={styles.table}>
                             <View style={styles.tableHeader}>
-                                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Level</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 1.2, textAlign: 'center' }]}>Criteria</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>Benefits</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1 }]}>{t('level')}</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1.2, textAlign: 'center' }]}>{t('criteria')}</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>{t('benefits')}</Text>
                             </View>
 
                             {/* Silver Level */}
@@ -182,12 +182,12 @@ export default function ForemanEarningsInfo() {
                                     <View style={[styles.levelIcon, { backgroundColor: '#E5E7EB' }]}>
                                         <FontAwesome5 name="medal" size={14} color="#6B7280" />
                                     </View>
-                                    <Text style={[styles.tableValue, { fontWeight: '600', color: '#6B7280' }]}>Silver</Text>
+                                    <Text style={[styles.tableValue, { fontWeight: '600', color: '#6B7280' }]}>{t('silverLevel')}</Text>
                                 </View>
-                                <Text style={[styles.tableValue, { flex: 1.2, textAlign: 'center' }]}>50 drivers</Text>
+                                <Text style={[styles.tableValue, { flex: 1.2, textAlign: 'center' }]}>{t('driversCount', { count: 50 })}</Text>
                                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                                     <View style={[styles.bonusBadge, { backgroundColor: '#F3F4F6' }]}>
-                                        <Text style={[styles.bonusBadgeText, { color: '#6B7280' }]}>+2% bonus</Text>
+                                        <Text style={[styles.bonusBadgeText, { color: '#6B7280' }]}>{t('bonusPercent', { percent: 2 })}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -199,12 +199,12 @@ export default function ForemanEarningsInfo() {
                                     <View style={[styles.levelIcon, { backgroundColor: '#FEF3C7' }]}>
                                         <FontAwesome5 name="medal" size={14} color="#D97706" />
                                     </View>
-                                    <Text style={[styles.tableValue, { fontWeight: '600', color: '#D97706' }]}>Gold</Text>
+                                    <Text style={[styles.tableValue, { fontWeight: '600', color: '#D97706' }]}>{t('goldLevel')}</Text>
                                 </View>
-                                <Text style={[styles.tableValue, { flex: 1.2, textAlign: 'center' }]}>150 drivers</Text>
+                                <Text style={[styles.tableValue, { flex: 1.2, textAlign: 'center' }]}>{t('driversCount', { count: 150 })}</Text>
                                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                                     <View style={[styles.bonusBadge, { backgroundColor: '#FEF3C7' }]}>
-                                        <Text style={[styles.bonusBadgeText, { color: '#D97706' }]}>+5% bonus</Text>
+                                        <Text style={[styles.bonusBadgeText, { color: '#D97706' }]}>{t('bonusPercent', { percent: 5 })}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -216,12 +216,12 @@ export default function ForemanEarningsInfo() {
                                     <View style={[styles.levelIcon, { backgroundColor: '#E0E7FF' }]}>
                                         <FontAwesome5 name="gem" size={14} color="#6366F1" />
                                     </View>
-                                    <Text style={[styles.tableValue, { fontWeight: '600', color: '#6366F1' }]}>Platinum</Text>
+                                    <Text style={[styles.tableValue, { fontWeight: '600', color: '#6366F1' }]}>{t('platinumLevel')}</Text>
                                 </View>
-                                <Text style={[styles.tableValue, { flex: 1.2, textAlign: 'center' }]}>300 drivers</Text>
+                                <Text style={[styles.tableValue, { flex: 1.2, textAlign: 'center' }]}>{t('driversCount', { count: 300 })}</Text>
                                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                                     <View style={[styles.bonusBadge, { backgroundColor: '#E0E7FF' }]}>
-                                        <Text style={[styles.bonusBadgeText, { color: '#6366F1' }]}>Priority leads</Text>
+                                        <Text style={[styles.bonusBadgeText, { color: '#6366F1' }]}>{t('priorityLeads')}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -232,11 +232,11 @@ export default function ForemanEarningsInfo() {
                     <View style={styles.benefitsContainer}>
                         <View style={styles.benefitItem}>
                             <Text style={styles.checkIcon}>✔️</Text>
-                            <Text style={styles.benefitText}>Cost-controlled incentives</Text>
+                            <Text style={styles.benefitText}>{t('costControlledIncentives')}</Text>
                         </View>
                         <View style={styles.benefitItem}>
                             <Text style={styles.checkIcon}>✔️</Text>
-                            <Text style={styles.benefitText}>Status driven motivation</Text>
+                            <Text style={styles.benefitText}>{t('statusDrivenMotivation')}</Text>
                         </View>
                     </View>
                 </View>
@@ -249,29 +249,29 @@ export default function ForemanEarningsInfo() {
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.sectionTitle}>
-                                Driver Subscription Commission
+                                {t('driverSubscriptionCommission')}
                             </Text>
                             <Text style={styles.sectionSubtitle}>
-                                AUTOMATED PAYMENT LOGIC
+                                {t('automatedPaymentLogic')}
                             </Text>
                         </View>
                     </View>
 
                     {/* Commission Table */}
                     <View style={styles.tableContainer}>
-                        <Text style={styles.tableTitle}>Commission Recommendation (Business Safe)</Text>
+                        <Text style={styles.tableTitle}>{t('commissionRecommendation')}</Text>
                         <View style={styles.table}>
                             <View style={styles.tableHeader}>
-                                <Text style={[styles.tableHeaderText, { flex: 1.2 }]}>Plan</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }]}>Price</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 1.2, textAlign: 'right' }]}>Your Commission</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1.2 }]}>{t('plan')}</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 0.8, textAlign: 'center' }]}>{t('price')}</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1.2, textAlign: 'right' }]}>{t('yourCommission')}</Text>
                             </View>
 
                             {/* Job Ready */}
                             <View style={styles.tableRow}>
                                 <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                     <View style={[styles.planDot, { backgroundColor: '#22C55E' }]} />
-                                    <Text style={styles.tableValue}>Job Ready</Text>
+                                    <Text style={styles.tableValue}>{t('jobReady')}</Text>
                                 </View>
                                 <Text style={[styles.tableValue, { flex: 0.8, textAlign: 'center' }]}>₹99</Text>
                                 <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
@@ -285,7 +285,7 @@ export default function ForemanEarningsInfo() {
                             <View style={styles.tableRow}>
                                 <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                     <View style={[styles.planDot, { backgroundColor: '#3B82F6' }]} />
-                                    <Text style={styles.tableValue}>Verified</Text>
+                                    <Text style={styles.tableValue}>{t('verified')}</Text>
                                 </View>
                                 <Text style={[styles.tableValue, { flex: 0.8, textAlign: 'center' }]}>₹199</Text>
                                 <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
@@ -299,7 +299,7 @@ export default function ForemanEarningsInfo() {
                             <View style={styles.tableRow}>
                                 <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                     <View style={[styles.planDot, { backgroundColor: '#8B5CF6' }]} />
-                                    <Text style={styles.tableValue}>Trusted</Text>
+                                    <Text style={styles.tableValue}>{t('trusted')}</Text>
                                 </View>
                                 <Text style={[styles.tableValue, { flex: 0.8, textAlign: 'center' }]}>₹499</Text>
                                 <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
@@ -314,20 +314,20 @@ export default function ForemanEarningsInfo() {
                     <View style={styles.whyContainer}>
                         <View style={styles.whyHeader}>
                             <Text style={styles.whyIcon}>📌</Text>
-                            <Text style={styles.whyTitle}>Why increasing %?</Text>
+                            <Text style={styles.whyTitle}>{t('whyIncreasingPercent')}</Text>
                         </View>
                         <View style={styles.whyContent}>
                             <View style={styles.whyItem}>
                                 <View style={styles.whyBullet} />
-                                <Text style={styles.whyText}>Pushes Foreman towards higher quality drivers</Text>
+                                <Text style={styles.whyText}>{t('pushesTowardsHigherQuality')}</Text>
                             </View>
                             <View style={styles.whyItem}>
                                 <View style={styles.whyBullet} />
-                                <Text style={styles.whyText}>Better platform reputation</Text>
+                                <Text style={styles.whyText}>{t('betterPlatformReputation')}</Text>
                             </View>
                             <View style={styles.whyItem}>
                                 <View style={styles.whyBullet} />
-                                <Text style={styles.whyText}>Lower churn</Text>
+                                <Text style={styles.whyText}>{t('lowerChurn')}</Text>
                             </View>
                         </View>
                     </View>
