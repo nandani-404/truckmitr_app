@@ -252,14 +252,14 @@ function TabBarDriver({ state, descriptors, navigation, homeRef }: { state: any,
         const jobProps = { height: 22, width: 22, tintColor: isFocused ? colors.white : colors.whiteOpacity(0.5) };
         const healthProps = { height: 26, width: 26, tintColor: isFocused ? colors.white : colors.whiteOpacity(0.5) };
         const profileProps = { height: 20, width: 20, tintColor: isFocused ? colors.white : colors.whiteOpacity(0.5) };
-        const driverKiAwazProps = { height: 24, width: 24, tintColor: isFocused ? colors.white : colors.whiteOpacity(0.5) };
+        const driverKiAwazProps = { height: 40, width: 40 };
         switch (screen) {
             case STACKS.HOME:
                 return <Image style={homeProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/1946/1946436.png' }} />
             case STACKS.JOB:
                 return <Image style={jobProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4121/4121106.png' }} />
             case STACKS.DRIVER_KI_AWAZ_INFO:
-                return <Image style={driverKiAwazProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3938/3938669.png' }} />
+                return <Image style={driverKiAwazProps} source={require('@truckmitr/assets/logo/speaker.png')} />
             case STACKS.DL_VERIFICATION:
                 return <Image style={healthProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/11831/11831511.png' }} />
             case STACKS.VERIFICATION:

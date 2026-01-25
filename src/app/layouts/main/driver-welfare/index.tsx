@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, StatusBar, TouchableOpacity, Animated, BackHandler, Dimensions, Image, Linking, Switch, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, StatusBar, TouchableOpacity, Animated, BackHandler, Dimensions, Image, Linking, Switch, Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -22,6 +23,8 @@ const PmjjbyImage = require('../../../../assets/images/pmjjby_life.png');
 const ShramYogiImage = require('../../../../assets/images/shram_yogi_senior.png');
 // @ts-ignore
 const AtalPensionImage = require('../../../../assets/images/atal_pension.png');
+// @ts-ignore
+const DriverRestFacilitiesImage = require('../../../../assets/images/driver_rest_facilitiess.png');
 
 const COLORS = {
     primary: '#1E3A5F',
@@ -34,136 +37,7 @@ const COLORS = {
     utilityBg: '#FEF7EC',
 };
 
-const SCHEMES = [
-    {
-        id: 'ayushman', title: 'Ayushman Bharat',
-        benefit: '₹5 Lakh', benefitSuffix: ' Health Coverage',
-        tagline: 'Cashless treatment for your family across India',
-        heroHighlight: '₹5 Lakh Health Coverage',
-        heroSubline: 'Cashless treatment across India',
-        heroGradient: ['#059669', '#0891B2'], // Green → Teal
-        about: 'Ayushman Bharat provides financial protection to families by covering major medical treatments at empanelled hospitals across India.',
-        highlights: ['Cashless Treatment', 'Pan India Coverage', 'No Premium', 'Family Coverage'],
-        benefits: [
-            { icon: 'medical-outline', text: '₹5 lakh per family cover every year' },
-            { icon: 'hospital-outline', text: 'Comprehensive hospitalisation cover' },
-            { icon: 'shield-checkmark-outline', text: 'Pre & post-hospital expenses included' }
-        ],
-        eligibility: ['Eligible SECC listed families', 'No age limit for family members', 'Aadhaar-based identification'],
-        steps: ['Check eligibility online or at CSC', 'Visit any empanelled hospital', 'Get cashless treatment easily'],
-        icon: 'building', color: '#059669', iconLib: 'FontAwesome5', featured: true,
-        image: AyushmanFamilyImage,
-        ctaText: 'Check Eligibility',
-        secondaryCta: 'Find Hospitals'
-    },
-    {
-        id: 'pmsby', title: 'PMSBY', subtitle: 'Accident Insurance',
-        benefit: '₹2 Lakh Cover',
-        line1: 'Sirf ₹20 mein', line2: '2 Lakh ka Bima',
-        heroHighlight: '₹2 Lakh Suraksha',
-        heroSubline: 'Sirf ₹20 saalana premium par',
-        heroGradient: ['#1E40AF', '#3B82F6'], // Dark Blue → Blue
-        about: 'Truck driving ek high-risk profession hai. PMSBY sarkar ki taraf se ek accident insurance scheme hai. Agar road accident mein driver ki death ya disability hoti hai, toh parivaar ko ₹2 lakh tak ki madad milti hai.',
-        highlights: ['Govt. of India Scheme', '₹2 Lakh Cover', 'Premium ₹20/Year'],
-        benefits: [
-            { icon: 'shield-outline', text: 'Accidental Death: ₹2,00,000' },
-            { icon: 'accessibility-outline', text: 'Permanent Disability: ₹2,00,000' },
-            { icon: 'medkit-outline', text: 'Partial Disability: ₹1,00,000' },
-            { icon: 'wallet-outline', text: 'Premium: Sirf ₹20 har saal' }
-        ],
-        eligibility: ['Age: 18 se 70 saal', 'Active Bank Account hona chahiye', 'Aadhaar aur Mobile number linked ho'],
-        steps: ['Apne bank branch mein form bharein', 'Auto-debit chalu karein (har saal ₹20 katenge)', 'Accident hone par nominee turant bank jaaye'],
-        detailTrust: 'Yeh Bharat Sarkar (Govt. of India) ki scheme hai. Aapka paisa seedha bank se kat-ta hai, beech mein koi agent nahi hota.',
-        detailFeatures: [
-            'Policy Status Check (Yes/No)',
-            'Application Help & Support',
-            'Renewal Reminders',
-            'Driver Safety Badge'
-        ],
-        detailPositioning: '“TruckMitr sirf loads nahi, driver ki suraksha bhi dekhta hai.”',
-        icon: 'shield-check', color: '#1E40AF', iconLib: 'MaterialCommunityIcons', image: PmsbyImage,
-        ctaText: 'Check Coverage Now'
-    },
-    {
-        id: 'pmjjby', title: 'PMJJBY', subtitle: 'Life Insurance',
-        benefit: '₹2 Lakh Cover',
-        line1: <Text>Protect the future of your <Text style={{ fontWeight: '700', color: COLORS.textDark }}>loved ones</Text></Text>, line2: '',
-        heroHighlight: '₹2 Lakh Life Cover',
-        heroSubline: 'Family protection and peace of mind',
-        heroGradient: ['#BE123C', '#FB7185'], // Rose → Pink
-        about: 'PMJJBY ensures essential financial support for your family in the unfortunate event of the policyholder\'s untimely death.',
-        highlights: ['Life Insurance', 'Affordable Premium', 'Family Security'],
-        benefits: [
-            { icon: 'heart-outline', text: '₹2 Lakh life insurance cover' },
-            { icon: 'refresh-outline', text: 'Yearly renewable policy' },
-            { icon: 'wallet-outline', text: 'Directly linked to bank account' }
-        ],
-        eligibility: ['Age group: 18 to 50 years', 'Active bank account holder', 'Consent for yearly renewal'],
-        steps: ['Join through any participating bank', 'Annual premium automatically deducted', 'Family receives benefit after claim'],
-        icon: 'heart-pulse', color: '#EF4444', iconLib: 'MaterialCommunityIcons', image: PmjjbyImage,
-        ctaText: 'Protect Your Family'
-    },
-    {
-        id: 'shramyogi', title: 'PM Shram\nYogi', subtitle: 'Pension Scheme',
-        benefit: '₹3,000 / Month',
-        line1: 'For unorganized sector', line2: 'workers',
-        heroHighlight: '₹3,000 Monthly Pension',
-        heroSubline: 'Dignity and security in old age',
-        heroGradient: ['#6D28D9', '#A78BFA'], // Purple → Lavender
-        about: 'PM Shram Yogi Maan-dhan provides an assured monthly pension to unorganised workers after they reach the age of 60.',
-        highlights: ['Old-age Pension', 'Govt Contribution', 'Family Support'],
-        benefits: [
-            { icon: 'cash-outline', text: 'Guaranteed ₹3,000 monthly pension' },
-            { icon: 'people-outline', text: 'Family pension on death of subscriber' },
-            { icon: 'business-outline', text: 'Equal government contribution' }
-        ],
-        eligibility: ['Age group: 18 to 40 years', 'Unorganised workers category', 'Monthly income below ₹15,000'],
-        steps: ['Register at the nearest CSC', 'Make monthly voluntary contributions', 'Receive pension regularly after 60'],
-        icon: 'piggy-bank', color: '#F97316', iconLib: 'FontAwesome5', image: ShramYogiImage,
-        ctaText: 'Start Pension Plan'
-    },
-    {
-        id: 'atal', title: 'Atal Pension', subtitle: 'Pension Scheme',
-        benefit: '₹1K-5K',
-        line1: 'Receive a guaranteed',
-        line2: <Text style={{ fontWeight: '700', color: COLORS.textDark }}>monthly pension</Text>,
-        heroHighlight: '₹1,000–₹5,000 Pension',
-        heroSubline: 'Planned, guaranteed retirement for all',
-        heroGradient: ['#4338CA', '#818CF8'], // Indigo → Light Indigo
-        about: 'Atal Pension Yojana helps Indian citizens plan a secure retirement with a guaranteed monthly income regularised by the government.',
-        highlights: ['Guaranteed Pension', 'Long-term Savings', 'Govt-backed'],
-        benefits: [
-            { icon: 'lock-closed-outline', text: 'Fixed pension amount of choice' },
-            { icon: 'umbrella-outline', text: 'Retirement security for spouse' },
-            { icon: 'gift-outline', text: 'Nominee receives full corpus benefits' }
-        ],
-        eligibility: ['Age group: 18 to 40 years', 'Valid savings bank account', 'Not a beneficiary of other schemes'],
-        steps: ['Choose your desired pension amount', 'Setup monthly contribution via bank', 'Get guaranteed pension after 60'],
-        icon: 'coins', color: '#8B5CF6', iconLib: 'FontAwesome5', image: AtalPensionImage,
-        ctaText: 'Plan Your Retirement'
-    },
-    {
-        id: 'apnaghar', title: 'Apna Ghar', subtitle: 'Rest Facilities',
-        benefit: 'Rest & Stay',
-        line1: 'Comfortable and safe',
-        line2: <Text style={{ fontWeight: '700', color: COLORS.textDark }}>resting facilities</Text>,
-        heroHighlight: 'Safe & Comfortable Stay',
-        heroSubline: 'Comfort, safety, and rest during journeys',
-        heroGradient: ['#EA580C', '#FDBA74'], // Orange → Apricot
-        about: 'Apna Ghar provides safe, clean, and comfortable resting facilities for truck drivers during their long and tiring journeys.',
-        highlights: ['Clean Rest Houses', 'Hygiene Washrooms', 'Drinking Water'],
-        benefits: [
-            { icon: 'bed-outline', text: 'Clean sleeping beds and quilts' },
-            { icon: 'water-outline', text: 'Access to washrooms & clean water' },
-            { icon: 'shield-outline', text: 'Safe and secure parking environment' }
-        ],
-        eligibility: ['All active commercial truck drivers', 'Must carry a valid commercial driver ID', 'Applicable for long-haul routes'],
-        steps: ['Find nearest Apna Ghar on the map', 'Check real-time bed availability', 'Check-in and rest safely'],
-        icon: 'bed', color: '#EC4899', iconLib: 'FontAwesome5', isUtility: true,
-        image: DriverRestingImage,
-        ctaText: 'Find Nearby Apna Ghar'
-    }
-];
+
 
 const SectionTitle = ({ title }: { title: string }) => (
     <Text style={styles.sectionTitle}>{title}</Text>
@@ -195,6 +69,121 @@ const EligibilityItem = ({ text }: { text: string }) => (
 );
 
 const DriverWelfare = () => {
+    const { t } = useTranslation();
+    const SCHEMES = [
+        {
+            id: 'ayushman', title: t('driverWelfare.ayushman.title'),
+            benefit: t('driverWelfare.ayushman.benefit'), benefitSuffix: t('driverWelfare.ayushman.benefitSuffix'),
+            tagline: t('driverWelfare.ayushman.tagline'),
+            heroHighlight: t('driverWelfare.ayushman.benefit'),
+            heroSubline: t('driverWelfare.ayushman.tagline'),
+            heroGradient: ['#059669', '#0891B2'], // Green → Teal
+            about: t('driverWelfare.ayushman.whatIsItDesc'),
+            highlights: t('driverWelfare.ayushman.benefitsList', { returnObjects: true }), // Assuming translation returns array
+            benefits: (t('driverWelfare.ayushman.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'checkmark-circle', text })),
+            eligibility: t('driverWelfare.ayushman.whoCanTakeList', { returnObjects: true }),
+            steps: [t('driverWelfare.ayushman.cta'), t('driverWelfare.ayushman.ctaSecondary')],
+            icon: 'building', color: '#059669', iconLib: 'FontAwesome5', featured: true,
+            image: AyushmanFamilyImage,
+            ctaText: t('driverWelfare.ayushman.cta'),
+            secondaryCta: t('driverWelfare.ayushman.ctaSecondary')
+        },
+        {
+            id: 'pmsby', title: t('driverWelfare.pmsby.title'), subtitle: t('driverWelfare.pmsby.subtitle'),
+            benefit: t('driverWelfare.pmsby.benefit'),
+            line1: t('driverWelfare.pmsby.benefitSuffix').replace('| ', ''), line2: '',
+            heroHighlight: t('driverWelfare.pmsby.benefit'),
+            heroSubline: t('driverWelfare.pmsby.benefitSuffix'),
+            heroGradient: ['#1E40AF', '#3B82F6'], // Dark Blue → Blue
+            about: t('driverWelfare.pmsby.whatIsItDesc'),
+            highlights: t('driverWelfare.pmsby.benefitsList', { returnObjects: true }),
+            benefits: (t('driverWelfare.pmsby.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'shield-outline', text })),
+            eligibility: [],
+            steps: [],
+            icon: 'shield-check', color: '#1E40AF', iconLib: 'MaterialCommunityIcons', image: PmsbyImage,
+            ctaText: t('driverWelfare.pmsby.cta')
+        },
+        {
+            id: 'pmjjby', title: t('driverWelfare.pmjjby.title'), subtitle: t('driverWelfare.pmjjby.subtitle'),
+            benefit: t('driverWelfare.pmjjby.benefit'),
+            line1: <Text>{t('driverWelfare.pmjjby.subtitle')}</Text>, line2: '',
+            heroHighlight: t('driverWelfare.pmjjby.benefit'),
+            heroSubline: t('driverWelfare.pmjjby.subtitle'),
+            heroGradient: ['#BE123C', '#FB7185'], // Rose → Pink
+            about: t('driverWelfare.pmjjby.whatIsItDesc'),
+            highlights: t('driverWelfare.pmjjby.benefitsList', { returnObjects: true }),
+            benefits: (t('driverWelfare.pmjjby.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'heart-outline', text })),
+            eligibility: [],
+            steps: [],
+            icon: 'heart-pulse', color: '#EF4444', iconLib: 'MaterialCommunityIcons', image: PmjjbyImage,
+            ctaText: t('driverWelfare.pmjjby.cta')
+        },
+        {
+            id: 'shramyogi', title: t('driverWelfare.shramyogi.title'), subtitle: t('driverWelfare.shramyogi.subtitle'),
+            benefit: t('driverWelfare.shramyogi.benefit'),
+            line1: t('driverWelfare.shramyogi.subtitle'), line2: '',
+            heroHighlight: t('driverWelfare.shramyogi.benefit'),
+            heroSubline: t('driverWelfare.shramyogi.subtitle'),
+            heroGradient: ['#6D28D9', '#A78BFA'], // Purple → Lavender
+            about: t('driverWelfare.shramyogi.whatIsItDesc'),
+            highlights: t('driverWelfare.shramyogi.benefitsList', { returnObjects: true }),
+            benefits: (t('driverWelfare.shramyogi.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'cash-outline', text })),
+            eligibility: [],
+            steps: [],
+            icon: 'piggy-bank', color: '#F97316', iconLib: 'FontAwesome5', image: ShramYogiImage,
+            ctaText: t('driverWelfare.shramyogi.cta')
+        },
+        {
+            id: 'atal', title: t('driverWelfare.atal.title'), subtitle: t('driverWelfare.atal.subtitle'),
+            benefit: t('driverWelfare.atal.benefit'),
+            line1: t('driverWelfare.atal.benefitSuffix'),
+            line2: <Text style={{ fontWeight: '700', color: COLORS.textDark }}></Text>,
+            heroHighlight: t('driverWelfare.atal.benefit'),
+            heroSubline: t('driverWelfare.atal.subtitle'),
+            heroGradient: ['#4338CA', '#818CF8'], // Indigo → Light Indigo
+            about: t('driverWelfare.atal.whatIsItDesc'),
+            highlights: t('driverWelfare.atal.benefitsList', { returnObjects: true }),
+            benefits: (t('driverWelfare.atal.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'lock-closed-outline', text })),
+            eligibility: [],
+            steps: [],
+            icon: 'coins', color: '#8B5CF6', iconLib: 'FontAwesome5', image: AtalPensionImage,
+            ctaText: t('driverWelfare.atal.cta')
+        },
+        {
+            id: 'apnaghar', title: t('driverWelfare.apnaghar.title'), subtitle: t('driverWelfare.apnaghar.subtitle'),
+            benefit: t('driverWelfare.apnaghar.title'), // Using Title as benefit placeholder or specific short text if needed
+            line1: t('driverWelfare.apnaghar.subtitle'),
+            line2: <Text style={{ fontWeight: '700', color: COLORS.textDark }}></Text>,
+            heroHighlight: t('driverWelfare.apnaghar.title'),
+            heroSubline: t('driverWelfare.apnaghar.subtitle'),
+            heroGradient: ['#EA580C', '#FDBA74'], // Orange → Apricot
+            about: t('driverWelfare.apnaghar.whatIsItDesc'),
+            highlights: t('driverWelfare.apnaghar.benefitsList', { returnObjects: true }),
+            benefits: (t('driverWelfare.apnaghar.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'bed-outline', text })),
+            eligibility: [],
+            steps: [],
+            icon: 'bed', color: '#EC4899', iconLib: 'FontAwesome5', isUtility: true,
+            image: DriverRestingImage,
+            ctaText: t('driverWelfare.apnaghar.cta')
+        },
+        {
+            id: 'driver_rest', title: t('driverWelfare.driverRest.title'), subtitle: t('driverWelfare.driverRest.subtitle'),
+            benefit: t('driverWelfare.driverRest.title'),
+            line1: t('driverWelfare.driverRest.subtitle'),
+            line2: <Text style={{ fontWeight: '700', color: COLORS.textDark }}></Text>,
+            heroHighlight: t('driverWelfare.driverRest.title'),
+            heroSubline: t('driverWelfare.driverRest.subtitle'),
+            heroGradient: ['#059669', '#34D399'],
+            about: t('driverWelfare.driverRest.whatIsItDesc'),
+            highlights: t('driverWelfare.driverRest.benefitsList', { returnObjects: true }),
+            benefits: (t('driverWelfare.driverRest.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'utensils', text })),
+            eligibility: [],
+            steps: [],
+            icon: 'hotel', color: '#059669', iconLib: 'FontAwesome5',
+            image: DriverRestFacilitiesImage,
+            ctaText: t('driverWelfare.driverRest.cta')
+        }
+    ];
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const [currentScreen, setCurrentScreen] = useState<'list' | 'detail'>('list');
@@ -222,8 +211,8 @@ const DriverWelfare = () => {
                     <Ionicons name="arrow-back" size={24} color={COLORS.textDark} />
                 </TouchableOpacity>
                 <View style={styles.headerCenter}>
-                    <Text style={styles.headerTitle}>Welfare Schemes</Text>
-                    <Text style={styles.headerSubtitle}>Support that moves with you 🚛</Text>
+                    <Text style={styles.headerTitle}>{t('driverWelfare.headerTitle')}</Text>
+                    <Text style={styles.headerSubtitle}>{t('driverWelfare.headerSubtitle')}</Text>
                 </View>
                 <View style={[styles.headerIconBtn, { opacity: 0 }]} />
             </View>
@@ -256,7 +245,7 @@ const DriverWelfare = () => {
                 <Text style={styles.featuredTagline}>{scheme.tagline}</Text>
                 <View style={styles.featuredDivider} />
                 <TouchableOpacity style={styles.featuredCta} onPress={onPress}>
-                    <Text style={styles.featuredCtaText}>Explore Scheme</Text>
+                    <Text style={styles.featuredCtaText}>{scheme.id === 'ayushman' ? t('driverWelfare.ayushman.cta') : t('driverWelfare.exploreScheme')}</Text>
                     <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
                 </TouchableOpacity>
             </LinearGradient>
@@ -277,6 +266,7 @@ const DriverWelfare = () => {
         else if (scheme.id === 'shramyogi') cardBg = '#FAF5FF';
         else if (scheme.id === 'atal') cardBg = '#EEF2FF';
         else if (scheme.id === 'apnaghar') cardBg = '#FDF2F8';
+        else if (scheme.id === 'driver_rest') cardBg = '#ECFDF5';
 
         return (
             <TouchableOpacity activeOpacity={0.95} onPress={onPress} style={[styles.wideCard, { backgroundColor: cardBg, borderColor: scheme.color + '30' }]}>
@@ -284,7 +274,7 @@ const DriverWelfare = () => {
                     <View style={[styles.wideCardBgCircle, { backgroundColor: scheme.color + '05' }]} />
 
                     {img && (
-                        <View style={styles.utilityImageContainer}>
+                        <View style={[styles.utilityImageContainer, scheme.id === 'driver_rest' && { right: -10 }]}>
                             <Image source={img} style={styles.utilityImage} resizeMode="cover" />
                             <LinearGradient
                                 colors={[cardBg, cardBg, 'transparent']}
@@ -318,7 +308,7 @@ const DriverWelfare = () => {
                         <View style={styles.wideCardDivider} />
 
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.textDark, marginRight: 4 }}>View Details</Text>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.textDark, marginRight: 4 }}>{t('driverWelfare.viewDetails')}</Text>
                             <Ionicons name="arrow-forward" size={12} color={COLORS.textDark} />
                         </View>
                     </View>
@@ -328,25 +318,45 @@ const DriverWelfare = () => {
     };
 
     const SchemesListScreen = () => {
-        const featured = SCHEMES[0];
-        const listItems = SCHEMES.slice(1);
+        const healthSchemes = SCHEMES.filter(s => ['ayushman', 'pmsby', 'pmjjby'].includes(s.id));
+        const pensionSchemes = SCHEMES.filter(s => ['shramyogi', 'atal'].includes(s.id));
+        const facilitySchemes = SCHEMES.filter(s => ['apnaghar', 'driver_rest'].includes(s.id));
 
         return (
             <View style={styles.flex1}>
                 <Header />
                 <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
                     <Animated.View style={{ opacity: fadeAnim }}>
-                        <FeaturedCard scheme={featured} onPress={() => { setSelectedScheme(featured); setCurrentScreen('detail'); }} />
 
-                        <View style={styles.listSpacer} />
+                        {/* Health & Insurance */}
+                        <Text style={styles.categoryTitle}>{t('driverWelfare.categoryHealth')}</Text>
+                        {healthSchemes.map((item) => (
+                            item.id === 'ayushman' ?
+                                <FeaturedCard key={item.id} scheme={item} onPress={() => { setSelectedScheme(item); setCurrentScreen('detail'); }} /> :
+                                <WideCard key={item.id} scheme={item} onPress={() => { setSelectedScheme(item); setCurrentScreen('detail'); }} />
+                        ))}
 
-                        {listItems.map((item) => (
+                        <View style={{ height: 24 }} />
+
+                        {/* Pension & Savings */}
+                        <Text style={styles.categoryTitle}>{t('driverWelfare.categoryPension')}</Text>
+                        {pensionSchemes.map((item) => (
                             <WideCard key={item.id} scheme={item} onPress={() => { setSelectedScheme(item); setCurrentScreen('detail'); }} />
                         ))}
 
-                        <View style={styles.footer}>
-                            <Ionicons name="shield-checkmark" size={14} color={COLORS.textMuted} />
-                            <Text style={styles.footerText}>Backed by Government of India</Text>
+                        <View style={{ height: 24 }} />
+
+                        {/* Facilities & Welfare */}
+                        <Text style={styles.categoryTitle}>{t('driverWelfare.categoryFacility')}</Text>
+                        {facilitySchemes.map((item) => (
+                            <WideCard key={item.id} scheme={item} onPress={() => { setSelectedScheme(item); setCurrentScreen('detail'); }} />
+                        ))}
+
+                        <View style={{ alignItems: 'center', marginTop: 16, paddingHorizontal: 24 }}>
+                            <Ionicons name="heart" size={16} color={COLORS.textMuted} />
+                            <Text style={{ fontSize: 12, color: COLORS.textMuted, textAlign: 'center', marginTop: 6, lineHeight: 18, fontWeight: '500' }}>
+                                {t('driverWelfare.finalLine')}
+                            </Text>
                         </View>
                         <View style={{ height: 20 }} />
                     </Animated.View>
@@ -355,9 +365,11 @@ const DriverWelfare = () => {
         );
     };
 
-    const PMSBYDetailView = ({ scheme }: { scheme: any }) => {
-        const [isCovered, setIsCovered] = useState(false);
-        const [showWhyExpanded, setShowWhyExpanded] = useState(true);
+
+
+    // NEW: Ayushman Bharat Detail View
+    const AyushmanDetailView = () => {
+        const [showWhyExpanded, setShowWhyExpanded] = useState(false);
 
         return (
             <View style={styles.flex1}>
@@ -366,331 +378,737 @@ const DriverWelfare = () => {
                     <TouchableOpacity onPress={() => setCurrentScreen('list')} style={styles.detailBackBtn}>
                         <Ionicons name="chevron-back" size={24} color={COLORS.textDark} />
                     </TouchableOpacity>
-                    <Text style={styles.detailHeaderTitle}>PMSBY Insurance</Text>
+                    <Text style={styles.detailHeaderTitle}>{t('driverWelfare.ayushman.title')}</Text>
                     <View style={{ width: 44 }} />
                 </View>
 
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 
-                    {/* 1. HERO SECTION (Feature Style) */}
-                    <View style={{ backgroundColor: '#EAF3FF', margin: 16, borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden' }}>
-                        <View style={{ position: 'absolute', right: -20, top: -20, opacity: 0.1 }}>
-                            <Ionicons name="shield-checkmark" size={120} color="#2563EB" />
-                        </View>
-
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-                            <View style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                <Ionicons name="shield-checkmark" size={14} color="#2563EB" />
-                                <Text style={{ fontSize: 11, fontWeight: '700', color: '#1E40AF' }}>GOVT. SCHEME</Text>
+                    {/* 1. HERO SECTION */}
+                    <View style={styles.idCheckHero}>
+                        <View style={styles.idCheckHeroContent}>
+                            <View style={[styles.shieldIconContainer, { backgroundColor: '#E0F2FE' }]}>
+                                <Text style={{ fontSize: 24 }}>🏥</Text>
                             </View>
-                            <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-                                <Text style={{ fontSize: 11, fontWeight: '700', color: '#D97706' }}>₹2L COVER</Text>
-                            </View>
-                        </View>
-
-                        <Text style={{ fontSize: 22, fontWeight: '800', color: '#1E3A5F', marginBottom: 6, lineHeight: 28 }}>
-                            PMSBY – Driver Accident Insurance
-                        </Text>
-                        <Text style={{ fontSize: 15, color: '#334155', lineHeight: 22, marginBottom: 16 }}>
-                            Sirf <Text style={{ fontWeight: '700', color: '#2563EB' }}>₹20 mein</Text> parivaar ke liye ₹2 lakh ki suraksha.
-                        </Text>
-
-                        <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(37,99,235,0.1)', paddingTop: 12, marginTop: 4 }}>
-                            <Text style={{ fontSize: 12, color: '#475569', fontStyle: 'italic' }}>
-                                Central Government ki accident insurance yojana specially useful for truck drivers.
+                            <Text style={styles.idCheckHeroTitle}>{t('driverWelfare.ayushman.title')}</Text>
+                            <Text style={styles.idCheckHeroSub}>
+                                {t('driverWelfare.ayushman.subtitle')}
                             </Text>
+                            <View style={{ marginBottom: 16 }}>
+                                <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center' }}>
+                                    {t('driverWelfare.ayushman.whatIsItDesc')}
+                                </Text>
+                            </View>
+                            <TouchableOpacity style={styles.heroCtaBtn} onPress={() => Linking.openURL('tel:18001024558')}>
+                                <Text style={styles.heroCtaText}>{t('driverWelfare.callTruckMitr')}</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
 
-                    {/* 2. WHY PMSBY (Expandable) */}
+                    {/* 2. WHY AYUSHMAN BHARAT */}
                     <TouchableOpacity
                         activeOpacity={0.8}
                         onPress={() => setShowWhyExpanded(!showWhyExpanded)}
-                        style={{ marginHorizontal: 16, marginBottom: 20, backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#F1F5F9', overflow: 'hidden' }}
+                        style={styles.expandableCard}
                     >
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#F8FAFC' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <Ionicons name="help-circle" size={20} color="#2563EB" />
-                                <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B' }}>Why PMSBY?</Text>
-                            </View>
+                        <View style={styles.expandableHeader}>
+                            <Text style={styles.expandableTitle}>{t('driverWelfare.ayushman.whatIsItTitle')}</Text>
                             <Ionicons name={showWhyExpanded ? "chevron-up" : "chevron-down"} size={20} color="#64748B" />
                         </View>
-
+                        {!showWhyExpanded && (
+                            <Text style={styles.expandablePreview}>
+                                {t('driverWelfare.ayushman.tagline')}
+                            </Text>
+                        )}
                         {showWhyExpanded && (
-                            <View style={{ padding: 16 }}>
-                                <Text style={{ fontSize: 14, color: '#334155', lineHeight: 22, marginBottom: 12 }}>
-                                    Truck driving ek high-risk profession hai. Road accident mein death ya permanent disability hone par parivaar ko financial support milta hai.
+                            <View style={{ marginTop: 8 }}>
+                                <Text style={styles.expandableText}>
+                                    {t('driverWelfare.ayushman.whatIsItDesc')}
                                 </Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F0FDF4', padding: 10, borderRadius: 8 }}>
-                                    <Ionicons name="bulb" size={16} color="#16A34A" />
-                                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#15803D', flex: 1 }}>
-                                        ₹20 ka kharcha, parivaar ke liye ₹2 lakh ki suraksha
-                                    </Text>
-                                </View>
+                                <TouchableOpacity style={{ marginTop: 8 }}>
+                                    <Text style={{ color: '#2563EB', fontSize: 12, fontWeight: '600' }}>{t('driverWelfare.viewDetails')}</Text>
+                                </TouchableOpacity>
                             </View>
                         )}
                     </TouchableOpacity>
 
-                    {/* 3. SCHEME DETAILS (2x2 Grid) */}
-                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
-                        <Text style={styles.sectionHeaderSmall}>Scheme Details</Text>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-                            {/* Card 1 */}
-                            <View style={{ width: '48%', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1 }}>
-                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
-                                    <Ionicons name="shield-checkmark" size={18} color="#2563EB" />
+                    {/* 3. WHAT IT COVERS */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.ayushman.benefitsTitle')}</Text>
+                        <View style={styles.docGrid}>
+                            <View style={styles.docCard}>
+                                <View style={[styles.docIconCircle, { backgroundColor: '#DBEAFE' }]}>
+                                    <Ionicons name="card-outline" size={24} color="#2563EB" />
                                 </View>
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Insurance Cover</Text>
-                                <Text style={{ fontSize: 11, color: '#64748B' }}>Accident death / disability</Text>
-                                <Text style={{ fontSize: 14, fontWeight: '800', color: '#2563EB', marginTop: 4 }}>₹2,00,000</Text>
+                                <Text style={styles.docTitle}>{t('driverWelfare.ayushman.grid.cashless')}</Text>
+                                <Text style={styles.docSub}>{t('driverWelfare.ayushman.grid.cashlessSub')}</Text>
                             </View>
-                            {/* Card 2 */}
-                            <View style={{ width: '48%', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1 }}>
-                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F0FDF4', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
-                                    <Ionicons name="cash" size={18} color="#16A34A" />
+                            <View style={styles.docCard}>
+                                <View style={[styles.docIconCircle, { backgroundColor: '#DCFCE7' }]}>
+                                    <Ionicons name="medkit-outline" size={24} color="#16A34A" />
                                 </View>
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Premium</Text>
-                                <Text style={{ fontSize: 11, color: '#64748B' }}>Sirf ₹20 / year</Text>
-                                <Text style={{ fontSize: 14, fontWeight: '800', color: '#16A34A', marginTop: 4 }}>₹20 Only</Text>
+                                <Text style={styles.docTitle}>{t('driverWelfare.ayushman.grid.major')}</Text>
+                                <Text style={styles.docSub}>{t('driverWelfare.ayushman.grid.majorSub')}</Text>
                             </View>
-                            {/* Card 3 */}
-                            <View style={{ width: '48%', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1 }}>
-                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
-                                    <Ionicons name="person" size={18} color="#EA580C" />
+                            <View style={styles.docCard}>
+                                <View style={[styles.docIconCircle, { backgroundColor: '#FEF3C7' }]}>
+                                    <Ionicons name="globe-outline" size={24} color="#D97706" />
                                 </View>
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Age Limit</Text>
-                                <Text style={{ fontSize: 11, color: '#64748B' }}>Eligibility criteria</Text>
-                                <Text style={{ fontSize: 14, fontWeight: '800', color: '#EA580C', marginTop: 4 }}>18 - 70 Years</Text>
+                                <Text style={styles.docTitle}>{t('driverWelfare.ayushman.grid.allIndia')}</Text>
+                                <Text style={styles.docSub}>{t('driverWelfare.ayushman.grid.allIndiaSub')}</Text>
                             </View>
-                            {/* Card 4 */}
-                            <View style={{ width: '48%', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1 }}>
-                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F5F3FF', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
-                                    <Ionicons name="business" size={18} color="#7C3AED" />
+                            <View style={styles.docCard}>
+                                <View style={[styles.docIconCircle, { backgroundColor: '#F3E8FF' }]}>
+                                    <Ionicons name="people-outline" size={24} color="#9333EA" />
                                 </View>
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Bank Linked</Text>
-                                <Text style={{ fontSize: 11, color: '#64748B' }}>Auto-debit facility</Text>
-                                <Text style={{ fontSize: 14, fontWeight: '800', color: '#7C3AED', marginTop: 4 }}>Yearly Renewal</Text>
+                                <Text style={styles.docTitle}>{t('driverWelfare.ayushman.grid.family')}</Text>
+                                <Text style={styles.docSub}>{t('driverWelfare.ayushman.grid.familySub')}</Text>
                             </View>
                         </View>
                     </View>
 
-                    {/* 4. WHO CAN APPLY & WHY NEEDED (Tabs style) */}
-                    <View style={{ marginHorizontal: 16, marginBottom: 24, gap: 16 }}>
-                        {/* Who Can Apply */}
-                        <View style={{ backgroundColor: '#FFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0' }}>
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 12 }}>Kaun apply kar sakta hai?</Text>
-                            <View style={{ gap: 10 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    {/* 4. WHO CAN BENEFIT */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.ayushman.whoCanTakeTitle')}</Text>
+                        <View style={styles.benefitsList}>
+                            {(t('driverWelfare.ayushman.whoCanTakeList', { returnObjects: true }) as string[]).map((benefit, index) => (
+                                <View key={index} style={styles.benefitItem}>
                                     <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
-                                    <Text style={{ fontSize: 13, color: '#334155' }}>Active bank account</Text>
+                                    <Text style={styles.benefitText}>{benefit}</Text>
                                 </View>
-                                <View style={{ height: 1, backgroundColor: '#F1F5F9' }} />
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
-                                    <Text style={{ fontSize: 13, color: '#334155' }}>Aadhaar bank se linked</Text>
-                                </View>
-                                <View style={{ height: 1, backgroundColor: '#F1F5F9' }} />
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
-                                    <Text style={{ fontSize: 13, color: '#334155' }}>Mobile number bank se linked</Text>
-                                </View>
-                                <View style={{ height: 1, backgroundColor: '#F1F5F9' }} />
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
-                                    <Text style={{ fontSize: 13, color: '#334155' }}>Age 18–70 saal</Text>
-                                </View>
-                            </View>
+                            ))}
                         </View>
+                    </View>
 
-                        {/* Why Truck Drivers Needed */}
-                        <View style={{ backgroundColor: '#FFF7ED', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#FFEDD5' }}>
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#9A3412', marginBottom: 12 }}>Truck drivers ke liye kyun zaroori?</Text>
-                            <View style={{ gap: 8 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                                    <Ionicons name="warning" size={16} color="#EA580C" style={{ marginTop: 2 }} />
-                                    <Text style={{ fontSize: 13, color: '#7C2D12', flex: 1 }}>Roz highway par high risk profession</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                                    <Ionicons name="alert-circle" size={16} color="#EA580C" style={{ marginTop: 2 }} />
-                                    <Text style={{ fontSize: 13, color: '#7C2D12', flex: 1 }}>Accident ke baad family ki income ruk jaati hai</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                                    <Ionicons name="shield" size={16} color="#EA580C" style={{ marginTop: 2 }} />
-                                    <Text style={{ fontSize: 13, color: '#7C2D12', flex: 1 }}>Sirf ₹20 mein family ko financial security</Text>
-                                </View>
+                    {/* 5. WHY IMPORTANT FOR DRIVERS */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.ayushman.whyImportantTitle')}</Text>
+                        <View style={{ backgroundColor: '#F0FDF4', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#DCFCE7' }}>
+                            <View style={{ gap: 10 }}>
+                                <Text style={{ fontSize: 13, color: '#334155' }}>
+                                    {t('driverWelfare.ayushman.whyImportantDesc')}
+                                </Text>
                             </View>
                             <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(234,88,12,0.2)' }}>
-                                <Text style={{ fontSize: 14, fontWeight: '700', color: '#C2410C', textAlign: 'center' }}>Aaj ka ₹20, kal ke liye suraksha.</Text>
+                                <Text style={{ fontSize: 14, fontWeight: '700', color: '#166534', textAlign: 'center' }}>{t('driverWelfare.ayushman.tagline')}</Text>
                             </View>
                         </View>
                     </View>
 
-                    {/* 5. CLAIM PROCESS */}
-                    <View style={styles.claimSectionSimple}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                            <Text style={styles.sectionHeaderSmall}>Claim Process</Text>
-                            <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-                                <Text style={{ color: '#4F46E5', fontSize: 11, fontWeight: '700' }}>3 STEPS</Text>
-                            </View>
+                    {/* 6. GOVERNMENT TRUST */}
+                    <View style={styles.securityCard}>
+                        <View style={styles.securityHeader}>
+                            <Ionicons name="business" size={20} color="#059669" />
+                            <Text style={styles.securityTitle}>{t('driverWelfare.ayushman.needHelpTitle')}</Text>
+                        </View>
+                        <Text style={styles.securityText}>
+                            {t('driverWelfare.ayushman.needHelpDesc')}
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                            <Ionicons name="lock-closed-outline" size={14} color="#059669" />
+                            <Text style={{ fontSize: 12, color: '#064E3B' }}>{t('driverWelfare.ayushman.trustBadge')}</Text>
                         </View>
 
-                        <View style={{ paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: '#E2E8F0', marginLeft: 10 }}>
-                            {/* Step 1 */}
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, marginLeft: -18 }}>
-                                <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF', borderWidth: 2, borderColor: '#2563EB', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#2563EB' }}>1</Text>
-                                </View>
-                                <View style={{ marginLeft: 12, flex: 1 }}>
-                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Inform Bank</Text>
-                                    <Text style={{ fontSize: 12, color: '#64748B' }}>Accident hone par family / nominee bank ko inform kare</Text>
-                                </View>
-                            </View>
+                        <View style={{ height: 1, backgroundColor: '#D1FAE5', marginVertical: 12 }} />
 
-                            {/* Step 2 */}
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, marginLeft: -18 }}>
-                                <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF', borderWidth: 2, borderColor: '#64748B', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#64748B' }}>2</Text>
-                                </View>
-                                <View style={{ marginLeft: 12, flex: 1 }}>
-                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Submit Documents</Text>
-                                    <Text style={{ fontSize: 12, color: '#64748B' }}>Required documents submit kare (Death cert, FIR, etc.)</Text>
-                                </View>
+                        <TouchableOpacity style={styles.supportBtn} onPress={() => Linking.openURL('tel:18001024558')}>
+                            <Ionicons name="call-outline" size={16} color="#475569" />
+                            <View>
+                                <Text style={styles.supportText}>{t('driverWelfare.ayushman.supportBtnTitle')}</Text>
+                                <Text style={{ fontSize: 11, color: '#64748B' }}>{t('driverWelfare.ayushman.supportBtnSub')}</Text>
                             </View>
-
-                            {/* Step 3 */}
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginLeft: -18 }}>
-                                <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF', borderWidth: 2, borderColor: '#16A34A', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Ionicons name="checkmark" size={20} color="#16A34A" />
-                                </View>
-                                <View style={{ marginLeft: 12, flex: 1 }}>
-                                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 2 }}>Claim Credited</Text>
-                                    <Text style={{ fontSize: 12, color: '#64748B' }}>Claim amount directly bank account mein aata hai</Text>
-                                </View>
-                            </View>
-                        </View>
-
-                        <View style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', padding: 12, borderRadius: 12, gap: 10 }}>
-                            <Ionicons name="information-circle" size={24} color="#2563EB" />
-                            <Text style={{ fontSize: 12, color: '#475569', flex: 1 }}>TruckMitr app mein <Text style={{ fontWeight: '700', color: '#2563EB' }}>Claim Checklist + Help Call</Text> available hai.</Text>
-                        </View>
+                        </TouchableOpacity>
                     </View>
-
-                    {/* 6. SMART APP FEATURES */}
-                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
-                        <Text style={styles.sectionHeaderSmall}>TruckMitr Smart Features</Text>
-
-                        {/* 6.1 Am I Covered? */}
-                        <View style={{ backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16, elevation: 2 }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#DBEAFE', justifyContent: 'center', alignItems: 'center' }}>
-                                        <Ionicons name="shield-half" size={20} color="#2563EB" />
-                                    </View>
-                                    <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B' }}>Am I Covered?</Text>
-                                </View>
-                                <TouchableOpacity
-                                    onPress={() => Alert.alert('Coming Soon', 'This feature is currently under development.')}
-                                    style={{ backgroundColor: '#2563EB', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 }}
-                                >
-                                    <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '700' }}>Check Status</Text>
-                                </TouchableOpacity>
-                            </View>
-
-
-                        </View>
-
-                        {/* 6.2 Apply with Help */}
-                        <View style={{ backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 }}>
-                            <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 12 }}>Apply with Help</Text>
-                            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-                                <TouchableOpacity style={{ flex: 1, backgroundColor: '#EFF6FF', paddingVertical: 10, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#BFDBFE' }}>
-                                    <Ionicons name="call" size={20} color="#2563EB" style={{ marginBottom: 4 }} />
-                                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#1E40AF' }}>Call Support</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={{ flex: 1, backgroundColor: '#F0FDF4', paddingVertical: 10, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#BBF7D0' }}>
-                                    <Ionicons name="logo-whatsapp" size={20} color="#16A34A" style={{ marginBottom: 4 }} />
-                                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#15803D' }}>Callback</Text>
-                                </TouchableOpacity>
-                            </View>
-                            <Text style={{ fontSize: 11, color: '#64748B', textAlign: 'center' }}>
-                                Telecaller step-by-step apply karne mein madad karega
-                            </Text>
-                        </View>
-
-                        {/* 6.3 Voice & Auto Reminder (Row) */}
-                        <View style={{ flexDirection: 'row', gap: 12 }}>
-                            {/* Voice */}
-                            <TouchableOpacity style={{ flex: 1, backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
-                                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3E8FF', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
-                                    <Ionicons name="mic" size={24} color="#9333EA" />
-                                </View>
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B' }}>Voice Help</Text>
-                                <Text style={{ fontSize: 10, color: '#64748B', textAlign: 'center', marginTop: 2 }}>Listen in Hindi</Text>
-                            </TouchableOpacity>
-
-                            {/* Reminder */}
-                            <View style={{ flex: 1, backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
-                                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
-                                    <Ionicons name="alarm" size={24} color="#EA580C" />
-                                </View>
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B' }}>Auto-Remind</Text>
-                                <Text style={{ fontSize: 10, color: '#64748B', textAlign: 'center', marginTop: 2 }}>For ₹20 renewal</Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* 7. GOVERNMENT TRUST */}
-                    <View style={{ marginHorizontal: 16, marginBottom: 24, backgroundColor: '#F8FAFC', padding: 16, borderRadius: 16, borderLeftWidth: 4, borderLeftColor: '#475569' }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                            <Ionicons name="business" size={24} color="#475569" />
-                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#334155' }}>Government Trust</Text>
-                        </View>
-                        <View style={{ gap: 8 }}>
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                <Ionicons name="ellipse" size={8} color="#94A3B8" style={{ marginTop: 6 }} />
-                                <Text style={{ fontSize: 13, color: '#475569', flex: 1 }}>PMSBY Government of India ki yojana hai</Text>
-                            </View>
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                <Ionicons name="ellipse" size={8} color="#94A3B8" style={{ marginTop: 6 }} />
-                                <Text style={{ fontSize: 13, color: '#475569', flex: 1 }}>Bank ke through operate hoti hai - No agent needed</Text>
-                            </View>
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                <Ionicons name="shield-checkmark" size={14} color="#94A3B8" style={{ marginTop: 4 }} />
-                                <Text style={{ fontSize: 13, color: '#475569', flex: 1, fontStyle: 'italic' }}>TruckMitr safe: Data safe, no spam calling</Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Footer Positioning Line */}
-                    <Text style={{ textAlign: 'center', fontSize: 13, fontWeight: '600', color: '#94A3B8', marginBottom: 20 }}>
-                        “TruckMitr sirf loads nahi,{'\n'}driver ki suraksha bhi dekhta hai.”
-                    </Text>
 
                 </ScrollView>
 
-                {/* BOTTOM STICKY CTA */}
+                {/* STICKY CTA */}
                 <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 12 }]}>
                     <TouchableOpacity
-                        activeOpacity={0.9}
+                        style={styles.stickyPrimaryBtn}
                         onPress={() => Linking.openURL('tel:18001024558')}
-                        style={styles.stickyCtaTouch}
                     >
-                        <LinearGradient
-                            colors={['#059669', '#047857']} // Deep Green (Standard for Call)
-                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                            style={styles.stickyCtaGradient}
-                        >
-                            <View style={styles.stickyTextContainer}>
-                                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: '600', marginBottom: 2 }}>For more information</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '500' }}>Call our Toll Free number</Text>
-                                    <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '800' }}>1800 102 4558</Text>
+                        <Text style={styles.stickyBtnText}>{t('driverWelfare.callTruckMitr')}</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
+
+    const PMSBYDetailView = ({ scheme }: { scheme: any }) => {
+
+        return (
+            <View style={styles.flex1}>
+                {/* Header */}
+                <View style={[styles.detailHeader, { paddingTop: insets.top }]}>
+                    <TouchableOpacity onPress={() => setCurrentScreen('list')} style={styles.detailBackBtn}>
+                        <Ionicons name="chevron-back" size={24} color={COLORS.textDark} />
+                    </TouchableOpacity>
+                    <Text style={styles.detailHeaderTitle}>{t('driverWelfare.pmsby.title')} Insurance</Text>
+                    <View style={{ width: 44 }} />
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+
+                    {/* 1. HERO SECTION */}
+                    <View style={styles.idCheckHero}>
+                        <View style={styles.idCheckHeroContent}>
+                            <View style={[styles.shieldIconContainer, { backgroundColor: '#E0F2FE' }]}>
+                                <Text style={{ fontSize: 24 }}>🛡️</Text>
+                            </View>
+                            <Text style={styles.idCheckHeroTitle}>{t('driverWelfare.pmsby.title')}</Text>
+                            <Text style={styles.idCheckHeroTitle}>{t('driverWelfare.pmsby.subtitle')}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#2563EB', marginBottom: 16 }}>{t('driverWelfare.pmsby.benefit')} {t('driverWelfare.pmsby.benefitSuffix')}</Text>
+                            <TouchableOpacity style={styles.heroCtaBtn} onPress={() => Linking.openURL('tel:18001024558')}>
+                                <Text style={styles.heroCtaText}>{t('driverWelfare.callTruckMitr')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* 2. WHAT IS IT? */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.pmsby.whatIsItTitle')}</Text>
+                        <View style={{ backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Text style={{ fontSize: 14, color: '#334155', lineHeight: 22 }}>
+                                {t('driverWelfare.pmsby.whatIsItDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 3. HOW IT HELPS YOU */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.pmsby.benefitsTitle')}</Text>
+                        <View style={styles.benefitsList}>
+                            {(t('driverWelfare.pmsby.benefitsList', { returnObjects: true }) as string[]).map((benefit, index) => (
+                                <View key={index} style={styles.benefitItem}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={styles.benefitText}>{benefit}</Text>
                                 </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* 4. WHY IMPORTANT FOR DRIVERS */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.pmsby.whyImportantTitle')}</Text>
+                        <View style={{ backgroundColor: '#FFF7ED', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FFEDD5' }}>
+                            <Text style={{ fontSize: 14, color: '#9A3412', lineHeight: 22, marginBottom: 8 }}>
+                                {t('driverWelfare.pmsby.whyImportantDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 5. NEED HELP? */}
+                    <View style={styles.securityCard}>
+                        <View style={styles.securityHeader}>
+                            <Ionicons name="call" size={20} color="#059669" />
+                            <Text style={styles.securityTitle}>{t('driverWelfare.callTruckMitr')}</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => Linking.openURL('tel:18001024558')}
+                            style={{ marginBottom: 12 }}
+                        >
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2563EB' }}>
+                                {t('driverWelfare.tollFree')}
+                            </Text>
+                        </TouchableOpacity>
+                        <Text style={styles.securityText}>
+                            {t('driverWelfare.ayushman.needHelpSub')}
+                        </Text>
+                    </View>
+
+                </ScrollView>
+
+                {/* STICKY CTA */}
+                <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 12 }]}>
+                    <TouchableOpacity
+                        style={styles.stickyPrimaryBtn}
+                        onPress={() => Linking.openURL('tel:18001024558')}
+                    >
+                        <Text style={styles.stickyBtnText}>{t('driverWelfare.callTruckMitr')}</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
+
+    // PMJJBY Detail View (Get ID Check style)
+    const PMJJBYDetailView = () => {
+        return (
+            <View style={styles.flex1}>
+                {/* Header */}
+                <View style={[styles.detailHeader, { paddingTop: insets.top }]}>
+                    <TouchableOpacity onPress={() => setCurrentScreen('list')} style={styles.detailBackBtn}>
+                        <Ionicons name="chevron-back" size={24} color={COLORS.textDark} />
+                    </TouchableOpacity>
+                    <Text style={styles.detailHeaderTitle}>{t('driverWelfare.pmjjby.title')} Insurance</Text>
+                    <View style={{ width: 44 }} />
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+
+                    {/* 1. HERO SECTION */}
+                    <View style={styles.idCheckHero}>
+                        <View style={styles.idCheckHeroContent}>
+                            <View style={[styles.shieldIconContainer, { backgroundColor: '#FEE2E2' }]}>
+                                <Text style={{ fontSize: 24 }}>❤️</Text>
                             </View>
-                            <View style={styles.callIconBubble}>
-                                <Ionicons name="call" size={20} color="#059669" />
+                            <Text style={styles.idCheckHeroTitle}>{t('driverWelfare.pmjjby.title')}</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#475569', marginBottom: 4 }}>{t('driverWelfare.pmjjby.subtitle')}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#DC2626', marginBottom: 16 }}>{t('driverWelfare.pmjjby.benefit')}</Text>
+                            <TouchableOpacity style={styles.heroCtaBtn} onPress={() => Linking.openURL('tel:18001024558')}>
+                                <Text style={styles.heroCtaText}>{t('driverWelfare.callTruckMitr')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* 2. WHAT IS IT? */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.pmjjby.whatIsItTitle')}</Text>
+                        <View style={{ backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Text style={{ fontSize: 14, color: '#334155', lineHeight: 22 }}>
+                                {t('driverWelfare.pmjjby.whatIsItDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 3. HOW IT HELPS YOU */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.pmjjby.benefitsTitle')}</Text>
+                        <View style={styles.benefitsList}>
+                            {(t('driverWelfare.pmjjby.benefitsList', { returnObjects: true }) as string[]).map((benefit, index) => (
+                                <View key={index} style={styles.benefitItem}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={styles.benefitText}>{benefit}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* 4. WHY IMPORTANT FOR DRIVERS */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.pmjjby.whyImportantTitle')}</Text>
+                        <View style={{ backgroundColor: '#FEF2F2', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FECACA' }}>
+                            <Text style={{ fontSize: 14, color: '#991B1B', lineHeight: 22, marginBottom: 8 }}>
+                                {t('driverWelfare.pmjjby.whyImportantDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 5. NEED HELP? */}
+                    <View style={styles.securityCard}>
+                        <View style={styles.securityHeader}>
+                            <Ionicons name="call" size={20} color="#059669" />
+                            <Text style={styles.securityTitle}>{t('driverWelfare.callTruckMitr')}</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => Linking.openURL('tel:18001024558')}
+                            style={{ marginBottom: 12 }}
+                        >
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2563EB' }}>
+                                {t('driverWelfare.tollFree')}
+                            </Text>
+                        </TouchableOpacity>
+                        <Text style={styles.securityText}>
+                            {t('driverWelfare.ayushman.needHelpSub')}
+                        </Text>
+                    </View>
+
+                </ScrollView>
+
+                {/* STICKY CTA */}
+                <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 12 }]}>
+                    <TouchableOpacity
+                        style={styles.stickyPrimaryBtn}
+                        onPress={() => Linking.openURL('tel:18001024558')}
+                    >
+                        <Text style={styles.stickyBtnText}>{t('driverWelfare.callTruckMitr')}</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
+
+    // PM Shram Yogi Detail View (Get ID Check style)
+    const PMShramYogiDetailView = () => {
+        return (
+            <View style={styles.flex1}>
+                {/* Header */}
+                <View style={[styles.detailHeader, { paddingTop: insets.top }]}>
+                    <TouchableOpacity onPress={() => setCurrentScreen('list')} style={styles.detailBackBtn}>
+                        <Ionicons name="chevron-back" size={24} color={COLORS.textDark} />
+                    </TouchableOpacity>
+                    <Text style={styles.detailHeaderTitle}>{t('driverWelfare.shramyogi.title')}</Text>
+                    <View style={{ width: 44 }} />
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+
+                    {/* 1. HERO SECTION */}
+                    <View style={styles.idCheckHero}>
+                        <View style={styles.idCheckHeroContent}>
+                            <View style={[styles.shieldIconContainer, { backgroundColor: '#FEF3C7' }]}>
+                                <Text style={{ fontSize: 24 }}>💰</Text>
                             </View>
-                        </LinearGradient>
+                            <Text style={styles.idCheckHeroTitle}>{t('driverWelfare.shramyogi.title')}</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#475569', marginBottom: 4 }}>{t('driverWelfare.shramyogi.subtitle')}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#D97706', marginBottom: 16 }}>{t('driverWelfare.shramyogi.benefit')}</Text>
+                            <TouchableOpacity style={styles.heroCtaBtn} onPress={() => Linking.openURL('tel:18001024558')}>
+                                <Text style={styles.heroCtaText}>{t('driverWelfare.callTruckMitr')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* 2. WHAT IS IT? */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.shramyogi.whatIsItTitle')}</Text>
+                        <View style={{ backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Text style={{ fontSize: 14, color: '#334155', lineHeight: 22 }}>
+                                {t('driverWelfare.shramyogi.whatIsItDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 3. HOW IT HELPS YOU */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.shramyogi.benefitsTitle')}</Text>
+                        <View style={styles.benefitsList}>
+                            {(t('driverWelfare.shramyogi.benefitsList', { returnObjects: true }) as string[]).map((benefit, index) => (
+                                <View key={index} style={styles.benefitItem}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={styles.benefitText}>{benefit}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* 4. WHY IMPORTANT FOR DRIVERS */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.shramyogi.whyImportantTitle')}</Text>
+                        <View style={{ backgroundColor: '#FFFBEB', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FDE68A' }}>
+                            <Text style={{ fontSize: 14, color: '#92400E', lineHeight: 22, marginBottom: 8 }}>
+                                {t('driverWelfare.shramyogi.whyImportantDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 5. NEED HELP? */}
+                    <View style={styles.securityCard}>
+                        <View style={styles.securityHeader}>
+                            <Ionicons name="call" size={20} color="#059669" />
+                            <Text style={styles.securityTitle}>{t('driverWelfare.callTruckMitr')}</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => Linking.openURL('tel:18001024558')}
+                            style={{ marginBottom: 12 }}
+                        >
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2563EB' }}>
+                                {t('driverWelfare.tollFree')}
+                            </Text>
+                        </TouchableOpacity>
+                        <Text style={styles.securityText}>
+                            {t('driverWelfare.ayushman.needHelpSub')}
+                        </Text>
+                    </View>
+
+                </ScrollView>
+
+                {/* STICKY CTA */}
+                <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 12 }]}>
+                    <TouchableOpacity
+                        style={styles.stickyPrimaryBtn}
+                        onPress={() => Linking.openURL('tel:18001024558')}
+                    >
+                        <Text style={styles.stickyBtnText}>{t('driverWelfare.callTruckMitr')}</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
+
+    // Atal Pension Yojana Detail View (Get ID Check style)
+    const AtalPensionDetailView = () => {
+        return (
+            <View style={styles.flex1}>
+                {/* Header */}
+                <View style={[styles.detailHeader, { paddingTop: insets.top }]}>
+                    <TouchableOpacity onPress={() => setCurrentScreen('list')} style={styles.detailBackBtn}>
+                        <Ionicons name="chevron-back" size={24} color={COLORS.textDark} />
+                    </TouchableOpacity>
+                    <Text style={styles.detailHeaderTitle}>{t('driverWelfare.atal.title')}</Text>
+                    <View style={{ width: 44 }} />
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+
+                    {/* 1. HERO SECTION */}
+                    <View style={styles.idCheckHero}>
+                        <View style={styles.idCheckHeroContent}>
+                            <View style={[styles.shieldIconContainer, { backgroundColor: '#E0E7FF' }]}>
+                                <Text style={{ fontSize: 24 }}>💵</Text>
+                            </View>
+                            <Text style={styles.idCheckHeroTitle}>{t('driverWelfare.atal.title')}</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#475569', marginBottom: 4 }}>{t('driverWelfare.atal.subtitle')}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: '#6366F1', marginBottom: 16 }}>{t('driverWelfare.atal.benefit')}</Text>
+                            <TouchableOpacity style={styles.heroCtaBtn} onPress={() => Linking.openURL('tel:18001024558')}>
+                                <Text style={styles.heroCtaText}>{t('driverWelfare.callTruckMitr')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* 2. WHAT IS IT? */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.atal.whatIsItTitle')}</Text>
+                        <View style={{ backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Text style={{ fontSize: 14, color: '#334155', lineHeight: 22 }}>
+                                {t('driverWelfare.atal.whatIsItDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 3. HOW IT HELPS YOU */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.atal.benefitsTitle')}</Text>
+                        <View style={styles.benefitsList}>
+                            {(t('driverWelfare.atal.benefitsList', { returnObjects: true }) as string[]).map((benefit, index) => (
+                                <View key={index} style={styles.benefitItem}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={styles.benefitText}>{benefit}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* 4. WHY IMPORTANT FOR DRIVERS */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.atal.whyImportantTitle')}</Text>
+                        <View style={{ backgroundColor: '#EEF2FF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#C7D2FE' }}>
+                            <Text style={{ fontSize: 14, color: '#3730A3', lineHeight: 22, marginBottom: 8 }}>
+                                {t('driverWelfare.atal.whyImportantDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 5. NEED HELP? */}
+                    <View style={styles.securityCard}>
+                        <View style={styles.securityHeader}>
+                            <Ionicons name="call" size={20} color="#059669" />
+                            <Text style={styles.securityTitle}>{t('driverWelfare.callTruckMitr')}</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => Linking.openURL('tel:18001024558')}
+                            style={{ marginBottom: 12 }}
+                        >
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2563EB' }}>
+                                {t('driverWelfare.tollFree')}
+                            </Text>
+                        </TouchableOpacity>
+                        <Text style={styles.securityText}>
+                            {t('driverWelfare.ayushman.needHelpSub')}
+                        </Text>
+                    </View>
+
+                </ScrollView>
+
+                {/* STICKY CTA */}
+                <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 12 }]}>
+                    <TouchableOpacity
+                        style={styles.stickyPrimaryBtn}
+                        onPress={() => Linking.openURL('tel:18001024558')}
+                    >
+                        <Text style={styles.stickyBtnText}>Call TruckMitr for Help</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
+
+    // Apna Ghar Detail View (Get ID Check style)
+    const ApnaGharDetailView = () => {
+        return (
+            <View style={styles.flex1}>
+                {/* Header */}
+                <View style={[styles.detailHeader, { paddingTop: insets.top }]}>
+                    <TouchableOpacity onPress={() => setCurrentScreen('list')} style={styles.detailBackBtn}>
+                        <Ionicons name="chevron-back" size={24} color={COLORS.textDark} />
+                    </TouchableOpacity>
+                    <Text style={styles.detailHeaderTitle}>{t('driverWelfare.apnaghar.title')}</Text>
+                    <View style={{ width: 44 }} />
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+
+                    {/* 1. HERO SECTION */}
+                    <View style={styles.idCheckHero}>
+                        <View style={styles.idCheckHeroContent}>
+                            <View style={[styles.shieldIconContainer, { backgroundColor: '#FCE7F3' }]}>
+                                <Text style={{ fontSize: 24 }}>🏠</Text>
+                            </View>
+                            <Text style={styles.idCheckHeroTitle}>{t('driverWelfare.apnaghar.title')}</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#475569', marginBottom: 16 }}>{t('driverWelfare.apnaghar.subtitle')}</Text>
+                            <TouchableOpacity style={styles.heroCtaBtn} onPress={() => Linking.openURL('tel:18001024558')}>
+                                <Text style={styles.heroCtaText}>{t('driverWelfare.callTruckMitr')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* 2. WHAT IS IT? */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.apnaghar.whatIsItTitle')}</Text>
+                        <View style={{ backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Text style={{ fontSize: 14, color: '#334155', lineHeight: 22 }}>
+                                {t('driverWelfare.apnaghar.whatIsItDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 3. HOW IT HELPS YOU */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.apnaghar.benefitsTitle')}</Text>
+                        <View style={styles.benefitsList}>
+                            {(t('driverWelfare.apnaghar.benefitsList', { returnObjects: true }) as string[]).map((benefit, index) => (
+                                <View key={index} style={styles.benefitItem}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={styles.benefitText}>{benefit}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* 4. WHY IMPORTANT FOR DRIVERS */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.apnaghar.whyImportantTitle')}</Text>
+                        <View style={{ backgroundColor: '#FDF2F8', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FBCFE8' }}>
+                            <Text style={{ fontSize: 14, color: '#9D174D', lineHeight: 22 }}>
+                                {t('driverWelfare.apnaghar.whyImportantDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 5. NEED HELP? */}
+                    <View style={styles.securityCard}>
+                        <View style={styles.securityHeader}>
+                            <Ionicons name="call" size={20} color="#059669" />
+                            <Text style={styles.securityTitle}>Need Help?</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => Linking.openURL('tel:18001024558')}
+                            style={{ marginBottom: 12 }}
+                        >
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2563EB' }}>
+                                Call TruckMitr Toll Free: 1800 102 4558
+                            </Text>
+                        </TouchableOpacity>
+                        <Text style={styles.securityText}>
+                            Our team will help you understand the facilities and access options.
+                        </Text>
+                    </View>
+
+                </ScrollView>
+
+                {/* STICKY CTA */}
+                <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 12 }]}>
+                    <TouchableOpacity
+                        style={styles.stickyPrimaryBtn}
+                        onPress={() => Linking.openURL('tel:18001024558')}
+                    >
+                        <Text style={styles.stickyBtnText}>Call TruckMitr for Help</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
+
+    // Driver Rest Facilities Detail View (Get ID Check style)
+    const DriverRestFacilitiesDetailView = () => {
+        return (
+            <View style={styles.flex1}>
+                {/* Header */}
+                <View style={[styles.detailHeader, { paddingTop: insets.top }]}>
+                    <TouchableOpacity onPress={() => setCurrentScreen('list')} style={styles.detailBackBtn}>
+                        <Ionicons name="chevron-back" size={24} color={COLORS.textDark} />
+                    </TouchableOpacity>
+                    <Text style={styles.detailHeaderTitle}>{t('driverWelfare.driverRest.title')}</Text>
+                    <View style={{ width: 44 }} />
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+
+                    {/* 1. HERO SECTION */}
+                    <View style={styles.idCheckHero}>
+                        <View style={styles.idCheckHeroContent}>
+                            <View style={[styles.shieldIconContainer, { backgroundColor: '#D1FAE5' }]}>
+                                <Text style={{ fontSize: 24 }}>🛌</Text>
+                            </View>
+                            <Text style={styles.idCheckHeroTitle}>{t('driverWelfare.driverRest.title')}</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#475569', marginBottom: 16 }}>{t('driverWelfare.driverRest.subtitle')}</Text>
+                            <TouchableOpacity style={styles.heroCtaBtn} onPress={() => Linking.openURL('tel:18001024558')}>
+                                <Text style={styles.heroCtaText}>{t('driverWelfare.callTruckMitr')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* 2. WHAT IS IT? */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.driverRest.whatIsItTitle')}</Text>
+                        <View style={{ backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Text style={{ fontSize: 14, color: '#334155', lineHeight: 22 }}>
+                                {t('driverWelfare.driverRest.whatIsItDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 3. HOW IT HELPS YOU */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.driverRest.benefitsTitle')}</Text>
+                        <View style={styles.benefitsList}>
+                            {(t('driverWelfare.driverRest.benefitsList', { returnObjects: true }) as string[]).map((benefit, index) => (
+                                <View key={index} style={styles.benefitItem}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                                    <Text style={styles.benefitText}>{benefit}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* 4. WHY IMPORTANT FOR DRIVERS */}
+                    <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
+                        <Text style={styles.sectionHeader}>{t('driverWelfare.driverRest.whyImportantTitle')}</Text>
+                        <View style={{ backgroundColor: '#ECFDF5', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#A7F3D0' }}>
+                            <Text style={{ fontSize: 14, color: '#065F46', lineHeight: 22, marginBottom: 8 }}>
+                                {t('driverWelfare.driverRest.whyImportantDesc')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* 5. NEED HELP? */}
+                    <View style={styles.securityCard}>
+                        <View style={styles.securityHeader}>
+                            <Ionicons name="call" size={20} color="#059669" />
+                            <Text style={styles.securityTitle}>Need Help?</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => Linking.openURL('tel:18001024558')}
+                            style={{ marginBottom: 12 }}
+                        >
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2563EB' }}>
+                                Call TruckMitr Toll Free: 1800 102 4558
+                            </Text>
+                        </TouchableOpacity>
+                        <Text style={styles.securityText}>
+                            Our team will help you understand the support services and access options.
+                        </Text>
+                    </View>
+
+                </ScrollView>
+
+                {/* STICKY CTA */}
+                <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 12 }]}>
+                    <TouchableOpacity
+                        style={styles.stickyPrimaryBtn}
+                        onPress={() => Linking.openURL('tel:18001024558')}
+                    >
+                        <Text style={styles.stickyBtnText}>Call TruckMitr for Help</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -699,7 +1117,14 @@ const DriverWelfare = () => {
 
     const SchemeDetailScreen = () => {
         if (!selectedScheme) return null;
+
+        if (selectedScheme.id === 'ayushman') return <AyushmanDetailView />;
         if (selectedScheme.id === 'pmsby') return <PMSBYDetailView scheme={selectedScheme} />;
+        if (selectedScheme.id === 'pmjjby') return <PMJJBYDetailView />;
+        if (selectedScheme.id === 'shramyogi') return <PMShramYogiDetailView />;
+        if (selectedScheme.id === 'atal') return <AtalPensionDetailView />;
+        if (selectedScheme.id === 'apnaghar') return <ApnaGharDetailView />;
+        if (selectedScheme.id === 'driver_rest') return <DriverRestFacilitiesDetailView />;
 
         return (
             <View style={styles.flex1}>
@@ -743,13 +1168,13 @@ const DriverWelfare = () => {
 
                     {/* 3. About the Scheme */}
                     <View style={styles.cardSection}>
-                        <SectionTitle title="About the Scheme" />
+                        <SectionTitle title={t('driverWelfare.detail.aboutScheme')} />
                         <Text style={styles.aboutText}>{selectedScheme.about}</Text>
                     </View>
 
                     {/* 4. What You Get */}
                     <View style={styles.cardSection}>
-                        <SectionTitle title="What You Get" />
+                        <SectionTitle title={t('driverWelfare.detail.whatYouGet')} />
                         {selectedScheme.benefits?.map((b: any, i: number) => (
                             <BenefitRow key={i} icon={b.icon} text={b.text} />
                         ))}
@@ -757,7 +1182,7 @@ const DriverWelfare = () => {
 
                     {/* 5. Who Can Apply */}
                     <View style={styles.cardSection}>
-                        <SectionTitle title="Who Can Apply" />
+                        <SectionTitle title={t('driverWelfare.detail.whoCanApply')} />
                         {selectedScheme.eligibility?.map((e: string, i: number) => (
                             <EligibilityItem key={i} text={e} />
                         ))}
@@ -765,7 +1190,7 @@ const DriverWelfare = () => {
 
                     {/* 6. How It Works */}
                     <View style={styles.cardSection}>
-                        <SectionTitle title="How It Works" />
+                        <SectionTitle title={t('driverWelfare.detail.howItWorks')} />
                         {selectedScheme.steps?.map((s: string, i: number) => (
                             <StepRow key={i} number={i + 1} text={s} />
                         ))}
@@ -856,6 +1281,7 @@ const styles = StyleSheet.create({
     highlightText: { fontSize: 12, fontWeight: '600', color: '#1E3A5F' },
 
     cardSection: { backgroundColor: '#FFFFFF', marginHorizontal: 16, marginBottom: 16, padding: 20, borderRadius: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+    categoryTitle: { fontSize: 18, fontWeight: '800', color: '#1E3A5F', marginBottom: 16, marginLeft: 4 },
     sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1E3A5F', marginBottom: 16 },
     aboutText: { fontSize: 14, color: '#444', lineHeight: 22 },
 
@@ -954,6 +1380,51 @@ const styles = StyleSheet.create({
     trustRowTitle: { fontSize: 14, fontWeight: '700', color: '#450A0A' },
     trustRowSub: { fontSize: 12, color: '#7F1D1D', marginTop: 1 },
     trustDivider: { height: 1, backgroundColor: '#FEF2F2', marginVertical: 12 },
+
+    // ID Check Styles
+    idCheckHero: { backgroundColor: '#EAF3FF', margin: 16, borderRadius: 20, padding: 24, alignItems: 'center' },
+    idCheckHeroContent: { alignItems: 'center' },
+    shieldIconContainer: { marginBottom: 16, backgroundColor: '#FFF', padding: 12, borderRadius: 30, elevation: 2 },
+    idCheckHeroTitle: { fontSize: 20, fontWeight: '800', color: '#1E3A5F', marginBottom: 8 },
+    idCheckHeroSub: { fontSize: 14, color: '#475569', textAlign: 'center', marginBottom: 20, lineHeight: 20 },
+    heroCtaBtn: { backgroundColor: '#2563EB', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25, width: '100%', alignItems: 'center' },
+    heroCtaText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
+
+    expandableCard: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#FFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#F1F5F9' },
+    expandableHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    expandableTitle: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
+    expandablePreview: { fontSize: 13, color: '#64748B', marginTop: 4 },
+    expandableText: { fontSize: 13, color: '#334155', lineHeight: 20 },
+
+    sectionContainer: { marginHorizontal: 16, marginBottom: 24 },
+    sectionHeader: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 12 },
+
+    docGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    docCard: { width: '48%', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+    docIconCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+    docTitle: { fontSize: 13, fontWeight: '700', color: '#1E293B', textAlign: 'center' },
+    docSub: { fontSize: 11, color: '#64748B', textAlign: 'center' },
+
+    stepperContainer: { marginLeft: 16, marginTop: 4 },
+    stepItem: { flexDirection: 'row', marginBottom: 24, position: 'relative' },
+    stepIndicator: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#EFF6FF', borderWidth: 2, borderColor: '#2563EB', justifyContent: 'center', alignItems: 'center', marginRight: 12, zIndex: 1 },
+    stepNumber: { fontSize: 12, fontWeight: '700', color: '#2563EB' },
+    stepText: { fontSize: 14, color: '#1E293B', fontWeight: '500', flex: 1, marginTop: 4 },
+    stepLine: { position: 'absolute', left: 13, top: 28, bottom: -20, width: 2, backgroundColor: '#E2E8F0', zIndex: 0 },
+
+    benefitsList: { gap: 12 },
+    benefitItem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12 },
+    benefitText: { fontSize: 14, color: '#334155', fontWeight: '500' },
+
+    securityCard: { marginHorizontal: 16, marginBottom: 24, backgroundColor: '#ECFDF5', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#D1FAE5' },
+    securityHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+    securityTitle: { fontSize: 14, fontWeight: '700', color: '#065F46' },
+    securityText: { fontSize: 13, color: '#064E3B', lineHeight: 20, marginBottom: 12 },
+    supportBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
+    supportText: { fontSize: 13, color: '#475569', fontWeight: '600' },
+
+    stickyPrimaryBtn: { backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+    stickyBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 });
 
 export default DriverWelfare;

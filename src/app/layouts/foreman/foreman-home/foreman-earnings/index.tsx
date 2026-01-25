@@ -461,7 +461,7 @@ export default function ForemanEarnings() {
                     <Ionicons name="chevron-back" size={24} color={colors.royalBlue} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.royalBlue }]}>
-                    {t('myEarnings')}
+                    {t('myEarnings2')}
                 </Text>
                 <View style={{ width: 40 }} />
             </View>

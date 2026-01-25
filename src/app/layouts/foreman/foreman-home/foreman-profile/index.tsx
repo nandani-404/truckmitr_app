@@ -1035,7 +1035,7 @@ export default function ForemanProfile() {
                                     fontSize: responsiveFontSize(1.2),
                                     marginTop: 2,
                                 }}>
-                                    Per Hiring
+                                    {t('perHiring')}
                                 </Text>
                             </View>
                             <View style={{
@@ -1060,7 +1060,7 @@ export default function ForemanProfile() {
                                     fontSize: responsiveFontSize(1.2),
                                     marginTop: 2,
                                 }}>
-                                    Per Subscription
+                                    {t('perSubscription')}
                                 </Text>
                             </View>
                         </View>
