@@ -16,6 +16,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NavigatorParams } from '@truckmitr/stacks/stacks';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
+import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { Space } from '@truckmitr/src/app/components';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import { useTranslation } from 'react-i18next';
@@ -305,6 +306,7 @@ export default function ForemanEarnings() {
 
     const [loading, setLoading] = useState(true);
     const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
+    const [requesting, setRequesting] = useState(false);
 
     // Filter states
     const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'SUBSCRIPTION' | 'HIRING'>('ALL');
@@ -333,6 +335,34 @@ export default function ForemanEarnings() {
 
     const goBack = () => {
         navigation.goBack();
+    };
+
+    const handleWithdraw = async () => {
+        const totalEarnings = earningsData?.total_commission || 0;
+
+        if (totalEarnings < 500) {
+            showToast(t('minBalanceRequired'));
+            return;
+        }
+
+        try {
+            setRequesting(true);
+            const payload = {
+                contact_reason: 'request for money',
+            };
+            const response = await axiosInstance.post(END_POINTS.CALLBACK_REQUEST, payload);
+
+            if (response.data?.status) {
+                showToast(t('payoutRequestSent'));
+            } else {
+                showToast(response.data?.message || t('payoutRequestFailed'));
+            }
+        } catch (error) {
+            console.error('Error requesting payout:', error);
+            showToast(t('payoutRequestFailed'));
+        } finally {
+            setRequesting(false);
+        }
     };
 
     // Filter logic
@@ -383,6 +413,23 @@ export default function ForemanEarnings() {
                     </View>
                 </View>
             </View>
+
+            {/* Request Payout Button - Prominent above filters */}
+            <TouchableOpacity
+                style={[styles.payoutButton, { backgroundColor: '#10B981', opacity: requesting ? 0.7 : 1 }]}
+                onPress={handleWithdraw}
+                disabled={requesting}
+                activeOpacity={0.7}
+            >
+                {requesting ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                    <>
+                        <Ionicons name="cash-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                        <Text style={styles.payoutButtonText}>{t('requestPayout')}</Text>
+                    </>
+                )}
+            </TouchableOpacity>
 
             {/* Filter Section */}
             <View style={styles.filterSection}>
@@ -624,5 +671,24 @@ const styles = StyleSheet.create({
         marginTop: 12,
         fontSize: 14,
         color: '#64748B',
+    },
+    payoutButton: {
+        marginBottom: 16,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    payoutButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
     },
 });

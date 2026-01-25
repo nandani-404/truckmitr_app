@@ -33,8 +33,7 @@ import { Space } from '@truckmitr/src/app/components';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSelector, useDispatch } from 'react-redux';
-import { setPilots, setPilotsLoading } from '@truckmitr/redux/slices/pilotsSlice';
+import { useSelector } from 'react-redux';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -102,7 +101,6 @@ const STATE_ID_MAP: Record<string, string> = {
 
 export default function ForemanAddDriver() {
     const { t } = useTranslation();
-    const dispatch = useDispatch();
     const navigation = useNavigation<NavigatorProp>();
     const safeAreaInsets = useSafeAreaInsets();
     const colors = useColor();
@@ -746,19 +744,6 @@ export default function ForemanAddDriver() {
                 setIsImportedFromContacts(false);
                 setIsOtpVerified(false);
                 setErrors({});
-
-                // Fetch fresh pilots list to override the Redux store
-                try {
-                    dispatch(setPilotsLoading(true));
-                    const pilotsResponse = await axiosInstance.get(END_POINTS.FOREMAN_MY_PILOTS);
-                    if (pilotsResponse?.data?.success) {
-                        dispatch(setPilots(pilotsResponse.data.drivers || []));
-                    }
-                } catch (err) {
-                    console.log('Error refreshing pilots list after add:', err);
-                } finally {
-                    dispatch(setPilotsLoading(false));
-                }
             } else {
                 const errorMessage = response?.data?.message || t('invalidOtp');
                 setOtpError(errorMessage);
@@ -1053,7 +1038,7 @@ export default function ForemanAddDriver() {
                 </TouchableOpacity>
 
                 {/* Debug Button - Log AsyncStorage */}
-                {/* <TouchableOpacity
+                <TouchableOpacity
                     onPress={async () => {
                         try {
                             const keys = await AsyncStorage.getAllKeys();
@@ -1083,10 +1068,10 @@ export default function ForemanAddDriver() {
                     <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
                         🐛 Log AsyncStorage Data
                     </Text>
-                </TouchableOpacity> */}
+                </TouchableOpacity>
 
                 {/* Debug Button - Log Redux State */}
-                {/* <TouchableOpacity
+                <TouchableOpacity
                     onPress={() => {
                         try {
                             console.log('\n========== Redux State Data ==========');
@@ -1113,7 +1098,7 @@ export default function ForemanAddDriver() {
                     <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
                         🗃️ Log Redux State
                     </Text>
-                </TouchableOpacity> */}
+                </TouchableOpacity>
 
                 <Space height={responsiveHeight(10)} />
             </KeyboardAwareScrollView>

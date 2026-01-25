@@ -10,6 +10,7 @@ export interface UserBadgeParams {
     payment_type?: string;
     is_active?: number | boolean;
     subscription_status?: string;
+    referral_code?: string;
   };
   subscriptionDetails?: {
     id?: string;
@@ -253,19 +254,31 @@ TruckMitr ने मुझे एक Digital Driver Card दिया है, �
 
 TruckMitr – ड्राइवर का साथी, हर सफर में भरोसा 🚚💪`;
     } else if (isForeman) {
-      return `👷 मुझे TruckMitr के साथ एक ${badgeText} होने पर गर्व है! 🇮🇳
+      const referralCode = params.user?.referral_code || 'TMFM23456';
+      return `👷 मुझे गर्व है कि मैं TruckMitr का Foreman Pro हूँ! 🇮🇳
 
-अब मैं सिर्फ एक फोरमैन नहीं, बल्कि एक प्रोफेशनल और विश्वसनीय लीडर हूँ।
-TruckMitr ने मुझे एक Digital Pro Card दिया है।
+TruckMitr ने मेरी प्रोफेशनल ज़िंदगी बदल दी है।
+अब मैं सिर्फ एक फोरमैन नहीं हूँ — बल्कि एक verified और trusted leader हूँ, जिसके पास Foreman Pro Card है।
 
-✅ बेहतर प्रोजेक्ट अवसर
-✅ पेशेवर पहचान
-✅ विशेष टूल्स तक पहुंच
-✅ बेहतर कमाई
+अब मैं चाहता हूँ कि मेरे ड्राइवर भी मेरे साथ आगे बढ़ें 👇
 
-यदि आप भी एक फोरमैन हैं और आगे बढ़ना चाहते हैं,
-तो आज ही TruckMitr App डाउनलोड करें 👇
-📲 https://play.google.com/store/apps/details?id=com.truckmitr`;
+🚚 ड्राइवर साथियों के लिए:
+TruckMitr से जुड़िए और बनिए एक प्रोफेशनल ड्राइवर, असली फायदे के साथ:
+✅ बेहतर काम के मौके
+✅ भरोसेमंद पहचान (Digital Identity)
+✅ ट्रेनिंग और सपोर्ट
+✅ ज़रूरी सर्विस और टूल्स की सुविधा
+✅ कमाई के ज़्यादा मौके
+
+📲 TruckMitr App अभी डाउनलोड करें:
+https://play.google.com/store/apps/details?id=com.truckmitr
+
+*🎯 मेरा Foreman Referral Code इस्तेमाल करें: ${referralCode}*
+(तेज़ onboarding और बेहतर सपोर्ट के लिए)
+
+आइए साथ मिलकर आगे बढ़ें —
+Foreman + Driver = Strong Team 💪
+आज ही TruckMitr से जुड़िए! 🚛🇮🇳`;
     } else {
       // Transporter
       return `🚛 मुझे TruckMitr के साथ एक ${badgeText} होने पर गर्व है! 🇮🇳
@@ -312,19 +325,29 @@ then download the TruckMitr App today 👇
 
 TruckMitr – A Driver's Companion, Trust for Every Journey 🚚💪`;
   } else if (isForeman) {
-    return `👷 I am proud to be a ${badgeText} with TruckMitr! 🇮🇳
+    const referralCode = params.user?.referral_code || 'TMFM23456';
+    return `👷 I am proud to be a Foreman Pro with TruckMitr! 🇮🇳
 
-I am not just a foreman anymore, but a professional and trusted leader.
-TruckMitr has given me a Digital Pro Card.
+TruckMitr has changed my professional life. I’m not just a foreman anymore — I’m a verified, trusted leader with a Foreman Pro Card.
 
-✅ Better project opportunities
-✅ Professional recognition
-✅ Access to exclusive tools
-✅ Higher earnings
+Now I want my drivers also to grow with me 👇
 
-If you are also a foreman and want to grow,
-download the TruckMitr App today 👇
-📲 https://play.google.com/store/apps/details?id=com.truckmitr`;
+🚚 For Drivers:
+Join TruckMitr and become a *professional driver* with real benefits:
+✅ Better job opportunities
+✅ Trust & digital identity
+✅ Training & support
+✅ Access to services & tools
+✅ More income opportunities
+
+📲 Download the TruckMitr App now:
+https://play.google.com/store/apps/details?id=com.truckmitr
+
+*🎯 Use my Foreman Referral Code: ${referralCode}*
+(So you get faster support & onboarding)
+
+Let’s grow together — Foreman + Driver = Strong Team 💪
+Join TruckMitr today! 🚛🇮🇳`;
   } else {
     // Transporter
     return `🚛 I am proud to be a ${badgeText} with TruckMitr! 🇮🇳

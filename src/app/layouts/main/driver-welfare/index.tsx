@@ -7,6 +7,10 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import Sound from 'react-native-sound';
+
+// Enable playback in silence mode
+Sound.setCategory('Playback');
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -1116,6 +1120,45 @@ const DriverWelfare = () => {
     };
 
     const SchemeDetailScreen = () => {
+        const AUDIO_MAP: { [key: string]: any } = {
+            ayushman: require('../../../../assets/voice/driver_walefare/ayushman_bharat.mp3'),
+            pmsby: require('../../../../assets/voice/driver_walefare/PMSBY.mp3'),
+            pmjjby: require('../../../../assets/voice/driver_walefare/PMJJBY.mp3'),
+            shramyogi: require('../../../../assets/voice/driver_walefare/tmsharam_yogi.mp3'),
+            atal: require('../../../../assets/voice/driver_walefare/atal_pension.mp3'),
+            apnaghar: require('../../../../assets/voice/driver_walefare/apna_ghar.mp3'),
+            driver_rest: require('../../../../assets/voice/driver_walefare/driver_rest_facilities.mp3'),
+        };
+
+        useEffect(() => {
+            let sound: Sound | null = null;
+
+            if (selectedScheme && AUDIO_MAP[selectedScheme.id]) {
+                const source = Image.resolveAssetSource(AUDIO_MAP[selectedScheme.id]);
+                if (source && source.uri) {
+                    sound = new Sound(source.uri, undefined, (error: any) => {
+                        if (error) {
+                            console.log('Failed to load sound', error);
+                            return;
+                        }
+                        sound?.play((success: boolean) => {
+                            if (success) {
+                                console.log('successfully finished playing');
+                            } else {
+                                console.log('playback failed due to audio decoding errors');
+                            }
+                        });
+                    });
+                }
+            }
+
+            return () => {
+                if (sound) {
+                    sound.stop();
+                    sound.release();
+                }
+            };
+        }, [selectedScheme]);
         if (!selectedScheme) return null;
 
         if (selectedScheme.id === 'ayushman') return <AyushmanDetailView />;

@@ -1355,7 +1355,17 @@ const Home = React.forwardRef((props, ref) => {
                             </View>
                         </TouchableOpacity>
                         <Space width={responsiveFontSize(1.5)} />
-                        <View style={{ flex: 1 }} />
+                        <TouchableOpacity
+                            onPress={_navigateDriverWelfare}
+                            activeOpacity={0.7} style={{ flex: 1, backgroundColor: 'transparent', ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
+                            <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'flex-start', paddingTop: responsiveFontSize(2), paddingHorizontal: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
+                                <View style={{ height: responsiveFontSize(6), width: responsiveFontSize(6), justifyContent: 'center', alignItems: 'center', marginBottom: responsiveFontSize(0.5) }}>
+                                    <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5) }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2921/2921222.png' }} />
+                                </View>
+                                <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('truckMitrDriverWelfare', 'TruckMitr Driver Welfare')}</Text>
+                            </View>
+                        </TouchableOpacity>
+                        {/* <View style={{ flex: 1 }} /> */}
                     </View>
                     <Space height={responsiveFontSize(1.5)} />
                     {/* <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(4), paddingVertical: responsiveWidth(3) }}>
@@ -1420,31 +1430,27 @@ const Home = React.forwardRef((props, ref) => {
                     </View>
                     {/* Coming Soon Row: Driver Ki Awaz, TruckMitr Driver Loan, TruckMitr Driver Welfare */}
                     <View style={{ flexDirection: 'row', paddingHorizontal: responsiveWidth(4), paddingVertical: responsiveWidth(3) }}>
-                        <TouchableOpacity onPress={_navigateDriverKiAwazInfo} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
-                            <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'flex-start', paddingTop: responsiveFontSize(2), paddingHorizontal: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
+
+                        <Space width={responsiveFontSize(1.5)} />
+                        <TouchableOpacity
+                            //  onPress={_navigateDriverWelfare}
+                            activeOpacity={1} style={{ flex: 1, backgroundColor: 'transparent', }}>                            {/* <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'flex-start', paddingTop: responsiveFontSize(2), paddingHorizontal: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
                                 <View style={{ height: responsiveFontSize(6), width: responsiveFontSize(6), justifyContent: 'center', alignItems: 'center', marginBottom: responsiveFontSize(0.5) }}>
                                     <Text style={{ fontSize: responsiveFontSize(4) }}>🗣️</Text>
                                 </View>
                                 <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('driverKiAwaz', 'Driver Ki Awaz')}</Text>
-                            </View>
+                            </View> */}
                         </TouchableOpacity>
                         <Space width={responsiveFontSize(1.5)} />
-                        <TouchableOpacity onPress={_navigateDriverLoan} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
-                            <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'flex-start', paddingTop: responsiveFontSize(2), paddingHorizontal: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
-                                <View style={{ height: responsiveFontSize(6), width: responsiveFontSize(6), justifyContent: 'center', alignItems: 'center', marginBottom: responsiveFontSize(0.5) }}>
-                                    <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5) }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png' }} />
-                                </View>
-                                <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('truckMitrDriverLoan', 'TruckMitr Driver Loan')}</Text>
-                            </View>
-                        </TouchableOpacity>
-                        <Space width={responsiveFontSize(1.5)} />
-                        <TouchableOpacity onPress={_navigateDriverWelfare} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
-                            <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'flex-start', paddingTop: responsiveFontSize(2), paddingHorizontal: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
+                        <TouchableOpacity
+                            //  onPress={_navigateDriverWelfare}
+                            activeOpacity={1} style={{ flex: 1, backgroundColor: 'transparent', }}>
+                            {/* <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'flex-start', paddingTop: responsiveFontSize(2), paddingHorizontal: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
                                 <View style={{ height: responsiveFontSize(6), width: responsiveFontSize(6), justifyContent: 'center', alignItems: 'center', marginBottom: responsiveFontSize(0.5) }}>
                                     <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5) }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2921/2921222.png' }} />
                                 </View>
                                 <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('truckMitrDriverWelfare', 'TruckMitr Driver Welfare')}</Text>
-                            </View>
+                            </View> */}
                         </TouchableOpacity>
                     </View>
 
@@ -1489,7 +1495,14 @@ const Home = React.forwardRef((props, ref) => {
                             </View>
                         </TouchableOpacity>
                         <Space width={responsiveFontSize(1.5)} />
-                        <View style={{ flex: 1 }} />
+                        <TouchableOpacity onPress={_navigateDriverLoan} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
+                            <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'flex-start', paddingTop: responsiveFontSize(2), paddingHorizontal: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
+                                <View style={{ height: responsiveFontSize(6), width: responsiveFontSize(6), justifyContent: 'center', alignItems: 'center', marginBottom: responsiveFontSize(0.5) }}>
+                                    <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5) }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png' }} />
+                                </View>
+                                <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('truckMitrDriverLoan', 'TruckMitr Driver Loan')}</Text>
+                            </View>
+                        </TouchableOpacity>
                         <Space width={responsiveFontSize(1.5)} />
                         <View style={{ flex: 1 }} />
                     </View>

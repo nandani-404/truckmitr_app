@@ -47,6 +47,8 @@ function TabBarTransporter({ state, descriptors, navigation }: { state: any, des
                 return <Image style={healthProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/11831/11831511.png' }} />
             case STACKS.PROFILE:
                 return <Image style={profileProps} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/266/266033.png' }} />
+            case STACKS.DRIVER_KI_AWAZ_INFO:
+                return <Image style={{ height: 40, width: 40 }} source={require('@truckmitr/assets/logo/speaker.png')} />
             default:
                 return null;
         }
@@ -179,6 +181,8 @@ function TabBarTransporter({ state, descriptors, navigation }: { state: any, des
                             return t('home');
                         case STACKS.TRANSPORTER_APPLIED_JOB:
                             return t('viewApplications');
+                        case STACKS.DRIVER_KI_AWAZ_INFO:
+                            return t('driverKiAwaz');
                         case STACKS.VIEW_JOBS:
                             return t('jobs');
                         case STACKS.DRIVER_LIST:
@@ -192,8 +196,8 @@ function TabBarTransporter({ state, descriptors, navigation }: { state: any, des
                 const tourTitle = [
                     { title: t(`youCanFindAndHireVerifiedAndSkilledDriversThroughTheTruckMitrApp`) },
                     { title: t(`hereYouCanSeeTheListOfDriversWhoHaveAppliedForTheJobs`) },
+                    { title: t(`hereYouCanWatchCommunityPostsAndUpdates`) },
                     { title: t(`hereYouCanPostDriverJobs`) },
-                    { title: t(`hereYouCanSeeTheListOfDriversAddedForTraining`) },
                     { title: t(`hereYouCanUpdateYourProfile`) },
                 ];
 
@@ -452,8 +456,9 @@ export default function Bottom() {
             {isTransporter ? <Tab.Navigator tabBar={props => <TabBarTransporter {...props} />} screenOptions={{ headerShown: false, animation: 'fade' }}>
                 <Tab.Screen name={STACKS.HOME} component={Home} />
                 <Tab.Screen name={STACKS.TRANSPORTER_APPLIED_JOB} component={TransporterAppliedJob} />
+                <Tab.Screen name={STACKS.DRIVER_KI_AWAZ_INFO} component={DriverKiAwazInfo} />
                 <Tab.Screen name={STACKS.VIEW_JOBS} component={ViewJobs} />
-                <Tab.Screen name={STACKS.DRIVER_LIST} component={DriverList} />
+                {/* <Tab.Screen name={STACKS.DRIVER_LIST} component={DriverList} /> */}
                 {/* <Tab.Screen name={STACKS.TRANSPORTER_VERIFICATION} component={TransporterVerificationScreen} /> */}
                 <Tab.Screen name={STACKS.PROFILE} component={Profile} />
             </Tab.Navigator> :

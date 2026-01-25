@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { STACKS } from '@truckmitr/stacks/stacks';
@@ -54,11 +54,18 @@ function ForemanTabBar({ state, descriptors, navigation }: any) {
                         style={styles.tabItem}
                         activeOpacity={0.7}
                     >
-                        <MaterialCommunityIcons
-                            name={tabConfig.icon}
-                            size={30}
-                            color={isFocused ? colors.white : colors.whiteOpacity(0.5)}
-                        />
+                        {tabConfig.name === STACKS.FOREMAN_DRIVER_KI_AWAZ ? (
+                            <Image
+                                source={require('@truckmitr/assets/logo/speaker.png')}
+                                style={{ height: 40, width: 40 }}
+                            />
+                        ) : (
+                            <MaterialCommunityIcons
+                                name={tabConfig.icon}
+                                size={30}
+                                color={isFocused ? colors.white : colors.whiteOpacity(0.5)}
+                            />
+                        )}
                         {isFocused && (
                             <Text
                                 numberOfLines={1}
