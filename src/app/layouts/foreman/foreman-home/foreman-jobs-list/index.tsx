@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions, Modal, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions, Modal, Keyboard, Linking, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -15,6 +15,7 @@ import { Driver as ReduxDriver } from '@truckmitr/redux/slices/pilotsSlice';
 import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
+import RNShare from 'react-native-share';
 import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop, BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import moment from 'moment';
@@ -272,13 +273,64 @@ const ForemanJobsList = () => {
         }
     };
 
-    const handleShareConfirm = () => {
+    const handleShareConfirm = async () => {
         if (selectedDrivers.length === 0) {
             showToast(t('pleaseSelectDriver'));
             return;
         }
+
+        if (!selectedJob) return;
+
+        // Construct the share message
+        const message = `*New Job Opportunity from TruckMitr!* \n\n` +
+            `*Job:* ${selectedJob.job_title}\n` +
+            `*Location:* ${selectedJob.job_location}\n` +
+            `*Salary:* ${formatSalary(selectedJob.Salary_Range, t)}\n` +
+            `*Experience:* ${selectedJob.Required_Experience || 'N/A'} years\n` +
+            `*License:* ${selectedJob.Type_of_License || 'N/A'}\n` +
+            `*Deadline:* ${formatDate(selectedJob.Application_Deadline)}\n\n` +
+            `*Description:* ${selectedJob.Job_Description ? (selectedJob.Job_Description.substring(0, 150) + (selectedJob.Job_Description.length > 150 ? '...' : '')) : 'Check details in app'}\n\n` +
+            `Interested? Apply now on the TruckMitr app!\n` +
+            `👉 https://play.google.com/store/apps/details?id=com.truckmitr`;
+
         shareSheetRef.current?.close();
-        showToast(t('jobShared', { count: selectedDrivers.length }));
+
+        try {
+            if (selectedDrivers.length === 1) {
+                // Direct share to specific driver
+                const driver = allPilots.find(p => p.id === selectedDrivers[0]);
+                if (driver) {
+                    const phone = driver.mobile;
+                    // Ensure 91 prefix for India if not present
+                    const formattedPhone = phone.startsWith('91') ? phone : `91${phone}`;
+                    const url = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
+
+                    const canOpen = await Linking.canOpenURL(url);
+                    if (canOpen) {
+                        await Linking.openURL(url);
+                    } else {
+                        // Fallback to general sharing
+                        await RNShare.open({
+                            message: message,
+                            title: selectedJob.job_title,
+                        });
+                    }
+                }
+            } else {
+                // Multiple drivers selected - Open share sheet
+                // This allows the user to select WhatsApp and then pick multiple recipients
+                await RNShare.open({
+                    message: message,
+                    title: selectedJob.job_title,
+                });
+            }
+            showToast(t('jobShared', { count: selectedDrivers.length }));
+        } catch (error: any) {
+            console.error('Error sharing to WhatsApp:', error);
+            if (!error?.message?.includes('User did not share')) {
+                showToast(t('errorOpeningWhatsApp'));
+            }
+        }
     };
 
     const handleAddDriver = () => {
