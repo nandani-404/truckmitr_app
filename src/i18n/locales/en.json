@@ -2627,5 +2627,172 @@
     "acceptThis": "Accept",
     "year": "Year",
     "years": "Years",
-    "legacy": "Legacy"
+    "legacy": "Legacy",
+    "driverWelfare": {
+        "headerTitle": "Welfare Schemes",
+        "headerSubtitle": "Support that moves with you 🚛",
+        "ayushman": {
+            "title": "Ayushman Bharat (PM-JAY)",
+            "subtitle": "Free treatment up to ₹5 Lakh",
+            "benefit": "₹5 Lakh",
+            "benefitSuffix": " Free Treatment",
+            "tagline": "Cashless treatment for your family across India",
+            "whatIsItTitle": "What is it?",
+            "whatIsItDesc": "This is a government scheme where your family gets free treatment up to ₹5 Lakh.",
+            "benefitsTitle": "How will this benefit you:",
+            "benefitsList": [
+                "Cashless treatment in hospitals",
+                "Cost of major diseases and operations covered",
+                "Treatment facility across India",
+                "Help in medical emergency",
+                "No need to pay from pocket"
+            ],
+            "whoCanTakeTitle": "Who can enroll?",
+            "whoCanTakeList": [
+                "Poor families",
+                "Daily wage laborers",
+                "Drivers",
+                "People from unorganized sector",
+                "Those without health insurance"
+            ],
+            "whyImportantTitle": "Why is it important for a driver?",
+            "whyImportantDesc": "Illness or accident can happen anytime. This scheme gives financial security to your family.",
+            "needHelpTitle": "Need Help?",
+            "needHelpDesc": "Call TruckMitr Toll Free: 1800 102 4558",
+            "needHelpSub": "Our team will explain the scheme and can also help with the application.",
+            "cta": "Check Eligibility",
+            "ctaSecondary": "Find Hospitals",
+            "grid": {
+                "cashless": "Cashless Treatment",
+                "cashlessSub": "No upfront payment",
+                "major": "Major Treatments",
+                "majorSub": "Surgeries covered",
+                "allIndia": "All-India Valid",
+                "allIndiaSub": "Empanelled hospitals",
+                "family": "Family Cover",
+                "familySub": "₹5 lakh / year"
+            },
+            "trustBadge": "Safe & Reliable • Cashless treatment • No agent needed",
+            "supportBtnTitle": "Need help understanding Ayushman Bharat?",
+            "supportBtnSub": "Our team will explain the scheme and help you apply"
+        },
+        "pmsby": {
+            "title": "PMSBY",
+            "subtitle": "Accident Insurance Scheme",
+            "benefit": "₹2 Lakh Insurance",
+            "benefitSuffix": " | Just ₹20/Year",
+            "whatIsItTitle": "What is it?",
+            "whatIsItDesc": "It is a government accident insurance scheme. Money is given to the family in case of death or permanent disability due to accident.",
+            "benefitsTitle": "Benefits:",
+            "benefitsList": [
+                "₹2 Lakh Cover",
+                "Very low cost (₹20 per year)",
+                "Government scheme",
+                "Financial help to family"
+            ],
+            "whyImportantTitle": "Why is it important for a driver?",
+            "whyImportantDesc": "There is risk in driving. This protects your family.",
+            "cta": "Check Coverage"
+        },
+        "pmjjby": {
+            "title": "PMJJBY",
+            "subtitle": "Life Insurance Scheme",
+            "benefit": "₹2 Lakh Life Insurance",
+            "whatIsItTitle": "What is it?",
+            "whatIsItDesc": "It is a government life insurance scheme. Your family gets money if something happens.",
+            "benefitsTitle": "Benefits:",
+            "benefitsList": [
+                "₹2 Lakh Insurance",
+                "Security at low cost",
+                "Family future secured",
+                "Government scheme"
+            ],
+            "whyImportantTitle": "Why is it important for a driver?",
+            "whyImportantDesc": "Family depends on you. This scheme becomes their support.",
+            "cta": "Protect Family"
+        },
+        "shramyogi": {
+            "title": "PM Shram Yogi",
+            "subtitle": "Pension Scheme",
+            "benefit": "₹3,000/Month Pension",
+            "whatIsItTitle": "What is it?",
+            "whatIsItDesc": "Government pension scheme for drivers and laborers.",
+            "benefitsTitle": "Benefits:",
+            "benefitsList": [
+                "₹3,000 monthly pension after 60 years",
+                "Regular income in old age",
+                "Secure government scheme",
+                "Security of future"
+            ],
+            "whyImportantTitle": "Why is it important for a driver?",
+            "whyImportantDesc": "Money will continue to come every month even after stopping work.",
+            "cta": "Start Pension Plan"
+        },
+        "atal": {
+            "title": "Atal Pension Yojana",
+            "subtitle": "Guaranteed Pension Scheme",
+            "benefit": "₹1,000 to ₹5,000",
+            "benefitSuffix": " Monthly Pension",
+            "whatIsItTitle": "What is it?",
+            "whatIsItDesc": "Government scheme to get pension in old age by small savings.",
+            "benefitsTitle": "Benefits:",
+            "benefitsList": [
+                "Guaranteed Pension",
+                "Secure Government Scheme",
+                "Future Financial Security",
+                "Pension according to your need"
+            ],
+            "whyImportantTitle": "Why is it important for a driver?",
+            "whyImportantDesc": "Assured money will be received even after working age.",
+            "cta": "Plan Retirement"
+        },
+        "apnaghar": {
+            "title": "Apna Ghar",
+            "subtitle": "Rest Facility for Drivers",
+            "whatIsItTitle": "What is it?",
+            "whatIsItDesc": "Safe and affordable place to stay for drivers.",
+            "benefitsTitle": "Benefits:",
+            "benefitsList": [
+                "Clean Rooms",
+                "Safe Place",
+                "Food",
+                "Bathroom",
+                "Resting Facility"
+            ],
+            "whyImportantTitle": "Why is it important for a driver?",
+            "whyImportantDesc": "Good Rest = Safe Driving + Good Health.",
+            "cta": "Find Nearby Apna Ghar"
+        },
+        "driverRest": {
+            "title": "Driver Rest Facility",
+            "subtitle": "Government Driver Convenience Center",
+            "whatIsItTitle": "What is it?",
+            "whatIsItDesc": "Rest centers built with government help for drivers.",
+            "benefitsTitle": "Benefits:",
+            "benefitsList": [
+                "Place to Rest",
+                "Water",
+                "Toilet",
+                "Medical Help",
+                "Emergency Support"
+            ],
+            "whyImportantTitle": "Why is it important for a driver?",
+            "whyImportantDesc": "Rest is very important in long drives.",
+            "cta": "Find Facilities"
+        },
+        "finalLine": "TruckMitr is not just a work app — it is a partner for your safety, health, family, and future.",
+        "categoryHealth": "🏥 Health & Insurance",
+        "categoryPension": "💰 Pension & Savings",
+        "categoryFacility": "🏠 Facilities & Welfare",
+        "viewDetails": "View Details",
+        "callTruckMitr": "Call TruckMitr for Help",
+        "tollFree": "1800 102 4558",
+        "detail": {
+            "aboutScheme": "About the Scheme",
+            "whatYouGet": "What You Get",
+            "whoCanApply": "Who Can Apply",
+            "howItWorks": "How It Works"
+        },
+        "exploreScheme": "Explore Scheme"
+    }
 }

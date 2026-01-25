@@ -279,65 +279,120 @@ const ForemanJobsList = () => {
     };
 
 
-    const renderJobItem = ({ item }: { item: Job }) => (
-        <View style={styles.jobCard}>
-            <View style={styles.jobHeader}>
-                <View style={styles.jobInfo}>
-                    <Text style={styles.jobTitle} numberOfLines={2}>{item.job_title}</Text>
-                    <View style={styles.jobIdRow}>
-                        <Text style={styles.jobId}>{item.job_id}</Text>
-                        <Text style={styles.jobDateTime}>{moment(item.Created_at).format('DD-MMM-YY')}</Text>
+    const renderJobItem = ({ item }: { item: Job }) => {
+        const plan = item.subscription_plan_name;
+
+        // Define interface for config to avoid type inference locking
+        interface PlanConfig {
+            text: string;
+            icon: string;
+            colors: string[];
+            textColor: string;
+            borderColor: string;
+            iconColor: string;
+        }
+
+        let badgeConfig: PlanConfig = {
+            text: 'Standard Job',
+            icon: 'shield-check-outline',
+            colors: ['#F1F5F9', '#F8FAFC'],
+            textColor: '#64748B',
+            borderColor: '#E2E8F0',
+            iconColor: '#64748B'
+        };
+
+        if (plan === 'super_premium_job') {
+            badgeConfig = {
+                text: 'Super Premium',
+                icon: 'crown',
+                colors: ['#FFF7ED', '#FFEDD5'],
+                textColor: '#B45309',
+                borderColor: '#FCD34D',
+                iconColor: '#B45309'
+            };
+        } else if (plan === 'premium_job') {
+            badgeConfig = {
+                text: 'Premium Job',
+                icon: 'star',
+                colors: ['#EFF6FF', '#DBEAFE'],
+                textColor: '#1D4ED8',
+                borderColor: '#93C5FD',
+                iconColor: '#1D4ED8'
+            };
+        }
+
+        return (
+            <View style={[styles.jobCard, { borderColor: badgeConfig.borderColor }]}>
+                {/* Plan Badge Header */}
+                <View style={[styles.planHeader, { backgroundColor: badgeConfig.colors[1] }]}>
+                    <View style={styles.planBadgeContainer}>
+                        <MaterialCommunityIcons name={badgeConfig.icon} size={14} color={badgeConfig.iconColor} />
+                        <Text style={[styles.planBadgeText, { color: badgeConfig.textColor }]}>
+                            {badgeConfig.text}
+                        </Text>
+                    </View>
+                    <View style={styles.jobIdContainer}>
+                        <Text style={styles.jobIdText}>ID: {item.job_id}</Text>
                     </View>
                 </View>
-                <TouchableOpacity
-                    onPress={() => handleSharePress(item)}
-                    style={styles.shareButton}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons name="share-social-outline" size={20} color="#3B82F6" />
-                </TouchableOpacity>
-            </View>
 
-            <View style={styles.jobDetailsRow}>
-                <View style={styles.detailBadge}>
-                    <Ionicons name="location-outline" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>{item.job_location}</Text>
-                </View>
-                <View style={styles.detailBadge}>
-                    <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>{t('deadline')}: {formatDate(item.Application_Deadline)}</Text>
+                <View style={styles.cardBody}>
+                    <View style={styles.jobHeader}>
+                        <View style={styles.jobInfo}>
+                            <Text style={styles.jobTitle} numberOfLines={2}>{item.job_title}</Text>
+                            <Text style={styles.jobDateTime}>{moment(item.Created_at).format('DD MMM YYYY')}</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => handleSharePress(item)}
+                            style={styles.shareButton}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="share-social-outline" size={20} color="#3B82F6" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.jobDetailsRow}>
+                        <View style={styles.detailBadge}>
+                            <Ionicons name="location-outline" size={14} color="#64748B" />
+                            <Text style={styles.detailText}>{item.job_location}</Text>
+                        </View>
+                        <View style={styles.detailBadge}>
+                            <Ionicons name="calendar-outline" size={14} color="#64748B" />
+                            <Text style={styles.detailText}>{t('deadline')}: {formatDate(item.Application_Deadline)}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.infoTagsRow}>
+                        <View style={styles.infoTag}>
+                            <Ionicons name="car-outline" size={12} color="#6366F1" />
+                            <Text style={styles.infoTagText}>{item.vehicle_type}</Text>
+                        </View>
+                        <View style={styles.infoTag}>
+                            <Ionicons name="time-outline" size={12} color="#6366F1" />
+                            <Text style={styles.infoTagText}>{t('experience')}: {item.Required_Experience} years</Text>
+                        </View>
+                        <View style={styles.infoTag}>
+                            <Ionicons name="card-outline" size={12} color="#6366F1" />
+                            <Text style={styles.infoTagText}>{item.Type_of_License}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.salaryRow}>
+                        <Text style={styles.salaryText}>{formatSalary(item.Salary_Range, t)}</Text>
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.viewDetailsButton}
+                        onPress={() => handleViewDetails(item)}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.viewDetailsText}>{t('viewDetails')}</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
+                    </TouchableOpacity>
                 </View>
             </View>
-
-            <View style={styles.infoTagsRow}>
-                <View style={styles.infoTag}>
-                    <Ionicons name="car-outline" size={12} color="#6366F1" />
-                    <Text style={styles.infoTagText}>{item.vehicle_type}</Text>
-                </View>
-                <View style={styles.infoTag}>
-                    <Ionicons name="time-outline" size={12} color="#6366F1" />
-                    <Text style={styles.infoTagText}>{t('experience')}: {item.Required_Experience} years</Text>
-                </View>
-                <View style={styles.infoTag}>
-                    <Ionicons name="card-outline" size={12} color="#6366F1" />
-                    <Text style={styles.infoTagText}>{item.Type_of_License}</Text>
-                </View>
-            </View>
-
-            <View style={styles.salaryRow}>
-                <Text style={styles.salaryText}>{formatSalary(item.Salary_Range, t)}</Text>
-            </View>
-
-            <TouchableOpacity
-                style={styles.viewDetailsButton}
-                onPress={() => handleViewDetails(item)}
-                activeOpacity={0.7}
-            >
-                <Text style={styles.viewDetailsText}>{t('viewDetails')}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
-            </TouchableOpacity>
-        </View>
-    );
+        );
+    };
 
     const renderDriverItem = (item: typeof DRIVERS_DATA[0]) => {
         const isSelected = selectedDrivers.includes(item.id);
@@ -1264,6 +1319,55 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '700',
+    },
+    // New Card Styles
+    planHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderTopLeftRadius: 15, // matching card radius - 1
+        borderTopRightRadius: 15,
+    },
+    planBadgeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    planBadgeText: {
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    jobIdContainer: {
+        backgroundColor: 'rgba(255,255,255,0.5)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    jobIdText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#475569',
+    },
+    cardBody: {
+        padding: 16,
+    },
+    viewDetailsButtonSmall: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#EFF6FF',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+        gap: 4,
+    },
+    viewDetailsTextSmall: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#3B82F6',
     },
 });
 
