@@ -4,6 +4,7 @@ import { useColor, useResponsiveScale } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Space } from '@truckmitr/src/app/components';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { NavigatorParams } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,23 +16,15 @@ import { useSelector } from 'react-redux';
 import moment from 'moment';
 import { BASE_URL } from '@truckmitr/src/utils/config';
 import { useTranslation } from 'react-i18next';
-import { getUserTier, getUserBadgeText } from '@truckmitr/src/utils/global';
+import { shouldShowMembershipCard, getUserBadgeText } from '@truckmitr/src/utils/global';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 // Asset Images
 const LOGO_IMAGE = require('@truckmitr/src/assets/membership-card/logotrick.png');
-const PROFILE_PLACEHOLDER = require('@truckmitr/src/assets/membership-card/man.png');
+const BACKGROUND_FOREMAN_PRO = require('@truckmitr/src/assets/membership-card/foremancardnew.jpeg');
 
-// Background Images for each tier
-const BACKGROUND_VERIFIED = require('@truckmitr/src/assets/membership-card/membershipbg.png');       // Silver/Gray for Verified
-const BACKGROUND_TRUSTED = require('@truckmitr/src/assets/membership-card/membershipcardbg2.png');   // Gold for Trusted
-const BACKGROUND_JOB_READY = require('@truckmitr/src/assets/membership-card/membershipcard3.png');   // Blue for Job Ready
-const BACKGROUND_TRANSPORTER_PRO = require('@truckmitr/src/assets/membership-card/TransporterPro.png');
-
-// Card configurations for each tier
-type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO' | 'FOREMAN PRO';
-
+// Card tier configurations
 interface TierConfig {
     background: any;
     borderColors: string[];
@@ -39,94 +32,7 @@ interface TierConfig {
     categoryText: string;
 }
 
-const TIER_CONFIGS: Record<TierType, TierConfig> = {
-    'JOB READY': {
-        background: BACKGROUND_JOB_READY,
-        borderColors: ['#000b29', '#002661', '#4A90E2', '#002661', '#000b29'],
-        chromeGradient: [
-            { offset: '0', color: '#E0E3E7' },
-            { offset: '0.25', color: '#BFC5CC' },
-            { offset: '0.5', color: '#9AA0A6' },
-            { offset: '0.75', color: '#BFC5CC' },
-            { offset: '1', color: '#E0E3E7' },
-        ],
-        categoryText: 'JOB READY DRIVER',
-    },
-    'VERIFIED': {
-        background: BACKGROUND_VERIFIED,
-        borderColors: ['#404040', '#E0E3E7', '#FFFFFF', '#E0E3E7', '#404040'],
-        chromeGradient: [
-            { offset: '0', color: '#E0E3E7' },
-            { offset: '0.25', color: '#BFC5CC' },
-            { offset: '0.5', color: '#9AA0A6' },
-            { offset: '0.75', color: '#BFC5CC' },
-            { offset: '1', color: '#E0E3E7' },
-        ],
-        categoryText: 'VERIFIED DRIVER',
-    },
-    'TRUSTED': {
-        background: BACKGROUND_TRUSTED,
-        borderColors: ['#A67C00', '#C9A23F', '#FFF6C8', '#C9A23F', '#A67C00'],
-        chromeGradient: [
-            { offset: '0', color: '#FFF6C8' },
-            { offset: '0.25', color: '#C9A23F' },
-            { offset: '0.5', color: '#A67C00' },
-            { offset: '0.75', color: '#C9A23F' },
-            { offset: '1', color: '#FFF6C8' },
-        ],
-        categoryText: 'TRUSTED DRIVER',
-    },
-    'Standard': {
-        background: BACKGROUND_JOB_READY,
-        borderColors: ['#000b29', '#002661', '#4A90E2', '#002661', '#000b29'],
-        chromeGradient: [
-            { offset: '0', color: '#E0E3E7' },
-            { offset: '0.25', color: '#BFC5CC' },
-            { offset: '0.5', color: '#9AA0A6' },
-            { offset: '0.75', color: '#BFC5CC' },
-            { offset: '1', color: '#E0E3E7' },
-        ],
-        categoryText: 'STANDARD MEMBER',
-    },
-    'LEGACY': {
-        background: BACKGROUND_VERIFIED,
-        borderColors: ['#8B4513', '#CD853F', '#DEB887', '#CD853F', '#8B4513'],
-        chromeGradient: [
-            { offset: '0', color: '#DEB887' },
-            { offset: '0.25', color: '#CD853F' },
-            { offset: '0.5', color: '#8B4513' },
-            { offset: '0.75', color: '#CD853F' },
-            { offset: '1', color: '#DEB887' },
-        ],
-        categoryText: 'LEGACY MEMBER', // Will be overridden dynamically
-    },
-    'TRANSPORTER PRO': {
-        background: BACKGROUND_TRANSPORTER_PRO,
-        borderColors: ['#404040', '#E0E3E7', '#FFFFFF', '#E0E3E7', '#404040'],
-        chromeGradient: [
-            { offset: '0', color: '#E0E3E7' },
-            { offset: '0.25', color: '#BFC5CC' },
-            { offset: '0.5', color: '#9AA0A6' },
-            { offset: '0.75', color: '#BFC5CC' },
-            { offset: '1', color: '#E0E3E7' },
-        ],
-        categoryText: 'TRANSPORTER PRO',
-    },
-    'FOREMAN PRO': {
-        background: BACKGROUND_TRANSPORTER_PRO,
-        borderColors: ['#404040', '#E0E3E7', '#FFFFFF', '#E0E3E7', '#404040'],
-        chromeGradient: [
-            { offset: '0', color: '#E0E3E7' },
-            { offset: '0.25', color: '#BFC5CC' },
-            { offset: '0.5', color: '#9AA0A6' },
-            { offset: '0.75', color: '#BFC5CC' },
-            { offset: '1', color: '#E0E3E7' },
-        ],
-        categoryText: 'FOREMAN PRO',
-    },
-};
-
-// State ID to Name Mapping (based on API states data)
+// State ID to Name Mapping
 const STATE_ID_MAP: Record<string, string> = {
     '1': 'Andaman and Nicobar Islands',
     '2': 'Andhra Pradesh',
@@ -172,15 +78,13 @@ const STATE_ID_MAP: Record<string, string> = {
 const getStateName = (stateValue: string | number | undefined): string => {
     if (!stateValue) return '';
     const stateStr = String(stateValue).trim();
-    // If it's a numeric ID, look up the name
     if (STATE_ID_MAP[stateStr]) {
         return STATE_ID_MAP[stateStr];
     }
-    // If it's already a name (non-numeric), return as-is
     return stateStr;
 };
 
-export default function MembershipCard() {
+export default function ForemanMembershipCard() {
     const { t } = useTranslation();
     const colors = useColor();
     const safeAreaInsets = useSafeAreaInsets();
@@ -202,33 +106,18 @@ export default function MembershipCard() {
         navigation.goBack();
     };
 
+    // Check if Foreman has Pro using global utility
+    const showCard = shouldShowMembershipCard({ user, subscriptionDetails, isDriver: false });
+    const badgeText = getUserBadgeText({ user, subscriptionDetails, isDriver: false });
+
     // Extract data from Redux
-    const userName = user?.name?.toUpperCase() || 'MEMBER NAME';
+    const userName = user?.name?.toUpperCase() || t('memberNameDefault')?.toUpperCase() || 'MEMBER NAME';
     const uniqueId = user?.unique_id || 'TM0000000000000';
-    const isTransporterRole = user?.role === 'transporter';
     const stateName = user?.state_name || getStateName(user?.states) || getStateName(user?.state) || '';
     const cityName = user?.city || '';
     const userLocation = (cityName && stateName ? `${cityName}, ${stateName}` : (cityName || stateName)).toUpperCase();
 
-    const displayLabel = isTransporterRole ? 'TRANSPORT NAME' : (t('licenseType') || 'LICENSE TYPE');
-    // Assuming transport_name is available in user object, otherwise fallback to empty or handle accordingly
-    const rawTransportName = user?.Transport_Name || user?.transport_name || '';
-    const displayValue = isTransporterRole ? (rawTransportName.toUpperCase() === 'N/A' ? '' : rawTransportName).toUpperCase() : (user?.Type_of_License || 'HMV')?.toUpperCase();
-    const profileImage = user?.images ? { uri: `${BASE_URL}public/${user?.images}` } : PROFILE_PLACEHOLDER;
-
-    // Subscription details - Using utility function for consistency
-    // This ensures same logic as dashboard, profile, and other components
-    const userRole = user?.role || 'driver';
-    const isDriver = userRole === 'driver';
-    const tier = getUserTier({ user, subscriptionDetails, isDriver });
-    const badgeText = getUserBadgeText({ user, subscriptionDetails, isDriver });
-
-    // Get tier config and dynamically set categoryText for LEGACY based on role
-    let tierConfig = { ...TIER_CONFIGS[tier] };
-    if (tier === 'LEGACY') {
-        tierConfig.categoryText = userRole === 'transporter' ? (t('cardLegacyTransporter') || 'LEGACY TRANSPORTER') : (t('cardLegacyDriver') || 'LEGACY DRIVER');
-    }
-
+    // Subscription details
     const startDate = subscriptionDetails?.start_at
         ? moment.unix(subscriptionDetails.start_at).format('DD/MM/YY')
         : moment().format('DD/MM/YY');
@@ -239,6 +128,20 @@ export default function MembershipCard() {
     // Credit card aspect ratio: 1.586:1 (landscape)
     const cardWidth = responsiveWidth(92);
     const cardHeight = cardWidth / 1.586;
+
+    // Foreman Pro tier config
+    const tierConfig: TierConfig = {
+        background: BACKGROUND_FOREMAN_PRO,
+        borderColors: ['#1F2937', '#4B5563', '#9CA3AF', '#4B5563', '#1F2937'],
+        chromeGradient: [
+            { offset: '0', color: '#E0E3E7' },
+            { offset: '0.25', color: '#BFC5CC' },
+            { offset: '0.5', color: '#9AA0A6' },
+            { offset: '0.75', color: '#BFC5CC' },
+            { offset: '1', color: '#E0E3E7' },
+        ],
+        categoryText: t('foremanProBadge') || 'FOREMAN PRO',
+    };
 
     if (loading) {
         return (
@@ -252,7 +155,7 @@ export default function MembershipCard() {
     const hasActiveSubscription = subscriptionDetails?.hasActiveSubscription ||
         (subscriptionDetails?.subscription_id && subscriptionDetails?.payment_status === 'captured');
 
-    if (!hasActiveSubscription) {
+    if (!showCard || !hasActiveSubscription) {
         return (
             <View style={[styles.container, { backgroundColor: colors.white }]}>
                 <Space height={safeAreaInsets.top} />
@@ -326,7 +229,7 @@ export default function MembershipCard() {
             <View style={{ alignItems: 'center', marginBottom: responsiveHeight(1) }}>
                 <View style={[styles.tierBadge, { backgroundColor: tierConfig.borderColors[2] + '20' }]}>
                     <Text style={[styles.tierBadgeText, { color: tierConfig.borderColors[0] }]}>
-                        {tier} MEMBER
+                        {badgeText.toUpperCase()}
                     </Text>
                 </View>
             </View>
@@ -351,7 +254,7 @@ export default function MembershipCard() {
                             >
                                 <View style={styles.darkOverlay} />
 
-                                {/* Card Content - Adapted from Profile Screen for consistency */}
+                                {/* Card Content */}
                                 <View style={{ flex: 1, padding: 12 }}>
 
                                     {/* Top Row: Logo and Profile Photo */}
@@ -378,11 +281,17 @@ export default function MembershipCard() {
                                                 padding: 2,
                                                 borderRadius: 28
                                             }}>
-                                                <Image
-                                                    source={profileImage}
-                                                    style={{ width: 52, height: 52, borderRadius: 26 }}
-                                                    resizeMode="cover"
-                                                />
+                                                {user?.images ? (
+                                                    <Image
+                                                        source={{ uri: `${BASE_URL}public/${user?.images}` }}
+                                                        style={{ width: 52, height: 52, borderRadius: 26 }}
+                                                        resizeMode="cover"
+                                                    />
+                                                ) : (
+                                                    <View style={{ width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E0E0E0' }}>
+                                                        <FontAwesome name="user" size={32} color="#757575" />
+                                                    </View>
+                                                )}
                                             </View>
                                         </LinearGradient>
                                     </View>
@@ -390,22 +299,22 @@ export default function MembershipCard() {
                                     {/* Middle Section: Category & ID */}
                                     <View style={{ marginTop: 4 }}>
                                         {/* Category Label with SVG Gradient */}
-                                        <View style={{ height: 22, width: 200 }}>
-                                            <Svg height="100%" width="100%" viewBox="0 0 200 22">
+                                        <View style={{ height: 24, width: 280 }}>
+                                            <Svg height="100%" width="100%" viewBox="0 0 280 24">
                                                 <Defs>
                                                     <SvgLinearGradient id="chromeGradientCat" x1="0" y1="0" x2="0" y2="1">
-                                                        {tierConfig.chromeGradient.map((stop: any, index: number) => (
+                                                        {tierConfig.chromeGradient.map((stop, index) => (
                                                             <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
                                                         ))}
                                                     </SvgLinearGradient>
                                                 </Defs>
                                                 {/* Shadow layer */}
-                                                <SvgText fill="#000000" fillOpacity="0.7" fontSize="15" fontWeight="900" fontStyle="italic" letterSpacing="1" x="1.5" y="17">
-                                                    {tierConfig.categoryText}
+                                                <SvgText fill="#000000" fillOpacity="0.7" fontSize="18" fontWeight="900" fontStyle="italic" letterSpacing="1" x="1.5" y="19">
+                                                    {tierConfig.categoryText.toUpperCase()}
                                                 </SvgText>
                                                 {/* Main gradient text */}
-                                                <SvgText fill="url(#chromeGradientCat)" stroke="#000" strokeWidth="0.5" fontSize="15" fontWeight="900" fontStyle="italic" letterSpacing="1" x="0" y="15.5">
-                                                    {tierConfig.categoryText}
+                                                <SvgText fill="url(#chromeGradientCat)" stroke="#000" strokeWidth="0.5" fontSize="18" fontWeight="900" fontStyle="italic" letterSpacing="1" x="0" y="17.5">
+                                                    {tierConfig.categoryText.toUpperCase()}
                                                 </SvgText>
                                             </Svg>
                                         </View>
@@ -415,7 +324,7 @@ export default function MembershipCard() {
                                             <Svg height="100%" width="100%" viewBox="0 0 340 38">
                                                 <Defs>
                                                     <SvgLinearGradient id="chromeGradientId" x1="0" y1="0" x2="0" y2="1">
-                                                        {tierConfig.chromeGradient.map((stop: any, index: number) => (
+                                                        {tierConfig.chromeGradient.map((stop, index) => (
                                                             <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
                                                         ))}
                                                     </SvgLinearGradient>
@@ -439,14 +348,14 @@ export default function MembershipCard() {
                                         justifyContent: 'space-between',
                                         alignItems: 'flex-end',
                                     }}>
-                                        {/* Left: Name, Location, License */}
+                                        {/* Left: Name, Location */}
                                         <View style={{ flex: 1 }}>
                                             {/* Name with SVG Gradient */}
                                             <View style={{ height: 20, width: 200 }}>
                                                 <Svg height="100%" width="100%" viewBox="0 0 200 20">
                                                     <Defs>
                                                         <SvgLinearGradient id="chromeGradientName" x1="0" y1="0" x2="0" y2="1">
-                                                            {tierConfig.chromeGradient.map((stop: any, index: number) => (
+                                                            {tierConfig.chromeGradient.map((stop, index) => (
                                                                 <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
                                                             ))}
                                                         </SvgLinearGradient>
@@ -470,21 +379,6 @@ export default function MembershipCard() {
                                             }}>
                                                 {userLocation}
                                             </Text>
-                                            <Text style={{
-                                                color: 'rgba(255, 255, 255, 1)',
-                                                fontSize: responsiveFontSize(1.3),
-                                                fontWeight: '900',
-                                                marginTop: 3,
-                                                textShadowColor: 'rgba(0,0,0,0.6)',
-                                                textShadowOffset: { width: 1, height: 1 },
-                                                textShadowRadius: 1,
-                                            }}>
-                                                {isTransporterRole ? (
-                                                    <Text style={{ fontWeight: '800', fontStyle: 'italic' }}>{displayValue}</Text>
-                                                ) : (
-                                                    <>{displayLabel}: <Text style={{ fontWeight: '800' }}>{displayValue}</Text></>
-                                                )}
-                                            </Text>
                                         </View>
 
                                         {/* Right: Validity Dates with SVG Gradient */}
@@ -503,7 +397,7 @@ export default function MembershipCard() {
                                                         <Svg height="100%" width="100%" viewBox="0 0 70 16">
                                                             <Defs>
                                                                 <SvgLinearGradient id="chromeGradientDate1" x1="0" y1="0" x2="0" y2="1">
-                                                                    {tierConfig.chromeGradient.map((stop: any, index: number) => (
+                                                                    {tierConfig.chromeGradient.map((stop, index) => (
                                                                         <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
                                                                     ))}
                                                                 </SvgLinearGradient>
@@ -527,7 +421,7 @@ export default function MembershipCard() {
                                                         <Svg height="100%" width="100%" viewBox="0 0 70 16">
                                                             <Defs>
                                                                 <SvgLinearGradient id="chromeGradientDate2" x1="0" y1="0" x2="0" y2="1">
-                                                                    {tierConfig.chromeGradient.map((stop: any, index: number) => (
+                                                                    {tierConfig.chromeGradient.map((stop, index) => (
                                                                         <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
                                                                     ))}
                                                                 </SvgLinearGradient>
@@ -558,7 +452,7 @@ export default function MembershipCard() {
 
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>{t('membershipType') || 'Membership Type'}</Text>
-                    <Text style={[styles.infoValue, { color: tierConfig.borderColors[0] }]}>{tier}</Text>
+                    <Text style={[styles.infoValue, { color: tierConfig.borderColors[0] }]}>{badgeText}</Text>
                 </View>
 
                 <View style={styles.infoRow}>

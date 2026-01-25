@@ -25,6 +25,7 @@ import ProfileOverView from '@truckmitr/src/app/layouts/foreman/foreman-overView
 import ForemanProfileEdit from '@truckmitr/src/app/layouts/foreman/foreman-profile-edit';
 import ForemanSearchScreen from '@truckmitr/src/app/layouts/foreman/foreman-home/search-screen';
 import ForemanEarningsInfo from '@truckmitr/src/app/layouts/foreman/foreman-home/earninig';
+import ForemanMembershipCard from '@truckmitr/src/app/layouts/foreman/foreman-home/membership-card';
 
 const Stack = createNativeStackNavigator();
 
@@ -125,6 +126,7 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.FOREMAN_PROFILE_EDIT} component={ForemanProfileEdit} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name={STACKS.FOREMAN_SEARCH} component={ForemanSearchScreen} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_EARNINGS_INFO} component={ForemanEarningsInfo} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.FOREMAN_MEMBERSHIP_CARD} component={ForemanMembershipCard} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.PAYMENT_SUCCESS} component={PaymentSuccess} options={{ animation: 'fade_from_bottom' }} />
         </Stack.Navigator>
     )

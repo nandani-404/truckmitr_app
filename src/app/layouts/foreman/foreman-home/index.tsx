@@ -14,6 +14,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
+import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -863,7 +864,7 @@ export default function ForemanHome() {
                                         } else if (item.id === 5) {
                                             handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_APPLICATIONS as any));
                                         } else if (item.id === 6) {
-                                            handleFeatureAccess(() => navigation.navigate(STACKS.FOREMAN_RECRUITMENTS as any));
+                                            showToast('Coming Soon');
                                         } else {
                                             console.log(item.title);
                                         }

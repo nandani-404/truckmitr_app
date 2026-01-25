@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions, Modal, Keyboard } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -8,14 +8,15 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 import { Driver as ReduxDriver } from '@truckmitr/redux/slices/pilotsSlice';
-import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
-import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop, BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import moment from 'moment';
 import { useTranslation } from 'react-i18next';
 
@@ -43,7 +44,8 @@ interface Job {
     Additional_Benefits?: string;
 }
 
-// Detail Item Component for Job Details grid
+
+// Format salary range
 const formatSalary = (salaryRange: string, t: any): string => {
     if (!salaryRange) return t('notSpecified');
     const parts = salaryRange.split('-');
@@ -181,16 +183,17 @@ const ForemanJobsList = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Bottom Sheet State
-    const bottomSheetRef = useRef<BottomSheet>(null);
-    const shareSheetRef = useRef<BottomSheet>(null);
+    // Job Details Modal State
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-    const snapPoints = useMemo(() => ['80%'], []);
+
+    // Bottom Sheet State
+    const shareSheetRef = useRef<BottomSheet>(null);
     const shareSnapPoints = useMemo(() => ['70%', '90%'], []);
 
     const { allPilots } = useSelector((state: RootState) => state.pilots);
 
-    // Share Modal State
+    // Share state
     const [selectedDrivers, setSelectedDrivers] = useState<number[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -233,11 +236,11 @@ const ForemanJobsList = () => {
 
     const handleViewDetails = (job: Job) => {
         setSelectedJob(job);
-        bottomSheetRef.current?.expand();
+        setShowDetailsModal(true);
     };
 
-    const handleCloseBottomSheet = () => {
-        bottomSheetRef.current?.close();
+    const handleCloseDetailsModal = () => {
+        setShowDetailsModal(false);
         setSelectedJob(null);
     };
 
@@ -278,74 +281,137 @@ const ForemanJobsList = () => {
         showToast(t('jobShared', { count: selectedDrivers.length }));
     };
 
+    const handleAddDriver = () => {
+        shareSheetRef.current?.close();
+        navigation.navigate(STACKS.FOREMAN_ADD_DRIVER as never);
+    };
+
     const renderBackdrop = useCallback(
         (props: any) => (
             <BottomSheetBackdrop
                 {...props}
-                disappearsOnIndex={-1}
                 appearsOnIndex={0}
-                opacity={0.5}
+                disappearsOnIndex={-1}
             />
         ),
         []
     );
 
-    const renderJobItem = ({ item }: { item: Job }) => (
-        <View style={styles.jobCard}>
-            <View style={styles.jobHeader}>
-                <View style={styles.jobInfo}>
-                    <Text style={styles.jobTitle} numberOfLines={2}>{item.job_title}</Text>
-                    <Text style={styles.jobId}>{item.job_id}</Text>
-                </View>
-                <TouchableOpacity onPress={() => handleSharePress(item)} style={styles.shareButton}>
-                    <Ionicons name="share-social-outline" size={20} color="#3B82F6" />
-                </TouchableOpacity>
-            </View>
 
-            <View style={styles.jobDetailsRow}>
-                <View style={styles.detailBadge}>
-                    <Ionicons name="location-outline" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>{item.job_location}</Text>
+    const renderJobItem = ({ item }: { item: Job }) => {
+        const plan = item.subscription_plan_name;
+
+        // Define interface for config to avoid type inference locking
+        interface PlanConfig {
+            text: string;
+            icon: string;
+            colors: string[];
+            textColor: string;
+            borderColor: string;
+            iconColor: string;
+        }
+
+        let badgeConfig: PlanConfig = {
+            text: 'Standard Job',
+            icon: 'shield-check-outline',
+            colors: ['#F1F5F9', '#F8FAFC'],
+            textColor: '#64748B',
+            borderColor: '#E2E8F0',
+            iconColor: '#64748B'
+        };
+
+        if (plan === 'super_premium_job') {
+            badgeConfig = {
+                text: 'Super Premium',
+                icon: 'crown',
+                colors: ['#FFF7ED', '#FFEDD5'],
+                textColor: '#B45309',
+                borderColor: '#FCD34D',
+                iconColor: '#B45309'
+            };
+        } else if (plan === 'premium_job') {
+            badgeConfig = {
+                text: 'Premium Job',
+                icon: 'star',
+                colors: ['#EFF6FF', '#DBEAFE'],
+                textColor: '#1D4ED8',
+                borderColor: '#93C5FD',
+                iconColor: '#1D4ED8'
+            };
+        }
+
+        return (
+            <View style={[styles.jobCard, { borderColor: badgeConfig.borderColor }]}>
+                {/* Plan Badge Header */}
+                <View style={[styles.planHeader, { backgroundColor: badgeConfig.colors[1] }]}>
+                    <View style={styles.planBadgeContainer}>
+                        <MaterialCommunityIcons name={badgeConfig.icon} size={14} color={badgeConfig.iconColor} />
+                        <Text style={[styles.planBadgeText, { color: badgeConfig.textColor }]}>
+                            {badgeConfig.text}
+                        </Text>
+                    </View>
+                    <View style={styles.jobIdContainer}>
+                        <Text style={styles.jobIdText}>ID: {item.job_id}</Text>
+                    </View>
                 </View>
-                <View style={styles.detailBadge}>
-                    <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>{t('deadline')}: {formatDate(item.Application_Deadline)}</Text>
-                </View>
-                <View style={styles.detailBadge}>
-                    <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>{t('noOfDriversRequired')}: {item.number_of_drivers_required}</Text>
+
+                <View style={styles.cardBody}>
+                    <View style={styles.jobHeader}>
+                        <View style={styles.jobInfo}>
+                            <Text style={styles.jobTitle} numberOfLines={2}>{item.job_title}</Text>
+                            <Text style={styles.jobDateTime}>{moment(item.Created_at).format('DD MMM YYYY')}</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => handleSharePress(item)}
+                            style={styles.shareButton}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="share-social-outline" size={20} color="#3B82F6" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.jobDetailsRow}>
+                        <View style={styles.detailBadge}>
+                            <Ionicons name="location-outline" size={14} color="#64748B" />
+                            <Text style={styles.detailText}>{item.job_location}</Text>
+                        </View>
+                        <View style={styles.detailBadge}>
+                            <Ionicons name="calendar-outline" size={14} color="#64748B" />
+                            <Text style={styles.detailText}>{t('deadline')}: {formatDate(item.Application_Deadline)}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.infoTagsRow}>
+                        <View style={styles.infoTag}>
+                            <Ionicons name="car-outline" size={12} color="#6366F1" />
+                            <Text style={styles.infoTagText}>{item.vehicle_type}</Text>
+                        </View>
+                        <View style={styles.infoTag}>
+                            <Ionicons name="time-outline" size={12} color="#6366F1" />
+                            <Text style={styles.infoTagText}>{t('experience')}: {item.Required_Experience} years</Text>
+                        </View>
+                        <View style={styles.infoTag}>
+                            <Ionicons name="card-outline" size={12} color="#6366F1" />
+                            <Text style={styles.infoTagText}>{item.Type_of_License}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.salaryRow}>
+                        <Text style={styles.salaryText}>{formatSalary(item.Salary_Range, t)}</Text>
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.viewDetailsButton}
+                        onPress={() => handleViewDetails(item)}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.viewDetailsText}>{t('viewDetails')}</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
+                    </TouchableOpacity>
                 </View>
             </View>
-
-            <View style={styles.infoTagsRow}>
-                <View style={styles.infoTag}>
-                    <Ionicons name="car-outline" size={12} color="#6366F1" />
-                    <Text style={styles.infoTagText}>{item.vehicle_type}</Text>
-                </View>
-                <View style={styles.infoTag}>
-                    <Ionicons name="time-outline" size={12} color="#6366F1" />
-                    <Text style={styles.infoTagText}>{item.Required_Experience} {t('yearsSuffix')}</Text>
-                </View>
-                <View style={styles.infoTag}>
-                    <Ionicons name="card-outline" size={12} color="#6366F1" />
-                    <Text style={styles.infoTagText}>{item.Type_of_License}</Text>
-                </View>
-            </View>
-
-            <View style={styles.salaryRow}>
-                <Text style={styles.salaryText}>{formatSalary(item.Salary_Range, t)}</Text>
-                <Text style={styles.postedText}>{moment(item.Created_at).format('DD-MMM-YY').toLowerCase()}</Text>
-            </View>
-
-            <TouchableOpacity
-                style={styles.viewDetailsButton}
-                onPress={() => handleViewDetails(item)}
-            >
-                <Text style={styles.viewDetailsText}>{t('viewDetails')}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
-            </TouchableOpacity>
-        </View>
-    );
+        );
+    };
 
     const renderDriverItem = (item: ReduxDriver) => {
         const isSelected = selectedDrivers.includes(item.id);
@@ -434,11 +500,15 @@ const ForemanJobsList = () => {
         const isPremium = selectedJob?.subscription_plan_name === 'premium_job';
 
         return (
-            <BottomSheetScrollView style={styles.sheetContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.sheetContent}
+                contentContainerStyle={styles.scrollContentContainer}
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Header with Title and Close Button */}
                 <View style={styles.sheetHeader}>
                     <Text style={styles.sheetHeaderTitle}>{t('jobDetails')}</Text>
-                    <TouchableOpacity style={styles.closeSheetButton} onPress={handleCloseBottomSheet}>
+                    <TouchableOpacity style={styles.closeSheetButton} onPress={handleCloseDetailsModal}>
                         <Ionicons name="close-circle" size={28} color="#64748B" />
                     </TouchableOpacity>
                 </View>
@@ -473,7 +543,7 @@ const ForemanJobsList = () => {
 
                 {/* Job Title Section */}
                 <View style={styles.sheetTitleSection}>
-                    {/* <Text style={styles.sheetJobEmoji}>🚚</Text> */}
+                    <Text style={styles.sheetJobEmoji}>🚚</Text>
                     <View style={styles.sheetTitleContainer}>
                         <Text style={styles.sheetJobTitle}>{selectedJob.job_title}</Text>
                         <Text style={styles.sheetVehicleType}>{selectedJob.vehicle_type}</Text>
@@ -518,7 +588,7 @@ const ForemanJobsList = () => {
                             />
                             <DetailItem
                                 icon={<FontAwesome6 name="users" size={14} color="#3B82F6" />}
-                                label={t('noOfDriversRequired')}
+                                label={t('openPositions')}
                                 value={selectedJob.number_of_drivers_required || '-'}
                             />
                         </View>
@@ -588,7 +658,7 @@ const ForemanJobsList = () => {
                 <TouchableOpacity
                     style={styles.shareJobButton}
                     onPress={() => {
-                        handleCloseBottomSheet();
+                        handleCloseDetailsModal();
                         setTimeout(() => handleSharePress(selectedJob), 300);
                     }}
                 >
@@ -597,14 +667,14 @@ const ForemanJobsList = () => {
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />
-            </BottomSheetScrollView>
+            </ScrollView>
         );
     };
 
     // Render Share Sheet Content
     const renderShareSheet = () => {
         return (
-            <View style={styles.sheetContent}>
+            <View style={[styles.sheetContent, { flex: 1 }]}>
                 <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>{t('shareJob')}</Text>
                     <TouchableOpacity onPress={() => shareSheetRef.current?.close()}>
@@ -631,92 +701,135 @@ const ForemanJobsList = () => {
                     </TouchableOpacity>
                 </View>
 
-                <BottomSheetScrollView style={styles.driverListContainer}>
-                    {filteredDrivers.map(renderDriverItem)}
-                    <View style={{ height: 100 }} />
-                </BottomSheetScrollView>
+                <BottomSheetFlatList
+                    data={filteredDrivers}
+                    keyExtractor={(item) => String(item.id)}
+                    renderItem={({ item }) => renderDriverItem(item)}
+                    style={styles.driverListContainer}
+                    contentContainerStyle={{ paddingBottom: 20 }}
+                    ListEmptyComponent={
+                        <View style={styles.emptySearchContainer}>
+                            <Ionicons name="search-outline" size={48} color="#CBD5E1" />
+                            <Text style={styles.emptySearchTitle}>
+                                {allPilots.length === 0
+                                    ? t('noDriversAddedYet', { defaultValue: 'No drivers added by you' })
+                                    : searchQuery
+                                        ? t('noMatchingDrivers')
+                                        : t('noDriversAvailable')}
+                            </Text>
+                            <Text style={styles.emptySearchSubtitle}>
+                                {allPilots.length === 0
+                                    ? t('pleaseAddFirst', { defaultValue: 'Please add first' })
+                                    : searchQuery
+                                        ? t('tryDifferentSearch')
+                                        : t('checkBackLater')}
+                            </Text>
+                            {allPilots.length === 0 && (
+                                <TouchableOpacity
+                                    style={styles.addDriverButtonSmall}
+                                    onPress={handleAddDriver}
+                                >
+                                    <Ionicons name="person-add-outline" size={18} color="#fff" />
+                                    <Text style={styles.addDriverButtonTextSmall}>{t('addDriver')}</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    }
+                    ListFooterComponent={<View style={{ height: 20 }} />}
+                />
 
-                <View style={[styles.modalFooter, { paddingBottom: insets.bottom + 16 }]}>
-                    <TouchableOpacity
-                        style={[styles.shareConfirmButton, selectedDrivers.length === 0 && styles.disabledButton]}
-                        onPress={handleShareConfirm}
-                        disabled={selectedDrivers.length === 0}
-                    >
-                        <Text style={styles.shareConfirmText}>{t('shareAction')} ({selectedDrivers.length})</Text>
-                        <Ionicons name="send" size={16} color="#fff" style={{ marginLeft: 8 }} />
-                    </TouchableOpacity>
-                </View>
+                {allPilots.length > 0 && (
+                    <View style={[styles.modalFooter, { paddingBottom: insets.bottom + 10 }]}>
+                        <TouchableOpacity
+                            style={[styles.shareConfirmButton, selectedDrivers.length === 0 && styles.disabledButton]}
+                            onPress={handleShareConfirm}
+                            disabled={selectedDrivers.length === 0}
+                        >
+                            <Text style={styles.shareConfirmText}>{t('shareAction')} ({selectedDrivers.length})</Text>
+                            <Ionicons name="send" size={16} color="#fff" style={{ marginLeft: 8 }} />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
         );
     };
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#0F172A" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('allAvailableJobs')}</Text>
-                <View style={styles.headerRight}>
-                    <Text style={styles.jobCount}>{jobs.length} {t('jobsLowercase')}</Text>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <View style={[styles.container, { paddingTop: insets.top }]}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color="#0F172A" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>{t('availableJobs')}</Text>
+                    <View style={styles.headerRight}>
+                        <Text style={styles.jobCount}>{jobs.length} {t('jobsLowercase')}</Text>
+                    </View>
                 </View>
+
+                {loading ? (
+                    renderShimmerList()
+                ) : error && jobs.length === 0 ? (
+                    renderErrorState()
+                ) : jobs.length === 0 ? (
+                    renderEmptyState()
+                ) : (
+                    <FlatList
+                        data={jobs}
+                        renderItem={renderJobItem}
+                        keyExtractor={item => String(item.id)}
+                        contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
+                        removeClippedSubviews={true}
+                        maxToRenderPerBatch={10}
+                        windowSize={5}
+                        initialNumToRender={5}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={onRefresh}
+                                colors={['#3B82F6']}
+                            />
+                        }
+                    />
+                )}
+
+
+                {/* Share Driver Selection Bottom Sheet */}
+                <BottomSheet
+                    ref={shareSheetRef}
+                    index={-1}
+                    snapPoints={shareSnapPoints}
+                    enablePanDownToClose={true}
+                    backdropComponent={renderBackdrop}
+                    backgroundStyle={styles.sheetBackground}
+                    handleIndicatorStyle={styles.sheetIndicator}
+                    onChange={(index) => {
+                        if (index === -1) {
+                            Keyboard.dismiss();
+                        }
+                    }}
+                >
+                    {renderShareSheet()}
+                </BottomSheet>
+
+                {/* Job Details Modal */}
+                <Modal
+                    visible={showDetailsModal}
+                    transparent={true}
+                    animationType="slide"
+                    onRequestClose={handleCloseDetailsModal}
+                    statusBarTranslucent={true}
+                >
+                    <View style={styles.detailsModalOverlay}>
+                        <View style={styles.detailsModalContent}>
+                            {renderJobDetailsSheet()}
+                        </View>
+                    </View>
+                </Modal>
             </View>
-
-            {loading ? (
-                renderShimmerList()
-            ) : error && jobs.length === 0 ? (
-                renderErrorState()
-            ) : jobs.length === 0 ? (
-                renderEmptyState()
-            ) : (
-                <FlatList
-                    data={jobs}
-                    renderItem={renderJobItem}
-                    keyExtractor={item => String(item.id)}
-                    contentContainerStyle={styles.listContent}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            colors={['#3B82F6']}
-                        />
-                    }
-                />
-            )}
-
-            {/* Job Details Bottom Sheet */}
-            <BottomSheet
-                ref={bottomSheetRef}
-                index={-1}
-                snapPoints={snapPoints}
-                enablePanDownToClose={true}
-                backdropComponent={renderBackdrop}
-                backgroundStyle={styles.sheetBackground}
-                handleIndicatorStyle={styles.sheetIndicator}
-            >
-                {renderJobDetailsSheet()}
-            </BottomSheet>
-
-            {/* Share Driver Selection Bottom Sheet */}
-            <BottomSheet
-                ref={shareSheetRef}
-                index={-1}
-                snapPoints={shareSnapPoints}
-                enablePanDownToClose={true}
-                backdropComponent={renderBackdrop}
-                backgroundStyle={styles.sheetBackground}
-                handleIndicatorStyle={styles.sheetIndicator}
-                onChange={(index) => {
-                    if (index === -1) {
-                        Keyboard.dismiss();
-                    }
-                }}
-            >
-                {renderShareSheet()}
-            </BottomSheet>
-        </View>
+        </GestureHandlerRootView>
     );
 };
 
@@ -795,6 +908,16 @@ const styles = StyleSheet.create({
         color: '#6366F1',
         fontWeight: '600',
     },
+    jobIdRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    jobDateTime: {
+        fontSize: 11,
+        color: '#94A3B8',
+        fontWeight: '500',
+    },
     shareButton: {
         padding: 8,
         backgroundColor: '#EFF6FF',
@@ -868,13 +991,26 @@ const styles = StyleSheet.create({
         borderColor: '#BFDBFE',
         borderRadius: 8,
         backgroundColor: '#EFF6FF',
-        // backgroundColor: 'red',
         gap: 4,
     },
     viewDetailsText: {
         fontSize: 13,
         fontWeight: '600',
         color: '#3B82F6',
+    },
+    // Details Modal Styles
+    detailsModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    detailsModalContent: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        width: '100%',
+        paddingBottom: 20,
+        maxHeight: '75%',
     },
     // Bottom Sheet Styles
     sheetBackground: {
@@ -890,8 +1026,11 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     sheetContent: {
-        flex: 1,
         paddingHorizontal: 20,
+    },
+    scrollContentContainer: {
+        flexGrow: 1,
+        paddingBottom: 40,
     },
     sheetHeader: {
         flexDirection: 'row',
@@ -1117,11 +1256,7 @@ const styles = StyleSheet.create({
     },
     // Modal Styles
     modalOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'flex-end',
     },
@@ -1180,7 +1315,8 @@ const styles = StyleSheet.create({
         color: '#3B82F6',
     },
     driverListContainer: {
-        marginBottom: 20,
+        flex: 1,
+        marginBottom: 10,
     },
     driverItem: {
         flexDirection: 'row',
@@ -1274,6 +1410,90 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '700',
+    },
+    // New Card Styles
+    planHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderTopLeftRadius: 15, // matching card radius - 1
+        borderTopRightRadius: 15,
+    },
+    planBadgeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    planBadgeText: {
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    jobIdContainer: {
+        backgroundColor: 'rgba(255,255,255,0.5)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    jobIdText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#475569',
+    },
+    cardBody: {
+        padding: 16,
+    },
+    viewDetailsButtonSmall: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#EFF6FF',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+        gap: 4,
+    },
+    viewDetailsTextSmall: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#3B82F6',
+    },
+    // Empty Search Styles
+    emptySearchContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 40,
+        paddingHorizontal: 20,
+    },
+    emptySearchTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#475569',
+        marginTop: 12,
+        textAlign: 'center',
+    },
+    emptySearchSubtitle: {
+        fontSize: 14,
+        color: '#94A3B8',
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    addDriverButtonSmall: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#3B82F6',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        marginTop: 20,
+        gap: 8,
+    },
+    addDriverButtonTextSmall: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });
 

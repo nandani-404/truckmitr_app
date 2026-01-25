@@ -307,7 +307,7 @@ export default function ForemanEarnings() {
     const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
 
     // Filter states
-    const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'SUBSCRIPTION' | 'HIRING' | 'PREMIUM' | 'SUPER_PREMIUM'>('ALL');
+    const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'SUBSCRIPTION' | 'HIRING'>('ALL');
     const [selectedSubscription, setSelectedSubscription] = useState<'ALL' | 'JOB_READY' | 'VERIFIED' | 'TRUSTED'>('ALL');
 
     const fetchEarnings = useCallback(async () => {
@@ -347,7 +347,6 @@ export default function ForemanEarnings() {
             if (selectedSubscription === 'VERIFIED') return type.includes('verified');
             if (selectedSubscription === 'JOB_READY') return type.includes('job ready') || type.includes('job_ready');
         }
-        // PREMIUM/SUPER_PREMIUM might be related to job types in future, for now mapping HIRING broadly
         return true;
     });
 
@@ -355,8 +354,6 @@ export default function ForemanEarnings() {
         { id: 'ALL', label: t('all') },
         { id: 'SUBSCRIPTION', label: t('subscription') },
         { id: 'HIRING', label: t('hiring') },
-        { id: 'PREMIUM', label: t('premiumJob') },
-        { id: 'SUPER_PREMIUM', label: t('superPremium') },
     ];
 
     const subCategories = [
