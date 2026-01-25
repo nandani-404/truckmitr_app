@@ -31,6 +31,7 @@ import { RootState } from '@truckmitr/redux/store';
 import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import PollSurveyModal from '@truckmitr/src/utils/poll-survey';
+import { setPilots, setPilotsLoading } from '@truckmitr/redux/slices/pilotsSlice';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -226,6 +227,27 @@ export default function ForemanHome() {
             console.error('Error fetching dashboard data:', error);
         }
     }, [user?.id]);
+
+    // Fetch pilots and store in Redux
+    const fetchPilots = useCallback(async () => {
+        try {
+            dispatch(setPilotsLoading(true));
+            const response = await axiosInstance.get(END_POINTS.FOREMAN_MY_PILOTS);
+            console.log('My Pilots API Response (Home):', response?.data);
+            if (response?.data?.success) {
+                dispatch(setPilots(response.data.drivers || []));
+            }
+        } catch (error) {
+            console.error('Error fetching pilots in Home:', error);
+        } finally {
+            dispatch(setPilotsLoading(false));
+        }
+    }, [dispatch]);
+
+    // Initial fetch on mount
+    React.useEffect(() => {
+        fetchPilots();
+    }, []);
 
     useFocusEffect(
         useCallback(() => {

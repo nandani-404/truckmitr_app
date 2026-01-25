@@ -2575,5 +2575,19 @@
     "foremanTrustTitle": "Join the Pro Community",
     "foremanTrustDesc": "Become a top-rated foreman with verified status.",
     "foremanSubscribeNow": "Upgrade to Pro",
-    "subForemanConsentText": "I agree to the "
+    "subForemanConsentText": "I agree to the ",
+    "applicationTitle": "Application",
+    "noApplicationsFound": "No applications found.",
+    "applicant": "Applicant",
+    "viewDriverDetail": "View Driver Detail",
+    "driverDetails": "Driver Details",
+    "personalAndLicenseDetails": "Personal & License Details",
+    "contactInformation": "Contact Information",
+    "mobileNumber": "Mobile Number",
+    "emailID": "Email ID",
+    "rejectThis": "Reject",
+    "acceptThis": "Accept",
+    "year": "Year",
+    "years": "Years",
+    "legacy": "Legacy"
 }

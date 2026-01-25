@@ -25,13 +25,6 @@ import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/utils/config/index';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 
-const DRIVER_COUNT_OPTIONS = [
-    { label: '1–10', value: '1-10' },
-    { label: '11–25', value: '11-25' },
-    { label: '26–50', value: '26-50' },
-    { label: '50+', value: '50+' },
-];
-
 const BankDetails = () => {
     const navigation = useNavigation();
     const safeAreaInsets = useSafeAreaInsets();
@@ -46,7 +39,6 @@ const BankDetails = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
-    const [showDriverCountModal, setShowDriverCountModal] = useState(false);
     const [bankData, setBankData] = useState({
         account_number: user?.account_number || '',
         account_holder_name: user?.account_holder_name || '',
@@ -54,7 +46,6 @@ const BankDetails = () => {
         branch_name: user?.branch_name || '',
         ifsc_code: user?.ifsc_code || '',
         account_type: user?.account_type || '',
-        driver_poll_size: user?.foreman_bank_detail?.driver_poll_size || user?.drivers_managed || '',
     });
 
     // Fetch bank details from API
@@ -79,7 +70,6 @@ const BankDetails = () => {
                     branch_name: data?.branch_name || '',
                     ifsc_code: data?.ifsc_code || '',
                     account_type: data?.account_type || '',
-                    driver_poll_size: workDetails?.foreman_bank_detail?.driver_poll_size || workDetails?.drivers_managed || '',
                 });
             } else {
                 showToast(response?.data?.message || 'Failed to fetch bank details');
@@ -106,7 +96,6 @@ const BankDetails = () => {
             branch_name: 'Branch Name',
             ifsc_code: 'IFSC Code',
             account_type: 'Account Type',
-            driver_poll_size: 'Drivers Managed',
         };
 
         for (const [key, label] of Object.entries(requiredFields)) {
@@ -124,13 +113,6 @@ const BankDetails = () => {
                 unique_id: user?.unique_id || '',
             };
             const response = await axiosInstance.post(END_POINTS.FOREMAN_BANK_DETAILS_UPDATE, payload);
-
-            // Also update work details if they are managed by a separate endpoint or if this one handles them
-            // Based on earlier logic, driver_poll_size and routes were sent to UPDATE_PROFILE_FOREMAN
-            const workPayload = {
-                driver_poll_size: bankData.driver_poll_size,
-            };
-            await axiosInstance.post(END_POINTS.UPDATE_PROFILE_FOREMAN, workPayload);
 
             if (response?.data?.success) {
                 showToast('Details updated successfully!');
@@ -160,7 +142,7 @@ const BankDetails = () => {
                 {label.toUpperCase()}
             </Text>
             {isEditing ? (
-                key === 'account_type' || key === 'driver_poll_size' ? (
+                key === 'account_type' ? (
                     <Pressable
                         style={[
                             styles.input,
@@ -172,17 +154,14 @@ const BankDetails = () => {
                                 alignItems: 'center',
                             }
                         ]}
-                        onPress={() => key === 'account_type' ? setShowAccountTypeModal(true) : setShowDriverCountModal(true)}
+                        onPress={() => setShowAccountTypeModal(true)}
                     >
                         <Text style={{
                             color: value ? colors.black : colors.blackOpacity(0.3),
                             fontSize: responsiveFontSize(1.8),
                             fontWeight: '500',
                         }}>
-                            {key === 'driver_poll_size'
-                                ? DRIVER_COUNT_OPTIONS.find(o => o.value === value)?.label || `Select ${label}`
-                                : value || `Select ${label}`
-                            }
+                            {value || `Select ${label}`}
                         </Text>
                         <Ionicons name="chevron-down" size={20} color={colors.blackOpacity(0.4)} />
                     </Pressable>
@@ -262,52 +241,6 @@ const BankDetails = () => {
         </Modal>
     );
 
-    const renderDriverCountModal = () => (
-        <Modal
-            visible={showDriverCountModal}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setShowDriverCountModal(false)}
-        >
-            <TouchableWithoutFeedback onPress={() => setShowDriverCountModal(false)}>
-                <View style={styles.modalOverlay}>
-                    <TouchableWithoutFeedback>
-                        <View style={[styles.modalContent, { backgroundColor: colors.white }]}>
-                            <View style={styles.modalHeader}>
-                                <Text style={[styles.modalTitle, { color: colors.black }]}>Select Driver Pool Size</Text>
-                                <TouchableOpacity onPress={() => setShowDriverCountModal(false)}>
-                                    <Ionicons name="close" size={24} color={colors.black} />
-                                </TouchableOpacity>
-                            </View>
-                            {DRIVER_COUNT_OPTIONS.map((opt) => (
-                                <TouchableOpacity
-                                    key={opt.value}
-                                    style={[
-                                        styles.optionItem,
-                                        bankData.driver_poll_size === opt.value && { backgroundColor: colors.royalBlue + '10' }
-                                    ]}
-                                    onPress={() => {
-                                        setBankData({ ...bankData, driver_poll_size: opt.value });
-                                        setShowDriverCountModal(false);
-                                    }}
-                                >
-                                    <Text style={[
-                                        styles.optionText,
-                                        { color: bankData.driver_poll_size === opt.value ? colors.royalBlue : colors.black }
-                                    ]}>
-                                        {opt.label}
-                                    </Text>
-                                    {bankData.driver_poll_size === opt.value && (
-                                        <Ionicons name="checkmark" size={20} color={colors.royalBlue} />
-                                    )}
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </TouchableWithoutFeedback>
-                </View>
-            </TouchableWithoutFeedback>
-        </Modal>
-    );
 
     if (loading) {
         return (
@@ -368,14 +301,6 @@ const BankDetails = () => {
                         {renderInput('IFSC Code', bankData.ifsc_code, 'ifsc_code', 'default', 'characters')}
                         <View style={styles.divider} />
                         {renderInput('Account Type', bankData.account_type, 'account_type')}
-
-                        <View style={[styles.sectionTitleContainer, { backgroundColor: colors.blackOpacity(0.02) }]}>
-                            <Text style={[styles.sectionTitle, { color: colors.blackOpacity(0.4), fontSize: responsiveFontSize(1.3) }]}>
-                                WORK DETAILS
-                            </Text>
-                        </View>
-
-                        {renderInput('Drivers Managed', bankData.driver_poll_size, 'driver_poll_size')}
                     </View>
 
                     {isEditing && (
@@ -404,7 +329,6 @@ const BankDetails = () => {
                 </ScrollView>
             </KeyboardAvoidingView>
             {renderAccountTypeModal()}
-            {renderDriverCountModal()}
         </View>
     );
 };
@@ -584,11 +508,6 @@ const styles = StyleSheet.create({
     optionText: {
         fontSize: 16,
         fontWeight: '600',
-    },
-    sectionTitleContainer: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        marginTop: 10,
     },
     sectionTitle: {
         fontWeight: '700',

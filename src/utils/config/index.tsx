@@ -4,8 +4,8 @@ export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.1.41:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
 // export const BASE_URL = 'https://devtruckmitr.in/'
-export const DRIVER_KI_AWAZ_BASE = 'https://awaz.devtruckmitr.in/'
-export const AWAZ_URL = 'https://devtruckmitr.in/'
+export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
+export const AWAZ_URL = 'https://truckmitr.com/'
 export const STATICS = {
     // RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
     // RAYZORPAY_SECRET: 'Jo14oUIoX75fb0WJejakbRvQ', // live
@@ -193,6 +193,7 @@ export const END_POINTS = {
     FOREMAN_SEARCH_DRIVERS: (query: string) => `api/foreman/drivers/search?search=${query}`,
     FOREMAN_EXPIRING_DOCUMENTS: (foreman_id: any) => `api/foreman/drivers/license-expiring-next-month/${foreman_id}`,
     FOREMAN_EARNINGS: (foreman_id: any) => `api/foreman/${foreman_id}/commission`,
+    FOREMAN_APPLIED_DRIVERS: (foreman_id: any) => `api/foreman/jobs/applied-drivers/${foreman_id}`,
     // Driver Ki Awaz
     DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
     DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,

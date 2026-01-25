@@ -40,6 +40,13 @@ const EXPERIENCE_OPTIONS = [
     { label: '10+', value: '10' },
 ];
 
+const DRIVER_COUNT_OPTIONS = [
+    { label: '1–10', value: '1-10' },
+    { label: '11–25', value: '11-25' },
+    { label: '26–50', value: '26-50' },
+    { label: '50+', value: '50+' },
+];
+
 const ForemanProfileEdit = () => {
     const navigation = useNavigation();
     const route = useRoute<any>();
@@ -62,6 +69,7 @@ const ForemanProfileEdit = () => {
         License_Number: user?.License_Number || '',
         Expiry_date_of_License: user?.Expiry_date_of_License || '',
         PAN_Number: user?.PAN_Number || '',
+        driver_poll_size: user?.driver_poll_size || user?.foreman_bank_detail?.driver_poll_size || '',
     });
 
     const [dateType, setDateType] = useState<'dob' | 'dl_expiry' | null>(null);
@@ -141,6 +149,10 @@ const ForemanProfileEdit = () => {
             Alert.alert('Required', 'Please enter your PAN Number.');
             return;
         }
+        if (stepId === 4 && !formData.driver_poll_size) {
+            Alert.alert('Required', 'Please select the number of drivers managed.');
+            return;
+        }
 
         setSaving(true);
         try {
@@ -165,7 +177,10 @@ const ForemanProfileEdit = () => {
                     license_number: formData.License_Number,
                     expiry_date_of_license: formData.Expiry_date_of_License ? moment(formData.Expiry_date_of_License).format('DD-MM-YYYY') : '',
                     pan_number: formData.PAN_Number,
+                    driver_poll_size: formData.driver_poll_size,
                 };
+                console.log('Profile Update Submit Data:', submitData);
+
                 response = await axiosInstance.post(END_POINTS.UPDATE_PROFILE_FOREMAN, submitData);
             }
 
@@ -190,6 +205,7 @@ const ForemanProfileEdit = () => {
             case 1: return 'Edit Personal Details';
             case 2: return 'Edit License Details';
             case 3: return 'Edit PAN Details';
+            case 4: return 'Edit Work Details';
             default: return 'Edit Profile';
         }
     };
@@ -318,6 +334,27 @@ const ForemanProfileEdit = () => {
                         </View>
                     </View>
                 );
+            case 4:
+                return (
+                    <View style={styles.sectionContainer}>
+                        <Text style={[styles.label, { color: colors.blackOpacity(0.6), fontSize: responsiveFontSize(1.6), marginBottom: 12 }]}>Drivers Managed</Text>
+                        <View style={styles.optionsRow}>
+                            {DRIVER_COUNT_OPTIONS.map((opt) => (
+                                <TouchableOpacity
+                                    key={opt.value}
+                                    onPress={() => setFormData({ ...formData, driver_poll_size: opt.value })}
+                                    style={[styles.optionBtn, {
+                                        borderColor: formData.driver_poll_size === opt.value ? colors.royalBlue : colors.blackOpacity(0.1),
+                                        backgroundColor: formData.driver_poll_size === opt.value ? colors.royalBlue + '08' : 'transparent',
+                                        minWidth: '45%'
+                                    }]}
+                                >
+                                    <Text style={[styles.optionText, { color: formData.driver_poll_size === opt.value ? colors.royalBlue : colors.blackOpacity(0.7) }]}>{opt.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                );
             default:
                 return null;
         }
@@ -402,7 +439,7 @@ const ForemanProfileEdit = () => {
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
-        </View>
+        </View >
     );
 };
 

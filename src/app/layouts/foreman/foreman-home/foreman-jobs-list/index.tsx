@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions, Keyboard } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -8,8 +8,11 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
+import { useSelector } from 'react-redux';
+import { RootState } from '@truckmitr/redux/store';
+import { Driver as ReduxDriver } from '@truckmitr/redux/slices/pilotsSlice';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
-import { END_POINTS } from '@truckmitr/utils/config/index';
+import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
 import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
@@ -40,16 +43,7 @@ interface Job {
     Additional_Benefits?: string;
 }
 
-// Mock Data for Drivers (Pilots)
-const DRIVERS_DATA = [
-    { id: '1', name: 'Ramesh Kumar', tmId: 'TM2301DR0012', status: 'Trusted Driver', image: 'https://randomuser.me/api/portraits/men/32.jpg' },
-    { id: '2', name: 'Vikas Verma', tmId: 'TM2301DR0045', status: 'Verified Driver', image: 'https://randomuser.me/api/portraits/men/45.jpg' },
-    { id: '3', name: 'Suresh Singh', tmId: 'TM2301DR0089', status: 'Job Ready Driver', image: 'https://randomuser.me/api/portraits/men/12.jpg' },
-    { id: '4', name: 'Rajesh Yadav', tmId: 'TM2301DR0112', status: 'Verified Driver', image: 'https://randomuser.me/api/portraits/men/67.jpg' },
-    { id: '5', name: 'Amit Sharma', tmId: 'TM2301DR0156', status: 'Job Ready Driver', image: 'https://randomuser.me/api/portraits/men/22.jpg' },
-];
-
-// Format salary range
+// Detail Item Component for Job Details grid
 const formatSalary = (salaryRange: string, t: any): string => {
     if (!salaryRange) return t('notSpecified');
     const parts = salaryRange.split('-');
@@ -189,12 +183,15 @@ const ForemanJobsList = () => {
 
     // Bottom Sheet State
     const bottomSheetRef = useRef<BottomSheet>(null);
+    const shareSheetRef = useRef<BottomSheet>(null);
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
     const snapPoints = useMemo(() => ['80%'], []);
+    const shareSnapPoints = useMemo(() => ['70%', '90%'], []);
+
+    const { allPilots } = useSelector((state: RootState) => state.pilots);
 
     // Share Modal State
-    const [showShareModal, setShowShareModal] = useState(false);
-    const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
+    const [selectedDrivers, setSelectedDrivers] = useState<number[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
 
     // Fetch Jobs
@@ -248,11 +245,12 @@ const ForemanJobsList = () => {
         setSelectedJob(job);
         setSelectedDrivers([]);
         setSearchQuery('');
-        setShowShareModal(true);
+        shareSheetRef.current?.expand();
     };
 
-    const filteredDrivers = DRIVERS_DATA.filter(driver =>
-        driver.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredDrivers = allPilots.filter(driver =>
+        driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        driver.unique_id.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const toggleSelectAll = () => {
@@ -263,7 +261,7 @@ const ForemanJobsList = () => {
         }
     };
 
-    const toggleDriverSelection = (driverId: string) => {
+    const toggleDriverSelection = (driverId: number) => {
         if (selectedDrivers.includes(driverId)) {
             setSelectedDrivers(prev => prev.filter(id => id !== driverId));
         } else {
@@ -276,7 +274,7 @@ const ForemanJobsList = () => {
             showToast(t('pleaseSelectDriver'));
             return;
         }
-        setShowShareModal(false);
+        shareSheetRef.current?.close();
         showToast(t('jobShared', { count: selectedDrivers.length }));
     };
 
@@ -349,8 +347,10 @@ const ForemanJobsList = () => {
         </View>
     );
 
-    const renderDriverItem = (item: typeof DRIVERS_DATA[0]) => {
+    const renderDriverItem = (item: ReduxDriver) => {
         const isSelected = selectedDrivers.includes(item.id);
+        const status = item.payment_type || 'No Subscription';
+
         return (
             <TouchableOpacity
                 key={item.id}
@@ -359,23 +359,32 @@ const ForemanJobsList = () => {
                 activeOpacity={0.7}
             >
                 <View style={styles.driverInfoLeft}>
-                    <Image source={{ uri: item.image }} style={styles.driverImage} />
+                    <Image
+                        source={{
+                            uri: item.images
+                                ? (item.images.startsWith('http') ? item.images : `${BASE_URL}public/${item.images}`)
+                                : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png'
+                        }}
+                        style={styles.driverImage}
+                    />
                     <View style={styles.driverTextContainer}>
                         <View style={styles.nameStatusRow}>
                             <Text style={styles.driverName}>{item.name}</Text>
                             <View style={[styles.statusBadge, {
-                                backgroundColor: item.status === 'Trusted Driver' ? '#F3E8FF' :
-                                    item.status === 'Verified Driver' ? '#DCFCE7' :
-                                        item.status === 'Job Ready Driver' ? '#DBEAFE' : '#F1F5F9'
+                                backgroundColor: status.toLowerCase().includes('trusted') ? '#F3E8FF' :
+                                    status.toLowerCase().includes('verified') ? '#DCFCE7' :
+                                        status.toLowerCase().includes('job_ready') ? '#DBEAFE' : '#F1F5F9'
                             }]}>
                                 <Text style={[styles.statusText, {
-                                    color: item.status === 'Trusted Driver' ? '#7E22CE' :
-                                        item.status === 'Verified Driver' ? '#166534' :
-                                            item.status === 'Job Ready Driver' ? '#1E40AF' : '#64748B'
-                                }]}>{item.status}</Text>
+                                    color: status.toLowerCase().includes('trusted') ? '#7E22CE' :
+                                        status.toLowerCase().includes('verified') ? '#166534' :
+                                            status.toLowerCase().includes('job_ready') ? '#1E40AF' : '#64748B'
+                                }]}>
+                                    {status.replace('_', ' ')}
+                                </Text>
                             </View>
                         </View>
-                        <Text style={styles.driverTmId}>{item.tmId}</Text>
+                        <Text style={styles.driverTmId}>{item.unique_id}</Text>
                     </View>
                 </View>
                 <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -464,7 +473,7 @@ const ForemanJobsList = () => {
 
                 {/* Job Title Section */}
                 <View style={styles.sheetTitleSection}>
-                    <Text style={styles.sheetJobEmoji}>🚚</Text>
+                    {/* <Text style={styles.sheetJobEmoji}>🚚</Text> */}
                     <View style={styles.sheetTitleContainer}>
                         <Text style={styles.sheetJobTitle}>{selectedJob.job_title}</Text>
                         <Text style={styles.sheetVehicleType}>{selectedJob.vehicle_type}</Text>
@@ -592,6 +601,55 @@ const ForemanJobsList = () => {
         );
     };
 
+    // Render Share Sheet Content
+    const renderShareSheet = () => {
+        return (
+            <View style={styles.sheetContent}>
+                <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>{t('shareJob')}</Text>
+                    <TouchableOpacity onPress={() => shareSheetRef.current?.close()}>
+                        <Ionicons name="close" size={24} color="#64748B" />
+                    </TouchableOpacity>
+                </View>
+                <Text style={styles.modalSubtitle}>{t('selectDriversToShare')}</Text>
+
+                <View style={styles.searchRow}>
+                    <View style={styles.searchContainer}>
+                        <Ionicons name="search" size={18} color="#64748B" />
+                        <TextInput
+                            placeholder={t('searchDrivers')}
+                            style={styles.searchInput}
+                            placeholderTextColor="#94A3B8"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
+                    </View>
+                    <TouchableOpacity onPress={toggleSelectAll} style={styles.selectAllButton}>
+                        <Text style={styles.selectAllText}>
+                            {selectedDrivers.length === filteredDrivers.length && filteredDrivers.length > 0 ? t('deselectAll') : t('selectAll')}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                <BottomSheetScrollView style={styles.driverListContainer}>
+                    {filteredDrivers.map(renderDriverItem)}
+                    <View style={{ height: 100 }} />
+                </BottomSheetScrollView>
+
+                <View style={[styles.modalFooter, { paddingBottom: insets.bottom + 16 }]}>
+                    <TouchableOpacity
+                        style={[styles.shareConfirmButton, selectedDrivers.length === 0 && styles.disabledButton]}
+                        onPress={handleShareConfirm}
+                        disabled={selectedDrivers.length === 0}
+                    >
+                        <Text style={styles.shareConfirmText}>{t('shareAction')} ({selectedDrivers.length})</Text>
+                        <Ionicons name="send" size={16} color="#fff" style={{ marginLeft: 8 }} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
+
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
             {/* Header */}
@@ -641,54 +699,23 @@ const ForemanJobsList = () => {
                 {renderJobDetailsSheet()}
             </BottomSheet>
 
-            {/* Share Driver Selection Modal - kept as simple overlay */}
-            {showShareModal && (
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>{t('shareJob')}</Text>
-                            <TouchableOpacity onPress={() => setShowShareModal(false)}>
-                                <Ionicons name="close" size={24} color="#64748B" />
-                            </TouchableOpacity>
-                        </View>
-                        <Text style={styles.modalSubtitle}>{t('selectDriversToShare')}</Text>
-
-                        {/* Search and Select All Row */}
-                        <View style={styles.searchRow}>
-                            <View style={styles.searchContainer}>
-                                <Ionicons name="search" size={18} color="#64748B" />
-                                <TextInput
-                                    placeholder={t('searchDrivers')}
-                                    style={styles.searchInput}
-                                    placeholderTextColor="#94A3B8"
-                                    value={searchQuery}
-                                    onChangeText={setSearchQuery}
-                                />
-                            </View>
-                            <TouchableOpacity onPress={toggleSelectAll} style={styles.selectAllButton}>
-                                <Text style={styles.selectAllText}>
-                                    {selectedDrivers.length === filteredDrivers.length && filteredDrivers.length > 0 ? t('deselectAll') : t('selectAll')}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView style={styles.driverListContainer}>
-                            {filteredDrivers.map(renderDriverItem)}
-                        </ScrollView>
-
-                        <View style={styles.modalFooter}>
-                            <TouchableOpacity
-                                style={[styles.shareConfirmButton, selectedDrivers.length === 0 && styles.disabledButton]}
-                                onPress={handleShareConfirm}
-                                disabled={selectedDrivers.length === 0}
-                            >
-                                <Text style={styles.shareConfirmText}>{t('shareAction')} ({selectedDrivers.length})</Text>
-                                <Ionicons name="send" size={16} color="#fff" style={{ marginLeft: 8 }} />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            )}
+            {/* Share Driver Selection Bottom Sheet */}
+            <BottomSheet
+                ref={shareSheetRef}
+                index={-1}
+                snapPoints={shareSnapPoints}
+                enablePanDownToClose={true}
+                backdropComponent={renderBackdrop}
+                backgroundStyle={styles.sheetBackground}
+                handleIndicatorStyle={styles.sheetIndicator}
+                onChange={(index) => {
+                    if (index === -1) {
+                        Keyboard.dismiss();
+                    }
+                }}
+            >
+                {renderShareSheet()}
+            </BottomSheet>
         </View>
     );
 };
@@ -841,6 +868,7 @@ const styles = StyleSheet.create({
         borderColor: '#BFDBFE',
         borderRadius: 8,
         backgroundColor: '#EFF6FF',
+        // backgroundColor: 'red',
         gap: 4,
     },
     viewDetailsText: {

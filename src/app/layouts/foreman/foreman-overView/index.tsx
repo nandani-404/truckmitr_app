@@ -234,6 +234,15 @@ const ProfileOverView = () => {
                 </View>
 
 
+                <FieldGroupCard
+                    title="Work Details"
+                    icon="briefcase-outline"
+                    stepId={4}
+                    onEdit={navigateToEdit}
+                    fields={[
+                        { label: 'Drivers Managed', value: user?.driver_poll_size || user?.foreman_bank_detail?.driver_poll_size },
+                    ]}
+                />
             </ScrollView>
         </View>
     );
