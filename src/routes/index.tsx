@@ -782,14 +782,14 @@ export default function Routes() {
         // Module-specific profile completion
         user?.data?.role?.toLowerCase() === 'foreman' || user?.role?.toLowerCase() === 'foreman' ? (
           <ForemanProfileCompletionStack />
-        ) : selectedModule === 'associate' ? (
+        ) : selectedModule === 'association' ? (
           <AssociateProfileCompletionStack />
         ) : (
           <ProfileCompletionStack />
         )
       ) : user?.data?.role?.toLowerCase() === 'foreman' || user?.role?.toLowerCase() === 'foreman' ? (
         <ForemanMain />
-      ) : selectedModule === 'associate' ? (
+      ) : selectedModule === 'association' ? (
         <AssociateMain />
       ) : (
         <Main />

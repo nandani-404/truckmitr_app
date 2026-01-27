@@ -22,6 +22,7 @@ import {
     ActivityIndicator,
     Modal,
     PermissionsAndroid,
+    StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -36,6 +37,7 @@ import { useTranslation } from 'react-i18next';
 
 import { DriverKiAwazService } from '../services';
 import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
+import { useStatusBarStyle } from '@truckmitr/src/app/hooks';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_SIZE = SCREEN_WIDTH / 3 - 2;
@@ -127,6 +129,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const route = useRoute();
     const insets = useSafeAreaInsets();
+    useStatusBarStyle('dark-content')
 
     const params = route?.params as RouteParams | undefined;
     const initData = initialData || params?.initialData;
@@ -259,7 +262,6 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
             const image = await ImagePicker.openCamera({
                 mediaType: 'photo',
                 cropping: true,
-                includeBase64: false,
             });
             setSelectedMedia(image);
             setSelectedType('IMAGE');
@@ -267,6 +269,58 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
             console.log('Camera cancelled', error);
         }
     };
+
+    // const pickImage = async () => {
+    //     try {
+    //         // ✅ Temporarily override translucent status bar (Android only)
+    //         if (Platform.OS === 'android') {
+    //             StatusBar.setTranslucent(false);
+    //             StatusBar.setBackgroundColor('#000000'); // solid background
+    //         }
+
+    //         const image = await ImagePicker.openCamera({
+    //             mediaType: 'photo',
+    //             cropping: true,
+    //         });
+
+    //         setSelectedMedia(image);
+    //         setSelectedType('IMAGE');
+    //     } catch (error) {
+    //         console.log('Image pick cancelled', error);
+    //     } finally {
+    //         // ✅ Restore your original StatusBar config
+    //         if (Platform.OS === 'android') {
+    //             StatusBar.setTranslucent(true);
+    //             StatusBar.setBackgroundColor('transparent');
+    //         }
+    //     }
+    // };
+
+
+    // const pickImage = async () => {
+    //     try {
+    //         // 1. Hide the status bar entirely before opening
+    //         if (Platform.OS === 'android') {
+    //             StatusBar.setHidden(true, 'fade');
+    //         }
+
+    //         const image = await ImagePicker.openCamera({
+    //             mediaType: 'photo',
+    //             cropping: true,
+    //         });
+
+    //         setSelectedMedia(image);
+    //         setSelectedType('IMAGE');
+    //     } catch (error) {
+    //         console.log('Image pick cancelled', error);
+    //     } finally {
+    //         // 2. Bring it back after the picker closes
+    //         if (Platform.OS === 'android') {
+    //             StatusBar.setHidden(false, 'fade');
+    //         }
+    //     }
+    // };
+
 
     const handleSubmit = async () => {
         if (!selectedType) {

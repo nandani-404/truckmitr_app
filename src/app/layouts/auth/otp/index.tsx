@@ -597,6 +597,7 @@ const Otp = () => {
                                         { transform: [{ scale: inputAnimations[index].scale }] }
                                     ]}>
                                     <TextInput
+                                        allowFontScaling={false}
                                         ref={(el: any) => (otpInputs.current[index] = el)}
                                         style={[
                                             styles.otpInput,

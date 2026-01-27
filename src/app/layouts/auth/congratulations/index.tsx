@@ -498,7 +498,7 @@ export default function Congratulations() {
                             end={{ x: 1, y: 0 }}
                             style={styles.idBadge}
                         >
-                            <Text style={styles.idValue}>
+                            <Text allowFontScaling={false} style={styles.idValue}>
                                 {userData?.unique_id || 'TM-XXXXXX'}
                             </Text>
                         </LinearGradient>
@@ -529,7 +529,7 @@ export default function Congratulations() {
             <Animated.View entering={FadeInUp.delay(1000).duration(500)}>
                 <View style={styles.completeMessageContainer}>
                     <Ionicons name="arrow-forward-circle-outline" size={24} color={colors.royalBlue} />
-                    <Text style={[styles.completeText, { color: colors.blackOpacity(0.6) }]}>
+                    <Text allowFontScaling={false} style={[styles.completeText, { color: colors.blackOpacity(0.6) }]}>
                         {t('pleaseCompleteYourProfile') || 'Please complete your profile to continue.'}
                     </Text>
                 </View>
