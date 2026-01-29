@@ -13,8 +13,8 @@ import {
     RefreshControl,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import ScreenHeader from '@truckmitr/src/app/components/screen-header';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
@@ -60,7 +60,7 @@ const TrainingCard = ({ driver }: { driver: PendingTrainingDriver }) => {
                 tmId: driver.unique_id,
                 mobile: driver.mobile,
                 image: driver.images ? `${BASE_URL}public/${driver.images}` : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png',
-                status: 'Training Pending',
+                status: t('association_training_pending'),
                 state: driver.state_name,
                 completion: driver.profile_completion_percentage,
                 amount: 0,
@@ -96,13 +96,13 @@ const TrainingCard = ({ driver }: { driver: PendingTrainingDriver }) => {
                 {/* WhatsApp Share Button */}
                 <TouchableOpacity style={styles.whatsappBtn} onPress={handleShareWhatsApp}>
                     <Ionicons name="logo-whatsapp" size={18} color="#fff" />
-                    <Text style={styles.whatsappBtnText}>Remind</Text>
+                    <Text style={styles.whatsappBtnText}>{t('association_remind')}</Text>
                 </TouchableOpacity>
 
                 {/* View Profile Button */}
                 <TouchableOpacity style={styles.viewProfileBtn} onPress={handleViewProfile}>
                     <Ionicons name="person-outline" size={18} color="#6366F1" />
-                    <Text style={styles.viewProfileBtnText}>View Profile</Text>
+                    <Text style={styles.viewProfileBtnText}>{t('association_view_profile')}</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -111,7 +111,7 @@ const TrainingCard = ({ driver }: { driver: PendingTrainingDriver }) => {
 
 export default function DriverAssociationPendingTraining() {
     const navigation = useNavigation<NavigatorProp>();
-    const safeAreaInsets = useSafeAreaInsets();
+    const { t } = useTranslation();
     const { user } = useSelector((state: any) => state?.user) || {};
 
     const [loading, setLoading] = useState(true);
@@ -149,12 +149,10 @@ export default function DriverAssociationPendingTraining() {
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: safeAreaInsets.top + 12 }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="#1F2937" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Pending Training</Text>
-            </View>
+            <ScreenHeader
+                title={t('association_pending_training')}
+                titleCount={drivers.length > 0 ? drivers.length : undefined}
+            />
 
             {loading ? (
                 <View style={styles.loadingContainer}>
@@ -173,7 +171,7 @@ export default function DriverAssociationPendingTraining() {
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="checkmark-circle" size={48} color="#22C55E" />
-                            <Text style={styles.emptyText}>All drivers have completed training</Text>
+                            <Text style={styles.emptyText}>{t('association_all_drivers_trained')}</Text>
                         </View>
                     }
                 />

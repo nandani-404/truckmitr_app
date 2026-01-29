@@ -8,6 +8,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 interface HeaderBarProps {
     title: string;
@@ -28,6 +29,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 }) => {
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
 
     return (
         <View style={[styles.container, { paddingTop: insets.top, backgroundColor }]}>

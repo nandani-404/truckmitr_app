@@ -20,6 +20,8 @@ import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { subscriptionModalAction } from '@truckmitr/redux/actions/user.action';
 import { useTranslation } from 'react-i18next';
+import { showToast } from '@truckmitr/src/app/hooks/toast';
+import { getUserBadgeText } from '@truckmitr/src/utils/global/userBadge';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -234,13 +236,30 @@ export default function DriverAssociation() {
     const dispatch = useDispatch();
 
     // Check if Association is Pro (Active Subscription)
+    // The subscriptionDetails.hasActiveSubscription now properly detects association_pro subscriptions
+    // Also check subscription details directly for payment_type and subscription_plan_id
     const isAssociationPro =
+        subscriptionDetails?.hasActiveSubscription ||
+        subscriptionDetails?.payment_type === 'association_pro' ||
+        subscriptionDetails?.subscription_plan_id === '12' ||
+        subscriptionDetails?.subscription_plan_id === 12 ||
         user?.is_active === 1 ||
         user?.plan_id === 12 ||
         user?.subscription_plan_id === '12' ||
         user?.payment_type === 'association_pro' ||
-        user?.subscription_status === 'active' ||
-        (subscriptionDetails?.hasActiveSubscription && (subscriptionDetails?.payment_type === 'association_pro' || subscriptionDetails?.subscription_plan_id == 12));
+        user?.subscription_status === 'active';
+
+    // Debug log to help troubleshoot subscription status
+    console.log('[AssociationHome] Subscription Check:', {
+        isAssociationPro,
+        'subscriptionDetails?.hasActiveSubscription': subscriptionDetails?.hasActiveSubscription,
+        'subscriptionDetails?.payment_type': subscriptionDetails?.payment_type,
+        'subscriptionDetails?.subscription_plan_id': subscriptionDetails?.subscription_plan_id,
+        'subscriptionDetails?.payment_status': subscriptionDetails?.payment_status,
+    });
+
+    // Get the user badge text (Association Pro / Association)
+    const userBadgeText = getUserBadgeText({ user, subscriptionDetails });
 
     const handleFeatureAccess = (action: () => void) => {
         if (isAssociationPro) {
@@ -298,11 +317,19 @@ export default function DriverAssociation() {
             if (user?.id) {
                 fetchDashboardData();
             }
-            // Open payment modal if not Pro
-            if (!isAssociationPro) {
+            // Only open payment modal if:
+            // 1. subscriptionDetails is loaded (not null/undefined)
+            // 2. showSubscriptionModel flag is true (set by reducer when no active subscription)
+            // 3. User is not already recognized as AssociationPro
+            const shouldShowModal =
+                subscriptionDetails?.showSubscriptionModel === true &&
+                !isAssociationPro;
+
+            if (shouldShowModal) {
+                console.log('[AssociationHome] Opening subscription modal - no active subscription detected');
                 dispatch(subscriptionModalAction(true));
             }
-        }, [user?.id, isAssociationPro])
+        }, [user?.id, isAssociationPro, subscriptionDetails?.showSubscriptionModel])
     );
 
     const filteredDrivers = MOCK_DRIVERS.filter(d =>
@@ -370,7 +397,8 @@ export default function DriverAssociation() {
                             <View>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`Hello, ${dashboardData?.association_name || user?.name || 'Transporter'} 👋`}</Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{dashboardData?.unique_id || user?.unique_id || 'TM2501UPTP00001'}</Text>
-                                {/* <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>Driver Association President</Text> */}
+                                {/* Association Badge - Plain Text */}
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: '600', lineHeight: responsiveFontSize(1.8) }}>{userBadgeText}</Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>{dashboardData?.level?.name ? `${dashboardData.level.name} ${t('association_home_level_suffix')}` : t('association_home_manage_lead_drivers')}</Text>
                             </View>
 
@@ -584,7 +612,14 @@ export default function DriverAssociation() {
                                 elevation: 4,
                             }}
                             activeOpacity={0.8}
-                            onPress={openPaymentModal}
+                            onPress={() => {
+                                // Only open payment modal if user doesn't have an active subscription
+                                if (isAssociationPro || subscriptionDetails?.hasActiveSubscription) {
+                                    showToast(t('association_already_subscribed') || 'You already have an active subscription!');
+                                } else {
+                                    openPaymentModal();
+                                }
+                            }}
                         >
                             <View style={{ flex: 1 }}>
                                 <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF', marginBottom: 4 }}>
@@ -604,14 +639,14 @@ export default function DriverAssociation() {
                                     borderRadius: 20,
                                     alignSelf: 'flex-start'
                                 }}>
-                                    <Ionicons
+                                    {/* <Ionicons
                                         name={subscriptionDetails?.hasActiveSubscription ? "settings" : "flash"}
                                         size={14}
                                         color="#FFFFFF"
-                                    />
-                                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#FFFFFF', marginLeft: 4 }}>
+                                    /> */}
+                                    {/*  <Text style={{ fontSize: 12, fontWeight: '600', color: '#FFFFFF', marginLeft: 4 }}>
                                         {subscriptionDetails?.hasActiveSubscription ? t('association_home_manage_plan') : t('association_home_view_plans')}
-                                    </Text>
+                                    </Text> */}
                                 </View>
                             </View>
                             <View style={{

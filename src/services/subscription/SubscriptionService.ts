@@ -337,7 +337,6 @@ class SubscriptionService {
 
         return isLegacy;
     }
-
     /**
      * Check if user is a transporter pro (paid Rs 499)
      * 
@@ -368,10 +367,68 @@ class SubscriptionService {
     }
 
     /**
+     * Check if user has an association pro subscription
+     * Association pro users have payment_type='association_pro' or subscription_plan_id='12'
+     * 
+     * @param subscriptionData - The subscription data object from API
+     * @returns Boolean indicating if this is an association pro subscription
+     */
+    isAssociationProSubscription(subscriptionData: any): boolean {
+        if (!subscriptionData) return false;
+
+        // Association Pro criteria:
+        // - payment_type is 'association_pro' OR subscription_plan_id is '12' or 12
+        // - Payment status is captured
+        // - Subscription is not expired
+        const isAssociationPro = subscriptionData.payment_type === 'association_pro' ||
+            subscriptionData.subscription_plan_id === '12' ||
+            subscriptionData.subscription_plan_id === 12;
+        const isPaymentCaptured = subscriptionData.payment_status === 'captured';
+        const isNotExpired = Date.now() / 1000 < subscriptionData.end_at;
+
+        const isActive = isAssociationPro && isPaymentCaptured && isNotExpired;
+
+        if (isActive) {
+            console.log('[SubscriptionService] Association Pro detected (association_pro subscription)');
+        }
+
+        return isActive;
+    }
+
+    /**
+     * Check if user has a foreman pro subscription
+     * Foreman pro users have payment_type='foreman_pro'
+     * 
+     * @param subscriptionData - The subscription data object from API
+     * @returns Boolean indicating if this is a foreman pro subscription
+     */
+    isForemanProSubscription(subscriptionData: any): boolean {
+        if (!subscriptionData) return false;
+
+        // Foreman Pro criteria:
+        // - payment_type is 'foreman_pro'
+        // - Payment status is captured
+        // - Subscription is not expired
+        const isForemanPro = subscriptionData.payment_type === 'foreman_pro';
+        const isPaymentCaptured = subscriptionData.payment_status === 'captured';
+        const isNotExpired = Date.now() / 1000 < subscriptionData.end_at;
+
+        const isActive = isForemanPro && isPaymentCaptured && isNotExpired;
+
+        if (isActive) {
+            console.log('[SubscriptionService] Foreman Pro detected (foreman_pro subscription)');
+        }
+
+        return isActive;
+    }
+
+    /**
      * Check if user has an active subscription from subscription details data
      * Includes legacy driver support (Rs 1/49/100 payment with captured status)
      * Includes legacy transporter support (Rs 99 payment with captured status)
      * Includes transporter pro support (Rs 499 payment with captured status)
+     * Includes association pro support (payment_type='association_pro')
+     * Includes foreman pro support (payment_type='foreman_pro')
      * 
      * @param subscriptionData - The subscription data object from API
      * @returns Boolean indicating if subscription is active
@@ -391,6 +448,16 @@ class SubscriptionService {
 
         // Check if this is a transporter pro (Rs 499 payment)
         if (this.isTransporterProSubscription(subscriptionData)) {
+            return true;
+        }
+
+        // Check if this is an association pro
+        if (this.isAssociationProSubscription(subscriptionData)) {
+            return true;
+        }
+
+        // Check if this is a foreman pro
+        if (this.isForemanProSubscription(subscriptionData)) {
             return true;
         }
 

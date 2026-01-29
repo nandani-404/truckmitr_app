@@ -12,6 +12,7 @@ import { STACKS } from '@truckmitr/stacks/stacks';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import LinearGradientLib from 'react-native-linear-gradient';
+import { getUserBadgeText } from '@truckmitr/src/utils/global/userBadge';
 
 // Dashboard API Response Interface
 interface DashboardData {
@@ -54,10 +55,22 @@ export default function DriverAssociationDashboard() {
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
 
     // Get user data from Redux
-    const { user, profileCompletion, star_rating } = useSelector((state: any) => state?.user) || {};
+    const { user, profileCompletion, star_rating, subscriptionDetails } = useSelector((state: any) => state?.user) || {};
 
     const [loading, setLoading] = useState(true);
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+
+    // Check if Association is Pro (Active Subscription)
+    const isAssociationPro =
+        subscriptionDetails?.hasActiveSubscription ||
+        subscriptionDetails?.payment_type === 'association_pro' ||
+        subscriptionDetails?.subscription_plan_id === '12' ||
+        subscriptionDetails?.subscription_plan_id === 12 ||
+        user?.plan_id === 12 ||
+        user?.payment_type === 'association_pro';
+
+    // Get the user badge text (Association Pro / Association)
+    const userBadgeText = getUserBadgeText({ user, subscriptionDetails });
 
     // Profile ring calculations
     const size = responsiveFontSize(8);
@@ -176,8 +189,9 @@ export default function DriverAssociationDashboard() {
                                 <Text style={[styles.tmId, { color: colors.royalBlue, fontSize: responsiveFontSize(1.6), lineHeight: responsiveFontSize(2.2) }]}>
                                     {user?.unique_id || 'TM2501UPTP00001'}
                                 </Text>
-                                <Text style={[styles.roleTitle, { color: colors.royalBlue, fontSize: responsiveFontSize(1.4), lineHeight: responsiveFontSize(1.8) }]}>
-                                    Driver Association President
+                                {/* Association Badge - Plain Text */}
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: '600', lineHeight: responsiveFontSize(1.8) }}>
+                                    {userBadgeText}
                                 </Text>
                                 <Text style={[styles.subTitle, { color: colors.royalBlue, fontSize: responsiveFontSize(1.2), lineHeight: responsiveFontSize(1.6) }]}>
                                     Manage Your Fleet Drivers

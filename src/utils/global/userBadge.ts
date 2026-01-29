@@ -128,6 +128,26 @@ export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBa
     return userRole;
   }
 
+  if (role === 'association') {
+    // Association logic
+    // Check amounts or explicit plan indicators
+    const isPro =
+      paidAmount === 999 ||
+      user?.plan_id == 12 ||
+      user?.subscription_plan_id == 12 ||
+      user?.subscription_plan_id === '12' ||
+      user?.payment_type === 'association_pro' ||
+      subscriptionDetails?.payment_type === 'association_pro' ||
+      subscriptionDetails?.subscription_plan_id == 12 ||
+      subscriptionDetails?.subscription_plan_id === '12' ||
+      subscriptionDetails?.hasActiveSubscription;
+
+    if (isPro) {
+      return 'Association Pro';
+    }
+    return userRole;
+  }
+
   // Fallback for unknown roles
   return userRole;
 };
@@ -135,7 +155,7 @@ export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBa
 /**
  * Get user tier type for internal use
  */
-export type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'LEGACY' | 'TRANSPORTER PRO' | 'FOREMAN PRO';
+export type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'LEGACY' | 'TRANSPORTER PRO' | 'FOREMAN PRO' | 'ASSOCIATION PRO';
 
 export const getUserTier = ({ user, subscriptionDetails, isDriver }: UserBadgeParams): TierType => {
   const hasSub = subscriptionDetails && (subscriptionDetails?.id || subscriptionDetails?.payment_id);
@@ -177,6 +197,25 @@ export const getUserTier = ({ user, subscriptionDetails, isDriver }: UserBadgePa
     return 'JOB READY';
   }
 
+  if (role === 'association') {
+    // Check for association pro subscription
+    const isPro =
+      paidAmount === 999 ||
+      user?.plan_id == 12 ||
+      user?.subscription_plan_id == 12 ||
+      user?.subscription_plan_id === '12' ||
+      user?.payment_type === 'association_pro' ||
+      subscriptionDetails?.payment_type === 'association_pro' ||
+      subscriptionDetails?.subscription_plan_id == 12 ||
+      subscriptionDetails?.subscription_plan_id === '12' ||
+      subscriptionDetails?.hasActiveSubscription;
+
+    if (isPro) {
+      return 'ASSOCIATION PRO';
+    }
+    return 'JOB READY';
+  }
+
   return 'JOB READY';
 };
 
@@ -204,6 +243,10 @@ export const shouldShowMembershipCard = ({ user, subscriptionDetails, isDriver }
   }
 
   if (role === 'foreman') {
+    return Boolean(hasActiveSubscription && hasSub);
+  }
+
+  if (role === 'association') {
     return Boolean(hasActiveSubscription && hasSub);
   }
 
@@ -465,6 +508,27 @@ export const getMembershipCardConfig = (params: UserBadgeParams): MembershipCard
           backgroundColor: '#1976d2',
           textColor: '#ffffff',
           borderColor: '#42a5f5'
+        };
+    }
+  }
+
+  if (role === 'association') {
+    switch (tier) {
+      case 'ASSOCIATION PRO':
+        return {
+          tier,
+          displayName: 'Association Pro',
+          backgroundColor: '#1E3A5F', // Deep Blue
+          textColor: '#ffffff',
+          borderColor: '#FFD700' // Gold
+        };
+      default:
+        return {
+          tier: 'JOB READY',
+          displayName: 'Association',
+          backgroundColor: '#374151',
+          textColor: '#ffffff',
+          borderColor: '#9CA3AF'
         };
     }
   }

@@ -1,14 +1,11 @@
 
-import { ActivityIndicator, Image, Text, View, BackHandler, Linking, Platform, UIManager, FlatList, Vibration, Modal, ScrollView, TouchableOpacity } from 'react-native'
+import { ActivityIndicator, Image, Text, View, Linking, Platform, UIManager, FlatList, Vibration, Modal, ScrollView, TouchableOpacity } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useColor, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NavigatorParams } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Space } from '@truckmitr/src/app/components';
-import { hitSlop } from '@truckmitr/src/app/functions';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
@@ -16,6 +13,7 @@ import { BASE_URL } from '@truckmitr/src/utils/config';
 import { useTranslation } from 'react-i18next';
 import moment from 'moment';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
+import ScreenHeader from '@truckmitr/src/app/components/screen-header';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -106,7 +104,6 @@ export default function DriverAssociationRecruitments() {
     const { t } = useTranslation();
     useStatusBarStyle('dark-content');
     const colors = useColor();
-    const safeAreaInsets = useSafeAreaInsets();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
 
@@ -398,15 +395,7 @@ export default function DriverAssociationRecruitments() {
     if (loading) {
         return (
             <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-                <Space height={safeAreaInsets.top} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', padding: responsiveWidth(4) }}>
-                    <TouchableOpacity hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} onPress={goBack} style={{ height: 40, width: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, borderRadius: 20, borderWidth: 1, borderColor: '#F1F5F9', zIndex: 10, elevation: 2 }}>
-                        <Ionicons name="chevron-back" size={22} color={colors.royalBlue} />
-                    </TouchableOpacity>
-                    <Text style={{ flex: 1, fontSize: responsiveFontSize(2.2), color: colors.royalBlue, fontWeight: 'bold', textAlign: 'center', marginRight: 40 }}>
-                        Recruitments
-                    </Text>
-                </View>
+                <ScreenHeader title={t('association_recruitments')} />
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                     <ActivityIndicator size="large" color={colors.royalBlue} />
                 </View>
@@ -416,17 +405,11 @@ export default function DriverAssociationRecruitments() {
 
     return (
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-            <Space height={safeAreaInsets.top} />
-
             {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: responsiveWidth(4) }}>
-                <TouchableOpacity hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} onPress={goBack} style={{ height: 40, width: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, borderRadius: 20, borderWidth: 1, borderColor: '#F1F5F9', zIndex: 10, elevation: 2 }}>
-                    <Ionicons name="chevron-back" size={22} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={{ flex: 1, fontSize: responsiveFontSize(2.2), color: colors.royalBlue, fontWeight: 'bold', textAlign: 'center', marginRight: 40 }}>
-                    Recruitments
-                </Text>
-            </View>
+            <ScreenHeader
+                title={t('association_recruitments')}
+                titleCount={recruitments.length > 0 ? recruitments.length : undefined}
+            />
 
             {/* Summary Section */}
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: responsiveWidth(4), marginBottom: 16 }}>
@@ -462,7 +445,7 @@ export default function DriverAssociationRecruitments() {
                         backgroundColor: '#fff',
                         borderBottomWidth: 1,
                         borderBottomColor: '#F1F5F9',
-                        paddingTop: Platform.OS === 'android' ? 10 : safeAreaInsets.top,
+                        paddingTop: Platform.OS === 'android' ? 10 : 50,
                         paddingBottom: 16,
                         paddingHorizontal: 16
                     }}>

@@ -42,6 +42,7 @@ import { ImageBackground } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import RNShare from 'react-native-share';
 import RNFetchBlob from 'react-native-blob-util';
+import { getUserBadgeText } from '@truckmitr/src/utils/global/userBadge';
 
 // Membership Card Asset Images
 const LOGO_IMAGE = require('@truckmitr/src/assets/membership-card/logotrick.png');
@@ -287,12 +288,24 @@ export default function DriverAssociationProfile() {
     const { t } = useTranslation();
     const dispatch = useDispatch()
     useStatusBarStyle('dark-content')
-    const { user, profileCompletion, star_rating } = useSelector((state: any) => state?.user) || {};
+    const { user, profileCompletion, star_rating, subscriptionDetails } = useSelector((state: any) => state?.user) || {};
     const colors = useColor();
     const safeAreaInsets = useSafeAreaInsets();
     const { shadow } = useShadow()
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
+
+    // Check if Association is Pro (Active Subscription)
+    const isAssociationPro =
+        subscriptionDetails?.hasActiveSubscription ||
+        subscriptionDetails?.payment_type === 'association_pro' ||
+        subscriptionDetails?.subscription_plan_id === '12' ||
+        subscriptionDetails?.subscription_plan_id === 12 ||
+        user?.plan_id === 12 ||
+        user?.payment_type === 'association_pro';
+
+    // Get the user badge text (Association Pro / Association)
+    const userBadgeText = getUserBadgeText({ user, subscriptionDetails });
 
     const progress = profileCompletion || 0;
     const size = responsiveFontSize(12);
@@ -577,13 +590,13 @@ export default function DriverAssociationProfile() {
                                 fontSize: responsiveFontSize(1.5),
                             }
                         ]}>
-                            {`ID: ${user?.unique_id || ''}`}
+                            {` ${user?.unique_id || ''}`}
                         </Text>
 
                         {/* Role Badge */}
                         <View style={[styles.roleBadge, { backgroundColor: colors.royalBlueOpacity(0.08) }]}>
                             <Text style={[styles.roleText, { color: colors.royalBlue, fontSize: responsiveFontSize(1.4) }]}>
-                                Driver Association President
+                                {userBadgeText}
                             </Text>
                         </View>
 
@@ -668,7 +681,13 @@ export default function DriverAssociationProfile() {
                                 resizeMode="cover"
                             >
                                 <View style={{ flex: 1, padding: 16, justifyContent: 'space-between' }}>
-                                    <Image source={LOGO_IMAGE} style={{ width: 100, height: 30 }} resizeMode="contain" />
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <Image source={LOGO_IMAGE} style={{ width: 100, height: 30 }} resizeMode="contain" />
+                                        {/* Badge on card - Plain Text */}
+                                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
+                                            {userBadgeText.toUpperCase()}
+                                        </Text>
+                                    </View>
                                     <View>
                                         <Text style={{ color: '#FFD700', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>
                                             DRIVER ASSOCIATION PRESIDENT

@@ -11,7 +11,6 @@ import {
     Alert,
     FlatList,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -20,6 +19,8 @@ import Svg, { Circle } from 'react-native-svg';
 import { useSelector } from 'react-redux';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS, BASE_URL } from '@truckmitr/src/utils/config';
+import { useTranslation } from 'react-i18next';
+import ScreenHeader from '@truckmitr/src/app/components/screen-header';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams>;
 
@@ -167,8 +168,8 @@ const DriverCard = ({ driver }: { driver: Driver }) => {
 
 export default function DriverAssociationMyDrivers() {
     const navigation = useNavigation<NavigatorProp>();
-    const safeAreaInsets = useSafeAreaInsets();
     const { user } = useSelector((state: any) => state?.user) || {};
+    const { t } = useTranslation();
 
     const [loading, setLoading] = useState(true);
     const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -206,12 +207,10 @@ export default function DriverAssociationMyDrivers() {
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: safeAreaInsets.top + 12 }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="#1F2937" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Drivers</Text>
-            </View>
+            <ScreenHeader
+                title={t('association_my_drivers')}
+                titleCount={drivers.length > 0 ? drivers.length : undefined}
+            />
 
             {loading ? (
                 <View style={styles.loadingContainer}>
