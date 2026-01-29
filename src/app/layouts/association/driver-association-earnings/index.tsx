@@ -295,7 +295,7 @@ const driverCardStyles = StyleSheet.create({
     },
 });
 
-export default function ForemanEarnings() {
+export default function DriverAssociationEarnings() {
     const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
     const colors = useColor();
@@ -316,7 +316,7 @@ export default function ForemanEarnings() {
         if (!user?.id) return;
         try {
             setLoading(true);
-            const response = await axiosInstance.get(END_POINTS.FOREMAN_EARNINGS(user.id));
+            const response = await axiosInstance.get(END_POINTS.ASSOCIATION_EARNINGS(user.id));
             if (response.data) {
                 setEarningsData(response.data);
             }

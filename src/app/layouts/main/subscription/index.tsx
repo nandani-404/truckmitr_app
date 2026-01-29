@@ -797,6 +797,193 @@ const ForemanSubscriptionModal = ({
   );
 };
 
+// --- Association Subscription Modal Component ---
+const AssociationSubscriptionModal = ({
+  visible,
+  onClose,
+  onSubscribe,
+  isLoading,
+  safeAreaInsets,
+  responsiveFontSize,
+  consentChecked,
+  onConsentToggle,
+  onOpenConsent,
+  t,
+  plan,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSubscribe: () => void;
+  isLoading: boolean;
+  safeAreaInsets: { top: number; bottom: number };
+  responsiveFontSize: (s: number) => number;
+  consentChecked: boolean;
+  onConsentToggle: () => void;
+  onOpenConsent: () => void;
+  t: (key: string) => string;
+  plan?: PlanDataType;
+}) => {
+  const benefits = [
+    {
+      icon: '✔',
+      title: t('associationFeatureVerifiedBadge') || 'Association Verified Badge',
+      desc: t('associationFeatureVerifiedBadgeDesc') || 'Get your union recognized as a verified partner.',
+    },
+    {
+      icon: '✔',
+      title: t('associationFeatureDriverManagement') || 'Advanced Driver Management',
+      desc: t('associationFeatureDriverManagementDesc') || 'Manage unlimited drivers with advanced tools.',
+    },
+    {
+      icon: '✔',
+      title: t('associationFeatureDirectHiring') || 'Direct Hiring Connect',
+      desc: t('associationFeatureDirectHiringDesc') || 'Get direct hiring requests from top transporters.',
+    },
+    {
+      icon: '✔',
+      title: t('associationFeaturePrioritySupport') || 'Priority Support',
+      desc: t('associationFeaturePrioritySupportDesc') || 'Dedicated support line for your association.',
+    },
+  ];
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={false}
+      visible={visible}
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <View style={[tStyles.container, { paddingTop: safeAreaInsets.top }]}>
+        {/* Close Button */}
+        <TouchableOpacity
+          onPress={onClose}
+          style={tStyles.closeButton}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="close" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+
+        <ScrollView
+          contentContainerStyle={[tStyles.scrollContent, { paddingBottom: safeAreaInsets.bottom + 100 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={tStyles.header}>
+            <Text style={[tStyles.badge, { fontSize: responsiveFontSize(1.8), color: COLORS.primary }]}>🏢 {t('associationProBadge') || 'ASSOCIATION PRO'}</Text>
+            <Text style={[tStyles.title, { fontSize: responsiveFontSize(2.8) }]}>
+              {t('associationHeroSubtitle') || 'Digitize Your Union'}
+            </Text>
+            <View style={tStyles.priceRow}>
+              <Text style={[tStyles.price, { fontSize: responsiveFontSize(4.2), color: COLORS.primary }]}>
+                {plan ? `₹${plan.price}` : '₹1299'}
+              </Text>
+              <Text style={[tStyles.duration, { fontSize: responsiveFontSize(1.8) }]}> / {plan?.duration || t('sixMonths') || '6 Months'}</Text>
+            </View>
+            <Text style={[tStyles.tagline, { fontSize: responsiveFontSize(1.6) }]}>
+              {t('associationTagline') || 'Unlock powerful tools to manage your drivers and grow your influence.'}
+            </Text>
+          </View>
+
+          {/* What You Get Section */}
+          <View style={tStyles.section}>
+            <Text style={[tStyles.sectionTitle, { fontSize: responsiveFontSize(2.2) }]}>
+              🚀 {t('associationWhatYouGet') || 'What You Get'}
+            </Text>
+
+            {benefits.map((item, index) => (
+              <View key={index} style={tStyles.benefitRow}>
+                <Text style={[tStyles.checkIcon, { fontSize: responsiveFontSize(1.8), color: COLORS.primary }]}>{item.icon}</Text>
+                <View style={tStyles.benefitContent}>
+                  <Text style={[tStyles.benefitTitle, { fontSize: responsiveFontSize(1.8) }]}>{item.title}</Text>
+                  <Text style={[tStyles.benefitDesc, { fontSize: responsiveFontSize(1.5) }]}>{item.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Additional Benefits */}
+          <View style={tStyles.section}>
+            <View style={tStyles.benefitRow}>
+              <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
+              <Text style={[tStyles.simpleBenefit, { fontSize: responsiveFontSize(1.7) }]}>
+                {t('associationBenefit1') || 'Track commissions and earnings easily'}
+              </Text>
+            </View>
+            <View style={tStyles.benefitRow}>
+              <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
+              <Text style={[tStyles.simpleBenefit, { fontSize: responsiveFontSize(1.7) }]}>
+                {t('associationBenefit2') || 'Exclusive events and rewards'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Trust Section */}
+          <View style={[tStyles.trustBox, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
+            <Text style={[tStyles.trustTitle, { fontSize: responsiveFontSize(1.8), color: '#0369A1' }]}>
+              🤝 {t('associationTrustTitle') || 'Empower Your Drivers'}
+            </Text>
+            <Text style={[tStyles.trustDesc, { fontSize: responsiveFontSize(1.5), color: '#0C4A6E' }]}>
+              {t('associationTrustDesc') || 'Give your drivers the best opportunities with TruckMitr.'}
+            </Text>
+          </View>
+
+          {/* Consent */}
+          <View style={tStyles.consentRow}>
+            <TouchableOpacity onPress={onConsentToggle} activeOpacity={0.7}>
+              <View style={[tStyles.checkbox, consentChecked && tStyles.checkboxChecked]}>
+                {consentChecked && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
+              </View>
+            </TouchableOpacity>
+            <Text style={[tStyles.consentText, { fontSize: responsiveFontSize(1.5) }]}>
+              {t('subAssociationConsentText') || 'I agree to the '}{' '}
+              <Text style={tStyles.consentLink} onPress={onOpenConsent}>
+                {t('subTermsAndConditions') || 'subscription terms and disclaimer'}
+              </Text>
+              {' '}{t('subAuthorizePayments') || 'and authorize payments'}
+            </Text>
+          </View>
+        </ScrollView>
+
+        {/* CTA Button */}
+        <View style={[tStyles.ctaContainer, { paddingBottom: safeAreaInsets.bottom + 16 }]}>
+          <TouchableOpacity
+            onPress={onSubscribe}
+            activeOpacity={consentChecked ? 0.9 : 1}
+            disabled={!consentChecked || isLoading}
+            style={[tStyles.ctaButton, { opacity: consentChecked ? 1 : 0.5 }]}
+          >
+            <LinearGradient
+              colors={[COLORS.primary, '#818CF8']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={tStyles.ctaGradient}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <Text style={[tStyles.ctaText, { fontSize: responsiveFontSize(2.0) }]}>
+                  👉 {t('associationSubscribeNow') || 'Upgrade to Pro'}
+                </Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <View style={tStyles.secureRow}>
+            <Ionicons name="shield-checkmark" size={18} color={COLORS.success} />
+            <Text style={[tStyles.secureText, { fontSize: responsiveFontSize(1.4) }]}>
+              {t('subSecurePayment') || 'Secure payment powered by Razorpay'}
+            </Text>
+          </View>
+        </View>
+
+        <LoadingOverlay visible={isLoading} t={t} />
+      </View>
+    </Modal>
+  );
+};
+
 // --- Clean Transporter Modal Styles ---
 const tStyles = StyleSheet.create({
   container: {
@@ -1258,6 +1445,7 @@ export default function Subscription({ }: any) {
   // Fetch subscription plans from API based on user role
   useEffect(() => {
     if (subscriptionModal) {
+      // Remove specific association block to allow fetching from API
       fetchSubscriptionPlans();
     }
   }, [subscriptionModal, user?.role]);
@@ -1268,7 +1456,7 @@ export default function Subscription({ }: any) {
       const role = user?.role || 'driver';
       console.log('Fetching subscription plans for role:', role);
 
-      const endpoint = role === 'foreman'
+      const endpoint = (role === 'foreman' || role === 'association')
         ? END_POINTS.SUBSCRIPTION_PLANS(role)
         : END_POINTS.PAYMENT_SUBSCRIPTION_UPDATE(role);
 
@@ -1659,9 +1847,6 @@ export default function Subscription({ }: any) {
     if (transporterPlan) {
       await handleSelectPlan(transporterPlan);
     }
-    if (transporterPlan) {
-      await handleSelectPlan(transporterPlan);
-    }
   }, [dynamicPlans]);
 
   // Handle foreman subscription
@@ -1670,6 +1855,18 @@ export default function Subscription({ }: any) {
     const foremanPlan = dynamicPlans.find(plan => plan.price === 999) || dynamicPlans[0];
     if (foremanPlan) {
       await handleSelectPlan(foremanPlan);
+    }
+  }, [dynamicPlans]);
+
+  // Handle association subscription
+  const handleAssociationSubscribe = useCallback(async () => {
+    // Find the association plan from API (likely only one)
+    const associationPlan = dynamicPlans[0];
+
+    if (associationPlan) {
+      await handleSelectPlan(associationPlan);
+    } else {
+      showToast(t('noPlanAvailable') || 'No plan available');
     }
   }, [dynamicPlans]);
 
@@ -1731,6 +1928,32 @@ export default function Subscription({ }: any) {
           visible={subscriptionModal}
           onClose={() => dispatch(subscriptionModalAction(false))}
           onSubscribe={handleForemanSubscribe}
+          isLoading={isLoading}
+          safeAreaInsets={safeAreaInsets}
+          responsiveFontSize={responsiveFontSize}
+          consentChecked={consentChecked}
+          onConsentToggle={() => setConsentChecked(!consentChecked)}
+          onOpenConsent={() => setConsentModalVisible(true)}
+          t={t}
+        />
+        <ConsentModal
+          visible={consentModalVisible}
+          onClose={() => setConsentModalVisible(false)}
+          safeAreaInsets={safeAreaInsets}
+        />
+      </>
+    );
+  }
+
+  // Show AssociationSubscriptionModal for association role
+  if (role === 'association') {
+    return (
+      <>
+        <AssociationSubscriptionModal
+          visible={subscriptionModal}
+          onClose={() => dispatch(subscriptionModalAction(false))}
+          onSubscribe={handleAssociationSubscribe}
+          plan={dynamicPlans[0]}
           isLoading={isLoading}
           safeAreaInsets={safeAreaInsets}
           responsiveFontSize={responsiveFontSize}

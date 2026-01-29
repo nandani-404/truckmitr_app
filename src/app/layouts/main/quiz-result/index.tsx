@@ -95,6 +95,8 @@ export default function QuizResult() {
             const _fetchQuizResult = async () => {
                 try {
                     const response: any = await axiosInstance.post(END_POINTS?.QUIZ_RESULT);
+                    console.log('response?.data?.result', response?.data?.result);
+
                     if (response?.data?.status) {
                         setquizResult(response?.data?.result)
                     }

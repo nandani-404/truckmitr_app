@@ -402,8 +402,8 @@ const Otp = () => {
                     let moduleToSave = 'hiring'; // default for driver/transporter
                     if (userRole === 'foreman') {
                         moduleToSave = 'foreman';
-                    } else if (userRole === 'associate') {
-                        moduleToSave = 'associate';
+                    } else if (userRole === 'associate' || userRole === 'association') {
+                        moduleToSave = 'association';
                     }
                     // driver and transporter both map to 'hiring'
                     await AsyncStorage.setItem('SELECTED_MODULE', moduleToSave);

@@ -194,6 +194,26 @@ export const END_POINTS = {
     FOREMAN_EXPIRING_DOCUMENTS: (foreman_id: any) => `api/foreman/drivers/license-expiring-next-month/${foreman_id}`,
     FOREMAN_EARNINGS: (foreman_id: any) => `api/foreman/${foreman_id}/commission`,
     FOREMAN_APPLIED_DRIVERS: (foreman_id: any) => `api/foreman/jobs/applied-drivers/${foreman_id}`,
+
+    // ++++++++++++++++++++++++
+    //association related api
+    // ++++++++++++++++++++++++
+    ASSOCIATION_PROFILE_COMPLETION: 'api/update-profile-association',
+    ASSOCIATION_DASHBOARD: (association_id: any) => `/api/association/${association_id}/dashboard-counts`,
+    ASSOCIATION_ADD_DRIVER: `api/association/add-driver`,
+    ASSOCIATION_DRIVERS_PENDING_PROFILE: (association_id: any) => `api/association/${association_id}/incomplete-profile-drivers`,
+    GET_ASSOCIATION_VERIFIED_DRIVER: (association_id: any) => `api/association/${association_id}/verified-driver`,
+    GET_ASSOCIATION_DRIVER_DETAILS: (association_id: any) => `api/association/drivers/${association_id}/full-details`,
+    GET_TRUSTED_ASSOCIATION_DRIVER: (association_id: any) => `api/association/${association_id}/trusted-driver`,
+    ASSOCIATION_DRIVER_SEARCH: `api/association/drivers/search`,
+    ASSOCIATION_DRIVERS: `api/association/drivers`,
+    ASSOCIATION_DRIVERS_PENDING_SUBSCRIPTION: (association_id: any) => `api/association/${association_id}/unsubscribe-driver`,
+    ASSOCIATION_DRIVERS_PENDING_TRAINING: (association_id: any) => `api/association/${association_id}/pending-training`,
+    ASSOCIATION_ACCOUNT_DETAILS_FETCH: (association_id: any) => `api/association/account-details/${association_id}`,
+    UPDATE_ASSOCIATION_BANK_DETAILS: `api/association/bank-details`,
+    ASSOCIATION_HOME_DASHBOARD: (association_id: any) => `/api/association/${association_id}/commission-summary`,
+    ASSOCIATION_EARNINGS: (association_id: any) => `/api/association/${association_id}/commission`,
+    ASSOCIATION_APPLICATIONS: (association_id: any) => `api/association/jobs/applied-drivers/${association_id}`,
     // Driver Ki Awaz
     DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
     DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,

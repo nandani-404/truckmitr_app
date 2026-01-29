@@ -137,7 +137,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
                             fullWidth && { textAlign: 'left' },
                             {
                                 color: isSelected ? 'rgba(255,255,255,0.8)' : colors.blackOpacity(0.5),
-                                fontSize: role === 'associate' ? responsiveFontSize(1.2) : responsiveFontSize(1.4)
+                                fontSize: role === 'association' ? responsiveFontSize(1.2) : responsiveFontSize(1.4)
                             }
                         ]}>
                             {subtitle}

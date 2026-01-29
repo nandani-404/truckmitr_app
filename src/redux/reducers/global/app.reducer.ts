@@ -1,6 +1,6 @@
 import * as TYPES from '@truckmitr/redux/actions/types';
 
-export type ModuleType = 'hiring' | 'foreman' | 'associate' | null;
+export type ModuleType = 'hiring' | 'foreman' | 'associate' | 'association' | null;
 
 interface AppState {
     selectedModule: ModuleType;

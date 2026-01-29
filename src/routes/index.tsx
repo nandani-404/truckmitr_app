@@ -327,8 +327,8 @@ export default function Routes() {
               let moduleFromRole = 'hiring'; // default for driver/transporter
               if (userRole === 'foreman') {
                 moduleFromRole = 'foreman';
-              } else if (userRole === 'associate') {
-                moduleFromRole = 'associate';
+              } else if (userRole === 'associate' || userRole === 'association') {
+                moduleFromRole = 'association';
               }
               // Update both AsyncStorage and Redux
               await AsyncStorage.setItem('SELECTED_MODULE', moduleFromRole);
@@ -776,6 +776,8 @@ export default function Routes() {
     >
       <StatusBar translucent backgroundColor="transparent" />
       {/* <ZegoCallInvitationDialog /> */}
+      {/* <AssociateMain /> */}
+      {/* <AssociateProfileCompletionStack /> */}
       {!isAuthenticated ? (
         <Auth />
       ) : profileRequiredFieldsStatus === false ? (

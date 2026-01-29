@@ -24,7 +24,7 @@ import BankDetails from '@truckmitr/src/app/layouts/foreman/foreman-home/bank-de
 import ProfileOverView from '@truckmitr/src/app/layouts/foreman/foreman-overView';
 import ForemanProfileEdit from '@truckmitr/src/app/layouts/foreman/foreman-profile-edit';
 import ForemanSearchScreen from '@truckmitr/src/app/layouts/foreman/foreman-home/search-screen';
-import ForemanEarningsInfo from '@truckmitr/src/app/layouts/foreman/foreman-home/earninig';
+import ForemanEarningsInfo from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-earnings-info';
 import ForemanMembershipCard from '@truckmitr/src/app/layouts/foreman/foreman-home/membership-card';
 
 const Stack = createNativeStackNavigator();

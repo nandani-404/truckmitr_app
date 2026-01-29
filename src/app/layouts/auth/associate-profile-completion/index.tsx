@@ -45,11 +45,12 @@ type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorP
 const ASSOCIATION_STEPS = [
     {
         id: 'association_details',
-        title: 'Association Information',
-        subtitle: 'Enter your association basic details',
-        progress: 40,
+        title: 'associate_profile_completion_step_1_title',
+        subtitle: 'associate_profile_completion_step_1_subtitle',
+        progress: 100, // Updated to 100 as it's the only step now
         required: true
     },
+    /*
     {
         id: 'add_members',
         title: 'Add Association Members',
@@ -57,14 +58,15 @@ const ASSOCIATION_STEPS = [
         progress: 100,
         required: false
     },
+    */
 ];
 
 // Association Types
 const ASSOCIATION_TYPES = [
-    { id: 'union', label: 'Union' },
-    { id: 'society', label: 'Society' },
-    { id: 'trust', label: 'Trust' },
-    { id: 'informal', label: 'Informal' },
+    { id: 'Union', label: 'associate_profile_completion_union' },
+    { id: 'Society', label: 'associate_profile_completion_society' },
+    { id: 'Trust', label: 'associate_profile_completion_trust' },
+    { id: 'Informal', label: 'associate_profile_completion_informal' },
 ];
 
 // Member Roles
@@ -201,19 +203,19 @@ export default function ProfileCompletionAssociation() {
         // Validation based on step
         if (step.id === 'association_details') {
             if (!associationName.trim()) {
-                showToast('Please enter Association Name');
+                showToast(t('associate_profile_completion_association_name_error'));
                 return;
             }
             if (!associationType) {
-                showToast('Please select Association Type');
+                showToast(t('associate_profile_completion_association_type_error'));
                 return;
             }
             if (!officeAddress.trim()) {
-                showToast('Please enter Office Address');
+                showToast(t('associate_profile_completion_office_address_error'));
                 return;
             }
             if (operatingStates.length === 0) {
-                showToast('Please select at least one Operating State');
+                showToast(t('associate_profile_completion_operating_states_error'));
                 return;
             }
         }
@@ -272,38 +274,41 @@ export default function ProfileCompletionAssociation() {
             formData.append('association_type', associationType);
             formData.append('registration_number', registrationNumber);
             formData.append('office_address', officeAddress);
-            formData.append('operating_states', JSON.stringify(operatingStates));
+            formData.append('operating_states', operatingStates.join(', '));
             formData.append('coverage_area', coverageArea);
-            formData.append('members', JSON.stringify(members));
-            formData.append('subscription_commission', subscriptionCommission);
-            formData.append('placement_commission', placementCommission);
-            formData.append('account_holder_name', accountHolderName);
-            formData.append('bank_name', bankName);
-            formData.append('account_number', accountNumber);
-            formData.append('ifsc_code', ifscCode);
 
-            console.log('Association Profile Submission:', formData);
+            console.log('Association Profile Submission Data:', formData);
 
-            // Simulating API call
-            setTimeout(() => {
-                setFinishing(false);
-                showToast('Profile Submitted Successfully!');
+            const response: any = await axiosInstance.post(END_POINTS.ASSOCIATION_PROFILE_COMPLETION, formData);
+
+            if (response?.data?.status) {
+                showToast(t('associate_profile_completion_success_msg'));
+
+                // Fetch updated profile to ensure Redux state is in sync
+                const profile: any = await axiosInstance.get(END_POINTS.GET_PROFILE);
+                if (profile?.data?.status) {
+                    dispatch(userAction(profile.data));
+                }
+
                 dispatch(userAuthenticatedAction(true));
-            }, 1500);
-
+            } else {
+                showToast(response?.data?.message || t('associate_profile_completion_fail_msg'));
+            }
         } catch (error: any) {
+            console.error('Profile Submission Error:', error);
+            showToast(error?.message || t('associate_profile_completion_fail_msg'));
+        } finally {
             setFinishing(false);
-            showToast(error?.message || 'Failed to update profile');
         }
     };
 
     const renderAssociationDetails = () => (
         <View style={styles.stepContainer}>
             {/* Association Name */}
-            <Text style={styles.classicLabel}>Association Name <Text style={styles.requiredStar}>*</Text></Text>
+            <Text style={styles.classicLabel}>{t('associate_profile_completion_association_name')} <Text style={styles.requiredStar}>{t('associate_profile_completion_required_star')}</Text></Text>
             <TextInput
                 style={styles.classicInput}
-                placeholder="Enter Association Name"
+                placeholder={t('associate_profile_completion_association_name_placeholder')}
                 value={associationName}
                 onChangeText={setAssociationName}
             />
@@ -311,7 +316,7 @@ export default function ProfileCompletionAssociation() {
             <Space height={20} />
 
             {/* Association Type */}
-            <Text style={styles.classicLabel}>Association Type <Text style={styles.requiredStar}>*</Text></Text>
+            <Text style={styles.classicLabel}>{t('associate_profile_completion_association_type')} <Text style={styles.requiredStar}>{t('associate_profile_completion_required_star')}</Text></Text>
             <View style={styles.typeGrid}>
                 {ASSOCIATION_TYPES.map((type) => (
                     <TouchableOpacity
@@ -326,7 +331,7 @@ export default function ProfileCompletionAssociation() {
                             styles.typeCardText,
                             associationType === type.id && styles.typeCardTextSelected
                         ]}>
-                            {type.label}
+                            {t(type.label)}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -335,10 +340,10 @@ export default function ProfileCompletionAssociation() {
             <Space height={20} />
 
             {/* Registration Number */}
-            <Text style={styles.classicLabel}>Registration Number (Optional)</Text>
+            <Text style={styles.classicLabel}>{t('associate_profile_completion_reg_num_optional')}</Text>
             <TextInput
                 style={styles.classicInput}
-                placeholder="Enter Registration Number"
+                placeholder={t('associate_profile_completion_reg_num_placeholder')}
                 value={registrationNumber}
                 onChangeText={setRegistrationNumber}
             />
@@ -346,10 +351,10 @@ export default function ProfileCompletionAssociation() {
             <Space height={20} />
 
             {/* Office Address */}
-            <Text style={styles.classicLabel}>Office Address <Text style={styles.requiredStar}>*</Text></Text>
+            <Text style={styles.classicLabel}>{t('associate_profile_completion_office_address')} <Text style={styles.requiredStar}>{t('associate_profile_completion_required_star')}</Text></Text>
             <TextInput
                 style={[styles.classicInput, { height: 80, textAlignVertical: 'top', paddingTop: 12 }]}
-                placeholder="Enter Complete Office Address"
+                placeholder={t('associate_profile_completion_office_address_placeholder')}
                 value={officeAddress}
                 onChangeText={setOfficeAddress}
                 multiline
@@ -358,15 +363,15 @@ export default function ProfileCompletionAssociation() {
             <Space height={20} />
 
             {/* Operating States */}
-            <Text style={styles.classicLabel}>Operating State(s) <Text style={styles.requiredStar}>*</Text></Text>
+            <Text style={styles.classicLabel}>{t('associate_profile_completion_operating_states')} <Text style={styles.requiredStar}>{t('associate_profile_completion_required_star')}</Text></Text>
             <TouchableOpacity
                 style={styles.classicBox}
                 onPress={() => setStatePickerOpen(true)}
             >
                 <Text style={{ color: operatingStates.length > 0 ? '#333' : '#999', flex: 1 }}>
                     {operatingStates.length > 0
-                        ? `${operatingStates.length} state(s) selected`
-                        : 'Select States'}
+                        ? t('associate_profile_completion_states_selected', { count: operatingStates.length })
+                        : t('associate_profile_completion_select_states')}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color={colors.royalBlue} />
             </TouchableOpacity>
@@ -386,10 +391,10 @@ export default function ProfileCompletionAssociation() {
             <Space height={20} />
 
             {/* Coverage Area */}
-            <Text style={styles.classicLabel}>Coverage Area (Optional)</Text>
+            <Text style={styles.classicLabel}>{t('associate_profile_completion_coverage_area_optional')}</Text>
             <TextInput
                 style={styles.classicInput}
-                placeholder="e.g., Mumbai-Delhi Route, North India"
+                placeholder={t('associate_profile_completion_coverage_area_placeholder')}
                 value={coverageArea}
                 onChangeText={setCoverageArea}
             />
@@ -399,7 +404,7 @@ export default function ProfileCompletionAssociation() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Operating States</Text>
+                            <Text style={styles.modalTitle}>{t('associate_profile_completion_select_operating_states_modal')}</Text>
                             <TouchableOpacity onPress={() => setStatePickerOpen(false)}>
                                 <Ionicons name="close" size={24} color="#666" />
                             </TouchableOpacity>
@@ -424,7 +429,7 @@ export default function ProfileCompletionAssociation() {
                             style={styles.modalDoneButton}
                             onPress={() => setStatePickerOpen(false)}
                         >
-                            <Text style={styles.modalDoneButtonText}>Done</Text>
+                            <Text style={styles.modalDoneButtonText}>{t('associate_profile_completion_done')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -871,21 +876,28 @@ export default function ProfileCompletionAssociation() {
                         <Ionicons name="arrow-back" size={24} color="#333" />
                     </TouchableOpacity>
                 )}
+                <View style={styles.headerTitleContainer}>
+                    <Text style={styles.headerTitle}>{t('associate_profile_completion_header_title')}</Text>
+                </View>
+                {/* 
                 <View style={styles.progressContainer}>
                     <Animated.View style={[styles.progressBar, animatedProgressStyle]} />
                 </View>
                 <Text style={styles.stepCount}>{currentStep + 1} / {STEPS.length}</Text>
+                */}
             </View>
 
-            {/* Progress Percentage */}
+            {/* Progress Percentage - Optional/Hidden if only one step */}
+            {/* 
             <View style={styles.progressPercentContainer}>
                 <Text style={styles.progressPercentText}>Profile Completion: {STEPS[currentStep].progress}%</Text>
             </View>
+            */}
 
             {/* Title */}
             <View style={styles.titleContainer}>
-                <Text style={styles.title}>{STEPS[currentStep].title}</Text>
-                <Text style={styles.subtitle}>{STEPS[currentStep].subtitle}</Text>
+                <Text style={styles.title}>{t(STEPS[currentStep].title)}</Text>
+                <Text style={styles.subtitle}>{t(STEPS[currentStep].subtitle)}</Text>
             </View>
 
             <KeyboardAvoidingView
@@ -907,24 +919,24 @@ export default function ProfileCompletionAssociation() {
 
             {/* Footer */}
             <View style={[styles.footer, { paddingBottom: safeAreaInsets.bottom || 20 }]}>
-                {currentStep === 1 && (
+                {STEPS.length > 1 && currentStep === 1 && (
                     <TouchableOpacity
                         onPress={handleNext}
                         style={[styles.skipButton]}
                     >
-                        <Text style={styles.skipButtonText}>Skip for Now</Text>
+                        <Text style={styles.skipButtonText}>{t('associate_profile_completion_skip')}</Text>
                     </TouchableOpacity>
                 )}
                 <TouchableOpacity
                     onPress={handleNext}
-                    style={[styles.nextButton, currentStep === 1 && { flex: 1, marginLeft: 12 }]}
+                    style={[styles.nextButton, STEPS.length > 1 && currentStep === 1 && { flex: 1, marginLeft: 12 }]}
                     disabled={finishing}
                 >
                     {finishing ? (
                         <ActivityIndicator color="white" />
                     ) : (
                         <Text style={styles.nextButtonText}>
-                            {currentStep === STEPS.length - 1 ? 'Submit Profile' : 'Next'}
+                            {currentStep === STEPS.length - 1 ? t('associate_profile_completion_submit_profile') : t('associate_profile_completion_next')}
                         </Text>
                     )}
                 </TouchableOpacity>
@@ -936,7 +948,9 @@ export default function ProfileCompletionAssociation() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F4F7FE' },
     header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, height: 50 },
-    backButton: { marginRight: 15 },
+    backButton: { position: 'absolute', left: 20, zIndex: 1 },
+    headerTitleContainer: { flex: 1, alignItems: 'center' },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
     progressContainer: { flex: 1, height: 6, backgroundColor: '#E0E0E0', borderRadius: 3, overflow: 'hidden' },
     progressBar: { height: '100%', backgroundColor: '#246BFD', borderRadius: 3 },
     stepCount: { marginLeft: 15, fontSize: 14, fontWeight: '600', color: '#666' },

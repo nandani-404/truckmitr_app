@@ -152,6 +152,16 @@ export type NavigatorParams = {
     foremanSearch: undefined;
     foremanEarningsInfo: undefined;
     foremanMembershipCard: undefined;
+
+    // Association Tabs
+    driverAssociationHome: undefined;
+    driverAssociationAddDriver: undefined;
+    driverAssociationEarnings: undefined;
+    driverAssociationProfile: undefined;
+    driverAssociationSearch: undefined;
+    associationBankDetails: undefined;
+    associationProfileEdit: undefined;
+    driverAssociationEarningsInfo: undefined;
 };
 
 export const STACKS = {
@@ -333,5 +343,29 @@ export const STACKS = {
     ASSOCIATE_EARNINGS: 'associateEarnings',
     ASSOCIATE_PROFILE: 'associateProfile',
     ASSOCIATE_PROFILE_COMPLETION: 'associateProfileCompletion',
+    ASSOCIATE_PROFILE_EDIT: 'associateProfileEdit',
+    DRIVER_ASSOCIATION_MY_DRIVERS: 'driverAssociationMyDrivers',
+    DRIVER_ASSOCIATION_PENDING_PROFILES: 'driverAssociationPendingProfiles',
+    DRIVER_ASSOCIATION_PENDING_SUBSCRIPTION: 'driverAssociationPendingSubscription',
+    DRIVER_ASSOCIATION_PENDING_TRAINING: 'driverAssociationPendingTraining',
+    DRIVER_ASSOCIATION_EXPIRING_DOCUMENTS: 'driverAssociationExpiringDocuments',
+    DRIVER_ASSOCIATION_VERIFIED_DRIVERS: 'driverAssociationVerifiedDrivers',
+    DRIVER_ASSOCIATION_TRUSTED_DRIVERS: 'driverAssociationTrustedDrivers',
+    DRIVER_ASSOCIATION_JOBS_LIST: 'driverAssociationJobsList',
+    DRIVER_ASSOCIATION_DRIVER_DETAILS: 'driverAssociationDriverDetails',
+    DRIVER_ASSOCIATION_APPLICATIONS: 'driverAssociationApplications',
+    DRIVER_ASSOCIATION_RECRUITMENTS: 'driverAssociationRecruitments',
+    DRIVER_ASSOCIATION_BANK_DETAILS: 'driverAssociationBankDetails',
+    DRIVER_ASSOCIATION_SEARCH: 'driverAssociationSearch',
+    DRIVER_ASSOCIATION_EARNINGS_INFO: 'driverAssociationEarningsInfo',
+    DRIVER_ASSOCIATION_MEMBERSHIP_CARD: 'driverAssociationMembershipCard',
+    ASSOCIATION_BANK_DETAILS: 'associationBankDetails',
+    ASSOCIATION_PROFILE_EDIT: 'associationProfileEdit',
 
+    // Association Tabs
+    DRIVER_ASSOCIATION_HOME_TAB: 'driverAssociationHome',
+    DRIVER_ASSOCIATION_ADD_DRIVER: 'driverAssociationAddDriver',
+    DRIVER_ASSOCIATION_EARNINGS: 'driverAssociationEarnings',
+    DRIVER_ASSOCIATION_PROFILE: 'driverAssociationProfile',
+    DRIVER_ASSOCIATION_DASHBOARD: 'driverAssociationDashboard',
 } as const;
