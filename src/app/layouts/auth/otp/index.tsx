@@ -46,6 +46,8 @@ const Otp = () => {
     const route = useRoute();
     const { formData, flow } = route?.params as OtpRouteParams;
 
+    // console.log("formdata", formData);
+
     const navigation = useNavigation<NavigatorProp>();
     const safeAreaInsets = useSafeAreaInsets();
     const colors = useColor();

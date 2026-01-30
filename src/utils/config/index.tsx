@@ -226,4 +226,13 @@ export const END_POINTS = {
     DKA_USER_FEED: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/user/${id}`,
     DKA_USER_DASHBOARD: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/users/${id}/dashboard`,
 
+
+    // ++++++++++++++++++++++++
+    //dhaba related api
+    // ++++++++++++++++++++++++
+    DHABA_BUSSINESS_INFO: `api/dhaba/business-info`,
+    DHABA_BUSSINESS_LOCATION: `api/dhaba/location`,
+    DHABA_OPERATIONAL_DETAILS: `api/dhaba/operation`,
+    DHABA_FACILITIES: `api/dhaba/facilities`,
+    DHABA_FOOD: `api/dhaba/food`,
 }

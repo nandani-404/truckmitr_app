@@ -7,6 +7,7 @@ import {
     Dimensions,
     StatusBar,
     Image,
+    ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -228,6 +229,22 @@ export default function ModuleSelection() {
             gradient: ['#845EC2', '#A178DF'],
             module: 'association'
         },
+        {
+            role: 'dhaba',
+            title: t('dhabhaSathi'),
+            subtitle: t('dhabhaSathiSubtitle'),
+            icon: 'silverware-fork-knife',
+            gradient: ['#FF9A3C', '#FFB547'],
+            module: 'dhaba'
+        },
+        // {
+        //     role: 'puncture_shop',
+        //     title: t('punctureShop'),
+        //     subtitle: t('punctureShopSubtitle'),
+        //     icon: 'tire',
+        //     gradient: ['#2D3436', '#636E72'],
+        //     module: 'puncture_shop'
+        // },
     ];
 
     const handleContinue = async () => {
@@ -267,81 +284,97 @@ export default function ModuleSelection() {
             <View style={styles.bgCircle1} />
             <View style={styles.bgCircle2} />
 
-            {/* Header */}
-            <Animated.View style={[styles.header, headerAnimatedStyle]}>
-                <Image
-                    source={images.TRUCKMITR_HORIZONTAL}
-                    style={styles.logo}
-                    resizeMode="contain"
-                />
-                <Text style={[styles.title, { fontSize: responsiveFontSize(3), color: colors.black }]}>
-                    {t('iAmA')}
-                </Text>
-                <Text style={[styles.subtitle, { fontSize: responsiveFontSize(1.7), color: colors.blackOpacity(0.6) }]}>
-                    {t('selectYourRole')}
-                </Text>
-            </Animated.View>
-
-            {/* Role Cards Grid */}
-            <View style={styles.cardsContainer}>
-                <View style={styles.cardsRow}>
-                    {roles.slice(0, 2).map((item, index) => (
-                        <RoleCard
-                            key={item.role}
-                            {...item}
-                            delay={100 + index * 100}
-                            isSelected={selectedRole === item.role}
-                            onSelect={() => setSelectedRole(item.role)}
-                        />
-                    ))}
-                </View>
-                <View style={styles.cardsRow}>
-                    {roles.slice(2, 4).map((item, index) => (
-                        <RoleCard
-                            key={item.role}
-                            {...item}
-                            delay={300 + index * 100}
-                            isSelected={selectedRole === item.role}
-                            onSelect={() => setSelectedRole(item.role)}
-                        />
-                    ))}
-                </View>
-            </View>
-
-            {/* Continue Button */}
-            <View style={[styles.buttonContainer, { paddingBottom: safeAreaInsets.bottom + responsiveHeight(2) }]}>
-                <Animated.View style={buttonAnimatedStyle}>
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={handleContinue}
-                        disabled={!selectedRole}
-                    >
-                        <LinearGradient
-                            colors={['#3D5EE1', '#18A9B3']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.continueButton}
-                        >
-                            <Text style={styles.continueButtonText}>
-                                {t('continue')}
-                            </Text>
-                            <MaterialCommunityIcons name="arrow-right" size={22} color="#fff" />
-                        </LinearGradient>
-                    </TouchableOpacity>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+            >
+                {/* Header */}
+                <Animated.View style={[styles.header, headerAnimatedStyle]}>
+                    <Image
+                        source={images.TRUCKMITR_HORIZONTAL}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
+                    <Text style={[styles.title, { fontSize: responsiveFontSize(3), color: colors.black }]}>
+                        {t('iAmA')}
+                    </Text>
+                    <Text style={[styles.subtitle, { fontSize: responsiveFontSize(1.7), color: colors.blackOpacity(0.6) }]}>
+                        {t('selectYourRole')}
+                    </Text>
                 </Animated.View>
 
-                {/* Login Link */}
-                <View style={styles.loginContainer}>
-                    <Text style={[styles.loginText, { color: colors.blackOpacity(0.6) }]}>
-                        {t('alreadyRegistered')}{' '}
-                    </Text>
-                    <TouchableOpacity onPress={() => navigation.navigate(STACKS.LOGIN as any)}>
-                        <Text style={[styles.loginLink, { color: colors.royalBlue }]}>
-                            {t('login')}
-                        </Text>
-                    </TouchableOpacity>
+                {/* Role Cards Grid */}
+                <View style={styles.cardsContainer}>
+                    <View style={styles.cardsRow}>
+                        {roles.slice(0, 2).map((item, index) => (
+                            <RoleCard
+                                key={item.role}
+                                {...item}
+                                delay={100 + index * 100}
+                                isSelected={selectedRole === item.role}
+                                onSelect={() => setSelectedRole(item.role)}
+                            />
+                        ))}
+                    </View>
+                    <View style={styles.cardsRow}>
+                        {roles.slice(2, 4).map((item, index) => (
+                            <RoleCard
+                                key={item.role}
+                                {...item}
+                                delay={300 + index * 100}
+                                isSelected={selectedRole === item.role}
+                                onSelect={() => setSelectedRole(item.role)}
+                            />
+                        ))}
+                    </View>
+                    <View style={styles.cardsRow}>
+                        {roles.slice(4, 6).map((item, index) => (
+                            <RoleCard
+                                key={item.role}
+                                {...item}
+                                delay={500 + index * 100}
+                                isSelected={selectedRole === item.role}
+                                onSelect={() => setSelectedRole(item.role)}
+                            />
+                        ))}
+                    </View>
                 </View>
-            </View>
+
+                {/* Continue Button */}
+                <View style={[styles.buttonContainer, { paddingBottom: safeAreaInsets.bottom + responsiveHeight(2) }]}>
+                    {/* Login Link */}
+                    <View style={[styles.loginContainer, { marginBottom: 16 }]}>
+                        <Text style={[styles.loginText, { color: colors.blackOpacity(0.6) }]}>
+                            {t('alreadyRegistered')}{' '}
+                        </Text>
+                        <TouchableOpacity onPress={() => navigation.navigate(STACKS.LOGIN as any)}>
+                            <Text style={[styles.loginLink, { color: colors.royalBlue }]}>
+                                {t('login')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <Animated.View style={buttonAnimatedStyle}>
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={handleContinue}
+                            disabled={!selectedRole}
+                        >
+                            <LinearGradient
+                                colors={['#3D5EE1', '#18A9B3']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.continueButton}
+                            >
+                                <Text style={styles.continueButtonText}>
+                                    {t('continue')}
+                                </Text>
+                                <MaterialCommunityIcons name="arrow-right" size={22} color="#fff" />
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </Animated.View>
+                </View>
+            </ScrollView>
         </View>
     );
 }

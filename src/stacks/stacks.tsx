@@ -162,6 +162,15 @@ export type NavigatorParams = {
     associationBankDetails: undefined;
     associationProfileEdit: undefined;
     driverAssociationEarningsInfo: undefined;
+
+    // Dhaba Module
+    dhabhaBottomTab: any;
+    dhabhaHome: undefined;
+    dhabhaProfile: undefined;
+    dhabhaProfileCompletion: undefined;
+    dhabhaMyReferrals: undefined;
+    dhabhaEarnings: undefined;
+    dhabhaAddDriver: undefined;
 };
 
 export const STACKS = {
@@ -368,4 +377,13 @@ export const STACKS = {
     DRIVER_ASSOCIATION_EARNINGS: 'driverAssociationEarnings',
     DRIVER_ASSOCIATION_PROFILE: 'driverAssociationProfile',
     DRIVER_ASSOCIATION_DASHBOARD: 'driverAssociationDashboard',
+
+    // DHABA MODULE
+    DHABHA_BOTTOM: 'dhabhaBottomTab',
+    DHABHA_HOME: 'dhabhaHome',
+    DHABHA_PROFILE: 'dhabhaProfile',
+    DHABHA_PROFILE_COMPLETION: 'dhabhaProfileCompletion',
+    DHABHA_MY_REFERRALS: 'dhabhaMyReferrals',
+    DHABHA_EARNINGS: 'dhabhaEarnings',
+    DHABHA_ADD_DRIVER: 'dhabhaAddDriver',
 } as const;

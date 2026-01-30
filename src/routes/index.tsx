@@ -2,7 +2,7 @@ import { StatusBar, useColorScheme, View, Image, AppState, Linking, TouchableOpa
 import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { darkTheme, lightTheme } from '@truckmitr/res/colors';
-import { Auth, Main, ForemanMain, AssociateMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack } from '@truckmitr/stacks/index';
+import { Auth, Main, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack } from '@truckmitr/stacks/index';
 import SystemNavigationBar from 'react-native-system-navigation-bar';
 import BootSplash from 'react-native-bootsplash';
 import { navigationRef } from '@truckmitr/utils/global/global.ref';
@@ -778,24 +778,30 @@ export default function Routes() {
       {/* <ZegoCallInvitationDialog /> */}
       {/* <AssociateMain /> */}
       {/* <AssociateProfileCompletionStack /> */}
-      {!isAuthenticated ? (
+      <DhabhaMain />
+      {/* <Auth /> */}
+      {/* {!isAuthenticated ? (
         <Auth />
       ) : profileRequiredFieldsStatus === false ? (
         // Module-specific profile completion
         user?.data?.role?.toLowerCase() === 'foreman' || user?.role?.toLowerCase() === 'foreman' ? (
           <ForemanProfileCompletionStack />
-        ) : selectedModule === 'association' ? (
+        ) : user?.data?.role?.toLowerCase() === 'dhaba' || user?.role?.toLowerCase() === 'dhaba' || selectedModule === 'dhaba' ? (
+          <DhabhaProfileCompletionStack />
+        ) : selectedModule === 'association' || user?.data?.role?.toLowerCase() === 'association' || user?.role?.toLowerCase() === 'association' ? (
           <AssociateProfileCompletionStack />
         ) : (
           <ProfileCompletionStack />
         )
       ) : user?.data?.role?.toLowerCase() === 'foreman' || user?.role?.toLowerCase() === 'foreman' ? (
         <ForemanMain />
-      ) : selectedModule === 'association' ? (
+      ) : user?.data?.role?.toLowerCase() === 'dhaba' || user?.role?.toLowerCase() === 'dhaba' || selectedModule === 'dhaba' ? (
+        <DhabhaMain />
+      ) : selectedModule === 'association' || user?.data?.role?.toLowerCase() === 'association' || user?.role?.toLowerCase() === 'association' ? (
         <AssociateMain />
       ) : (
         <Main />
-      )}
+      )} */}
       {subscriptionModal && <Subscription />}
       <InAppUpdatePopup />
     </NavigationContainer>
