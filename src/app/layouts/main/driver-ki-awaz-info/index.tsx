@@ -18,4 +18,8 @@ export {
     CreatePostScreen,
     RecordVoiceScreen,
     PostStatusScreen,
+    MyPostsScreen,
+    ReelsScreen,
+    FeedScreen,
+    ProfileFeedScreen
 } from './screens';

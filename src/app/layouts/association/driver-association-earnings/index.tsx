@@ -10,20 +10,18 @@ import {
     StatusBar,
     FlatList,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
-import { Space } from '@truckmitr/src/app/components';
-import { hitSlop } from '@truckmitr/src/app/functions';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
+import ScreenHeader from '@truckmitr/src/app/components/screen-header';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -296,7 +294,6 @@ const driverCardStyles = StyleSheet.create({
 });
 
 export default function DriverAssociationEarnings() {
-    const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
     const colors = useColor();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
@@ -496,28 +493,19 @@ export default function DriverAssociationEarnings() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-            <Space height={safeAreaInsets.top} />
 
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity
-                    hitSlop={hitSlop(10)}
-                    onPress={goBack}
-                    style={styles.backButton}
-                >
-                    <Ionicons name="chevron-back" size={24} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: colors.royalBlue }]}>
-                    {t('myEarnings2')}
-                </Text>
-                <TouchableOpacity
-                    hitSlop={hitSlop(10)}
-                    onPress={() => navigation.navigate(STACKS.FOREMAN_EARNINGS_INFO)}
-                    style={styles.backButton}
-                >
-                    <Ionicons name="information-circle-outline" size={24} color={colors.royalBlue} />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title={t('association_earnings')}
+                rightComponent={
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate(STACKS.FOREMAN_EARNINGS_INFO)}
+                        style={styles.backButton}
+                    >
+                        <Ionicons name="information-circle-outline" size={24} color={colors.royalBlue} />
+                    </TouchableOpacity>
+                }
+            />
 
             <View style={styles.mainContent}>
                 {loading ? (

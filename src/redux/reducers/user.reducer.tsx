@@ -131,7 +131,9 @@ const userReducer = (state = initialState, action: any) => {
                 'JOB READY',
                 'VERIFIED',
                 'TRUSTED',
-                'foreman_pro'
+                'foreman_pro',
+                'association_pro',
+                'transporter_pro'
             ];
 
             // Filter for subscription records - handle all payment types
@@ -143,13 +145,20 @@ const userReducer = (state = initialState, action: any) => {
             // Find the first active subscription
             const currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
+            // Helper to safely parse end_at timestamp (handles both string and number)
+            const getEndAtTimestamp = (item: any): number => {
+                if (!item?.end_at) return 0;
+                return typeof item.end_at === 'string' ? parseInt(item.end_at, 10) : item.end_at;
+            };
+
             // Helper function to check if a subscription is a legacy driver (Rs 1, Rs 49 or Rs 100 payment for DRIVERS)
             const isLegacyDriverSubscription = (item: any): boolean => {
                 const amount = parseFloat(item.amount) || 0;
                 // Legacy driver: Rs 1, Rs 49 or Rs 100 payment
                 const isLegacyAmount = amount === 1 || amount === 1.00 || amount === 49 || amount === 49.00 || amount === 100 || amount === 100.00;
                 const isPaymentCaptured = item.payment_status === 'captured';
-                const isNotExpired = currentTimeInSeconds < item.end_at;
+                const endAt = getEndAtTimestamp(item);
+                const isNotExpired = currentTimeInSeconds < endAt;
                 return isLegacyAmount && isPaymentCaptured && isNotExpired;
             };
 
@@ -159,8 +168,47 @@ const userReducer = (state = initialState, action: any) => {
                 // Legacy transporter: Rs 1 or Rs 99 payment
                 const isLegacyAmount = amount === 1 || amount === 1.00 || amount === 99 || amount === 99.00;
                 const isPaymentCaptured = item.payment_status === 'captured';
-                const isNotExpired = currentTimeInSeconds < item.end_at;
+                const endAt = getEndAtTimestamp(item);
+                const isNotExpired = currentTimeInSeconds < endAt;
                 return isLegacyAmount && isPaymentCaptured && isNotExpired;
+            };
+
+            // Helper function to check if this is an association pro subscription
+            const isAssociationProSubscription = (item: any): boolean => {
+                const isAssociationPro = item.payment_type === 'association_pro' || item.subscription_plan_id === '12' || item.subscription_plan_id === 12;
+                const isPaymentCaptured = item.payment_status === 'captured';
+                const endAt = getEndAtTimestamp(item);
+                const isNotExpired = currentTimeInSeconds < endAt;
+                console.log('[userReducer] isAssociationProSubscription check:', {
+                    payment_type: item.payment_type,
+                    subscription_plan_id: item.subscription_plan_id,
+                    payment_status: item.payment_status,
+                    end_at: item.end_at,
+                    endAt,
+                    currentTimeInSeconds,
+                    isAssociationPro,
+                    isPaymentCaptured,
+                    isNotExpired
+                });
+                return isAssociationPro && isPaymentCaptured && isNotExpired;
+            };
+
+            // Helper function to check if this is a transporter pro subscription
+            const isTransporterProSubscription = (item: any): boolean => {
+                const isTransporterPro = item.payment_type === 'transporter_pro';
+                const isPaymentCaptured = item.payment_status === 'captured';
+                const endAt = getEndAtTimestamp(item);
+                const isNotExpired = currentTimeInSeconds < endAt;
+                return isTransporterPro && isPaymentCaptured && isNotExpired;
+            };
+
+            // Helper function to check if this is a foreman pro subscription
+            const isForemanProSubscription = (item: any): boolean => {
+                const isForemanPro = item.payment_type === 'foreman_pro';
+                const isPaymentCaptured = item.payment_status === 'captured';
+                const endAt = getEndAtTimestamp(item);
+                const isNotExpired = currentTimeInSeconds < endAt;
+                return isForemanPro && isPaymentCaptured && isNotExpired;
             };
 
             // Helper function to check if a subscription is active
@@ -175,10 +223,26 @@ const userReducer = (state = initialState, action: any) => {
                     console.log('[userReducer] Legacy transporter detected (Rs 1/99 subscription)');
                     return true;
                 }
+                // Check for association pro subscription
+                if (isAssociationProSubscription(item)) {
+                    console.log('[userReducer] Association Pro detected (association_pro subscription)');
+                    return true;
+                }
+                // Check for transporter pro subscription
+                if (isTransporterProSubscription(item)) {
+                    console.log('[userReducer] Transporter Pro detected (transporter_pro subscription)');
+                    return true;
+                }
+                // Check for foreman pro subscription
+                if (isForemanProSubscription(item)) {
+                    console.log('[userReducer] Foreman Pro detected (foreman_pro subscription)');
+                    return true;
+                }
                 // Standard subscription check
                 const hasSubscriptionId = !!item.subscription_id;
                 const isPaymentCaptured = item.payment_status === 'captured';
-                const isNotExpired = currentTimeInSeconds < item.end_at;
+                const endAt = getEndAtTimestamp(item);
+                const isNotExpired = currentTimeInSeconds < endAt;
                 return hasSubscriptionId && isPaymentCaptured && isNotExpired;
             };
 
@@ -217,12 +281,26 @@ const userReducer = (state = initialState, action: any) => {
 
             // Determine if user has an active subscription
             const hasActiveSubscription = !!activeSubscription;
-            const subscriptionExpiry = payloadSubscriptionDetails?.end_at
-                ? currentTimeInSeconds > payloadSubscriptionDetails.end_at
-                : true;
+            const endAtForExpiry = payloadSubscriptionDetails?.end_at
+                ? (typeof payloadSubscriptionDetails.end_at === 'string'
+                    ? parseInt(payloadSubscriptionDetails.end_at, 10)
+                    : payloadSubscriptionDetails.end_at)
+                : 0;
+            const subscriptionExpiry = endAtForExpiry ? currentTimeInSeconds > endAtForExpiry : true;
 
             // showSubscriptionModel is true when user does NOT have an active subscription
             const shouldShowSubscriptionModal = !hasActiveSubscription;
+
+            console.log('[userReducer] Final subscription state:', {
+                hasActiveSubscription,
+                shouldShowSubscriptionModal,
+                subscriptionExpiry,
+                payment_type: payloadSubscriptionDetails?.payment_type,
+                subscription_plan_id: payloadSubscriptionDetails?.subscription_plan_id,
+                payment_status: payloadSubscriptionDetails?.payment_status,
+                end_at: payloadSubscriptionDetails?.end_at,
+                currentTimeInSeconds
+            });
 
             return {
                 ...state,

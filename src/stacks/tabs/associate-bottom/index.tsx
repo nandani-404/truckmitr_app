@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { useColor, useResponsiveScale } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { STACKS } from '@truckmitr/stacks/stacks';
@@ -9,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import DriverAssociation from '@truckmitr/src/app/layouts/association/driver-association-home';
 import DriverAssociationAddDriver from '@truckmitr/src/app/layouts/association/driver-association-add-driver';
 import { DriverAssociationEarnings, DriverAssociationProfile } from '@truckmitr/src/app/layouts/association';
+import DriverKiAwazInfo from '@truckmitr/src/app/layouts/main/driver-ki-awaz-info';
 
 const Tab = createBottomTabNavigator();
 
@@ -55,6 +57,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
     const tabs = [
         { name: STACKS.DRIVER_ASSOCIATION_HOME_TAB, label: t('home') || 'Home', icon: 'home' },
         { name: STACKS.DRIVER_ASSOCIATION_ADD_DRIVER, label: t('addDriver') || 'Add Driver', icon: 'person-add' },
+        { name: STACKS.DRIVER_KI_AWAZ_INFO, label: '', icon: 'mic', isSpecial: true },
         { name: STACKS.DRIVER_ASSOCIATION_EARNINGS, label: t('earnings') || 'Earnings', icon: 'wallet' },
         { name: STACKS.DRIVER_ASSOCIATION_PROFILE, label: t('profile') || 'Profile', icon: 'person' },
     ];
@@ -92,6 +95,26 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
                     }
                     return iconName;
                 };
+
+                if (tab.isSpecial) {
+                    return (
+                        <TouchableOpacity
+                            key={route.key}
+                            onPress={onPress}
+                            style={styles.centerButtonContainer}
+                            activeOpacity={0.9}
+                        >
+                            <LinearGradient
+                                colors={['#EF4444', '#F59E0B']}
+                                style={styles.centerButton}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                <Ionicons name="mic" size={32} color="#FFFFFF" />
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    );
+                }
 
                 return (
                     <TouchableOpacity
@@ -132,6 +155,10 @@ export default function AssociateBottomTabs() {
         >
             <Tab.Screen name={STACKS.DRIVER_ASSOCIATION_HOME_TAB} component={DriverAssociation} />
             <Tab.Screen name={STACKS.DRIVER_ASSOCIATION_ADD_DRIVER} component={DriverAssociationAddDriver} />
+            <Tab.Screen
+                name={STACKS.DRIVER_KI_AWAZ_INFO}
+                component={DriverKiAwazInfo}
+            />
             <Tab.Screen name={STACKS.DRIVER_ASSOCIATION_EARNINGS} component={DriverAssociationEarnings} />
             <Tab.Screen name={STACKS.DRIVER_ASSOCIATION_PROFILE} component={DriverAssociationProfile} />
         </Tab.Navigator>
@@ -181,5 +208,24 @@ const styles = StyleSheet.create({
     },
     tabLabel: {
         textAlign: 'center',
+    },
+    centerButtonContainer: {
+        top: -20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 60,
+    },
+    centerButton: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#EF4444',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 8,
     },
 });

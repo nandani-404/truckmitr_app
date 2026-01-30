@@ -24,6 +24,7 @@ import {
 import DriverAssociationProfileEdit from '../app/layouts/association/driver-association-profile-edit';
 
 import DriverAssociationEarningsInfo from '@truckmitr/src/app/layouts/association/driver-association-earnings-info';
+import DriverKiAwazInfo, { MyPostsScreen } from '@truckmitr/src/app/layouts/main/driver-ki-awaz-info';
 
 const Stack = createNativeStackNavigator();
 
@@ -99,6 +100,7 @@ export default function AssociateMain() {
             <Stack.Screen name={STACKS.ASSOCIATION_BANK_DETAILS} component={AssociationBankDetails} />
             <Stack.Screen name={STACKS.DRIVER_ASSOCIATION_EARNINGS_INFO} component={DriverAssociationEarningsInfo} />
             <Stack.Screen name={STACKS.ASSOCIATION_PROFILE_EDIT} component={DriverAssociationProfileEdit} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_MY_POSTS} component={MyPostsScreen} />
 
         </Stack.Navigator>
     )

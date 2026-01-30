@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from '@truckmitr/utils/config/index';
+import ScreenHeader from '@truckmitr/src/app/components/screen-header';
 
 const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
 
@@ -130,7 +130,6 @@ const DriverAssociationDriverDetails = () => {
     const navigation = useNavigation();
     const route = useRoute<RouteProp<{ params: Params }, 'params'>>();
     const driverParam = route.params?.driver;
-    const insets = useSafeAreaInsets();
 
     const [details, setDetails] = useState<FullDriver | null>(null);
     const [loading, setLoading] = useState(true);
@@ -234,21 +233,18 @@ const DriverAssociationDriverDetails = () => {
     );
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.container}>
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#0F172A" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('driverProfile')}</Text>
-                <View style={{ width: 24 }}>
-                    {details && (
+            <ScreenHeader
+                title={t('association_driver_details')}
+                rightComponent={
+                    details ? (
                         <TouchableOpacity onPress={fetchDetails}>
                             <Ionicons name="refresh" size={20} color="#3B82F6" />
                         </TouchableOpacity>
-                    )}
-                </View>
-            </View>
+                    ) : undefined
+                }
+            />
 
             {loading ? (
                 <View style={styles.centerContainer}>

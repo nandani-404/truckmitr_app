@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions, Modal, Keyboard, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, TextInput, RefreshControl, ActivityIndicator, Dimensions, Modal, Keyboard, Linking, Platform, StatusBar } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScreenHeader from '@truckmitr/src/app/components/screen-header';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -808,17 +809,13 @@ const DriverAssociationJobs = () => {
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <View style={[styles.container, { paddingTop: insets.top }]}>
+            <View style={styles.container}>
+                <StatusBar barStyle="dark-content" backgroundColor="#fff" />
                 {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#0F172A" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>{t('availableJobs')}</Text>
-                    <View style={styles.headerRight}>
-                        <Text style={styles.jobCount}>{jobs.length} {t('jobsLowercase')}</Text>
-                    </View>
-                </View>
+                <ScreenHeader
+                    title={t('association_jobs')}
+                    titleCount={jobs.length}
+                />
 
                 {loading ? (
                     renderShimmerList()

@@ -10,16 +10,13 @@ import {
     Share,
     Clipboard,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { NavigatorParams } from '@truckmitr/stacks/stacks';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { useTranslation } from 'react-i18next';
+import ScreenHeader from '@truckmitr/src/app/components/screen-header';
 
-type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
+
 
 // Document type for expiring documents
 interface ExpiringDocument {
@@ -152,27 +149,24 @@ const DriverCard = ({ driver }: { driver: DriverWithExpiringDocs }) => {
             {/* WhatsApp Share Button */}
             <TouchableOpacity style={styles.whatsappBtn} onPress={handleShareWhatsApp}>
                 <Ionicons name="logo-whatsapp" size={20} color="#fff" />
-                <Text style={styles.whatsappBtnText}>Remind via WhatsApp</Text>
+                <Text style={styles.whatsappBtnText}>{t('association_whatsapp_remind')}</Text>
             </TouchableOpacity>
         </View>
     );
 };
 
 export default function DriverAssociationExpiringDocuments() {
-    const navigation = useNavigation<NavigatorProp>();
-    const safeAreaInsets = useSafeAreaInsets();
+    const { t } = useTranslation();
 
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: safeAreaInsets.top + 12 }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="#1F2937" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Expiring Documents</Text>
-            </View>
+            <ScreenHeader
+                title={t('association_expiring_documents')}
+                titleCount={DRIVERS_WITH_EXPIRING_DOCS.length > 0 ? DRIVERS_WITH_EXPIRING_DOCS.length : undefined}
+            />
 
             <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
                 {DRIVERS_WITH_EXPIRING_DOCS.map((driver) => (
@@ -181,7 +175,7 @@ export default function DriverAssociationExpiringDocuments() {
                 {DRIVERS_WITH_EXPIRING_DOCS.length === 0 && (
                     <View style={styles.emptyState}>
                         <MaterialCommunityIcons name="file-check" size={48} color="#22C55E" />
-                        <Text style={styles.emptyText}>All documents are up to date</Text>
+                        <Text style={styles.emptyText}>{t('association_no_expiring_documents')}</Text>
                     </View>
                 )}
             </ScrollView>

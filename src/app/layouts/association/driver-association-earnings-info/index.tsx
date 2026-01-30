@@ -4,54 +4,28 @@ import {
     Text,
     ScrollView,
     StyleSheet,
-    TouchableOpacity,
     StatusBar,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { NavigatorParams } from '@truckmitr/stacks/stacks';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import { Space } from '@truckmitr/src/app/components';
-import { hitSlop } from '@truckmitr/src/app/functions';
 import { useTranslation } from 'react-i18next';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
-
-type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
+import ScreenHeader from '@truckmitr/src/app/components/screen-header';
 
 export default function DriverAssociationEarningsInfo() {
     const { t } = useTranslation();
-    const safeAreaInsets = useSafeAreaInsets();
-    const navigation = useNavigation<NavigatorProp>();
     const colors = useColor();
     const { shadow } = useShadow();
     const { responsiveFontSize, responsiveHeight } = useResponsiveScale();
 
-    const goBack = () => {
-        navigation.goBack();
-    };
-
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-            <Space height={safeAreaInsets.top} />
 
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity
-                    hitSlop={hitSlop(10)}
-                    onPress={goBack}
-                    style={styles.backButton}
-                >
-                    <Ionicons name="chevron-back" size={24} color={colors.royalBlue} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: colors.royalBlue }]}>
-                    {t('earningsChart') || 'Earnings Chart'}
-                </Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader
+                title={t('association_earnings_info')}
+            />
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
