@@ -71,6 +71,27 @@ const COLORS = {
     inactiveTabText: '#64748B',
 };
 
+// Helper to format date from YYYY-MM-DD to DD MMM YYYY
+const formatDate = (dateString?: string): string => {
+    if (!dateString) return '';
+    // Handle YYYY-MM-DD format specifically to avoid timezone issues
+    const dateParts = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateParts) {
+        const year = dateParts[1];
+        const monthIndex = parseInt(dateParts[2], 10) - 1;
+        const day = parseInt(dateParts[3], 10);
+
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        if (monthIndex >= 0 && monthIndex < 12) {
+            return `${day} ${monthNames[monthIndex]} ${year}`;
+        }
+    }
+    return dateString;
+};
+
 // Response Interfaces
 interface DLVerificationResponse {
     status: number;
@@ -165,6 +186,7 @@ interface PANVerificationCheckResponse {
     full_name: string;
     first_name: string;
     middle_name: string;
+    dob: string;
     last_name: string;
     gender: string;
     email: string | null;
@@ -490,17 +512,17 @@ export default function DocumentVerification() {
                             user_full_name: data.user_full_name,
                             name: data.user_full_name,
                             father_or_husband: data.father_or_husband,
-                            dob: data.dob,
-                            user_dob: data.dob,
+                            dob: formatDate(data.dob),
+                            user_dob: formatDate(data.dob),
                             father_name: data.father_or_husband,
                             user_blood_group: data.user_blood_group,
                             blood_group: data.user_blood_group,
-                            issued_date: data.issued_date,
-                            issue_date: data.issued_date,
-                            expiry_date: data.expiry_date,
+                            issued_date: formatDate(data.issued_date),
+                            issue_date: formatDate(data.issued_date),
+                            expiry_date: formatDate(data.expiry_date),
                             validity: {
-                                non_transport: data.expiry_date || '',
-                                transport: data.expiry_date || '',
+                                non_transport: formatDate(data.expiry_date) || '',
+                                transport: formatDate(data.expiry_date) || '',
                             },
                             user_address: data.user_address ? [{
                                 addressLine1: data.user_address.line1 || '',
@@ -566,7 +588,7 @@ export default function DocumentVerification() {
                             first_name: data.first_name,
                             last_name: data.last_name,
                             gender: data.gender,
-                            dob: '', // DOB not returned in check API
+                            dob: formatDate(data.dob), // DOB not returned in check API
                             email: data.email || '',
                             mobile: data.mobile || '',
                             address: {
@@ -850,7 +872,29 @@ export default function DocumentVerification() {
                 const response = await axiosInstance.post(END_POINTS.DL_VERIFY, payload, config);
 
                 if (response?.data?.status === 1) {
-                    setDlResult(response.data);
+                    const data = response.data;
+                    // Format dates in the response result
+                    if (data.result) {
+                        data.result.dob = formatDate(data.result.dob);
+                        data.result.user_dob = formatDate(data.result.user_dob);
+                        data.result.issue_date = formatDate(data.result.issue_date);
+                        data.result.issued_date = formatDate(data.result.issued_date);
+                        data.result.expiry_date = formatDate(data.result.expiry_date);
+
+                        if (data.result.cov_details) {
+                            data.result.cov_details = data.result.cov_details.map((cov: any) => ({
+                                ...cov,
+                                issue_date: formatDate(cov.issue_date),
+                                expiry_date: formatDate(cov.expiry_date)
+                            }));
+                        }
+
+                        if (data.result.validity) {
+                            data.result.validity.non_transport = formatDate(data.result.validity.non_transport);
+                            data.result.validity.transport = formatDate(data.result.validity.transport);
+                        }
+                    }
+                    setDlResult(data);
                     cardScale.value = 0;
                 } else {
                     const apiError = response?.data?.message || t('verificationFailed') || 'Verification failed';
@@ -873,7 +917,12 @@ export default function DocumentVerification() {
                 const response = await axiosInstance.post(END_POINTS.PAN_VERIFY, payload, config);
 
                 if (response?.data?.status === 1) {
-                    setPanResult(response.data);
+                    const data = response.data;
+                    // Format dates in the response result
+                    if (data.result) {
+                        data.result.dob = formatDate(data.result.dob);
+                    }
+                    setPanResult(data);
                     cardScale.value = 0;
                 } else {
                     const apiError = response?.data?.message || t('verificationFailed') || 'Verification failed';
@@ -1006,7 +1055,7 @@ export default function DocumentVerification() {
                             <DetailRow icon="card" label="PAN Number" value={data.pan} highlight />
                             <DetailRow icon="male-female" label={t('gender') || 'Gender'} value={data.gender} />
                             <DetailRow icon="calendar" label={t('dob') || 'Date of Birth'} value={data.dob} />
-                            <DetailRow icon="call" label={t('mobile') || 'Mobile'} value={data.mobile} />
+                            {/* <DetailRow icon="call" label={t('mobile') || 'Mobile'} value={data.mobile} /> */}
                             {data.address && (
                                 <DetailRow
                                     icon="location"
