@@ -84,6 +84,7 @@ interface DLVerificationResponse {
         img?: string;
         father_name?: string;
         father_or_husband?: string;
+
         cov_details?: {
             cov: string;
             issue_date: string;
@@ -139,6 +140,8 @@ interface DLVerificationCheckResponse {
     dl_number_verified?: boolean;
     user_full_name?: string;
     father_or_husband?: string;
+    dob?: string;
+    user_dob?: string;
     user_blood_group?: string;
     issued_date?: string;
     expiry_date?: string;
@@ -487,6 +490,8 @@ export default function DocumentVerification() {
                             user_full_name: data.user_full_name,
                             name: data.user_full_name,
                             father_or_husband: data.father_or_husband,
+                            dob: data.dob,
+                            user_dob: data.dob,
                             father_name: data.father_or_husband,
                             user_blood_group: data.user_blood_group,
                             blood_group: data.user_blood_group,
