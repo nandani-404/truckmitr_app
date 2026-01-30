@@ -42,7 +42,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
         { name: STACKS.DHABHA_HOME, label: t('home') || 'Home', icon: 'home' },
         { name: STACKS.DHABHA_ADD_DRIVER, label: t('addDriver') || 'Add Driver', icon: 'person-add' },
         { name: STACKS.DHABHA_MY_REFERRALS, label: t('myReferrals') || 'My Referrals', icon: 'people' },
-        { name: STACKS.DHABHA_EARNINGS, label: t('earnings') || 'Earnings', icon: 'wallet' },
+        { name: STACKS.DHABHA_EARNINGS, label: t('wallet') || 'My Earnings', icon: 'wallet' },
         { name: STACKS.DHABHA_PROFILE, label: t('profile') || 'Profile', icon: 'person' },
     ];
 
