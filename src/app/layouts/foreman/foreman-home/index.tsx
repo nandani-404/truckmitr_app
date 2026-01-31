@@ -167,12 +167,17 @@ export default function ForemanHome() {
     // Checking is_active flag, specific plan_id (11) or payment_type for Foreman Pro
     // console.log("user unique_id", user?.unique_id);
 
+    // Check if subscription details have been loaded (not null)
+    // This prevents showing the modal before subscription data is fetched from API
+    const isSubscriptionDataLoaded = subscriptionDetails !== null;
+
     const isForemanPro =
         user?.is_active === 1 ||
         user?.plan_id === 11 ||
         user?.subscription_plan_id === '11' ||
         user?.payment_type === 'foreman_pro' ||
         user?.subscription_status === 'active' ||
+        subscriptionDetails?.hasActiveSubscription === true ||
         (subscriptionDetails?.hasActiveSubscription && (subscriptionDetails?.payment_type === 'foreman_pro' || subscriptionDetails?.subscription_plan_id == 11));
 
     const handleFeatureAccess = (action: () => void) => {
@@ -274,14 +279,21 @@ export default function ForemanHome() {
 
             fetchData();
 
-            // Open payment modal if not Pro regarding USER REQUES
-            if (!isForemanPro) {
-                dispatch(subscriptionModalAction(true));
-            }
-
             return () => { isMounted = false; };
-        }, [fetchDashboardData, isForemanPro])
+        }, [fetchDashboardData])
     );
+
+    // Separate effect to handle subscription modal
+    // This runs only when subscription data is loaded and user is not Pro
+    // This fixes the issue where modal was shown before subscription data was fetched
+    React.useEffect(() => {
+        // Only show modal if:
+        // 1. Subscription data has been loaded (not null)
+        // 2. User is NOT a Foreman Pro
+        if (isSubscriptionDataLoaded && !isForemanPro) {
+            dispatch(subscriptionModalAction(true));
+        }
+    }, [isSubscriptionDataLoaded, isForemanPro]);
 
     // Pull to refresh handler
     const onRefresh = useCallback(async () => {
