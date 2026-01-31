@@ -174,6 +174,9 @@ export type NavigatorParams = {
     dhabhaBankDetails: undefined;
     dhabhaMyDhabha: undefined;
     dhabhaNearby: undefined;
+    dhabhaDriverSearch: undefined;
+    dhabhaProfileEdit: undefined;
+    dhabhaDriverKiAwaz: undefined;
 };
 
 export const STACKS = {
@@ -392,4 +395,7 @@ export const STACKS = {
     DHABHA_BANK_DETAILS: 'dhabhaBankDetails',
     DHABHA_MY_DHABHA: 'dhabhaMyDhabha',
     DHABHA_NEARBY: 'dhabhaNearby',
+    DHABHA_DRIVER_SEARCH: 'dhabhaDriverSearch',
+    DHABHA_PROFILE_EDIT: 'dhabhaProfileEdit',
+    DHABHA_DRIVER_KI_AWAZ: 'dhabhaDriverKiAwaz',
 } as const;

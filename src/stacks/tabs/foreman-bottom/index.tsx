@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import { useColor, useResponsiveScale } from '@truckmitr/src/app/hooks';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +25,7 @@ function ForemanTabBar({ state, descriptors, navigation }: any) {
     const tabs = [
         { name: STACKS.FOREMAN_HOME, icon: 'home', label: 'Home' },
         { name: STACKS.FOREMAN_ADD_DRIVER, icon: 'account-plus', label: 'Add Driver' },
-        { name: STACKS.FOREMAN_DRIVER_KI_AWAZ, icon: 'microphone', label: 'Driver Ki Awaz' },
+        { name: STACKS.FOREMAN_DRIVER_KI_AWAZ, icon: 'mic', label: '', isSpecial: true },
         { name: STACKS.FOREMAN_MY_EARNINGS, icon: 'cash-multiple', label: 'Earnings' },
         { name: STACKS.FOREMAN_PROFILE, icon: 'account-circle', label: 'Profile' },
     ];
@@ -47,6 +49,26 @@ function ForemanTabBar({ state, descriptors, navigation }: any) {
                     }
                 };
 
+                if (tabConfig.isSpecial) {
+                    return (
+                        <TouchableOpacity
+                            key={route.key}
+                            onPress={onPress}
+                            style={styles.centerButtonContainer}
+                            activeOpacity={0.9}
+                        >
+                            <LinearGradient
+                                colors={['#EF4444', '#F59E0B']}
+                                style={styles.centerButton}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                <Ionicons name="mic" size={32} color="#FFFFFF" />
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    );
+                }
+
                 return (
                     <TouchableOpacity
                         key={route.key}
@@ -54,18 +76,11 @@ function ForemanTabBar({ state, descriptors, navigation }: any) {
                         style={styles.tabItem}
                         activeOpacity={0.7}
                     >
-                        {tabConfig.name === STACKS.FOREMAN_DRIVER_KI_AWAZ ? (
-                            <Image
-                                source={require('@truckmitr/assets/logo/speaker.png')}
-                                style={{ height: 40, width: 40 }}
-                            />
-                        ) : (
-                            <MaterialCommunityIcons
-                                name={tabConfig.icon}
-                                size={30}
-                                color={isFocused ? colors.white : colors.whiteOpacity(0.5)}
-                            />
-                        )}
+                        <MaterialCommunityIcons
+                            name={tabConfig.icon}
+                            size={30}
+                            color={isFocused ? colors.white : colors.whiteOpacity(0.5)}
+                        />
                         {isFocused && (
                             <Text
                                 numberOfLines={1}
@@ -124,5 +139,24 @@ const styles = StyleSheet.create({
     tabLabel: {
         marginTop: 4,
         fontWeight: '500',
+    },
+    centerButtonContainer: {
+        top: -20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 60,
+    },
+    centerButton: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#EF4444',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 8,
     },
 });

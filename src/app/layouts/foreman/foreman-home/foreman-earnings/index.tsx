@@ -117,7 +117,7 @@ const DriverCard = ({ item }: DriverCardProps) => {
                 <View style={driverCardStyles.driverDetails}>
                     <View style={driverCardStyles.nameRow}>
                         <Text style={driverCardStyles.driverName}>{item.name}</Text>
-                        {item.hiring_charges.commission_amount > 0 && (
+                        {(item.hiring_charges?.commission_amount || 0) > 0 && (
                             <View style={[driverCardStyles.miniBadge, { backgroundColor: '#F1F5F9' }]}>
                                 <Text style={[driverCardStyles.miniBadgeText, { color: '#64748B' }]}>
                                     {t('hiring')}
@@ -159,7 +159,7 @@ const DriverCard = ({ item }: DriverCardProps) => {
                         <View>
                             <Text style={driverCardStyles.commissionLabel}>{t('hiring')}</Text>
                             <Text style={[driverCardStyles.commissionAmount, { color: '#F59E0B' }]}>
-                                ₹{item.hiring_charges.commission_amount}
+                                ₹{item.hiring_charges?.commission_amount || 0}
                             </Text>
                         </View>
                     </View>
@@ -185,7 +185,7 @@ const DriverCard = ({ item }: DriverCardProps) => {
                         <View>
                             <Text style={driverCardStyles.commissionLabel}>{t('total')}</Text>
                             <Text style={[driverCardStyles.commissionAmount, { color: '#10B981', fontWeight: '700' }]}>
-                                ₹{(item.commission_amount + item.hiring_charges.commission_amount).toFixed(1)}
+                                ₹{(item.commission_amount + (item.hiring_charges?.commission_amount || 0)).toFixed(1)}
                             </Text>
                         </View>
                     </View>
@@ -368,7 +368,7 @@ export default function ForemanEarnings() {
     // Filter logic
     const filteredSubscriptions = (earningsData?.subscriptions || []).filter(sub => {
         if (selectedCategory === 'HIRING') {
-            return sub.hiring_charges.commission_amount > 0;
+            return (sub.hiring_charges?.commission_amount || 0) > 0;
         }
         if (selectedCategory === 'SUBSCRIPTION') {
             if (selectedSubscription === 'ALL') return true;

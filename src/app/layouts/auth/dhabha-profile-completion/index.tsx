@@ -112,7 +112,8 @@ export default function ProfileCompletionDhabha() {
     const STEPS = DHABHA_STEPS;
 
     useEffect(() => {
-        const newProgress = ((currentStep + 1) / STEPS.length) * 100;
+        const nextStep = Math.min(currentStep + 1, STEPS.length);
+        const newProgress = (nextStep / STEPS.length) * 100;
         progressWidth.value = withSpring(newProgress, { damping: 15, stiffness: 90 });
     }, [currentStep]);
 
@@ -262,8 +263,12 @@ export default function ProfileCompletionDhabha() {
                     }
 
                     // Proceed to next step
-                    contentOpacity.value = withTiming(0, { duration: 200 });
-                    setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    } else {
+                        submitProfile();
+                    }
                 } else {
                     showToast(response?.data?.message || t('failedToSaveBusinessInfo'));
                 }
@@ -317,8 +322,12 @@ export default function ProfileCompletionDhabha() {
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('locationDetailsSavedSuccess'));
                     // Proceed to next step
-                    contentOpacity.value = withTiming(0, { duration: 200 });
-                    setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    } else {
+                        submitProfile();
+                    }
                 } else {
                     showToast(response?.data?.message || t('failedToSaveLocationInfo'));
                 }
@@ -358,8 +367,12 @@ export default function ProfileCompletionDhabha() {
 
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('facilitiesSavedSuccess') || "Facilities saved!");
-                    contentOpacity.value = withTiming(0, { duration: 200 });
-                    setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    } else {
+                        submitProfile();
+                    }
                 } else {
                     showToast(response?.data?.message || t('failedToSaveFacilities'));
                 }
@@ -421,8 +434,12 @@ export default function ProfileCompletionDhabha() {
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('operationalDetailsSavedSuccess') || "Operational details saved!");
                     // Proceed to next step
-                    contentOpacity.value = withTiming(0, { duration: 200 });
-                    setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    } else {
+                        submitProfile();
+                    }
                 } else {
                     showToast(response?.data?.message || t('failedToSaveOperationalInfo'));
                 }
@@ -489,8 +506,12 @@ export default function ProfileCompletionDhabha() {
 
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('foodMenuSavedSuccess') || 'Food menu saved!');
-                    contentOpacity.value = withTiming(0, { duration: 200 });
-                    setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    } else {
+                        submitProfile();
+                    }
                 } else {
                     showToast(response?.data?.message || t('failedToSaveFoodMenu') || 'Failed to save food menu');
                 }
@@ -545,8 +566,12 @@ export default function ProfileCompletionDhabha() {
 
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('photosSavedSuccess') || 'Photos saved successfully!');
-                    contentOpacity.value = withTiming(0, { duration: 200 });
-                    setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    } else {
+                        submitProfile();
+                    }
                 } else {
                     showToast(response?.data?.message || t('failedToSavePhotos') || 'Failed to save photos');
                 }
@@ -609,12 +634,25 @@ export default function ProfileCompletionDhabha() {
             // SIMULATED API CALL
             // const response = await axiosInstance.post(END_POINTS.EDIT_PROFILE, formData);
 
-            setTimeout(() => {
-                setFinishing(false);
-                showToast(t('profileSubmittedSuccess'));
+            try {
+                const profileResponse = await axiosInstance.get(END_POINTS.GET_PROFILE);
+                if (profileResponse?.data?.status) {
+                    dispatch(userAction(profileResponse.data));
+                    dispatch(userAuthenticatedAction(true));
+                    showToast(t('profileSubmittedSuccess'));
+                    // Navigation loop handled by Routes stack switch based on profileRequiredFieldsStatus
+                } else {
+                    // Fallback if fetch fails but we want to let them in (risky but keeps existing flow)
+                    dispatch(userAuthenticatedAction(true));
+                    navigation.navigate(STACKS.DHABHA_BOTTOM as any);
+                }
+            } catch (err) {
+                console.error('Error fetching profile after completion:', err);
                 dispatch(userAuthenticatedAction(true));
                 navigation.navigate(STACKS.DHABHA_BOTTOM as any);
-            }, 1500);
+            } finally {
+                setFinishing(false);
+            }
 
         } catch (error: any) {
             setFinishing(false);
@@ -1684,7 +1722,10 @@ export default function ProfileCompletionDhabha() {
     };
 
     const renderCurrentStep = () => {
-        switch (STEPS[currentStep].id) {
+        const step = STEPS[currentStep];
+        if (!step) return null;
+
+        switch (step.id) {
             case 'basic_info': return renderBasicInfo();
             case 'location_details': return renderLocationDetails();
             case 'operational_details': return renderOperationalDetails();
@@ -1714,8 +1755,8 @@ export default function ProfileCompletionDhabha() {
 
             {/* Title Block */}
             <View style={styles.titleContainer}>
-                <Text style={styles.title}>{t(STEPS[currentStep].title)}</Text>
-                <Text style={styles.subtitle}>{t(STEPS[currentStep].subtitle)}</Text>
+                <Text style={styles.title}>{STEPS[currentStep] ? t(STEPS[currentStep].title) : ''}</Text>
+                <Text style={styles.subtitle}>{STEPS[currentStep] ? t(STEPS[currentStep].subtitle) : ''}</Text>
             </View>
 
             <KeyboardAvoidingView

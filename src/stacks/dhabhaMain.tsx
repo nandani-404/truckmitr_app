@@ -15,6 +15,8 @@ import DhabhaAddDriver from '@truckmitr/src/app/layouts/dhaba/dhabha-add-driver'
 import DhabhaWallet from '@truckmitr/src/app/layouts/dhaba/dhabha-wallet';
 import DhabhaMyReferralsScreen from '@truckmitr/src/app/layouts/dhaba/dhabha-my-referrals';
 import DhabhaMyProfile from '@truckmitr/src/app/layouts/dhaba/dhabha-my-profile';
+import DhabaProfileEdit from '@truckmitr/src/app/layouts/dhaba/dhaba-profile-edit';
+import DriverKiAwazHome from '@truckmitr/src/app/layouts/main/driver-ki-awaz-info/DriverKiAwazHome';
 
 // Import shared screens
 import { Settings, Rating, ContactUs, Privacy, LanguageMain } from '@truckmitr/layouts/index';
@@ -143,6 +145,7 @@ const DhabhaBottomTabs = () => {
 
 // Main Stack Navigator
 import DhabhaNearby from '@truckmitr/src/app/layouts/dhaba/dhabha-nearby';
+import DhabhaDriverSearch from '@truckmitr/src/app/layouts/dhaba/dhabha-driver-search';
 
 // ... imports
 
@@ -158,6 +161,9 @@ export default function DhabhaMain() {
             <Stack.Screen name={STACKS.DHABHA_BANK_DETAILS} component={DhabaBankDetails} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_MY_DHABHA} component={DhabhaMyDhabha} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_NEARBY} component={DhabhaNearby} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DHABHA_DRIVER_SEARCH} component={DhabhaDriverSearch} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DHABHA_PROFILE_EDIT} component={DhabaProfileEdit} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DHABHA_DRIVER_KI_AWAZ} component={DriverKiAwazHome} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.LANGUAGE_MAIN} component={LanguageMain} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     );

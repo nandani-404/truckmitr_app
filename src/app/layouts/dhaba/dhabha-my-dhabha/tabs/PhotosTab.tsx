@@ -39,6 +39,8 @@ const PhotosTab = () => {
     const fetchPhotos = async () => {
         try {
             const response: any = await axiosInstance.get(END_POINTS.DHABA_PHOTOS);
+            console.log("response", response);
+
             if (response?.data?.success && response?.data?.photos) {
                 const interiorPhotos = response.data.photos.Interior || [];
                 const newSlots: PhotoSlot[] = Array.from({ length: 7 }, () => ({ id: null, uri: null, isLocal: false }));
@@ -47,9 +49,12 @@ const PhotosTab = () => {
                     if (idx < 7) {
                         // Handle potential double slash in URL
                         const cleanUrl = p.image_url.startsWith('/') ? p.image_url : `/${p.image_url}`;
+                        // Add storage path if not present (based on user's attempt to access storage/app/public)
+                        const finalPath = cleanUrl.includes('storage') ? cleanUrl : `/storage/app/public${cleanUrl}`;
+
                         newSlots[idx] = {
                             id: p.id,
-                            uri: `${BASE_URL.replace(/\/$/, '')}${cleanUrl}`,
+                            uri: `${BASE_URL.replace(/\/$/, '')}${finalPath}`,
                             isLocal: false
                         };
                     }

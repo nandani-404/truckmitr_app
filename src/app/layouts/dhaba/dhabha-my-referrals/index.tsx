@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,89 +7,38 @@ import {
     FlatList,
     Modal,
     Platform,
-    ScrollView
+    ScrollView,
+    ActivityIndicator,
+    RefreshControl
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useResponsiveScale, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { hitSlop } from '@truckmitr/src/app/functions';
-
-// Mock Data
-const MOCK_REFERRALS = [
-    {
-        id: '1',
-        name: 'Rajesh Kumar',
-        mobile: '98******12',
-        state: 'Haryana',
-        date: '27 Jan 2024, 10:30 AM',
-        timestamp: new Date('2024-01-27T10:30:00').getTime(),
-        status: 'Verified',
-        walletStatus: 'Credited',
-        amount: 10
-    },
-    {
-        id: '2',
-        name: 'Amit Singh',
-        mobile: '99******45',
-        state: 'Punjab',
-        date: '26 Jan 2024, 02:15 PM',
-        timestamp: new Date('2024-01-26T14:15:00').getTime(),
-        status: 'Pending',
-        walletStatus: 'Pending',
-        amount: 10
-    },
-    {
-        id: '3',
-        name: 'Vikram Yadav',
-        mobile: '88******99',
-        state: 'Rajasthan',
-        date: '25 Jan 2024, 11:00 AM',
-        timestamp: new Date('2024-01-25T11:00:00').getTime(),
-        status: 'Rejected',
-        walletStatus: 'Not Eligible',
-        amount: 0,
-        rejectReason: 'Duplicate Entry'
-    },
-    {
-        id: '4',
-        name: 'Suresh Patel',
-        mobile: '91******23',
-        state: 'Gujarat',
-        date: '24 Jan 2024, 04:45 PM',
-        timestamp: new Date('2024-01-24T16:45:00').getTime(),
-        status: 'Verified',
-        walletStatus: 'Credited',
-        amount: 10
-    },
-    {
-        id: '5',
-        name: 'Dinesh Karthik',
-        mobile: '78******56',
-        state: 'Tamil Nadu',
-        date: '23 Jan 2024, 09:20 AM',
-        timestamp: new Date('2024-01-23T09:20:00').getTime(),
-        status: 'Pending',
-        walletStatus: 'Pending',
-        amount: 10
-    }
-];
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/src/utils/config';
+import moment from 'moment';
 
 // Status Badge Component
 const StatusBadge = ({ status }: { status: string }) => {
+    const { t } = useTranslation();
     let bg = '#F3F4F6';
     let color = '#4B5563';
     let icon = 'ellipse';
 
-    if (status === 'Verified') {
+    const lowerStatus = status?.toLowerCase();
+
+    if (lowerStatus === 'paid' || lowerStatus === 'verified' || lowerStatus === 'credited') {
         bg = '#DCFCE7';
         color = '#16A34A';
         icon = 'checkmark-circle';
-    } else if (status === 'Pending') {
+    } else if (lowerStatus === 'pending') {
         bg = '#FEF3C7';
         color = '#D97706';
         icon = 'time';
-    } else if (status === 'Rejected') {
+    } else if (lowerStatus === 'rejected') {
         bg = '#FEE2E2';
         color = '#DC2626';
         icon = 'close-circle';
@@ -98,12 +47,13 @@ const StatusBadge = ({ status }: { status: string }) => {
     return (
         <View style={[styles.badgeContainer, { backgroundColor: bg }]}>
             <Ionicons name={icon} size={12} color={color} style={{ marginRight: 4 }} />
-            <Text style={[styles.badgeText, { color: color }]}>{status}</Text>
+            <Text style={[styles.badgeText, { color: color, textTransform: 'capitalize' }]}>{t(lowerStatus || status)}</Text>
         </View>
     );
 };
 
 export default function DhabhaMyReferrals() {
+    const { t } = useTranslation();
     const navigation = useNavigation();
     const safeAreaInsets = useSafeAreaInsets();
     useStatusBarStyle('dark-content');
@@ -112,67 +62,80 @@ export default function DhabhaMyReferrals() {
     const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
 
     // Criteria
-    const [statusFilter, setStatusFilter] = useState('All'); // For Quick Chips
-    const [selectedStates, setSelectedStates] = useState<string[]>([]);
-    const [isStateDropdownOpen, setIsStateDropdownOpen] = useState(false);
-    const [dateRange, setDateRange] = useState('All Time');
+    // status: 'all', 'paid', 'pending'
+    const [statusFilter, setStatusFilter] = useState('all');
+    // filter (date): 'today', 'last7Days', 'last30Days', 'allTime'
+    const [dateRange, setDateRange] = useState('allTime');
 
-    // All Indian States
-    const ALL_STATES = [
-        'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat',
-        'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh',
-        'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
-        'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
-        'Uttarakhand', 'West Bengal', 'Andaman and Nicobar Islands', 'Chandigarh',
-        'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir', 'Ladakh',
-        'Lakshadweep', 'Puducherry'
-    ];
+    // Data State
+    const [referrals, setReferrals] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [stats, setStats] = useState({
+        totalEarned: 0,
+        pendingCount: 0,
+        totalReferrals: 0
+    });
+    const [refreshing, setRefreshing] = useState(false);
 
-    // Filter Logic
-    const filteredData = useMemo(() => {
-        return MOCK_REFERRALS.filter(item => {
-            // 1. Status Check
-            if (statusFilter !== 'All' && item.status !== statusFilter) return false;
+    const fetchReferrals = useCallback(async () => {
+        try {
+            setLoading(true);
 
-            // 2. State Check
-            if (selectedStates.length > 0 && !selectedStates.includes(item.state)) return false;
+            // Map UI filters to API params
+            let apiStatus = 'all';
+            if (statusFilter === 'paid') apiStatus = 'paid';
+            else if (statusFilter === 'pending') apiStatus = 'pending';
 
-            // 3. Date Check (Mock Logic)
-            const now = new Date().getTime();
-            const OneDay = 24 * 60 * 60 * 1000;
-            const diff = now - item.timestamp;
+            let apiFilter = 'all';
+            if (dateRange === 'today') apiFilter = 'today';
+            else if (dateRange === 'last7Days') apiFilter = 'last7';
+            else if (dateRange === 'last30Days') apiFilter = 'last30';
 
-            if (dateRange === 'Today') {
-                if (diff > OneDay) return false; // Rough check
-            } else if (dateRange === 'Last 7 Days') {
-                if (diff > 7 * OneDay) return false;
-            } else if (dateRange === 'Last 30 Days') {
-                if (diff > 30 * OneDay) return false;
+            const response = await axiosInstance.get(END_POINTS.DHABA_COMMISSION_DETAILS, {
+                params: {
+                    filter: apiFilter,
+                    status: apiStatus
+                }
+            });
+
+            if (response.data && response.data.success && response.data.data) {
+                const apiData = response.data.data;
+                const driversList = apiData.drivers || [];
+                setReferrals(driversList);
+
+                // Pending count: drivers with status 'pending'
+                const pendingC = driversList.filter((item: any) => item?.status?.toLowerCase() === 'pending').length;
+
+                setStats({
+                    totalEarned: parseFloat(apiData.total_commission) || 0,
+                    pendingCount: pendingC,
+                    totalReferrals: parseInt(apiData.driver_count) || 0
+                });
+            } else {
+                setReferrals([]);
+                setStats({ totalEarned: 0, pendingCount: 0, totalReferrals: 0 });
             }
+        } catch (error) {
+            console.error('Error fetching referrals:', error);
+            setReferrals([]);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [statusFilter, dateRange]);
 
-            return true;
-        });
-    }, [statusFilter, selectedStates, dateRange]);
+    useEffect(() => {
+        fetchReferrals();
+    }, [fetchReferrals]);
 
-    // Calculate Stats based on filtered data OR total data? Usually total stats shown, but filtered list.
-    // Let's show Total stats always.
-    const totalReferrals = MOCK_REFERRALS.length;
-    const totalEarned = MOCK_REFERRALS.reduce((sum, item) => sum + (item.amount || 0), 0);
-    const pendingCount = MOCK_REFERRALS.filter(item => item.status === 'Pending').length;
-
-    const toggleStateSelection = (state: string) => {
-        setSelectedStates(prev =>
-            prev.includes(state)
-                ? prev.filter(s => s !== state)
-                : [...prev, state]
-        );
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchReferrals();
     };
 
     const clearFilters = () => {
-        setStatusFilter('All');
-        setSelectedStates([]);
-        setIsStateDropdownOpen(false);
-        setDateRange('All Time');
+        setStatusFilter('all');
+        setDateRange('allTime');
         setIsFilterModalVisible(false);
     };
 
@@ -182,19 +145,17 @@ export default function DhabhaMyReferrals() {
             <View style={styles.cardHeader}>
                 <View style={styles.profileRow}>
                     <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+                        <Text style={styles.avatarText}>{(item.driver_name || 'U').charAt(0)}</Text>
                     </View>
                     <View>
-                        <Text style={styles.driverName}>{item.name}</Text>
+                        <Text style={styles.driverName}>{item.driver_name || 'Unknown User'}</Text>
                         <View style={styles.metaRow}>
                             <Ionicons name="call-outline" size={12} color="#6B7280" />
-                            <Text style={styles.metaText}>{item.mobile}</Text>
-                            <View style={styles.dot} />
-                            <Text style={styles.metaText}>{item.state}</Text>
+                            <Text style={styles.metaText}>{item.driver_mobile || 'N/A'}</Text>
                         </View>
                     </View>
                 </View>
-                <StatusBadge status={item.status} />
+                <StatusBadge status={item.status || 'Pending'} />
             </View>
 
             <View style={styles.divider} />
@@ -202,36 +163,32 @@ export default function DhabhaMyReferrals() {
             {/* Details Row: Date & Wallet */}
             <View style={styles.cardFooter}>
                 <View style={styles.dateContainer}>
-                    <Text style={styles.label}>Registered On</Text>
-                    <Text style={styles.value}>{item.date}</Text>
+                    <Text style={styles.label}>{t('date')}</Text>
+                    <Text style={styles.value}>
+                        {item.date ? moment(item.date).format('DD MMM YYYY, hh:mm A') : t('notSpecified')}
+                    </Text>
                 </View>
 
                 <View style={[styles.walletStatus,
-                item.walletStatus === 'Credited' ? styles.walletSuccess :
-                    item.walletStatus === 'Pending' ? styles.walletPending : styles.walletError
+                item.status?.toLowerCase() === 'paid' ? styles.walletSuccess :
+                    item.status?.toLowerCase() === 'pending' ? styles.walletPending : styles.walletError
                 ]}>
                     <Ionicons
-                        name={item.walletStatus === 'Credited' ? 'wallet' : 'wallet-outline'}
+                        name={item.status?.toLowerCase() === 'paid' ? 'wallet' : 'wallet-outline'}
                         size={14}
                         color={
-                            item.walletStatus === 'Credited' ? '#15803D' :
-                                item.walletStatus === 'Pending' ? '#B45309' : '#B91C1C'
+                            item.status?.toLowerCase() === 'paid' ? '#15803D' :
+                                item.status?.toLowerCase() === 'pending' ? '#B45309' : '#B91C1C'
                         }
                     />
                     <Text style={[styles.walletText, {
-                        color: item.walletStatus === 'Credited' ? '#15803D' :
-                            item.walletStatus === 'Pending' ? '#B45309' : '#B91C1C'
+                        color: item.status?.toLowerCase() === 'paid' ? '#15803D' :
+                            item.status?.toLowerCase() === 'pending' ? '#B45309' : '#B91C1C'
                     }]}>
-                        {item.walletStatus === 'Credited' ? `₹${item.amount} Credited` : item.walletStatus}
+                        {item.status?.toLowerCase() === 'paid' ? `₹${item.amount || 0}` : item.status}
                     </Text>
                 </View>
             </View>
-
-            {item.rejectReason && (
-                <View style={styles.rejectReasonBox}>
-                    <Text style={styles.rejectReasonText}>Reason: {item.rejectReason}</Text>
-                </View>
-            )}
         </View>
     );
 
@@ -246,13 +203,13 @@ export default function DhabhaMyReferrals() {
                 >
                     <Ionicons name="arrow-back" size={24} color="#1F2937" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Referrals</Text>
+                <Text style={styles.headerTitle}>{t('myReferrals')}</Text>
                 <TouchableOpacity
                     style={styles.filterBtn}
                     onPress={() => setIsFilterModalVisible(true)}
                 >
                     <Ionicons name="filter" size={20} color="#1F2937" />
-                    {(selectedStates.length > 0 || dateRange !== 'All Time' || statusFilter !== 'All') && (
+                    {(dateRange !== 'allTime' || statusFilter !== 'all') && (
                         <View style={styles.filterBadge} />
                     )}
                 </TouchableOpacity>
@@ -261,18 +218,18 @@ export default function DhabhaMyReferrals() {
             {/* Stats Summary */}
             <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{totalReferrals}</Text>
-                    <Text style={styles.statLabel}>Total Referrals</Text>
+                    <Text style={styles.statValue}>{stats.totalReferrals}</Text>
+                    <Text style={styles.statLabel}>{t('totalReferrals')}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                    <Text style={styles.statValue}>₹{totalEarned}</Text>
-                    <Text style={styles.statLabel}>Total Earned</Text>
+                    <Text style={styles.statValue}>₹{stats.totalEarned}</Text>
+                    <Text style={styles.statLabel}>{t('totalEarnedLabel')}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{pendingCount}</Text>
-                    <Text style={styles.statLabel}>Pending</Text>
+                    <Text style={styles.statValue}>{stats.pendingCount}</Text>
+                    <Text style={styles.statLabel}>{t('pending')}</Text>
                 </View>
             </View>
 
@@ -281,7 +238,7 @@ export default function DhabhaMyReferrals() {
                 <FlatList
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    data={['All', 'Verified', 'Pending', 'Rejected']}
+                    data={['all', 'paid', 'pending']}
                     keyExtractor={item => item}
                     contentContainerStyle={{ paddingHorizontal: 20, gap: 10, paddingVertical: 10 }}
                     renderItem={({ item }) => (
@@ -290,7 +247,7 @@ export default function DhabhaMyReferrals() {
                             style={[styles.filterChip, statusFilter === item && styles.filterChipActive]}
                         >
                             <Text style={[styles.filterChipText, statusFilter === item && styles.filterChipTextActive]}>
-                                {item}
+                                {t(item)}
                             </Text>
                         </TouchableOpacity>
                     )}
@@ -298,22 +255,31 @@ export default function DhabhaMyReferrals() {
             </View>
 
             {/* Drivers List */}
-            <FlatList
-                data={filteredData}
-                keyExtractor={item => item.id}
-                contentContainerStyle={[styles.listContent, { paddingBottom: safeAreaInsets.bottom + 20 }]}
-                renderItem={renderItem}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Ionicons name="search-outline" size={48} color="#D1D5DB" />
-                        <Text style={styles.emptyText}>No drivers found matching filters.</Text>
-                        <TouchableOpacity onPress={clearFilters}>
-                            <Text style={styles.clearFilterLink}>Clear Filters</Text>
-                        </TouchableOpacity>
-                    </View>
-                }
-            />
+            {loading && !refreshing ? (
+                <View style={[styles.listContent, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+                    <ActivityIndicator size="large" color="#EA580C" />
+                </View>
+            ) : (
+                <FlatList
+                    data={referrals}
+                    keyExtractor={(item, index) => item.driver_id?.toString() || index.toString()}
+                    contentContainerStyle={[styles.listContent, { paddingBottom: safeAreaInsets.bottom + 20 }]}
+                    renderItem={renderItem}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#EA580C']} />
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+                            <Text style={styles.emptyText}>{t('noReferralsFound')}</Text>
+                            <TouchableOpacity onPress={clearFilters}>
+                                <Text style={styles.clearFilterLink}>{t('clearFilters')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    }
+                />
+            )}
 
             {/* Comprehensive Filter Modal */}
             <Modal
@@ -325,7 +291,7 @@ export default function DhabhaMyReferrals() {
                 <View style={styles.modalContainer}>
                     <View style={[styles.modalContent, { paddingBottom: safeAreaInsets.bottom + 20 }]}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Filter Drivers</Text>
+                            <Text style={styles.modalTitle}>{t('filterReferrals')}</Text>
                             <TouchableOpacity onPress={() => setIsFilterModalVisible(false)}>
                                 <Ionicons name="close" size={24} color="#1F2937" />
                             </TouchableOpacity>
@@ -334,15 +300,15 @@ export default function DhabhaMyReferrals() {
                         <ScrollView style={styles.modalBody}>
 
                             {/* Date Range Section */}
-                            <Text style={styles.filterSectionTitle}>Date Range</Text>
+                            <Text style={styles.filterSectionTitle}>{t('dateRange')}</Text>
                             <View style={styles.filterOptionsGrid}>
-                                {['All Time', 'Today', 'Last 7 Days', 'Last 30 Days'].map((range) => (
+                                {['allTime', 'today', 'last7Days', 'last30Days'].map((range) => (
                                     <TouchableOpacity
                                         key={range}
                                         style={[styles.optionChip, dateRange === range && styles.optionChipSelected]}
                                         onPress={() => setDateRange(range)}
                                     >
-                                        <Text style={[styles.optionText, dateRange === range && styles.optionTextSelected]}>{range}</Text>
+                                        <Text style={[styles.optionText, dateRange === range && styles.optionTextSelected]}>{t(range)}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -350,57 +316,17 @@ export default function DhabhaMyReferrals() {
                             <View style={styles.sectionDivider} />
 
                             {/* Status Section */}
-                            <Text style={styles.filterSectionTitle}>Status</Text>
+                            <Text style={styles.filterSectionTitle}>{t('status')}</Text>
                             <View style={styles.filterOptionsGrid}>
-                                {['All', 'Verified', 'Pending', 'Rejected'].map((status) => (
+                                {['all', 'paid', 'pending'].map((status) => (
                                     <TouchableOpacity
                                         key={status}
                                         style={[styles.optionChip, statusFilter === status && styles.optionChipSelected]}
                                         onPress={() => setStatusFilter(status)}
                                     >
-                                        <Text style={[styles.optionText, statusFilter === status && styles.optionTextSelected]}>{status}</Text>
+                                        <Text style={[styles.optionText, statusFilter === status && styles.optionTextSelected]}>{t(status)}</Text>
                                     </TouchableOpacity>
                                 ))}
-                            </View>
-
-                            <View style={styles.sectionDivider} />
-
-                            {/* State Section */}
-                            {/* State Section */}
-                            <Text style={styles.filterSectionTitle}>State</Text>
-                            <View>
-                                <TouchableOpacity
-                                    style={styles.dropdownHeader}
-                                    onPress={() => setIsStateDropdownOpen(!isStateDropdownOpen)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={[styles.dropdownHeaderText, { color: selectedStates.length > 0 ? '#111827' : '#6B7280' }]} numberOfLines={1}>
-                                        {selectedStates.length > 0 ? selectedStates.join(', ') : 'Select State'}
-                                    </Text>
-                                    <Ionicons name={isStateDropdownOpen ? "chevron-up" : "chevron-down"} size={20} color="#6B7280" />
-                                </TouchableOpacity>
-
-                                {isStateDropdownOpen && (
-                                    <View style={styles.dropdownList}>
-                                        {ALL_STATES.map((state, index) => (
-                                            <TouchableOpacity
-                                                key={state}
-                                                style={[
-                                                    styles.dropdownItem,
-                                                    index === ALL_STATES.length - 1 && { borderBottomWidth: 0 }
-                                                ]}
-                                                onPress={() => toggleStateSelection(state)}
-                                            >
-                                                <Text style={[styles.dropdownItemText, selectedStates.includes(state) && styles.dropdownItemTextSelected]}>
-                                                    {state}
-                                                </Text>
-                                                {selectedStates.includes(state) && (
-                                                    <Ionicons name="checkmark" size={18} color="#EA580C" />
-                                                )}
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                )}
                             </View>
 
                         </ScrollView>
@@ -410,18 +336,17 @@ export default function DhabhaMyReferrals() {
                             <TouchableOpacity
                                 style={styles.resetBtn}
                                 onPress={() => {
-                                    setStatusFilter('All');
-                                    setSelectedStates([]);
-                                    setDateRange('All Time');
+                                    setStatusFilter('all');
+                                    setDateRange('allTime');
                                 }}
                             >
-                                <Text style={styles.resetBtnText}>Reset</Text>
+                                <Text style={styles.resetBtnText}>{t('reset')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.applyBtn}
                                 onPress={() => setIsFilterModalVisible(false)}
                             >
-                                <Text style={styles.applyBtnText}>Apply Filters</Text>
+                                <Text style={styles.applyBtnText}>{t('applyFilters')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -564,47 +489,4 @@ const styles = StyleSheet.create({
     resetBtnText: { fontSize: 15, fontWeight: '600', color: '#374151' },
     applyBtn: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: '#EA580C', alignItems: 'center' },
     applyBtnText: { fontSize: 15, fontWeight: '600', color: '#FFF' },
-
-    // Dropdown Styles
-    dropdownHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#D1D5DB',
-        borderRadius: 12,
-    },
-    dropdownHeaderText: {
-        fontSize: 14,
-        flex: 1,
-        marginRight: 8,
-    },
-    dropdownList: {
-        marginTop: 8,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    dropdownItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
-    },
-    dropdownItemText: {
-        fontSize: 14,
-        color: '#374151',
-    },
-    dropdownItemTextSelected: {
-        color: '#EA580C',
-        fontWeight: '600',
-    },
 });

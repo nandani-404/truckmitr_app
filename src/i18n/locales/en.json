@@ -1,4 +1,5 @@
 {
+    "interiorPhotos": "Interior Photos",
     "welcome": "Welcome",
     "premiumJobLabel": "Premium Job",
     "superPremium": "Super Premium",
@@ -568,6 +569,7 @@
     "viewEarningsLevelsCommission": "View earnings, levels & commission rates",
     "inactive": "Inactive",
     "tmId": "TM Id",
+    "saveAndNext": "Save & Next",
     "appliedDateTime": "Applied Date/Time",
     "reject": "Reject",
     "accept": "Accept",
@@ -3225,5 +3227,19 @@
     "operationalTab": "Operational",
     "foodTab": "Food",
     "facilitiesTab": "Facilities",
-    "photosTabTitle": "Photos"
+    "photosTabTitle": "Photos",
+    "paid": "Paid",
+    "today": "Today",
+    "last7Days": "Last 7 Days",
+    "last30Days": "Last 30 Days",
+    "allTime": "All Time",
+    "filterReferrals": "Filter Referrals",
+    "dateRange": "Date Range",
+    "reason": "Reason",
+    "unknownUser": "Unknown User",
+    "totalReferrals": "Total Referrals",
+    "noReferralsFound": "No referrals found.",
+    "clearFilters": "Clear Filters",
+    "applyFilters": "Apply Filters",
+    "date": "Date"
 }

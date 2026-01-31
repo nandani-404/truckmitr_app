@@ -221,22 +221,22 @@ export default function ModuleSelection() {
             gradient: ['#FF6B6B', '#FF8E8E'],
             module: 'foreman'
         },
-        // {
-        //     role: 'association',
-        //     title: t('associate'),
-        //     subtitle: t('associateSubtitle'),
-        //     icon: 'account-group',
-        //     gradient: ['#845EC2', '#A178DF'],
-        //     module: 'association'
-        // },
-        // {
-        //     role: 'dhaba',
-        //     title: t('dhabhaSathi'),
-        //     subtitle: t('dhabhaSathiSubtitle'),
-        //     icon: 'silverware-fork-knife',
-        //     gradient: ['#FF9A3C', '#FFB547'],
-        //     module: 'dhaba'
-        // },
+        {
+            role: 'association',
+            title: t('associate'),
+            subtitle: t('associateSubtitle'),
+            icon: 'account-group',
+            gradient: ['#845EC2', '#A178DF'],
+            module: 'association'
+        },
+        {
+            role: 'dhaba',
+            title: t('dhabhaSathi'),
+            subtitle: t('dhabhaSathiSubtitle'),
+            icon: 'silverware-fork-knife',
+            gradient: ['#FF9A3C', '#FFB547'],
+            module: 'dhaba'
+        },
         // {
         //     role: 'puncture_shop',
         //     title: t('punctureShop'),

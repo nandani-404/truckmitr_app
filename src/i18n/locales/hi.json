@@ -1,4 +1,5 @@
 {
+    "interiorPhotos": "आंतरिक तस्वीरें",
     "yourProfileIncomplete": "आपकी प्रोफ़ाइल अधूरी है",
     "premiumJobLabel": "प्रीमियम नौकरी",
     "superPremium": "सुपर प्रीमियम",
@@ -2995,6 +2996,7 @@
     "placeholderEmailExample": "email@example.com",
     "open24x7Label": "खुलने का समय 24x7",
     "selectTime": "समय चुनें",
+    "saveAndNext": "सेव और अगला",
     "saveOperationalDetails": "परिचालन विवरण सेव करें",
     "openingTimeCannotBeAfterClosing": "खुलने का समय बंद होने के समय के बाद नहीं हो सकता",
     "closingTimeCannotBeBeforeOpening": "बंद होने का समय खुलने के समय से पहले नहीं हो सकता",
@@ -3122,5 +3124,19 @@
     "operationalTab": "परिचालन",
     "foodTab": "भोजन",
     "facilitiesTab": "सुविधाएं",
-    "photosTabTitle": "फ़ोटो"
+    "photosTabTitle": "फ़ोटो",
+    "paid": "भुगतान किया",
+    "today": "आज",
+    "last7Days": "पिछले 7 दिन",
+    "last30Days": "पिछले 30 दिन",
+    "allTime": "सभी समय",
+    "filterReferrals": "रेफरल फ़िल्टर करें",
+    "dateRange": "तिथि सीमा",
+    "reason": "कारण",
+    "unknownUser": "अज्ञात उपयोगकर्ता",
+    "totalReferrals": "कुल रेफरल",
+    "noReferralsFound": "कोई रेफरल नहीं मिला।",
+    "clearFilters": "फ़िल्टर साफ़ करें",
+    "applyFilters": "फ़िल्टर लागू करें",
+    "date": "दिनांक"
 }

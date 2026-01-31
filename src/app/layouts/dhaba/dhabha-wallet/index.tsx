@@ -8,54 +8,24 @@ import {
     Modal,
     TextInput,
     ActivityIndicator,
-    ScrollView
+    ScrollView,
+    RefreshControl
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useResponsiveScale, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import LinearGradient from 'react-native-linear-gradient';
+import { showToast } from '@truckmitr/src/app/hooks/toast';
 
-// Mock Data
-const TRANSACTIONS = [
-    {
-        id: '1',
-        type: 'CREDIT',
-        title: 'Driver Referral Bonus',
-        subtitle: 'Rajesh Kumar',
-        amount: 10,
-        date: '27 Jan 2024, 10:30 AM',
-        status: 'Success'
-    },
-    {
-        id: '2',
-        type: 'DEBIT',
-        title: 'Redemption',
-        subtitle: 'Bank Transfer - HDFC ****1234',
-        amount: 250,
-        date: '25 Jan 2024, 02:00 PM',
-        status: 'Completed'
-    },
-    {
-        id: '3',
-        type: 'CREDIT',
-        title: 'Driver Referral Bonus',
-        subtitle: 'Amit Singh',
-        amount: 10,
-        date: '24 Jan 2024, 11:15 AM',
-        status: 'Success'
-    },
-    {
-        id: '4',
-        type: 'DEBIT',
-        title: 'Redemption',
-        subtitle: 'Bank Transfer - HDFC ****1234',
-        amount: 100,
-        date: '20 Jan 2024, 05:30 PM',
-        status: 'Processing'
-    }
-];
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/src/utils/config';
+import moment from 'moment';
+
+// Mock Data removed, using state
+
+
 
 export default function DhabhaWallet() {
     const navigation = useNavigation();
@@ -63,29 +33,69 @@ export default function DhabhaWallet() {
     useStatusBarStyle('dark-content');
 
     // States
-    const [balance, setBalance] = useState(240);
-    const [totalEarned, setTotalEarned] = useState(320);
-    const [totalRedeemed, setTotalRedeemed] = useState(80);
-    const [pendingRedemption, setPendingRedemption] = useState(100);
+    const [balance, setBalance] = useState(0);
+    const [totalEarned, setTotalEarned] = useState(0);
+    const [totalRedeemed, setTotalRedeemed] = useState(0); // This will map to 'total_paid'
+    const [pendingRedemption, setPendingRedemption] = useState(0);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const [isRedeemModalVisible, setIsRedeemModalVisible] = useState(false);
     const [redeemAmount, setRedeemAmount] = useState('');
     const [redeemStatus, setRedeemStatus] = useState<'IDLE' | 'PROCESSING' | 'SUCCESS' | 'FAILED'>('IDLE');
 
     // Constants
-    const MIN_REDEEM_AMOUNT = 100;
+    const MIN_REDEEM_AMOUNT = 500;
 
-    const handleRedeem = () => {
+    const fetchWalletData = async () => {
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get(END_POINTS.DHABA_WALLET_SUMMARY);
+            if (response.data && response.data.success && response.data.data) {
+                const data = response.data.data;
+                setBalance(parseFloat(data.current_balance) || 0);
+                setTotalEarned(parseFloat(data.total_earned) || 0);
+                setTotalRedeemed(parseFloat(data.total_paid) || 0);
+                setPendingRedemption(parseFloat(data.total_pending) || 0);
+                setTransactions(data.transactions || []);
+            }
+        } catch (error) {
+            console.error('Error fetching dhaba wallet summary:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchWalletData();
+        }, [])
+    );
+
+    const handleRedeem = async () => {
         const amount = parseInt(redeemAmount);
         if (isNaN(amount) || amount < MIN_REDEEM_AMOUNT || amount > balance) return;
 
-        setRedeemStatus('PROCESSING');
-        setTimeout(() => {
-            setRedeemStatus('SUCCESS');
-            setBalance(prev => prev - amount);
-            setTotalRedeemed(prev => prev + amount);
-            setPendingRedemption(prev => prev + amount); // Mocking it goes to pending
-        }, 2000);
+        try {
+            setRedeemStatus('PROCESSING');
+            const payload = {
+                contact_reason: `request for money - Amount: ${amount}`,
+            };
+            const response = await axiosInstance.post(END_POINTS.CALLBACK_REQUEST, payload);
+
+            if (response.data?.status) {
+                setRedeemStatus('SUCCESS');
+                // Optimistically update balance if needed, or just show success
+                // For now, we just show success state in modal
+            } else {
+                setRedeemStatus('FAILED');
+                showToast(response.data?.message || 'Payout request failed');
+            }
+        } catch (error) {
+            console.error('Error requesting payout:', error);
+            setRedeemStatus('FAILED');
+            showToast('Payout request failed');
+        }
     };
 
     const resetRedeem = () => {
@@ -95,7 +105,16 @@ export default function DhabhaWallet() {
     };
 
     const renderTransaction = ({ item }: { item: any }) => {
-        const isCredit = item.type === 'CREDIT';
+        // According to user request: transaction has only 2 status: pending, paid
+        // Assuming 'paid' is credit in this context based on "Driver Referral Bonus" logic, 
+        // but typically 'paid' implies money sent TO user (DEBIT from system, CREDIT to user). 
+        // Wait, the API response shows transaction_count: 1, transactions: [{... driver_name: "testing" ...}]
+        // This looks like commission earned from a driver. So it's an EARNING (Credit to Wallet).
+        // Let's assume all these transactions listed are Earnings for now.
+        // Actually, let's look at the structure: "amount": "10", "status": "pending".
+        // This is commission EARNED. So it is CREDIT.
+
+        const isCredit = true; // For now, all commissions are credits
         return (
             <View style={styles.txnCard}>
                 <View style={[styles.txnIcon, isCredit ? styles.iconCredit : styles.iconDebit]}>
@@ -106,8 +125,8 @@ export default function DhabhaWallet() {
                     />
                 </View>
                 <View style={styles.txnContent}>
-                    <Text style={styles.txnTitle}>{item.title}</Text>
-                    <Text style={styles.txnSubtitle}>{item.subtitle}</Text>
+                    <Text style={styles.txnTitle}>{item.driver_name || 'Driver Commission'}</Text>
+                    <Text style={styles.txnSubtitle}>{item.driver_mobile}</Text>
                     <Text style={styles.txnDate}>{item.date}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
@@ -115,7 +134,7 @@ export default function DhabhaWallet() {
                         {isCredit ? '+' : '-'} ₹{item.amount}
                     </Text>
                     <Text style={[styles.txnStatus,
-                    item.status === 'Processing' ? { color: '#D97706' } : { color: '#059669' }
+                    item.status?.toLowerCase() === 'pending' ? { color: '#D97706' } : { color: '#059669' }
                     ]}>
                         {item.status}
                     </Text>
@@ -139,7 +158,12 @@ export default function DhabhaWallet() {
                 <View style={{ width: 24 }} />
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: safeAreaInsets.bottom + 20 }}>
+            <ScrollView
+                contentContainerStyle={{ paddingBottom: safeAreaInsets.bottom + 20 }}
+                refreshControl={
+                    <RefreshControl refreshing={loading} onRefresh={fetchWalletData} colors={['#EA580C']} />
+                }
+            >
                 {/* Main Balance Card */}
                 <LinearGradient
                     colors={['#EA580C', '#C2410C']}
@@ -156,7 +180,7 @@ export default function DhabhaWallet() {
                         activeOpacity={0.8}
                         onPress={() => setIsRedeemModalVisible(true)}
                     >
-                        <Text style={styles.redeemBtnText}>Redeem</Text>
+                        <Text style={styles.redeemBtnText}>Request Redeem</Text>
                         <Ionicons name="chevron-forward" size={16} color="#EA580C" />
                     </TouchableOpacity>
                 </LinearGradient>
@@ -185,11 +209,16 @@ export default function DhabhaWallet() {
 
                 {/* Transactions List */}
                 <FlatList
-                    data={TRANSACTIONS}
+                    data={transactions}
                     renderItem={renderTransaction}
-                    keyExtractor={item => item.id}
+                    keyExtractor={(item, index) => item.transaction_id?.toString() || index.toString()}
                     scrollEnabled={false}
                     contentContainerStyle={{ paddingHorizontal: 20 }}
+                    ListEmptyComponent={
+                        <View style={{ alignItems: 'center', padding: 20 }}>
+                            <Text style={{ color: '#9CA3AF' }}>No transactions found</Text>
+                        </View>
+                    }
                 />
             </ScrollView>
 
@@ -239,18 +268,7 @@ export default function DhabhaWallet() {
                                     Available: <Text style={{ fontWeight: '700' }}>₹{balance}</Text> • Min: ₹{MIN_REDEEM_AMOUNT}
                                 </Text>
 
-                                <View style={styles.bankCard}>
-                                    <View style={styles.bankIcon}>
-                                        <Ionicons name="business" size={20} color="#4B5563" />
-                                    </View>
-                                    <View>
-                                        <Text style={styles.bankName}>HDFC Bank</Text>
-                                        <Text style={styles.bankAccount}>**** **** **** 1234</Text>
-                                    </View>
-                                    <TouchableOpacity>
-                                        <Text style={styles.editLink}>Edit</Text>
-                                    </TouchableOpacity>
-                                </View>
+
 
                                 <TouchableOpacity
                                     style={[styles.confirmBtn,
@@ -374,18 +392,7 @@ const styles = StyleSheet.create({
     },
     helperText: { fontSize: 12, color: '#6B7280', marginTop: 6, marginBottom: 20 },
 
-    bankCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F3F4F6',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 24,
-    },
-    bankIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-    bankName: { fontSize: 14, fontWeight: '700', color: '#374151' },
-    bankAccount: { fontSize: 13, color: '#6B7280' },
-    editLink: { fontSize: 13, fontWeight: '600', color: '#EA580C', marginLeft: 'auto' },
+
 
     confirmBtn: { width: '100%', height: 50, backgroundColor: '#EA580C', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     confirmBtnText: { color: '#FFF', fontSize: 16, fontWeight: '600' },

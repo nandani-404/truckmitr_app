@@ -394,7 +394,7 @@ export default function DhabhaMyProfile() {
 
             {/* Edit Button */}
             <TouchableOpacity
-                // onPress={() => navigation.navigate(STACKS.DHABHA_PROFILE_OVERVIEW as any)}
+                onPress={() => navigation.navigate(STACKS.DHABHA_PROFILE_EDIT as any)}
                 activeOpacity={0.7}
                 style={[
                     styles.editButton,
@@ -422,9 +422,9 @@ export default function DhabhaMyProfile() {
                             icon={<Feather name="user" size={20} color={colors.royalBlue} />}
                             title={t('profile') || "Profile"}
                             onPress={() =>
-                                console.log('profile')
+                                // console.log('profile')
 
-                                // navigation.navigate(STACKS.DHABHA_PROFILE_OVERVIEW as any)
+                                navigation.navigate(STACKS.DHABHA_PROFILE_EDIT as any)
                             }
                         />
 

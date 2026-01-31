@@ -278,7 +278,11 @@ export default function DhabhaHome() {
                     </View>
 
                     {/* Search Bar */}
-                    <TouchableOpacity activeOpacity={1} style={{ position: 'absolute', bottom: -responsiveHeight(1.5), width: responsiveWidth(92), flexDirection: 'row', height: responsiveHeight(6), alignSelf: 'center', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'space-between', borderColor: '#000', borderWidth: 1.5, borderRadius: 100, paddingHorizontal: responsiveWidth(3), ...shadow, zIndex: 100, elevation: 10 }}>
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        style={{ position: 'absolute', bottom: -responsiveHeight(1.5), width: responsiveWidth(92), flexDirection: 'row', height: responsiveHeight(6), alignSelf: 'center', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'space-between', borderColor: '#000', borderWidth: 1.5, borderRadius: 100, paddingHorizontal: responsiveWidth(3), ...shadow, zIndex: 100, elevation: 10 }}
+                        onPress={() => navigation.navigate(STACKS.DHABHA_DRIVER_SEARCH as any)}
+                    >
                         <Text style={{ fontSize: responsiveFontSize(1.6), color: 'rgba(0,0,0,0.9)', fontWeight: '500' }}>{t('searchDrivers')}</Text>
                         <Feather name={'search'} size={18} color={colors.royalBlue} />
                     </TouchableOpacity>
@@ -631,11 +635,10 @@ export default function DhabhaHome() {
                                 <Text style={styles.awazSubtitle}>{t('seeLatestUpdatesFrom')} <Text style={{ color: '#1E88E5' }}>TruckMitr</Text> {t('drivers')}</Text>
                             </View>
                         </View>
-                        <TouchableOpacity style={styles.openButton}>
+                        <TouchableOpacity style={styles.openButton} onPress={() => navigation.navigate(STACKS.DHABHA_DRIVER_KI_AWAZ as any)}>
                             <Text style={styles.openButtonText}>{t('open')}</Text>
                         </TouchableOpacity>
                     </View>
-
                 </View>
             </ScrollView >
 

@@ -110,6 +110,7 @@ export default function Routes() {
       console.log('🔑 EVENT LOG TOKEN:', {
         hasToken: !!token,
         tokenLength: token ? token.length : 0,
+        tokenPreview: token,
         screenName
       });
       if (!token) {

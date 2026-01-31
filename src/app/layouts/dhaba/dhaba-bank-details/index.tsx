@@ -58,10 +58,11 @@ const DhabaBankDetails = () => {
         }
         try {
             setLoading(true);
-            const response = await axiosInstance.get(END_POINTS.ASSOCIATION_ACCOUNT_DETAILS_FETCH(userId));
-            // console.log('response------------------', response);
+            const response = await axiosInstance.get(END_POINTS.DHABA_BANK_DETAILS_FETCH(userId));
+            console.log('response------------------', response);
+
             if (response?.data?.success) {
-                const data = response?.data?.bank_details || response?.data?.user || response?.data;
+                const data = response?.data?.bank_details || response?.data?.user || response?.data?.data || response?.data;
                 setBankData({
                     account_number: data?.account_number || '',
                     account_holder_name: data?.account_holder_name || '',
@@ -70,12 +71,22 @@ const DhabaBankDetails = () => {
                     ifsc_code: data?.ifsc_code || '',
                     account_type: data?.account_type || '',
                 });
+            } else if (response?.data?.message === "Dhaba bank details not found") {
+                // Determine if we should clear data or keep existing redux data? 
+                // Usually "not found" means we should probably let the user enter fresh data.
+                // But if we have pre-filled data from login (redux), we might want to keep it as a starting point.
+                // Current behavior: The state is initialized with Redux data. 
+                // If API says "not found", we essentially just don't overwrite the initial state.
+                console.log('Bank details not found on server, ready for input.');
             } else {
-                // If it fails but we have data in redux, we could fallback, but usually we just show error
-                // showToast(response?.data?.message || t('failedToFetchBankDetails'));
+                showToast(response?.data?.message || t('failedToFetchBankDetails'));
             }
         } catch (err: any) {
             console.error('Error fetching bank details:', err);
+            // Handle 404 specifically if the API returns 404 for "not found" instead of 200 with success:false
+            if (err?.response?.data?.message === "Dhaba bank details not found") {
+                console.log('Bank details not found (404), ready for input.');
+            }
         } finally {
             setLoading(false);
         }
@@ -110,7 +121,7 @@ const DhabaBankDetails = () => {
                 user_id: userId,
                 unique_id: user?.unique_id || '',
             };
-            const response = await axiosInstance.post(END_POINTS.UPDATE_ASSOCIATION_BANK_DETAILS, payload);
+            const response = await axiosInstance.post(END_POINTS.DHABA_BANK_DETAILS_UPDATE, payload);
 
             if (response?.data?.success) {
                 showToast(t('detailsUpdatedSuccessfully', 'Details updated successfully!'));
