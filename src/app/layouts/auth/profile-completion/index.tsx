@@ -504,7 +504,7 @@ export default function ProfileCompletion() {
     ];
 
     const translatedExperienceList = [
-        { label: t('lessThan1Year'), value: '0' },
+        { label: t('lessThan1Year'), value: '0-1' },
         { label: t('1to2Years'), value: '1-2' },
         { label: t('3to5Years'), value: '3-5' },
         { label: t('6to10Years'), value: '6-10' },
@@ -556,7 +556,7 @@ export default function ProfileCompletion() {
     ];
 
     const translatedYearOfExp = [
-        { label: t('lessThan1Year'), value: '0' },
+        { label: t('lessThan1Year'), value: '0-1' },
         { label: t('1to2Years'), value: '1-2' },
         { label: t('3to5Years'), value: '3-5' },
         { label: t('6to10Years'), value: '6-10' },

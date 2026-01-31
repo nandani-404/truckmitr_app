@@ -637,7 +637,11 @@ export default function ProfileCompletionDhabha() {
             try {
                 const profileResponse = await axiosInstance.get(END_POINTS.GET_PROFILE);
                 if (profileResponse?.data?.status) {
-                    dispatch(userAction(profileResponse.data));
+                    // Optimistically update the status to prevent race conditions
+                    const updatedData = { ...profileResponse.data };
+                    updatedData.dhaba_required_fields_status = true;
+
+                    dispatch(userAction(updatedData));
                     dispatch(userAuthenticatedAction(true));
                     showToast(t('profileSubmittedSuccess'));
                     // Navigation loop handled by Routes stack switch based on profileRequiredFieldsStatus

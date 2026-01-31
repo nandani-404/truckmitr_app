@@ -1397,7 +1397,7 @@ export default function ProfileEdit() {
                     <View style={styles.stepContent}>
                         <View style={styles.gridContainer}>
                             {[
-                                { label: t('lessThan1Year') || '< 1 Year', value: 'less_than_1' },
+                                { label: t('lessThan1Year') || '< 1 Year', value: '0-1' },
                                 { label: t('1to2Years') || '1-2 Years', value: '1-2' },
                                 { label: t('3to5Years') || '3-5 Years', value: '3-5' },
                                 { label: t('6to10Years') || '6-10 Years', value: '6-10' },

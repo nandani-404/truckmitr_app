@@ -135,7 +135,13 @@ export default function ProfileEditNew() {
     const contentTranslateX = useSharedValue(0);
 
     // Data arrays
-    const drivingExperienceArray = Array.from({ length: 51 }, (_, i) => ({ label: i === 0 ? t('lessThan1Year') || 'Less than 1 year' : `${i} ${i === 1 ? 'year' : 'years'}`, value: i === 0 ? 'less_than_1' : `${i}` }));
+    const drivingExperienceArray = [
+        { label: t('lessThan1Year'), value: '0-1' },
+        { label: t('1to2Years'), value: '1-2' },
+        { label: t('3to5Years'), value: '3-5' },
+        { label: t('6to10Years'), value: '6-10' },
+        { label: t('10PlusYears'), value: '10+' },
+    ];
 
     const salaryRanges = ['15000-20000', '20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000', '55000-60000'];
     const currentSalaryRanges = ['15000-20000', '20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000',];
@@ -1590,7 +1596,7 @@ export default function ProfileEditNew() {
                     <View style={styles.stepContent}>
                         <View style={styles.gridContainer}>
                             {[
-                                { label: t('lessThan1Year') || '< 1 Year', value: 'less_than_1' },
+                                { label: t('lessThan1Year') || '< 1 Year', value: '0-1' },
                                 { label: t('1to2Years') || '1-2 Years', value: '1-2' },
                                 { label: t('3to5Years') || '3-5 Years', value: '3-5' },
                                 { label: t('6to10Years') || '6-10 Years', value: '6-10' },
