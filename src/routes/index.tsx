@@ -778,9 +778,10 @@ export default function Routes() {
       {/* <ZegoCallInvitationDialog /> */}
       {/* <AssociateMain /> */}
       {/* <AssociateProfileCompletionStack /> */}
-      <DhabhaMain />
+      {/* <DhabhaMain /> */}
       {/* <Auth /> */}
-      {/* {!isAuthenticated ? (
+      {/* <DhabhaProfileCompletionStack /> */}
+      {!isAuthenticated ? (
         <Auth />
       ) : profileRequiredFieldsStatus === false ? (
         // Module-specific profile completion
@@ -801,7 +802,7 @@ export default function Routes() {
         <AssociateMain />
       ) : (
         <Main />
-      )} */}
+      )}
       {subscriptionModal && <Subscription />}
       <InAppUpdatePopup />
     </NavigationContainer>

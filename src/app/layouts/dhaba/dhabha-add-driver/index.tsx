@@ -28,6 +28,10 @@ import { hitSlop } from '@truckmitr/src/app/functions';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
+import { useSelector } from 'react-redux';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export default function DhabhaAddDriver() {
     const { t } = useTranslation();
     const navigation = useNavigation<NavigatorProp>();
@@ -35,8 +39,13 @@ export default function DhabhaAddDriver() {
     const { responsiveFontSize } = useResponsiveScale();
     useStatusBarStyle('dark-content');
 
+    // Redux State
+    const { user } = useSelector((state: any) => state.user);
+    // console.log('userData', user);
+
+    const referralCode = user?.Referral_Code || 'TM2024DH001';
+
     // State
-    const [referralCode, setReferralCode] = useState('TM2024DH001');
     const [fullName, setFullName] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
     const [email, setEmail] = useState('');
@@ -48,18 +57,26 @@ export default function DhabhaAddDriver() {
     const [isStateModalVisible, setIsStateModalVisible] = useState(false);
     const [stateSearchText, setStateSearchText] = useState('');
 
-    // OTP
-    const otpInputRef = useRef<TextInput>(null);
+    // OTP Modal State
+    const [showOtpModal, setShowOtpModal] = useState(false);
     const [otp, setOtp] = useState('');
-    const [isOtpSent, setIsOtpSent] = useState(false);
-    const [isVerifying, setIsVerifying] = useState(false);
-    const [timer, setTimer] = useState(30);
-    const [showOtpConfirmModal, setShowOtpConfirmModal] = useState(false);
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [otpError, setOtpError] = useState('');
+    const [pendingDriverData, setPendingDriverData] = useState<{
+        name: string;
+        mobile: string;
+        email: string;
+        states: string;
+        stateName: string;
+    } | null>(null);
+
+    const [loading, setLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
     // Animation values for Success Modal
     const scaleAnim = useRef(new Animated.Value(0)).current;
+
     useEffect(() => {
         if (showSuccessModal) {
             Animated.spring(scaleAnim, {
@@ -103,44 +120,99 @@ export default function DhabhaAddDriver() {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSendOtp = () => {
+    const handleSubmit = async () => {
         if (!validateForm()) return;
-        if (mobileNumber === '9999999999') {
-            setErrors({ mobile: t('mobileAlreadyRegistered') });
+
+        setLoading(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('name', fullName);
+            formData.append('mobile', mobileNumber);
+            if (email) formData.append('email', email);
+            formData.append('states', state);
+            // formData.append('role', 'dhaba'); // Assuming role is handled by backend or implied
+
+            const response = await axiosInstance.post(END_POINTS.DHABA_ADD_DRIVER, formData);
+
+            if (response?.data?.status || response?.data?.success) {
+                const message = response?.data?.message?.toLowerCase() || '';
+                if (message.includes('otp')) {
+                    setPendingDriverData({
+                        name: fullName,
+                        mobile: mobileNumber,
+                        email: email,
+                        states: state,
+                        stateName: selectedStateName,
+                    });
+                    setShowOtpModal(true);
+                    showToast(response?.data?.message || t('otpSent'));
+                } else {
+                    const successMessage = response?.data?.message || t('driverAddedSuccessfully');
+                    showToast(`${successMessage}`);
+                    setShowSuccessModal(true);
+                }
+            } else {
+                const errorMessage = response?.data?.message || t('failedToAddDriver');
+                showToast(`${errorMessage}`);
+            }
+        } catch (error: any) {
+            console.log('Error adding driver:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || t('oopsSomethingWentWrong');
+            showToast(`${errorMessage}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otp || otp.length < 4) {
+            setOtpError(t('pleaseEnterValidOtp'));
             return;
         }
-        setShowOtpConfirmModal(true);
-    };
 
-    const confirmSendOtp = () => {
-        setShowOtpConfirmModal(false);
-        setIsOtpSent(true);
-        setTimer(30);
-        // Delay focus slightly to ensure modal closes and input is ready
-        setTimeout(() => {
-            otpInputRef.current?.focus();
-        }, 500);
-    };
-
-    const handleVerify = () => {
-        setIsVerifying(true);
-        setTimeout(() => {
-            setIsVerifying(false);
-            if (otp.length === 6) {
-                setShowSuccessModal(true);
-            } else {
-                showToast(t('invalidOtp'));
-            }
-        }, 1500);
-    };
-
-    useEffect(() => {
-        let interval: any;
-        if (isOtpSent && timer > 0) {
-            interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+        if (!pendingDriverData) {
+            setOtpError(t('oopsSomethingWentWrong'));
+            return;
         }
-        return () => clearInterval(interval);
-    }, [isOtpSent, timer]);
+
+        setOtpLoading(true);
+        setOtpError('');
+
+        try {
+            const formData = new FormData();
+            formData.append('mobile', pendingDriverData.mobile);
+            formData.append('otp', otp);
+
+            const response = await axiosInstance.post(END_POINTS.OTP_VERIFY, formData);
+
+            if (response?.data?.status || response?.data?.success) {
+                const successMessage = response?.data?.message || t('driverAddedSuccessfully');
+                showToast(`${successMessage}`);
+
+                setShowOtpModal(false);
+                setShowSuccessModal(true);
+                setOtp('');
+                setOtpError('');
+                setPendingDriverData(null);
+            } else {
+                const errorMessage = response?.data?.message || t('invalidOtp');
+                setOtpError(errorMessage);
+            }
+        } catch (error: any) {
+            console.log('Error verifying OTP:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || t('otpVerificationFailed');
+            setOtpError(errorMessage);
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    const handleCloseOtpModal = () => {
+        setShowOtpModal(false);
+        setOtp('');
+        setOtpError('');
+    };
 
     const resetForm = () => {
         setShowSuccessModal(false);
@@ -149,7 +221,6 @@ export default function DhabhaAddDriver() {
         setEmail('');
         setState('');
         setSelectedStateName('');
-        setIsOtpSent(false);
         setOtp('');
     };
 
@@ -194,7 +265,6 @@ export default function DhabhaAddDriver() {
                         placeholderTextColor="#9CA3AF"
                         value={fullName}
                         onChangeText={setFullName}
-                        editable={!isOtpSent}
                     />
                 </View>
 
@@ -210,7 +280,6 @@ export default function DhabhaAddDriver() {
                             maxLength={10}
                             value={mobileNumber}
                             onChangeText={setMobileNumber}
-                            editable={!isOtpSent}
                         />
                     </View>
                     <Text style={styles.fieldError}>{errors.mobile}</Text>
@@ -225,14 +294,13 @@ export default function DhabhaAddDriver() {
                         keyboardType="email-address"
                         value={email}
                         onChangeText={setEmail}
-                        editable={!isOtpSent}
                     />
                 </View>
 
                 <View style={styles.formGroup}>
                     <Text style={styles.inputLabel}>{t('state')}</Text>
                     <TouchableOpacity
-                        onPress={() => !isOtpSent && setIsStateModalVisible(true)}
+                        onPress={() => setIsStateModalVisible(true)}
                         style={[styles.minimalInput, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, errors.state && styles.inputError]}
                         activeOpacity={0.7}
                     >
@@ -244,108 +312,142 @@ export default function DhabhaAddDriver() {
                     <Text style={styles.fieldError}>{errors.state}</Text>
                 </View>
 
-                {/* OTP Section - Overlay Input Method */}
-                {isOtpSent && (
-                    <View style={styles.otpSection}>
-                        <Text style={styles.otpLabel}>{t('enterOtp')}</Text>
-                        <Text style={styles.otpSubLabel}>{t('sentTo')} +91 {mobileNumber}</Text>
 
-                        <View style={styles.otpContainer}>
-                            {/* Visual Boxes */}
-                            <View style={styles.otpBoxesContainer}>
-                                {[...Array(6)].map((_, i) => (
-                                    <View
-                                        key={i}
-                                        style={[
-                                            styles.otpBox,
-                                            otp.length === i && styles.otpBoxActive,
-                                            otp.length > i && styles.otpBoxFilled
-                                        ]}
-                                    >
-                                        <Text style={styles.otpBoxText}>{otp[i] || ''}</Text>
-                                    </View>
-                                ))}
-                            </View>
-
-                            {/* Transparent Overlay Input */}
-                            <TextInput
-                                ref={otpInputRef}
-                                style={styles.hiddenOtpInput}
-                                keyboardType="number-pad"
-                                maxLength={6}
-                                value={otp}
-                                onChangeText={(text) => {
-                                    if (/^\d*$/.test(text)) {
-                                        setOtp(text);
-                                        // Auto-verify optional
-                                        if (text.length === 6) {
-                                            // Keyboard.dismiss();
-                                        }
-                                    }
-                                }}
-                                autoFocus
-                                // Only hide caret/context menu if needed, but opacity 0 does it mostly
-                                caretHidden={true}
-                                contextMenuHidden={true}
-                            />
-                        </View>
-
-                        <View style={styles.timerRow}>
-                            <Text style={styles.timerText}>
-                                {timer > 0 ? `${t('resendIn')} 00:${timer < 10 ? `0${timer}` : timer}` : ''}
-                            </Text>
-                            {timer === 0 && (
-                                <TouchableOpacity onPress={() => { setTimer(30); }}>
-                                    <Text style={styles.resendLink}>{t('resendOtp')}</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    </View>
-                )}
 
             </KeyboardAwareScrollView>
 
             {/* Bottom Button */}
             <View style={[styles.footer, { paddingBottom: safeAreaInsets.bottom + 16 }]}>
-                {!isOtpSent ? (
-                    <TouchableOpacity
-                        style={[styles.mainButton, { opacity: (fullName && mobileNumber && state) ? 1 : 0.5 }]}
-                        onPress={handleSendOtp}
-                        disabled={!(fullName && mobileNumber && state)}
-                    >
-                        <Text style={styles.mainButtonText}>{t('getOtp')}</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <TouchableOpacity
-                        style={[styles.mainButton, { opacity: otp.length === 6 ? 1 : 0.5 }]}
-                        onPress={handleVerify}
-                        disabled={isVerifying || otp.length < 6}
-                    >
-                        {isVerifying ? (
-                            <ActivityIndicator color="#fff" size="small" />
-                        ) : (
-                            <Text style={styles.mainButtonText}>{t('verifyAndAddDriver')}</Text>
-                        )}
-                    </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                    style={[styles.mainButton, { opacity: (fullName && mobileNumber && state) ? 1 : 0.5 }]}
+                    onPress={handleSubmit}
+                    disabled={!(fullName && mobileNumber && state) || loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                        <Text style={styles.mainButtonText}>{t('addDriver')}</Text>
+                    )}
+                </TouchableOpacity>
+                {/* <TouchableOpacity
+                    onPress={async () => {
+                        try {
+                            const keys = await AsyncStorage.getAllKeys();
+                            const result = await AsyncStorage.multiGet(keys);
+                            console.log('\n========== AsyncStorage Data ==========');
+                            result.forEach(([key, value]) => {
+                                console.log(`\n[${key}]:`, value);
+                            });
+                            console.log('\n========================================\n');
+                            Alert.alert('AsyncStorage Logged', `${keys.length} keys logged to console. Check your terminal/debugger.`);
+                        } catch (error) {
+                            console.error('Error reading AsyncStorage:', error);
+                            Alert.alert('Error', 'Failed to read AsyncStorage');
+                        }
+                    }}
+                    style={{
+                        marginHorizontal: 16,
+                        marginTop: 16,
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        backgroundColor: '#FF9800',
+                        borderRadius: 8,
+                        alignItems: 'center',
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
+                        🐛 Log AsyncStorage Data
+                    </Text>
+                </TouchableOpacity> */}
             </View>
 
-            {/* OTP Confirmation Modal - Clean */}
-            <Modal transparent visible={showOtpConfirmModal} animationType="fade">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.alertBox}>
-                        <Text style={styles.alertTitle}>{t('confirmNumber')}</Text>
-                        <Text style={styles.alertMessage}>
-                            {t('sendOtpTo')} <Text style={{ fontWeight: '700', color: '#1F2937' }}>+91 {mobileNumber}</Text>?
-                        </Text>
-                        <View style={styles.alertButtons}>
-                            <TouchableOpacity onPress={() => setShowOtpConfirmModal(false)} style={styles.alertBtnCancel}>
-                                <Text style={styles.alertBtnTextCancel}>{t('edit')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={confirmSendOtp} style={styles.alertBtnConfirm}>
-                                <Text style={styles.alertBtnTextConfirm}>{t('send')}</Text>
-                            </TouchableOpacity>
+            {/* OTP Verification Modal */}
+            <Modal
+                visible={showOtpModal}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={handleCloseOtpModal}
+            >
+                <View style={styles.otpModalOverlay}>
+                    <View style={styles.otpModalContainer}>
+                        {/* Close Button */}
+                        <TouchableOpacity
+                            onPress={handleCloseOtpModal}
+                            style={styles.otpCloseButton}
+                            hitSlop={hitSlop(10)}
+                        >
+                            <Ionicons name="close" size={24} color={'#1F2937'} />
+                        </TouchableOpacity>
+
+                        {/* OTP Icon */}
+                        <View style={styles.otpIconContainer}>
+                            <MaterialCommunityIcons name="message-text-lock" size={48} color={'#EA580C'} />
                         </View>
+
+                        {/* Title */}
+                        <Text style={styles.otpTitle}>
+                            {t('verifyOtp')}
+                        </Text>
+
+                        {/* Subtitle with phone number */}
+                        <Text style={styles.otpSubtitle}>
+                            {t('pleaseEnterOtpFor') || 'Please enter the 6-digit code sent to'}{'\n'}
+                            <Text style={styles.otpPhoneNumber}>+91 {pendingDriverData?.mobile}</Text>
+                        </Text>
+
+                        {/* OTP Input */}
+                        <View style={styles.otpInputContainer}>
+                            <TextInput
+                                value={otp}
+                                onChangeText={(text) => {
+                                    setOtp(text.replace(/[^0-9]/g, ''));
+                                    if (otpError) setOtpError('');
+                                }}
+                                placeholder={t('enterOtp') || 'Enter 6-digit OTP'}
+                                placeholderTextColor={'#9CA3AF'}
+                                keyboardType="number-pad"
+                                maxLength={6}
+                                style={styles.otpInput}
+                                autoFocus={true}
+                            />
+                        </View>
+
+                        {/* Error Message */}
+                        {otpError ? (
+                            <Text style={styles.otpErrorText}>{otpError}</Text>
+                        ) : null}
+
+                        {/* Verify Button */}
+                        <TouchableOpacity
+                            onPress={handleVerifyOtp}
+                            disabled={otpLoading || otp.length < 6}
+                            style={[
+                                styles.otpVerifyButton,
+                                (otpLoading || otp.length < 6) && styles.otpVerifyButtonDisabled
+                            ]}
+                            activeOpacity={0.8}
+                        >
+                            {otpLoading ? (
+                                <ActivityIndicator color={'#FFFFFF'} size="small" />
+                            ) : (
+                                <Text style={styles.otpVerifyButtonText}>
+                                    {t('verifyAndAddDriver')}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+
+                        {/* Resend OTP */}
+                        <TouchableOpacity
+                            onPress={handleSubmit}
+                            disabled={otpLoading}
+                            style={styles.resendButton}
+                        >
+                            <Text style={styles.resendText}>
+                                {t('didntReceiveCode') || "Didn't receive code?"}{' '}
+                                <Text style={styles.resendLink}>{t('resendOtp')}</Text>
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -393,7 +495,7 @@ export default function DhabhaAddDriver() {
 
                             <TouchableOpacity
                                 style={styles.enhancedSecondaryBtn}
-                                onPress={() => navigation.goBack()}
+                                onPress={resetForm}
                             >
                                 <Text style={styles.enhancedSecondaryBtnText}>{t('done')}</Text>
                             </TouchableOpacity>
@@ -530,48 +632,7 @@ const styles = StyleSheet.create({
     inputText: { fontSize: 15, color: '#1F2937' },
     placeholderText: { fontSize: 15, color: '#9CA3AF' },
 
-    // OTP
-    otpSection: { marginTop: 16, alignItems: 'center' },
-    otpLabel: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 4 },
-    otpSubLabel: { fontSize: 13, color: '#6B7280', marginBottom: 20 },
-    otpContainer: { width: '100%', alignItems: 'center', marginBottom: 16, justifyContent: 'center' },
-    otpBoxesContainer: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
-    otpBox: {
-        width: 45,
-        height: 50,
-        borderRadius: 10,
-        backgroundColor: '#F9FAFB',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    otpBoxActive: {
-        borderColor: '#EA580C',
-        backgroundColor: '#FFF7ED',
-        borderWidth: 1.5,
-    },
-    otpBoxFilled: {
-        borderColor: '#EA580C',
-        backgroundColor: '#FFF',
-    },
-    otpBoxText: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#1F2937',
-    },
-    hiddenOtpInput: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        opacity: 0,
-        zIndex: 20,
-    },
-    timerRow: { marginTop: 0, flexDirection: 'row', justifyContent: 'center' },
-    timerText: { fontSize: 13, color: '#6B7280' },
-    resendLink: { fontSize: 13, color: '#EA580C', fontWeight: '600' },
+
 
     // Footer
     footer: { padding: 24, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
@@ -589,16 +650,7 @@ const styles = StyleSheet.create({
     },
     mainButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 
-    // Alerts
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
-    alertBox: { backgroundColor: '#FFF', borderRadius: 16, padding: 24, alignItems: 'center' },
-    alertTitle: { fontSize: 18, fontWeight: '600', color: '#111827', marginBottom: 8 },
-    alertMessage: { fontSize: 15, color: '#4B5563', textAlign: 'center', marginBottom: 24 },
-    alertButtons: { flexDirection: 'row', width: '100%', gap: 12 },
-    alertBtnCancel: { flex: 1, padding: 12, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, alignItems: 'center' },
-    alertBtnConfirm: { flex: 1, padding: 12, backgroundColor: '#EA580C', borderRadius: 8, alignItems: 'center' },
-    alertBtnTextCancel: { color: '#374151', fontWeight: '500' },
-    alertBtnTextConfirm: { color: '#FFF', fontWeight: '600' },
+
 
     // Enhanced Success Modal
     enhancedModalContent: { backgroundColor: '#FFF', borderRadius: 24, padding: 32, alignItems: 'center', width: '100%' },
@@ -629,4 +681,116 @@ const styles = StyleSheet.create({
     stateItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
     stateText: { fontSize: 15, color: '#374151' },
     stateTextSelected: { fontSize: 15, color: '#EA580C', fontWeight: '600' },
+
+    // OTP Modal
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    otpModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    otpModalContainer: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        paddingBottom: 40,
+        alignItems: 'center',
+    },
+    otpCloseButton: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        zIndex: 10,
+        padding: 4,
+    },
+    otpIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#FFF7ED',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    otpTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginBottom: 8,
+    },
+    otpSubtitle: {
+        fontSize: 15,
+        color: '#6B7280',
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 24,
+    },
+    otpPhoneNumber: {
+        fontWeight: '700',
+        color: '#1F2937',
+    },
+    otpInputContainer: {
+        width: '100%',
+        marginBottom: 16,
+    },
+    otpInput: {
+        width: '100%',
+        height: 54,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        fontSize: 18,
+        color: '#1F2937',
+        textAlign: 'center',
+        letterSpacing: 4,
+        backgroundColor: '#F9FAFB',
+    },
+    otpErrorText: {
+        fontSize: 13,
+        color: '#EF4444',
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    otpVerifyButton: {
+        width: '100%',
+        height: 52,
+        backgroundColor: '#EA580C',
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#EA580C',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+        marginBottom: 16,
+    },
+    otpVerifyButtonDisabled: {
+        backgroundColor: '#FDBA74',
+        shadowOpacity: 0,
+    },
+    otpVerifyButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    resendButton: {
+        paddingVertical: 8,
+    },
+    resendText: {
+        fontSize: 14,
+        color: '#6B7280',
+    },
+    resendLink: {
+        color: '#EA580C',
+        fontWeight: '600',
+    },
 });

@@ -978,7 +978,7 @@ export default function DriverAssociationAddDriver() {
                 <Space height={responsiveHeight(10)} />
 
                 {/* Debug Button - Log AsyncStorage */}
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     onPress={async () => {
                         try {
                             const keys = await AsyncStorage.getAllKeys();
@@ -1008,10 +1008,10 @@ export default function DriverAssociationAddDriver() {
                     <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
                         🐛 Log AsyncStorage Data
                     </Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 {/* Debug Button - Log Redux State */}
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     onPress={() => {
                         try {
                             console.log('\n========== Redux State Data ==========');
@@ -1038,7 +1038,7 @@ export default function DriverAssociationAddDriver() {
                     <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
                         🗃️ Log Redux State
                     </Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </KeyboardAwareScrollView>
 
             {/* State Selection Modal */}

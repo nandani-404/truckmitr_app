@@ -25,6 +25,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Feather from 'react-native-vector-icons/Feather'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import Ionicons from 'react-native-vector-icons/Ionicons'
+import AntDesign from 'react-native-vector-icons/AntDesign'
 import { deleteUserData } from '@truckmitr/src/utils/config/token';
 import { userAuthenticatedAction } from '@truckmitr/src/redux/actions/user.action';
 import { useDispatch, useSelector } from 'react-redux';
@@ -35,7 +36,7 @@ import { useTranslation } from 'react-i18next';
 import analytics from '@react-native-firebase/analytics';
 import { AppEventsLogger } from 'react-native-fbsdk-next';
 
-const PROFILE_PLACEHOLDER = 'https://randomuser.me/api/portraits/men/55.jpg'; // Example placeholder
+const PROFILE_PLACEHOLDER = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -219,11 +220,32 @@ export default function DhabhaMyProfile() {
     const _onPressDeleteAccount = () => setShowDeleteDialog(true);
 
     const handleLogoutConfirm = async () => {
+        const userinfo = {
+            id: user?.id ?? '',
+            unique_id: user?.unique_id ?? '',
+            name: user?.name ?? '',
+            mobile: user?.mobile ?? '',
+            email: user?.email ?? '',
+            role: user?.role ?? '',
+        };
+
         try {
+            const eventParams = {
+                method: 'manual_logout',
+                user_id: String(userinfo.id),
+                user_unique_id: userinfo.unique_id,
+                user_name: userinfo.name,
+                user_email: userinfo.email,
+                user_role: userinfo.role,
+            };
+            await analytics().logEvent('user_logout', eventParams);
+            AppEventsLogger.logEvent('user_logout', eventParams);
+            await new Promise<void>(res => setTimeout(() => res(), 500));
             await axiosInstance.post(END_POINTS?.LOGOUT);
         } catch (error) {
-            console.warn('Logout error:', error);
+            console.warn('Analytics logout error:', error);
         }
+
         dispatch(userAuthenticatedAction(false));
         deleteUserData();
         setShowLogoutDialog(false);
@@ -302,7 +324,7 @@ export default function DhabhaMyProfile() {
                         }
                     ]}
                     source={{
-                        uri: user?.profile_image || PROFILE_PLACEHOLDER
+                        uri: user?.images ? `${BASE_URL}public/${user.images}` : PROFILE_PLACEHOLDER
                     }}
                     resizeMode="cover"
                 />
@@ -390,19 +412,6 @@ export default function DhabhaMyProfile() {
                 <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
                     <Space height={safeAreaInsets.top} />
 
-                    {/* Navigation Header */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(5), marginBottom: responsiveHeight(1) }}>
-                        <TouchableOpacity
-                            onPress={() => navigation.goBack()}
-                            style={{ padding: 8, marginLeft: -8 }}
-                        >
-                            <Ionicons name="arrow-back" size={24} color={colors.black} />
-                        </TouchableOpacity>
-                        <Text style={{ fontSize: responsiveFontSize(2.4), fontWeight: '700', color: colors.black, marginLeft: 8 }}>
-                            Profile
-                        </Text>
-                    </View>
-
                     {/* Header */}
                     {renderHeader()}
 
@@ -410,8 +419,8 @@ export default function DhabhaMyProfile() {
                     <SectionHeader title={t('account') || "Account"} />
                     <CardContainer>
                         <MenuItem
-                            icon={<Ionicons name="person-outline" size={22} color={colors.royalBlue} />}
-                            title="Profile"
+                            icon={<Feather name="user" size={20} color={colors.royalBlue} />}
+                            title={t('profile') || "Profile"}
                             onPress={() =>
                                 console.log('profile')
 
@@ -419,34 +428,28 @@ export default function DhabhaMyProfile() {
                             }
                         />
 
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
                         <MenuItem
-                            icon={<Ionicons name="card-outline" size={22} color="#f9d107ff" />}
-                            title="Bank Detail"
-                            onPress={() =>
-                                console.log('profile')
-
-                                // navigation.navigate(STACKS.DHABHA_PROFILE_OVERVIEW as any)
-                            }
-                        // onPress={() => navigation.navigate(STACKS.DHABHA_BANK_DETAILS as any)}
+                            icon={<MaterialCommunityIcons name="bank-outline" size={20} color="#D97706" />}
+                            title={t('bankDetails') || "Bank Details"}
+                            onPress={() => navigation.navigate(STACKS.DHABHA_BANK_DETAILS as any)}
                         />
                     </CardContainer>
 
                     {/* Growth Section */}
-                    <SectionHeader title={t('growth') || "Growth"} />
+                    {/* <SectionHeader title={t('growth') || "Growth"} />
                     <CardContainer>
                         <MenuItem
-                            icon={<Ionicons name="people-outline" size={22} color="#8B5CF6" />}
-                            title="My Referrals"
+                            icon={<MaterialCommunityIcons name="account-group-outline" size={20} color="#8B5CF6" />}
+                            title={t('myReferrals') || "My Referrals"}
                             onPress={() =>
-                                console.log('profile')
+                                console.log('my referrals')
 
-                                // navigation.navigate(STACKS.DHABHA_PROFILE_OVERVIEW as any)
+                                // navigation.navigate(STACKS.DHABHA_MY_REFERRALS as any)
                             }
-                        // onPress={() => navigation.navigate(STACKS.DHABHA_MY_REFERRALS as any)}
                         />
 
-                    </CardContainer>
+                    </CardContainer> */}
 
                     {/* General Section */}
                     <SectionHeader title={t('general') || "General"} />
@@ -456,19 +459,19 @@ export default function DhabhaMyProfile() {
                             title={t('rateUs') || "Rate Us"}
                             onPress={_navigateRating}
                         />
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
                         <MenuItem
-                            icon={<Ionicons name="headset-outline" size={20} color="#34C759" />}
+                            icon={<AntDesign name="customerservice" size={20} color="#34C759" />}
                             title={t('contactUs') || "Contact Us"}
                             onPress={() => navigation.navigate(STACKS.CONTACT_US as any)}
                         />
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
                         <MenuItem
                             icon={<Feather name="shield" size={20} color="#5856D6" />}
                             title={t('privacyPolicy') || "Privacy Policy"}
                             onPress={_navigatePrivacy}
                         />
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
                         <MenuItem
                             icon={<Ionicons name="settings-outline" size={20} color="#8E8E93" />}
                             title={t('settings') || "Settings"}
@@ -483,12 +486,6 @@ export default function DhabhaMyProfile() {
                             icon={<Ionicons name="share-social-outline" size={20} color={colors.azureBlue} />}
                             title={t('shareTheApp') || "Share The App"}
                             onPress={_onPressShareApp}
-                        />
-                        <View style={styles.divider} />
-                        <MenuItem
-                            icon={<Ionicons name="person-circle-outline" size={20} color={colors.royalBlue} />}
-                            title={t('shareMyProfile') || "Share My Profile"}
-                            onPress={_onPressShareProfile}
                         />
                     </CardContainer>
 

@@ -10,7 +10,7 @@ export interface UserBadgeParams {
     payment_type?: string;
     is_active?: number | boolean;
     subscription_status?: string;
-    referral_code?: string;
+    Referral_Code?: string;
   };
   subscriptionDetails?: {
     id?: string;
@@ -297,7 +297,7 @@ TruckMitr ने मुझे एक Digital Driver Card दिया है, �
 
 TruckMitr – ड्राइवर का साथी, हर सफर में भरोसा 🚚💪`;
     } else if (isForeman) {
-      const referralCode = params.user?.referral_code || 'TMFM23456';
+      const referralCode = params.user?.Referral_Code || 'TMFM23456';
       return `👷 मुझे गर्व है कि मैं TruckMitr का Foreman Pro हूँ! 🇮🇳
 
 TruckMitr ने मेरी प्रोफेशनल ज़िंदगी बदल दी है।
@@ -368,7 +368,7 @@ then download the TruckMitr App today 👇
 
 TruckMitr – A Driver's Companion, Trust for Every Journey 🚚💪`;
   } else if (isForeman) {
-    const referralCode = params.user?.referral_code || 'TMFM23456';
+    const referralCode = params.user?.Referral_Code || 'TMFM23456';
     return `👷 I am proud to be a Foreman Pro with TruckMitr! 🇮🇳
 
 TruckMitr has changed my professional life. I’m not just a foreman anymore — I’m a verified, trusted leader with a Foreman Pro Card.

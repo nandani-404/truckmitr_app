@@ -16,6 +16,11 @@ import DhabhaWallet from '@truckmitr/src/app/layouts/dhaba/dhabha-wallet';
 import DhabhaMyReferralsScreen from '@truckmitr/src/app/layouts/dhaba/dhabha-my-referrals';
 import DhabhaMyProfile from '@truckmitr/src/app/layouts/dhaba/dhabha-my-profile';
 
+// Import shared screens
+import { Settings, Rating, ContactUs, Privacy, LanguageMain } from '@truckmitr/layouts/index';
+import DhabaBankDetails from '@truckmitr/src/app/layouts/dhaba/dhaba-bank-details';
+import DhabhaMyDhabha from '@truckmitr/src/app/layouts/dhaba/dhabha-my-dhabha';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -42,7 +47,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
         { name: STACKS.DHABHA_HOME, label: t('home') || 'Home', icon: 'home' },
         { name: STACKS.DHABHA_ADD_DRIVER, label: t('addDriver') || 'Add Driver', icon: 'person-add' },
         { name: STACKS.DHABHA_MY_REFERRALS, label: t('myReferrals') || 'My Referrals', icon: 'people' },
-        { name: STACKS.DHABHA_EARNINGS, label: t('wallet') || 'My Earnings', icon: 'wallet' },
+        { name: STACKS.DHABHA_EARNINGS, label: t('wallet') || 'My Wallet', icon: 'wallet' },
         { name: STACKS.DHABHA_PROFILE, label: t('profile') || 'Profile', icon: 'person' },
     ];
 
@@ -137,10 +142,23 @@ const DhabhaBottomTabs = () => {
 };
 
 // Main Stack Navigator
+import DhabhaNearby from '@truckmitr/src/app/layouts/dhaba/dhabha-nearby';
+
+// ... imports
+
 export default function DhabhaMain() {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name={STACKS.DHABHA_BOTTOM} component={DhabhaBottomTabs} />
+            {/* Shared screens */}
+            <Stack.Screen name={STACKS.SETTINGS} component={Settings} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.RATING} component={Rating} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.CONTACT_US} component={ContactUs} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.PRIVACY} component={Privacy} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DHABHA_BANK_DETAILS} component={DhabaBankDetails} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DHABHA_MY_DHABHA} component={DhabhaMyDhabha} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DHABHA_NEARBY} component={DhabhaNearby} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.LANGUAGE_MAIN} component={LanguageMain} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     );
 }

@@ -24,6 +24,7 @@ export const currentCoordinates = async (): Promise<LocationResponse> => {
         return new Promise((resolve, reject) => {
             Geolocation.getCurrentPosition(
                 (position) => {
+                    console.log('GPS Success:', position);
                     const location = {
                         coords: {
                             latitude: position.coords.latitude,
@@ -34,9 +35,11 @@ export const currentCoordinates = async (): Promise<LocationResponse> => {
                     resolve(location);
                 },
                 (error) => {
+                    console.log('GPS Error:', error);
                     showToast(error.message);
                     reject({ coords: { latitude: null, longitude: null }, error: error.message });
-                }
+                },
+                { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 }
             );
         });
     } catch (err) {

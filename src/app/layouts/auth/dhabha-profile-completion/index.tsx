@@ -39,6 +39,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import DatePicker from 'react-native-date-picker';
 import moment from 'moment';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
+import { fetchCompleteLocationDetails } from '@truckmitr/src/utils/maps/location/location.detail';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -58,7 +59,7 @@ const DHABHA_STEPS = [
     { id: 'operational_details', title: 'operationalDetails', subtitle: 'enterOperationalDetails' },
     { id: 'facilities', title: 'facilitiesAmenities', subtitle: 'selectFacilities' },
     { id: 'food_menu', title: 'foodMenuInfo', subtitle: 'enterFoodDetails' },
-    // { id: 'photos', title: 'dhabhaPhotos', subtitle: 'uploadPhotos' },
+    { id: 'photos', title: 'dhabhaPhotos', subtitle: 'uploadPhotos' },
     // { id: 'offers_for_drivers', title: 'offersForDrivers', subtitle: 'addOffersSubtitle' },
 ];
 
@@ -84,6 +85,7 @@ export default function ProfileCompletionDhabha() {
     // Pickers
     const [timePickerOpen, setTimePickerOpen] = useState<{ visible: boolean, type: 'opening' | 'closing' | null }>({ visible: false, type: null });
     const [photoModal, setPhotoModal] = useState<{ visible: boolean, categoryId: string | null }>({ visible: false, categoryId: null });
+    const [shopPhotoInstructionModal, setShopPhotoInstructionModal] = useState(false);
     const [establishmentYearPickerOpen, setEstablishmentYearPickerOpen] = useState(false);
 
     const [mapModalVisible, setMapModalVisible] = useState(false);
@@ -94,6 +96,7 @@ export default function ProfileCompletionDhabha() {
     const [stateModalVisible, setStateModalVisible] = useState(false);
     const [stateSearchQuery, setStateSearchQuery] = useState('');
     const [stepErrors, setStepErrors] = useState<{ [key: string]: string }>({});
+    const [localPhotos, setLocalPhotos] = useState<any>({});
 
     // Food Menu Section
     const [specialDishes, setSpecialDishes] = useState<string[]>([]);
@@ -123,6 +126,20 @@ export default function ProfileCompletionDhabha() {
     useEffect(() => {
         fetchStates();
     }, []);
+
+    // Initialize local photos from Redux if available (for editing existing profile)
+    useEffect(() => {
+        if (userEdit?.shop_photos) {
+            setLocalPhotos(userEdit.shop_photos);
+        }
+    }, []);
+
+    // Show photo instruction modal when entering photos step
+    useEffect(() => {
+        if (STEPS[currentStep]?.id === 'photos') {
+            setShopPhotoInstructionModal(true);
+        }
+    }, [currentStep]);
 
     const fetchStates = async () => {
         try {
@@ -265,6 +282,10 @@ export default function ProfileCompletionDhabha() {
                 showToast(t('pleaseEnterAllRequiredDetails'));
                 return;
             }
+            if (!localLocation?.lat || !localLocation?.lng) {
+                showToast(t('pleaseFetchCurrentLocation') || 'Please fetch current location');
+                return;
+            }
 
             setFinishing(true);
             try {
@@ -281,10 +302,11 @@ export default function ProfileCompletionDhabha() {
                 formData.append('full_address', userEdit?.address || '');
                 formData.append('landmark', userEdit?.landmark || '');
                 formData.append('district', userEdit?.district || '');
+                formData.append('state', userEdit?.state || '');
+                formData.append('state_id', state_id || '');
                 formData.append('pincode', userEdit?.pincode || '');
-                formData.append('state_id', state_id);
-                formData.append('latitude', '28.4595');
-                formData.append('longitude', '77.0266');
+                formData.append('latitude', localLocation?.lat || '');
+                formData.append('longitude', localLocation?.lng || '');
                 formData.append('location_source', 'Pinned via GPS');
 
 
@@ -384,11 +406,15 @@ export default function ProfileCompletionDhabha() {
                     dhaba_id = await AsyncStorage.getItem('dhaba_id');
                 }
                 formData.append('dhaba_id', dhaba_id || '');
-                formData.append('opening_time', userEdit?.opening_time ? moment(userEdit.opening_time).format('HH:mm') : '');
-                formData.append('closing_time', userEdit?.closing_time ? moment(userEdit.closing_time).format('HH:mm') : '');
                 formData.append('is_24x7', userEdit?.is_24x7 ? '1' : '0');
+                // Only send opening/closing times if not 24x7
+                if (!userEdit?.is_24x7) {
+                    formData.append('opening_time', userEdit?.opening_time ? moment(userEdit.opening_time).format('HH:mm') : '');
+                    formData.append('closing_time', userEdit?.closing_time ? moment(userEdit.closing_time).format('HH:mm') : '');
+                }
                 formData.append('peak_hours', userEdit?.peak_hours || '');
                 formData.append('avg_wait_time', "15-20 mins");
+                console.log('formData', formData);
 
                 const response = await axiosInstance.post(END_POINTS.DHABA_OPERATIONAL_DETAILS, formData);
 
@@ -478,6 +504,62 @@ export default function ProfileCompletionDhabha() {
             return;
         }
 
+        // Photos Step Handler
+        if (step.id === 'photos') {
+            const allPhotos = localPhotos?.all_photos || [];
+
+            // Check if at least one photo is uploaded
+            if (!allPhotos || allPhotos.length === 0) {
+                showToast(t('pleaseUploadAtLeastOnePhoto') || 'Please upload at least one photo');
+                return;
+            }
+
+            setFinishing(true);
+            try {
+                const formData = new FormData();
+                let dhaba_id = userEdit?.dhaba_id;
+                if (!dhaba_id) {
+                    dhaba_id = await AsyncStorage.getItem('dhaba_id');
+                }
+                formData.append('dhaba_id', dhaba_id || '');
+
+                // New Payload Structure
+                formData.append('category', 'Interior'); // As requested
+                formData.append('ordering_priority', '1');
+                formData.append('upload_date', moment().format('YYYY-MM-DD'));
+
+                // Append all photos using key 'image_url[]' as requested
+                allPhotos.forEach((photoUri: string, idx: number) => {
+                    const fileName = `dhaba_photo_${idx}_${Date.now()}.jpg`;
+                    formData.append(`image_url[${idx}]`, {
+                        uri: photoUri,
+                        type: 'image/jpeg',
+                        name: fileName,
+                    } as any);
+                });
+
+                console.log('formData photos', formData);
+                const response = await axiosInstance.post(END_POINTS.DHABA_PHOTO_UPLOAD, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+
+                if (response?.data?.status === true || response?.data?.success === true) {
+                    showToast(response?.data?.message || t('photosSavedSuccess') || 'Photos saved successfully!');
+                    contentOpacity.value = withTiming(0, { duration: 200 });
+                    setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                } else {
+                    showToast(response?.data?.message || t('failedToSavePhotos') || 'Failed to save photos');
+                }
+            } catch (error: any) {
+                console.error('Photos API Error:', error);
+                const errorMessage = error?.response?.data?.message || error?.message || t('somethingWentWrong');
+                showToast(errorMessage);
+            } finally {
+                setFinishing(false);
+            }
+            return;
+        }
+
         if (currentStep < STEPS.length - 1) {
             contentOpacity.value = withTiming(0, { duration: 200 });
             setTimeout(() => setCurrentStep(prev => prev + 1), 200);
@@ -539,7 +621,10 @@ export default function ProfileCompletionDhabha() {
             showToast(error?.message || "Failed to submit profile");
         }
     };
+    const [locationWarningModalVisible, setLocationWarningModalVisible] = useState(false);
+    const [localLocation, setLocalLocation] = useState<{ lat: string, lng: string, address: string } | null>(null);
 
+    // --- Handlers ---
     const handlePickImage = (source: 'camera' | 'gallery') => {
         if (!photoModal.categoryId) return;
 
@@ -549,24 +634,31 @@ export default function ProfileCompletionDhabha() {
             height: 1000,
             compressImageQuality: 0.8,
             mediaType: 'photo' as const,
-            cropping: isCamera, // Disable cropping for multiple selection compatibility
+            cropping: false,
         };
 
         const pickerAction = isCamera
             ? ImagePicker.openCamera(commonOptions)
-            : ImagePicker.openPicker({ ...commonOptions, multiple: true, maxFiles: 50 });
+            : ImagePicker.openPicker({ ...commonOptions, multiple: true, maxFiles: 7 });
 
         pickerAction.then((response: any) => {
             const images = Array.isArray(response) ? response : [response];
-            const currentPhotos = userEdit?.dhabha_photos || {};
-            const categoryPhotos = currentPhotos[photoModal.categoryId!] || [];
 
-            const newPhotoPaths = images.map(img => img.path);
-            const updatedCategoryPhotos = [...categoryPhotos, ...newPhotoPaths];
+            setLocalPhotos((prev: any) => {
+                const currentPhotos = prev?.[photoModal.categoryId!] || [];
+                const newPhotoPaths = images.map((img: any) => img.path);
 
-            updateUser('dhabha_photos', {
-                ...currentPhotos,
-                [photoModal.categoryId!]: updatedCategoryPhotos
+                if (currentPhotos.length + newPhotoPaths.length > 7) {
+                    showToast(t('youCanAddOnly7Photos') || "You can add only 7 photos");
+                    return prev;
+                }
+
+                const updatedCategoryPhotos = [...currentPhotos, ...newPhotoPaths];
+
+                return {
+                    ...prev,
+                    [photoModal.categoryId!]: updatedCategoryPhotos
+                };
             });
 
             setPhotoModal({ visible: false, categoryId: null });
@@ -610,34 +702,42 @@ export default function ProfileCompletionDhabha() {
 
     const getCurrentLocation = async () => {
         setFetchingLocation(true);
-        const hasPermission = await requestLocationPermission();
+        console.log('Fetching location...');
+        try {
+            const locationData = await fetchCompleteLocationDetails();
+            console.log('Location Data:', locationData);
 
-        if (!hasPermission) {
-            setFetchingLocation(false);
-            showToast(t('locationPermissionDenied') || 'Location permission denied');
-            return;
-        }
+            if (locationData && locationData.coords) {
+                const { latitude, longitude } = locationData.coords;
+                // setTempMarker({ latitude, longitude }); // Not using tempMarker here for direct fetch
 
-        Geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                setTempMarker({ latitude, longitude });
-                updateUser('latitude', latitude.toString());
-                updateUser('longitude', longitude.toString());
-                setFetchingLocation(false);
+                // Fix: Dispatch both updates together to avoid state overwrite due to closure staleness
+                /* dispatch(userEditAction({
+                    ...userEdit,
+                    latitude: latitude.toString(),
+                    longitude: longitude.toString()
+                })); */
+
+                if (locationData.displayName) {
+                    // updateUser('address', locationData.displayName); // Don't auto-fill main address
+                }
+
+                setLocalLocation({
+                    lat: latitude.toString(),
+                    lng: longitude.toString(),
+                    address: locationData.displayName || ''
+                });
+
                 showToast(t('locationFetchedSuccess') || 'Location fetched successfully!');
-            },
-            (error) => {
-                console.error('GPS Error:', error);
-                setFetchingLocation(false);
+            } else {
                 showToast(t('failedToGetLocation') || 'Failed to get location. Please try again.');
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 10000
             }
-        );
+        } catch (error) {
+            console.error('GPS Error:', error);
+            showToast(t('failedToGetLocation') || 'Failed to get location. Please try again.');
+        } finally {
+            setFetchingLocation(false);
+        }
     };
 
     const openMapWithCurrentLocation = async () => {
@@ -683,6 +783,7 @@ export default function ProfileCompletionDhabha() {
 
     // --- Step Renderers ---
 
+
     const renderBasicInfo = () => (
         <View style={styles.stepContainer}>
             <MandatoryLabel text={t('dhabhaName')} />
@@ -707,13 +808,13 @@ export default function ProfileCompletionDhabha() {
             <Space height={16} />
             <MandatoryLabel text={t('mobileNumber')} />
             <TextInput
-                style={styles.classicInput}
+                style={[styles.classicInput, { backgroundColor: '#F3F4F6', color: '#6B7280' }]}
                 placeholder="10-digit number"
                 placeholderTextColor="#999"
                 keyboardType="phone-pad"
                 maxLength={10}
                 value={userEdit?.mobile}
-                onChangeText={(text) => updateUser('mobile', text.replace(/[^0-9]/g, ''))}
+                editable={false}
             />
 
             <Space height={16} />
@@ -760,6 +861,8 @@ export default function ProfileCompletionDhabha() {
                     </TouchableOpacity>
                 ))}
             </View>
+
+
         </View>
     );
 
@@ -786,9 +889,11 @@ export default function ProfileCompletionDhabha() {
                 onChangeText={(text) => updateUser('landmark', text)}
             />
 
+            <Space height={16} />
+
+            {/* Pincode & District & State Section */}
             <View style={styles.rowGap}>
                 <View style={{ flex: 1 }}>
-                    <Space height={16} />
                     <MandatoryLabel text={t('pincode')} />
                     <View style={{ position: 'relative' }}>
                         <TextInput
@@ -810,86 +915,89 @@ export default function ProfileCompletionDhabha() {
                     </View>
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Space height={16} />
                     <MandatoryLabel text={t('district')} />
                     <TextInput
-                        style={styles.classicInput}
+                        style={[styles.classicInput, { backgroundColor: '#F3F4F6', color: '#6B7280' }]}
                         placeholder={t('district')}
                         placeholderTextColor="#999"
                         value={userEdit?.district}
-                        onChangeText={(text) => updateUser('district', text)}
+                        editable={false}
                     />
                 </View>
             </View>
 
             <Space height={16} />
             <MandatoryLabel text={t('state')} />
-            <TouchableOpacity
-                style={styles.datetimeBox}
-                onPress={() => setStateModalVisible(true)}
-                activeOpacity={0.7}
-            >
-                <Text style={[styles.datetimeText, !userEdit?.state && { color: '#999' }]}>
-                    {userEdit?.state || t('selectState')}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color="#666" />
-            </TouchableOpacity>
+            <TextInput
+                style={[styles.classicInput, { backgroundColor: '#F3F4F6', color: '#6B7280' }]}
+                placeholder={t('state')}
+                placeholderTextColor="#999"
+                value={userEdit?.state}
+                editable={false}
+            />
 
             <Space height={24} />
 
             {/* GPS Location Section */}
-            {/* <Text style={styles.classicLabel}>{t('pinYourLocation')}</Text>
-            <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('pinLocationHelperText') || 'Use GPS to automatically detect your dhaba location or select on map'}</Text>
+            <Space height={16} />
+            <Text style={styles.classicLabel}>{t('pinYourLocation') || 'Pin Your Location'}</Text>
 
-            <View style={styles.gpsButtonsRow}>
-                <TouchableOpacity
-                    style={[styles.gpsButton, { flex: 1, marginRight: 8 }]}
-                    activeOpacity={0.8}
-                    onPress={getCurrentLocation}
-                    disabled={fetchingLocation}
-                >
-                    {fetchingLocation ? (
-                        <ActivityIndicator size="small" color="white" />
-                    ) : (
-                        <>
-                            <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                                <Ionicons name="navigate" size={18} color="white" />
-                            </View>
-                            <Text style={styles.gpsButtonText}>{t('useMyLocation') || 'Use My Location'}</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
+            <TouchableOpacity
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: colors.royalBlue,
+                    paddingVertical: 12,
+                    borderRadius: 8,
+                    marginTop: 8
+                }}
+                activeOpacity={0.8}
+                onPress={() => setLocationWarningModalVisible(true)}
+                disabled={fetchingLocation}
+            >
+                {fetchingLocation ? (
+                    <ActivityIndicator size="small" color="white" />
+                ) : (
+                    <>
+                        <Ionicons name="location" size={20} color="white" style={{ marginRight: 8 }} />
+                        <Text style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>
+                            {t('fetchCurrentLocation') || 'Fetch Current Location'}
+                        </Text>
+                    </>
+                )}
+            </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.gpsButton, { flex: 1, marginLeft: 8, backgroundColor: colors.royalBlue }]}
-                    activeOpacity={0.8}
-                    onPress={openMapWithCurrentLocation}
-                    disabled={fetchingLocation}
-                >
-                    <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                        <Ionicons name="map" size={18} color="white" />
-                    </View>
-                    <Text style={styles.gpsButtonText}>{t('pinOnMap') || 'Pin on Map'}</Text>
-                </TouchableOpacity>
-            </View>
-
-            {userEdit?.latitude && (
-                <View style={styles.gpsInfoBox}>
+            {localLocation && (
+                <View style={[styles.gpsInfoBox, { marginTop: 12 }]}>
                     <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                         <Text style={styles.gpsTextTitle}>{t('locationPinned') || 'Location Pinned'}</Text>
                         <Text style={styles.gpsTextCoords}>
-                            {parseFloat(userEdit.latitude).toFixed(6)}, {parseFloat(userEdit.longitude).toFixed(6)}
+                            {parseFloat(localLocation.lat).toFixed(6)}, {parseFloat(localLocation.lng).toFixed(6)}
                         </Text>
+                        {localLocation.address ? (
+                            <View style={{ marginTop: 4 }}>
+                                <Text style={[styles.gpsTextCoords, { fontWeight: '700', color: '#16A34A' }]}>
+                                    {t('currentAccessedLocation') || 'Current Accessed Location:'}
+                                </Text>
+                                <Text style={[styles.gpsTextCoords, { height: 'auto' }]} numberOfLines={2}>
+                                    {localLocation.address}
+                                </Text>
+                            </View>
+                        ) : null}
                     </View>
                     <TouchableOpacity onPress={() => {
                         updateUser('latitude', '');
                         updateUser('longitude', '');
+                        setLocalLocation(null);
                     }}>
                         <Ionicons name="close-circle-outline" size={22} color="#EF4444" />
                     </TouchableOpacity>
                 </View>
-            )} */}
+            )}
+
+
         </View>
     );
 
@@ -972,29 +1080,33 @@ export default function ProfileCompletionDhabha() {
             { id: 'wheel_alignment', label: t('wheel_alignment'), key: 'wheel_alignment' },
             { id: 'mechanic', label: t('mechanic'), key: 'mechanic' },
         ];
+
+        const renderFacilityItem = (item: any) => {
+            const isSelected = !!userEdit?.[item.key];
+            return (
+                <TouchableOpacity
+                    key={item.id}
+                    style={[styles.gridItem, isSelected && styles.gridItemSelected]}
+                    onPress={() => updateUser(item.key, !isSelected)}
+                    activeOpacity={0.7}
+                >
+                    <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                        {isSelected && <View style={styles.radioInner} />}
+                    </View>
+                    <Text style={[styles.gridItemText, isSelected && styles.gridItemTextSelected]}>{item.label}</Text>
+                </TouchableOpacity>
+            );
+        };
+
         return (
             <View style={styles.stepContainer}>
                 <Text style={styles.classicLabel}>{t('selectAvailableFacilities')}</Text>
                 <Text style={[styles.helperText, { marginBottom: 15 }]}>{t('selectAllThatApply')}</Text>
 
                 <View style={styles.gridContainer}>
-                    {facilitiesList.map(item => {
-                        const isSelected = !!userEdit?.[item.key];
-                        return (
-                            <TouchableOpacity
-                                key={item.id}
-                                style={[styles.gridItem, isSelected && styles.gridItemSelected]}
-                                onPress={() => updateUser(item.key, !isSelected)}
-                                activeOpacity={0.7}
-                            >
-                                <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                                    {isSelected && <View style={styles.radioInner} />}
-                                </View>
-                                <Text style={[styles.gridItemText, isSelected && styles.gridItemTextSelected]}>{item.label}</Text>
-                            </TouchableOpacity>
-                        );
-                    })}
+                    {facilitiesList.map(renderFacilityItem)}
                 </View>
+
             </View>
         );
     };
@@ -1048,6 +1160,7 @@ export default function ProfileCompletionDhabha() {
                         keyboardType="numeric"
                         value={priceRangeFrom}
                         onChangeText={(text) => setPriceRangeFrom(text.replace(/[^0-9]/g, ''))}
+                        maxLength={5}
                     />
                 </View>
                 <Text style={{ alignSelf: 'center', marginHorizontal: 10, fontSize: 16, color: '#666' }}>to</Text>
@@ -1059,6 +1172,7 @@ export default function ProfileCompletionDhabha() {
                         keyboardType="numeric"
                         value={priceRangeTo}
                         onChangeText={(text) => setPriceRangeTo(text.replace(/[^0-9]/g, ''))}
+                        maxLength={5}
                     />
                 </View>
             </View>
@@ -1115,67 +1229,94 @@ export default function ProfileCompletionDhabha() {
     );
 
     const renderPhotos = () => {
-        const photoCategories = [
-            { id: 'dishes', label: t('signatureDishes'), icon: 'food-outline' },
-            { id: 'menu', label: t('menuCard'), icon: 'book-open-outline' },
-            { id: 'seating', label: t('seatingArea'), icon: 'chair-rolling' },
-            { id: 'exterior', label: t('dhabhaFront'), icon: 'storefront-outline' },
-            { id: 'parking', label: t('parkingArea'), icon: 'truck-outline' },
-        ];
-
-        const photos = userEdit?.dhabha_photos || {};
+        const categoryId = 'all_photos';
+        const photos = localPhotos?.[categoryId] || [];
 
         return (
             <View style={styles.stepContainer}>
-                <Text style={styles.classicLabel}>{t('uploadDhabhaPhotos')}</Text>
-                <Text style={[styles.helperText, { marginBottom: 20 }]}>{t('addPhotosToGainTrust')}</Text>
+                <Text style={styles.classicLabel}>{t('dhabhaPhotos') || 'Dhaba Photos'}</Text>
+                <Text style={[styles.helperText, { marginBottom: 20 }]}>
+                    {t('uploadPhotosHelper') || 'Upload photos of your dhaba to attract more drivers'}
+                </Text>
 
-                {photoCategories.map(cat => {
-                    const categoryPhotos = photos[cat.id] || [];
-                    return (
-                        <View key={cat.id} style={styles.photoCategoryBlock}>
-                            <TouchableOpacity
-                                style={styles.photoUploadRow}
-                                activeOpacity={0.7}
-                                onPress={() => setPhotoModal({ visible: true, categoryId: cat.id })}
-                            >
-                                <View style={styles.photoIconBox}>
-                                    <MaterialCommunityIcons name={cat.icon} size={24} color={colors.royalBlue} />
-                                </View>
-                                <View style={{ flex: 1, paddingHorizontal: 15 }}>
-                                    <Text style={styles.photoCatLabel}>{cat.label}</Text>
-                                    <Text style={styles.photoCatSub}>
-                                        {categoryPhotos.length > 0
-                                            ? `${categoryPhotos.length} ${t('photosAdded')}`
-                                            : t('tapToUpload')}
-                                    </Text>
-                                </View>
-                                <View style={styles.uploadActionBtn}>
-                                    <Ionicons name="add" size={20} color={colors.royalBlue} />
-                                </View>
-                            </TouchableOpacity>
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: '#F5F9FF',
+                        borderWidth: 1.5,
+                        borderColor: '#246BFD',
+                        borderStyle: 'dashed',
+                        borderRadius: 16,
+                        height: 120,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 20
+                    }}
+                    activeOpacity={0.7}
+                    onPress={() => setPhotoModal({ visible: true, categoryId: categoryId })}
+                >
+                    <Ionicons name="cloud-upload-outline" size={40} color="#246BFD" />
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#246BFD', marginTop: 10 }}>{t('tapToUpload') || 'Tap to Upload'}</Text>
+                </TouchableOpacity>
 
-                            {categoryPhotos.length > 0 && (
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailScroll}>
-                                    {categoryPhotos.map((uri: string, idx: number) => (
-                                        <View key={idx} style={styles.thumbnailContainer}>
-                                            <FastImage
-                                                source={{ uri }}
-                                                style={styles.thumbnail}
-                                            />
-                                            <TouchableOpacity
-                                                style={styles.removePhotoBtn}
-                                                onPress={() => removePhoto(cat.id, idx)}
-                                            >
-                                                <Ionicons name="close" size={14} color="white" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    ))}
-                                </ScrollView>
-                            )}
+                {photos.length > 0 && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                        {photos.map((uri: string, idx: number) => (
+                            <View key={uri} style={{ position: 'relative', width: '31%', aspectRatio: 1, marginBottom: 10 }}>
+                                <FastImage
+                                    source={{ uri }}
+                                    style={{ width: '100%', height: '100%', borderRadius: 12 }}
+                                />
+                                <TouchableOpacity
+                                    style={styles.removePhotoBtn}
+                                    onPress={() => {
+                                        const updatedList = photos.filter((_: string, i: number) => i !== idx);
+                                        setLocalPhotos({ ...localPhotos, [categoryId]: updatedList });
+                                    }}
+                                >
+                                    <Ionicons name="close" size={12} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                <Modal visible={shopPhotoInstructionModal} transparent animationType="fade">
+                    <View style={styles.modalOverlay}>
+                        <View style={[styles.modalContent, { padding: 0, overflow: 'hidden' }]}>
+                            <View style={{ backgroundColor: '#F8F9FA', padding: 20, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#eee', width: '100%' }}>
+                                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#E0EAFF', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                                    <Ionicons name="camera" size={32} color="#246BFD" />
+                                </View>
+                                <Text style={{ fontSize: 20, fontWeight: '700', color: '#111' }}>{t('photoRequirements') || 'Photo Requirements'}</Text>
+                                <Text style={{ fontSize: 14, color: '#666', marginTop: 5 }}>{t('photoGuidelinesSub') || 'Follow these guidelines for best results'}</Text>
+                            </View>
+
+                            <View style={{ padding: 25, width: '100%' }}>
+                                {[
+                                    t('photoDhabhaFront') || 'Dhaba front view',
+                                    t('photoSeatingArea') || 'Seating area',
+                                    t('photoKitchen') || 'Kitchen area',
+                                    t('photoFoodItems') || 'Popular food items',
+                                    t('photoParkingArea') || 'Parking area'
+                                ].map((item, idx) => (
+                                    <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                        <Ionicons name="checkmark-circle" size={20} color="#22C55E" style={{ marginRight: 12 }} />
+                                        <Text style={{ fontSize: 15, color: '#333', fontWeight: '500' }}>{item}</Text>
+                                    </View>
+                                ))}
+                            </View>
+
+                            <View style={{ padding: 20, width: '100%', borderTopWidth: 1, borderTopColor: '#eee' }}>
+                                <TouchableOpacity
+                                    style={[styles.modalBtn, { marginTop: 0, width: '100%', height: 50, alignItems: 'center', justifyContent: 'center' }]}
+                                    onPress={() => setShopPhotoInstructionModal(false)}
+                                >
+                                    <Text style={styles.modalBtnText}>{t('gotItUpload') || 'Got it, let me upload'}</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    );
-                })}
+                    </View>
+                </Modal>
             </View>
         );
     };
@@ -1606,13 +1747,52 @@ export default function ProfileCompletionDhabha() {
                     ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={styles.nextButtonText}>
-                                {currentStep === STEPS.length - 1 ? t('submitProfile') : t('next')}
+                                {currentStep === STEPS.length - 1 ? (t('submitProfile') || 'Submit Profile') : (t('saveAndNext') || 'Save & Next')}
                             </Text>
                             {currentStep !== STEPS.length - 1 && <Ionicons name="arrow-forward" size={18} color="white" style={{ marginLeft: 8 }} />}
                         </View>
                     )}
                 </TouchableOpacity>
             </View>
+
+            {/* Location Warning Modal */}
+            <Modal
+                transparent
+                visible={locationWarningModalVisible}
+                animationType="fade"
+                onRequestClose={() => setLocationWarningModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                    <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center' }}>
+                        <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                            <Ionicons name="warning" size={32} color="#D97706" />
+                        </View>
+                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 12, textAlign: 'center' }}>
+                            {t('importantNotice') || 'Important Notice'}
+                        </Text>
+                        <Text style={{ fontSize: 15, color: '#4B5563', textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+                            {t('locationWarningMessage') || 'Before doing share location please stay near or at your dhaba to get perfect location of your dhaba.'}
+                        </Text>
+                        <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
+                            <TouchableOpacity
+                                style={{ flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: '#F3F4F6', alignItems: 'center' }}
+                                onPress={() => setLocationWarningModalVisible(false)}
+                            >
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#4B5563' }}>{t('cancel')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: colors.royalBlue, alignItems: 'center' }}
+                                onPress={() => {
+                                    setLocationWarningModalVisible(false);
+                                    getCurrentLocation();
+                                }}
+                            >
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: 'white' }}>{t('shareLocation') || 'Share Location'}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
             {/* Time Picker Modal */}
             <Modal visible={timePickerOpen.visible} transparent animationType="fade">
