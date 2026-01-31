@@ -329,37 +329,6 @@ export default function DhabhaAddDriver() {
                         <Text style={styles.mainButtonText}>{t('addDriver')}</Text>
                     )}
                 </TouchableOpacity>
-                {/* <TouchableOpacity
-                    onPress={async () => {
-                        try {
-                            const keys = await AsyncStorage.getAllKeys();
-                            const result = await AsyncStorage.multiGet(keys);
-                            console.log('\n========== AsyncStorage Data ==========');
-                            result.forEach(([key, value]) => {
-                                console.log(`\n[${key}]:`, value);
-                            });
-                            console.log('\n========================================\n');
-                            Alert.alert('AsyncStorage Logged', `${keys.length} keys logged to console. Check your terminal/debugger.`);
-                        } catch (error) {
-                            console.error('Error reading AsyncStorage:', error);
-                            Alert.alert('Error', 'Failed to read AsyncStorage');
-                        }
-                    }}
-                    style={{
-                        marginHorizontal: 16,
-                        marginTop: 16,
-                        paddingVertical: 12,
-                        paddingHorizontal: 16,
-                        backgroundColor: '#FF9800',
-                        borderRadius: 8,
-                        alignItems: 'center',
-                    }}
-                    activeOpacity={0.7}
-                >
-                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
-                        🐛 Log AsyncStorage Data
-                    </Text>
-                </TouchableOpacity> */}
             </View>
 
             {/* OTP Verification Modal */}

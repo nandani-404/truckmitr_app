@@ -14,7 +14,7 @@ import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { saveUserData } from '@truckmitr/src/utils/config/token';
-import { userAction, userAuthenticatedAction } from '@truckmitr/src/redux/actions/user.action';
+import { userAction, userAuthenticatedAction, subscriptionDetailsAction } from '@truckmitr/src/redux/actions/user.action';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { setupFirebaseNotifications } from '@truckmitr/src/utils/notification';
@@ -431,6 +431,25 @@ const Otp = () => {
                                 },
                             }));
                             console.log('logging user data ------------', profile?.data);
+
+                            // Fetch subscription details immediately after profile
+                            // This ensures subscription data is available before home screen loads
+                            // Fixes issue where payment modal was shown on first login even for Pro users
+                            try {
+                                const sub: any = await axiosInstance.get(END_POINTS?.PAYMENT_SUBSCRIPTION_DETAILS, {
+                                    headers: {
+                                        Authorization: `Bearer ${token}`,
+                                        'X-Skip-Global-Logout': 'true'
+                                    }
+                                });
+                                const subData = sub?.data?.data || [];
+                                dispatch(subscriptionDetailsAction(subData));
+                                console.log('📦 Subscription details fetched during OTP verification:', subData?.length ? 'Has subscription' : 'No subscription');
+                            } catch (subError) {
+                                console.log('⚠️ Failed to fetch subscription details during login:', subError);
+                                // Dispatch empty array to set subscriptionDetails as loaded (not null)
+                                dispatch(subscriptionDetailsAction([]));
+                            }
 
                             // For new signups, navigate to congratulations screen first
                             if (flow !== 'login') {

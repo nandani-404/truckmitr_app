@@ -140,11 +140,11 @@ export default function ProfileEdit() {
     ];
 
     const translatedOperationalSegments = [
-        { label: t('localDelivery') || 'Local Delivery', value: 'local' },
-        { label: t('intracity') || 'Intracity', value: 'intracity' },
-        { label: t('intercity') || 'Intercity', value: 'intercity' },
-        { label: t('interstate') || 'Interstate', value: 'interstate' },
-        { label: t('allIndia') || 'All India', value: 'all_india' },
+        { label: t('localDelivery') || 'Local Delivery', value: 'Local Delivery' },
+        { label: t('intracity') || 'Intracity', value: 'Intracity' },
+        { label: t('intercity') || 'Intercity', value: 'Intercity' },
+        { label: t('interstate') || 'Interstate', value: 'Interstate' },
+        { label: t('allIndia') || 'All India', value: 'All India' },
     ];
 
     const translatedEndorsements = [

@@ -177,11 +177,11 @@ export default function ProfileEditNew() {
     ];
 
     const translatedOperationalSegments = [
-        { label: t('localDelivery') || 'Local Delivery', value: 'local' },
-        { label: t('intracity') || 'Intracity', value: 'intracity' },
-        { label: t('intercity') || 'Intercity', value: 'intercity' },
-        { label: t('interstate') || 'Interstate', value: 'interstate' },
-        { label: t('allIndia') || 'All India', value: 'all_india' },
+        { label: t('localDelivery') || 'Local Delivery', value: 'Local Delivery' },
+        { label: t('intracity') || 'Intracity', value: 'Intracity' },
+        { label: t('intercity') || 'Intercity', value: 'Intercity' },
+        { label: t('interstate') || 'Interstate', value: 'Interstate' },
+        { label: t('allIndia') || 'All India', value: 'All India' },
     ];
 
     const translatedEndorsements = [
@@ -241,10 +241,10 @@ export default function ProfileEditNew() {
                     if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice) {
                         const postOfficeList = data[0].PostOffice;
                         setPostOffices(postOfficeList);
-                        
+
                         // Check if current city matches any post office, but don't auto-select
                         if (userEdit?.city) {
-                            const matchingPostOffice = postOfficeList.find((po: any) => 
+                            const matchingPostOffice = postOfficeList.find((po: any) =>
                                 po.Name.toLowerCase() === userEdit.city.toLowerCase()
                             );
                             if (matchingPostOffice) {
@@ -288,7 +288,7 @@ export default function ProfileEditNew() {
     // Sync selectedPostOffice with userEdit.city when component loads or city changes
     useEffect(() => {
         if (userEdit?.city && postOffices.length > 0) {
-            const matchingPostOffice = postOffices.find((po: any) => 
+            const matchingPostOffice = postOffices.find((po: any) =>
                 po.Name.toLowerCase() === userEdit.city.toLowerCase()
             );
             if (matchingPostOffice) {
@@ -910,8 +910,8 @@ export default function ProfileEditNew() {
             formData.append('fleet_size', userEdit?.fleet_size || '');
             formData.append('operational_segment', userEdit?.industry_segment || '');
             // Routes - send as array format like profile-completion
-            const routeSegments = Array.isArray(userEdit?.routes) 
-                ? userEdit.routes 
+            const routeSegments = Array.isArray(userEdit?.routes)
+                ? userEdit.routes
                 : userEdit?.routes?.split(',').filter(Boolean) || [];
             if (routeSegments.length > 0) {
                 routeSegments.forEach((seg: string) => {
@@ -1366,7 +1366,7 @@ export default function ProfileEditNew() {
                                 <Text style={{ color: '#333', fontSize: 15 }}>{stateDisplayName || t('stateSelected') || 'State Selected'}</Text>
                             </View>
                         ) : (
-                            
+
                             <Dropdown
                                 style={styles.dropdown}
                                 placeholderStyle={{ color: '#999', fontSize: 15 }}
@@ -1608,15 +1608,15 @@ export default function ProfileEditNew() {
                 return (<View style={styles.stepContent}><View style={styles.gridContainer}>{translatedFleetSizes.map(f => (<TouchableOpacity key={f.value} style={[styles.gridTile, userEdit?.fleet_size === f.value && styles.gridTileSelected]} onPress={() => dispatch(userEditAction({ ...userEdit, fleet_size: f.value }))}><Text style={[styles.gridTileText, userEdit?.fleet_size === f.value && styles.gridTileTextSelected]}>{f.label}</Text></TouchableOpacity>))}</View></View>);
 
             case 'industry_segment':
-                const industrySegmentArray = Array.isArray(userEdit?.industry_segment) 
-                    ? userEdit.industry_segment 
+                const industrySegmentArray = Array.isArray(userEdit?.industry_segment)
+                    ? userEdit.industry_segment
                     : userEdit?.industry_segment?.split(',')?.filter(Boolean) || [];
                 return (<View style={styles.stepContent}><View style={styles.chipContainer}>{translatedIndustrySegments.map(s => { const selected = industrySegmentArray.includes(s.value) || industrySegmentArray.includes(s.label); return <Chip key={s.value} label={s.label} selected={selected} onPress={() => toggleMultiSelect('industry_segment', s.value)} />; })}</View></View>);
 
             case 'operational_segment':
                 // Routes selection (local, intracity, intercity, etc.) - Same UI as profile-completion
-                const currentRoutes = Array.isArray(userEdit?.routes) 
-                    ? userEdit.routes 
+                const currentRoutes = Array.isArray(userEdit?.routes)
+                    ? userEdit.routes
                     : userEdit?.routes?.split(',')?.filter(Boolean) || [];
                 return (
                     <View style={styles.stepContent}>

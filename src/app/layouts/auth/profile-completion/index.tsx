@@ -504,7 +504,7 @@ export default function ProfileCompletion() {
     ];
 
     const translatedExperienceList = [
-        { label: t('lessThan1Year'), value: 'less_than_1' },
+        { label: t('lessThan1Year'), value: '0' },
         { label: t('1to2Years'), value: '1-2' },
         { label: t('3to5Years'), value: '3-5' },
         { label: t('6to10Years'), value: '6-10' },
@@ -527,12 +527,12 @@ export default function ProfileCompletion() {
     const expectedSalaryRanges = ['20000-25000', '25000-30000', '30000-35000', '35000-40000', '40000-45000', '45000-50000', '50000-55000', '55000-60000'];
 
     const translatedEndorsements = [
-        { id: 'hill', label: t('hillDriving'), emoji: '🏔️' },
-        { id: 'hazardous', label: t('hazardousGoods'), emoji: '☢️' },
-        { id: 'roller', label: t('roadRoller'), emoji: '🚜' },
-        { id: 'tractor', label: t('tractorTrailer'), emoji: '🚛' },
-        { id: 'forklift', label: t('forkliftMHE'), emoji: '🏗️' },
-        { id: 'other', label: t('other'), emoji: '📋' },
+        { id: 'hill', label: t('hillDriving'), value: 'Hill Driving', emoji: '🏔️' },
+        { id: 'hazardous', label: t('hazardousGoods'), value: 'Hazardous Goods', emoji: '☢️' },
+        { id: 'roller', label: t('roadRoller'), value: 'Road Roller', emoji: '🚜' },
+        { id: 'tractor', label: t('tractorTrailer'), value: 'Tractor-Trailer (Commercial)', emoji: '🚛' },
+        { id: 'forklift', label: t('forkliftMHE'), value: 'Forklift / MHE', emoji: '🏗️' },
+        { id: 'other', label: t('other'), value: 'Other', emoji: '📋' },
     ];
 
     // Vehicle type IDs match the database vehicle_type table
@@ -556,7 +556,7 @@ export default function ProfileCompletion() {
     ];
 
     const translatedYearOfExp = [
-        { label: t('lessThan1Year'), value: 'less_than_1' },
+        { label: t('lessThan1Year'), value: '0' },
         { label: t('1to2Years'), value: '1-2' },
         { label: t('3to5Years'), value: '3-5' },
         { label: t('6to10Years'), value: '6-10' },
@@ -564,11 +564,11 @@ export default function ProfileCompletion() {
     ];
 
     const translatedOperationalSegments = [
-        { label: t('localDelivery') || 'Local Delivery', value: 'local' },
-        { label: t('intracity') || 'Intracity', value: 'intracity' },
-        { label: t('intercity') || 'Intercity', value: 'intercity' },
-        { label: t('interstate') || 'Interstate', value: 'interstate' },
-        { label: t('allIndia') || 'All India', value: 'all_india' },
+        { label: t('localDelivery') || 'Local Delivery', value: 'Local Delivery' },
+        { label: t('intracity') || 'Intracity', value: 'Intracity' },
+        { label: t('intercity') || 'Intercity', value: 'Intercity' },
+        { label: t('interstate') || 'Interstate', value: 'Interstate' },
+        { label: t('allIndia') || 'All India', value: 'All India' },
     ];
 
     const translatedAvgKmRanges = [
@@ -765,12 +765,12 @@ export default function ProfileCompletion() {
         }
     };
 
-    const toggleEndorsement = (label: string) => {
-        let current = formData?.endorsement ? formData.endorsement.split(', ') : [];
-        if (current.includes(label)) {
-            current = current.filter((i: string) => i !== label);
+    const toggleEndorsement = (value: string) => {
+        let current = formData?.endorsement ? formData.endorsement.split(',').map(s => s.trim()).filter(Boolean) : [];
+        if (current.includes(value)) {
+            current = current.filter((i: string) => i !== value);
         } else {
-            current.push(label);
+            current.push(value);
         }
         updateFormData({ endorsement: current.join(',') });
     };
@@ -893,7 +893,7 @@ export default function ProfileCompletion() {
         type_of_license: userEdit?.Type_of_License || '',
 
         licence_endorsement:
-            userEdit?.endorsement?.split(', ').filter(Boolean) || [],
+            userEdit?.endorsement?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
 
         Driving_Experience:
             ({
@@ -951,13 +951,29 @@ export default function ProfileCompletion() {
                     savedSignupData?.transport_name ||
                     '',
 
-                year_of_exp: userEdit?.year_of_exp || '',
+                year_of_exp:
+                    ({
+                        'less_than_1': '0',
+                        '1-2': '1',
+                        '3-5': '3',
+                        '6-10': '6',
+                        '10+': '10',
+                    } as any)[userEdit?.year_of_exp] ||
+                    userEdit?.year_of_exp ||
+                    '',
 
                 year_of_establishment:
-                    userEdit?.year_of_exp ||
-                    userEdit?.year_of_establishment ||
-                    userEdit?.establishment_year ||
-                    '',
+                    (({
+                        'less_than_1': '0',
+                        '1-2': '1',
+                        '3-5': '3',
+                        '6-10': '6',
+                        '10+': '10',
+                    } as any)[userEdit?.year_of_exp || userEdit?.year_of_establishment || userEdit?.establishment_year] ||
+                        userEdit?.year_of_exp ||
+                        userEdit?.year_of_establishment ||
+                        userEdit?.establishment_year ||
+                        ''),
 
                 fleet_size: userEdit?.fleet_size || '',
                 average_km: userEdit?.avg_km_run || '',
@@ -1058,7 +1074,7 @@ export default function ProfileCompletion() {
             // License Endorsements - API expects array
             console.log('=== LICENSE ENDORSEMENT DEBUG ===');
             console.log('Raw endorsement from formData:', formData?.endorsement);
-            const endorsements = formData?.endorsement?.split(',').filter(Boolean) || []; // Fixed: removed space after comma
+            const endorsements = formData?.endorsement?.split(',').map(s => s.trim()).filter(Boolean) || [];
             console.log('Split endorsements:', endorsements);
             console.log('=== END LICENSE ENDORSEMENT DEBUG ===');
 
@@ -1072,14 +1088,7 @@ export default function ProfileCompletion() {
             }
 
             // Driving Experience - API expects CamelCase matching the missing field list
-            const expMapping: { [key: string]: string } = {
-                'less_than_1': '0', // If "0" is rejected, we might need to change this later
-                '1-2': '1',
-                '3-5': '3',
-                '6-10': '6',
-                '10+': '10'
-            };
-            formDataPayload.append('driving_experience', expMapping[formData?.Driving_Experience || ''] || formData?.Driving_Experience || '0');
+            formDataPayload.append('driving_experience', formData?.Driving_Experience || '0');
 
             // Aadhar Number - removed for drivers
             // formDataPayload.append('Aadhar_Number', formData?.Aadhar_Number || '');
@@ -1153,7 +1162,7 @@ export default function ProfileCompletion() {
                 formDataPayload.append('registered_id', userEdit?.registered_id || '');
 
                 // Operational Segment - UI "Industry Segment" values go here
-                const opSegments = formData?.industry_segment?.split(',').filter(Boolean) || [];
+                const opSegments = formData?.industry_segment?.split(',').map(s => s.trim()).filter(Boolean) || [];
                 if (opSegments.length > 0) {
                     opSegments.forEach((seg: string) => {
                         formDataPayload.append('operational_segment[]', seg.trim());
@@ -1161,7 +1170,7 @@ export default function ProfileCompletion() {
                 }
 
                 // Routes - UI "Operational Segment" values go here
-                const routeSegments = formData?.operational_segment?.split(',').filter(Boolean) || [];
+                const routeSegments = formData?.operational_segment?.split(',').map(s => s.trim()).filter(Boolean) || [];
                 if (routeSegments.length > 0) {
                     routeSegments.forEach((seg: string) => {
                         formDataPayload.append('routes[]', seg.trim());
@@ -1191,7 +1200,7 @@ export default function ProfileCompletion() {
 
             console.log('=== formDataPayload ===', formDataPayload);
             logFormDataPayload(formDataPayload);
-
+            // return
             const response = await axiosInstance.post(END_POINTS.EDIT_PROFILE, formDataPayload);
             console.log('=== Profile update response ===', response?.data);
 
@@ -1629,7 +1638,7 @@ export default function ProfileCompletion() {
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
                         <View>
                             {translatedEndorsements.map((opt) => {
-                                const isSelected = formData?.endorsement?.includes(opt.label);
+                                const isSelected = formData?.endorsement?.split(',').map(s => s.trim()).includes(opt.value);
                                 return (
                                     <TouchableOpacity
                                         key={opt.id}
@@ -1637,7 +1646,7 @@ export default function ProfileCompletion() {
                                             styles.endorsementTile,
                                             isSelected && styles.endorsementTileSelected
                                         ]}
-                                        onPress={() => toggleEndorsement(opt.label)}
+                                        onPress={() => toggleEndorsement(opt.value)}
                                     >
                                         <View style={[styles.endorsementIcon, isSelected && { backgroundColor: '#246BFD' }]}>
                                             <Text style={{ fontSize: 22 }}>{opt.emoji}</Text>
@@ -1850,7 +1859,7 @@ export default function ProfileCompletion() {
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable') || 'Select all that apply'}</Text>
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                             {translatedIndustrySegments.map((segment) => {
-                                const selectedSegments = formData?.industry_segment?.split(',') || [];
+                                const selectedSegments = formData?.industry_segment?.split(',').map(s => s.trim()) || [];
                                 const isSelected = selectedSegments.includes(segment.value);
                                 return (
                                     <TouchableOpacity
@@ -1923,8 +1932,8 @@ export default function ProfileCompletion() {
                         <Text style={[styles.helperText, { marginBottom: 12 }]}>{t('selectMultipleIfApplicable')}</Text>
                         <View>
                             {translatedOperationalSegments.map((segment) => {
-                                const selectedSegments = formData?.operational_segment?.split(',') || [];
-                                const isSelected = selectedSegments.includes(segment.label);
+                                const selectedSegments = formData?.operational_segment?.split(',').map(s => s.trim()) || [];
+                                const isSelected = selectedSegments.includes(segment.value);
                                 return (
                                     //sourabh
                                     <TouchableOpacity
@@ -1936,9 +1945,9 @@ export default function ProfileCompletion() {
                                         onPress={() => {
                                             let newSegments = [...selectedSegments];
                                             if (isSelected) {
-                                                newSegments = newSegments.filter(s => s !== segment.label);
+                                                newSegments = newSegments.filter(s => s !== segment.value);
                                             } else {
-                                                newSegments.push(segment.label);
+                                                newSegments.push(segment.value);
                                             }
                                             updateFormData({ operational_segment: newSegments.filter(Boolean).join(',') });
                                         }}
