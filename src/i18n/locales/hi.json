@@ -3138,5 +3138,8 @@
     "noReferralsFound": "कोई रेफरल नहीं मिला।",
     "clearFilters": "फ़िल्टर साफ़ करें",
     "applyFilters": "फ़िल्टर लागू करें",
-    "date": "दिनांक"
+    "date": "दिनांक",
+    "wheel_alignment": "व्हील एलाइनमेंट पास में",
+    "mechanic": "मैकेनिक शॉप पास में",
+    "tapToAddMorePhotos": "और तस्वीरें जोड़ने के लिए टैप करें"
 }

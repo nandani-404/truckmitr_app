@@ -554,6 +554,32 @@ export default function ProfileEditNew() {
                 }
             }
 
+            // Normalize Driving Experience (numeric to range buckets)
+            const rawExp = user.Driving_Experience || user.driving_experience;
+            if (rawExp && !userEdit?.Driving_Experience) {
+                let normExp = String(rawExp).trim();
+                const numExp = parseInt(normExp);
+
+                // Check if it's already a valid range string, if not map it
+                const validRanges = ['0-1', '1-2', '3-5', '6-10', '10+'];
+                if (!validRanges.includes(normExp)) {
+                    if (!isNaN(numExp)) {
+                        if (numExp === 0) normExp = '0-1'; // or less_than_1 depending on value set
+                        else if (numExp >= 1 && numExp <= 2) normExp = '1-2';
+                        else if (numExp >= 3 && numExp <= 5) normExp = '3-5';
+                        else if (numExp >= 6 && numExp <= 10) normExp = '6-10';
+                        else if (numExp > 10) normExp = '10+';
+                    } else if (normExp === 'less_than_1') {
+                        normExp = '0-1';
+                    }
+                }
+
+                if (normExp) {
+                    updates.Driving_Experience = normExp;
+                    shouldUpdate = true;
+                }
+            }
+
             if (shouldUpdate) {
                 console.log('Normalizing driver data:', updates);
                 // DO NOT touch image paths - they are managed separately now

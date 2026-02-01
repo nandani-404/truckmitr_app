@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     View,
     Text,
@@ -77,6 +77,7 @@ export default function ProfileCompletionDhabha() {
     const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
     const { userEdit, user } = useSelector((state: any) => state?.user);
+    const scrollViewRef = useRef<ScrollView>(null);
 
     const [currentStep, setCurrentStep] = useState(0);
     const [finishing, setFinishing] = useState(false);
@@ -879,7 +880,7 @@ export default function ProfileCompletionDhabha() {
             >
                 <Text style={styles.datetimeText}>
                     {userEdit?.establishment_year
-                        ? moment(userEdit.establishment_year).format('DD MMM YYYY')
+                        ? moment(userEdit.establishment_year).format('YYYY')
                         : t('selectDate')}
                 </Text>
                 <Ionicons name="calendar-outline" size={20} color={colors.royalBlue} />
@@ -940,7 +941,7 @@ export default function ProfileCompletionDhabha() {
                     <View style={{ position: 'relative' }}>
                         <TextInput
                             style={styles.classicInput}
-                            placeholder="000000"
+                            placeholder="110031"
                             placeholderTextColor="#999"
                             keyboardType="numeric"
                             maxLength={6}
@@ -1281,24 +1282,28 @@ export default function ProfileCompletionDhabha() {
                     {t('uploadPhotosHelper') || 'Upload photos of your dhaba to attract more drivers'}
                 </Text>
 
-                <TouchableOpacity
-                    style={{
-                        backgroundColor: '#F5F9FF',
-                        borderWidth: 1.5,
-                        borderColor: '#246BFD',
-                        borderStyle: 'dashed',
-                        borderRadius: 16,
-                        height: 120,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: 20
-                    }}
-                    activeOpacity={0.7}
-                    onPress={() => setPhotoModal({ visible: true, categoryId: categoryId })}
-                >
-                    <Ionicons name="cloud-upload-outline" size={40} color="#246BFD" />
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#246BFD', marginTop: 10 }}>{t('tapToUpload') || 'Tap to Upload'}</Text>
-                </TouchableOpacity>
+                {photos.length < 7 && (
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: '#F5F9FF',
+                            borderWidth: 1.5,
+                            borderColor: '#246BFD',
+                            borderStyle: 'dashed',
+                            borderRadius: 16,
+                            height: 120,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: 20
+                        }}
+                        activeOpacity={0.7}
+                        onPress={() => setPhotoModal({ visible: true, categoryId: categoryId })}
+                    >
+                        <Ionicons name="cloud-upload-outline" size={40} color="#246BFD" />
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#246BFD', marginTop: 10 }}>
+                            {photos.length === 0 ? (t('tapToUpload') || 'Tap to Upload') : (t('tapToAddMorePhotos') || 'Tap to Add More Photos')}
+                        </Text>
+                    </TouchableOpacity>
+                )}
 
                 {photos.length > 0 && (
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
@@ -1769,6 +1774,7 @@ export default function ProfileCompletionDhabha() {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <ScrollView
+                    ref={scrollViewRef}
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 180 }}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
@@ -1849,6 +1855,8 @@ export default function ProfileCompletionDhabha() {
                         <DatePicker
                             date={userEdit?.[timePickerOpen.type === 'opening' ? 'opening_time' : 'closing_time'] || new Date()}
                             mode="time"
+                            locale="en-US"
+                            is24hourSource="locale"
                             onDateChange={(date) => {
                                 if (timePickerOpen.type === 'opening') updateUser('opening_time', date);
                                 if (timePickerOpen.type === 'closing') updateUser('closing_time', date);
@@ -1867,21 +1875,46 @@ export default function ProfileCompletionDhabha() {
             {/* Year of Establishment Picker Modal */}
             <Modal visible={establishmentYearPickerOpen} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    <View style={[styles.modalContent, { height: 400 }]}>
                         <Text style={styles.modalTitle}>
                             {t('selectYearOfEstablishment')}
                         </Text>
-                        <DatePicker
-                            date={userEdit?.establishment_year || new Date()}
-                            mode="date"
-                            maximumDate={new Date()}
-                            onDateChange={(date) => updateUser('establishment_year', date)}
+                        <FlatList
+                            data={Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i)}
+                            keyExtractor={(item) => item.toString()}
+                            showsVerticalScrollIndicator={false}
+                            renderItem={({ item }) => {
+                                const isSelected = userEdit?.establishment_year && moment(userEdit.establishment_year).year() === item;
+                                return (
+                                    <TouchableOpacity
+                                        style={{
+                                            paddingVertical: 12,
+                                            flexDirection: 'row',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            borderBottomWidth: 1,
+                                            borderBottomColor: '#eee',
+                                            width: '100%',
+                                            backgroundColor: isSelected ? '#F0F7FF' : 'transparent'
+                                        }}
+                                        onPress={() => {
+                                            // Set date to Jan 1st of selected year
+                                            const date = new Date(item, 0, 1);
+                                            updateUser('establishment_year', date);
+                                            setEstablishmentYearPickerOpen(false);
+                                        }}
+                                    >
+                                        <Text style={{ fontSize: 18, color: isSelected ? colors.royalBlue : '#333', fontWeight: isSelected ? '700' : '400' }}>{item}</Text>
+                                        {isSelected && <Ionicons name="checkmark" size={20} color={colors.royalBlue} style={{ position: 'absolute', right: 20 }} />}
+                                    </TouchableOpacity>
+                                );
+                            }}
                         />
                         <TouchableOpacity
                             onPress={() => setEstablishmentYearPickerOpen(false)}
-                            style={styles.modalBtn}
+                            style={[styles.modalBtn, { marginTop: 10 }]}
                         >
-                            <Text style={styles.modalBtnText}>{t('confirm')}</Text>
+                            <Text style={styles.modalBtnText}>{t('cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

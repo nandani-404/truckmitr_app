@@ -106,12 +106,32 @@ const LICENSE_ENDORSEMENT_MAP: Record<string, string> = {
 }
 
 // Driving Experience Mapping
+// Driving Experience Mapping
 const getDrivingExperienceLabel = (value: string | undefined): string => {
-  if (!value) return 'Not Provided'
-  if (value === 'less_than_1') return 'Less than 1 year'
-  const numValue = parseInt(value)
-  if (isNaN(numValue)) return value
-  return `${numValue} ${numValue === 1 ? 'year' : 'years'}`
+  if (!value) return 'Not Provided';
+
+  // Normalize value to string
+  const strVal = String(value).trim();
+
+  // Direct matches for ranges
+  if (strVal === 'less_than_1' || strVal === '0' || strVal === '0-1') return 'Less than 1 year';
+  if (strVal === '1-2') return '1-2 years';
+  if (strVal === '3-5') return '3-5 years';
+  if (strVal === '6-10') return '6-10 years';
+  if (strVal === '10+' || strVal === '10') return '10+ years';
+
+  // Handle number parsing
+  const numValue = parseInt(strVal);
+  if (!isNaN(numValue)) {
+    if (numValue === 0) return 'Less than 1 year';
+    if (numValue >= 1 && numValue <= 2) return '1-2 years';
+    if (numValue >= 3 && numValue <= 5) return '3-5 years';
+    if (numValue >= 6 && numValue <= 10) return '6-10 years';
+    if (numValue > 10) return '10+ years';
+    return `${numValue} years`; // Fallback
+  }
+
+  return strVal;
 }
 
 // Helper function to get license endorsement names from IDs
