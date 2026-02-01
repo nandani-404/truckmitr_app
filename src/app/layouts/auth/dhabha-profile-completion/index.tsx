@@ -83,7 +83,89 @@ export default function ProfileCompletionDhabha() {
     const [finishing, setFinishing] = useState(false);
     const [activeOfferType, setActiveOfferType] = useState<string | null>(null);
 
-    // Pickers
+    // Initial Form State
+    const [formData, setFormData] = useState({
+        dhabha_name: '',
+        owner_name: '',
+        mobile: user?.mobile || '', // Pre-fill mobile from auth user if available
+        email: user?.email || '',   // Pre-fill email from auth user if available
+        establishment_year: null as Date | null,
+        dhabha_type: '',
+
+        // Location
+        address: '',
+        landmark: '',
+        state: '',
+        district: '',
+        pincode: '',
+        latitude: '',
+        longitude: '',
+
+        // Operational
+        is_24x7: false,
+        opening_time: null as Date | null,
+        closing_time: null as Date | null,
+        peak_hours: '' as string,
+
+        // Facilities (booleans)
+        sitting_facility: false,
+        clean_restrooms: false,
+        drinking_water: false,
+        parking_small: false,
+        parking_large: false,
+        sleeping_area: false,
+        washing_area: false,
+        electric_point: false,
+        cctv: false,
+        security_staff: false,
+        wheel_alignment: false,
+        mechanic: false,
+
+        // Food
+        food_type: [] as string[],
+        meal_availability: [] as string[],
+        special_dishes: [] as string[], // We might need to sync this with the separate state
+
+        // Photos stored separately in localPhotos for now, but good to have ref here if needed or keep separate
+        dhaba_id: null as string | null,
+
+        // Offers
+        driver_offers: [] as string[],
+        offer_details: {} as any,
+    });
+
+    // Helper to update Local State
+    const updateFormData = (key: string, value: any) => {
+        setFormData(prev => ({
+            ...prev,
+            [key]: value
+        }));
+    };
+
+    // Toggle for arrays (Facilities, logic etc)
+    const toggleFormSelection = (key: string, item: string) => {
+        setFormData(prev => {
+            // @ts-ignore
+            let list = prev[key] ? [...prev[key]] : [];
+            if (list.includes(item)) {
+                list = list.filter((i: string) => i !== item);
+            } else {
+                list = [...list, item];
+            }
+            return { ...prev, [key]: list };
+        });
+    };
+
+    const toggleFormBoolean = (key: string) => {
+        setFormData(prev => ({
+            ...prev,
+            // @ts-ignore
+            [key]: !prev[key]
+        }));
+    };
+
+
+    // Pickers & Modals (Restored)
     const [timePickerOpen, setTimePickerOpen] = useState<{ visible: boolean, type: 'opening' | 'closing' | null }>({ visible: false, type: null });
     const [photoModal, setPhotoModal] = useState<{ visible: boolean, categoryId: string | null }>({ visible: false, categoryId: null });
     const [shopPhotoInstructionModal, setShopPhotoInstructionModal] = useState(false);
@@ -123,18 +205,27 @@ export default function ProfileCompletionDhabha() {
         contentTranslateX.value = 20;
         contentOpacity.value = withTiming(1, { duration: 400 });
         contentTranslateX.value = withSpring(0, { damping: 12 });
+
+        // Auto-scroll to top when step changes
+        if (scrollViewRef.current) {
+            scrollViewRef.current.scrollTo({ y: 0, animated: true });
+        }
     }, [currentStep]);
 
     useEffect(() => {
         fetchStates();
     }, []);
 
-    // Initialize local photos from Redux if available (for editing existing profile)
+    // Initialize local photos from Redux if available
     useEffect(() => {
         if (userEdit?.shop_photos) {
-            setLocalPhotos(userEdit.shop_photos);
+            // We generally want to avoid pre-fill based on user request, but photos might be exception if they are complex to re-upload.
+            // However, sticking to "no prefill" for consistency unless user complains.
+            // setLocalPhotos(userEdit.shop_photos); 
+            setLocalPhotos({});
         }
     }, []);
+
 
     // Show photo instruction modal when entering photos step
     useEffect(() => {
@@ -168,24 +259,14 @@ export default function ProfileCompletionDhabha() {
     }));
     const animatedProgressStyle = useAnimatedStyle(() => ({ width: `${progressWidth.value}%` }));
 
-    // Helper to update Redux safely
-    const updateUser = (key: string, value: any) => {
+    // Helper to update Redux safely (Legacy - can be removed or kept if mixed usage, but we are moving to local)
+    /* const updateUser = (key: string, value: any) => {
         dispatch(userEditAction({ ...userEdit, [key]: value }));
-    };
-
-    const toggleSelection = (key: string, item: string) => {
-        let list = userEdit?.[key] ? [...userEdit[key]] : [];
-        if (list.includes(item)) {
-            list = list.filter((i: string) => i !== item);
-        } else {
-            list = [...list, item];
-        }
-        updateUser(key, list);
-    };
+    }; */
 
     const handlePincodeChange = (pincode: string) => {
         const cleaned = pincode.replace(/[^0-9]/g, '');
-        updateUser('pincode', cleaned);
+        updateFormData('pincode', cleaned);
 
         if (cleaned.length === 6) {
             fetchPincodeDetails(cleaned);
@@ -193,7 +274,7 @@ export default function ProfileCompletionDhabha() {
     };
 
     const handleStateSelect = (state: any) => {
-        updateUser('state', state.name);
+        updateFormData('state', state.name);
         setStateModalVisible(false);
     };
 
@@ -206,9 +287,8 @@ export default function ProfileCompletionDhabha() {
                 const district = details.District;
                 const state = details.State;
 
-                dispatch(userEditAction({
-                    ...userEdit,
-                    pincode: pincodeValue,
+                setFormData(prev => ({
+                    ...prev,
                     district: district,
                     state: state
                 }));
@@ -225,11 +305,11 @@ export default function ProfileCompletionDhabha() {
 
         // Basic Validation
         if (step.id === 'basic_info') {
-            if (!userEdit?.dhabha_name || !userEdit?.owner_name || !userEdit?.mobile) {
+            if (!formData.dhabha_name || !formData.owner_name || !formData.mobile) {
                 showToast(t('pleaseEnterAllRequiredDetails'));
                 return;
             }
-            if (userEdit?.mobile?.length !== 10) {
+            if (formData.mobile?.length !== 10) {
                 showToast(t('enter10DigitMobile'));
                 return;
             }
@@ -237,28 +317,31 @@ export default function ProfileCompletionDhabha() {
             // Call API for Step 1
             setFinishing(true);
             try {
-                const formData = new FormData();
+                const apiPayload = new FormData();
                 // formData.append('user_id', user?.id || user?.user_id || '');
                 // formData.append('unique_id', user?.unique_id || '');
-                formData.append('dhaba_name', userEdit?.dhabha_name || '');
-                formData.append('owner_name', userEdit?.owner_name || '');
-                formData.append('mobile', userEdit?.mobile || '');
-                formData.append('email', userEdit?.email || '');
-                formData.append('year_established', userEdit?.establishment_year ? moment(userEdit.establishment_year).format('YYYY') : '');
-                formData.append('dhaba_type', userEdit?.dhabha_type || '');
+                apiPayload.append('dhaba_name', formData.dhabha_name || '');
+                apiPayload.append('owner_name', formData.owner_name || '');
+                apiPayload.append('mobile', formData.mobile || '');
+                apiPayload.append('email', formData.email || '');
+                apiPayload.append('year_established', formData.establishment_year ? moment(formData.establishment_year).format('YYYY') : '');
+                apiPayload.append('dhaba_type', formData.dhabha_type || '');
 
-                const response = await axiosInstance.post(END_POINTS.DHABA_BUSSINESS_INFO, formData);
+                const response = await axiosInstance.post(END_POINTS.DHABA_BUSSINESS_INFO, apiPayload);
 
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('businessInfoSavedSuccess'));
 
-                    // Store dhaba.id as dhaba_id in Redux state
+                    // Store dhaba.id as dhaba_id in Local State & Redux state (for consistency)
                     const dhabaId = response?.data?.dhaba?.id;
                     if (dhabaId) {
-                        dispatch(userEditAction({
-                            ...userEdit,
-                            dhaba_id: dhabaId
-                        }));
+                        // dispatch(userEditAction({
+                        //     ...userEdit,
+                        //     dhaba_id: dhabaId
+                        // }));
+                        // Update local form data
+                        updateFormData('dhaba_id', dhabaId);
+
                         // Also store in AsyncStorage
                         await AsyncStorage.setItem('dhaba_id', dhabaId.toString());
                     }
@@ -284,7 +367,7 @@ export default function ProfileCompletionDhabha() {
         }
 
         if (step.id === 'location_details') {
-            if (!userEdit?.address || !userEdit?.state || !userEdit?.pincode || !userEdit?.district) {
+            if (!formData.address || !formData.state || !formData.pincode || !formData.district) {
                 showToast(t('pleaseEnterAllRequiredDetails'));
                 return;
             }
@@ -296,29 +379,29 @@ export default function ProfileCompletionDhabha() {
             setFinishing(true);
             try {
                 // Find state_id
-                const selectedState = statesList.find(s => s.name?.toLowerCase() === userEdit.state?.toLowerCase());
+                const selectedState = statesList.find(s => s.name?.toLowerCase() === formData.state?.toLowerCase());
                 const state_id = selectedState ? selectedState.id : '';
 
-                const formData = new FormData();
-                let dhaba_id = userEdit?.dhaba_id;
+                const apiPayload = new FormData();
+                let dhaba_id = formData.dhaba_id;
                 if (!dhaba_id) {
                     dhaba_id = await AsyncStorage.getItem('dhaba_id');
                 }
-                formData.append('dhaba_id', dhaba_id || '');
-                formData.append('full_address', userEdit?.address || '');
-                formData.append('landmark', userEdit?.landmark || '');
-                formData.append('district', userEdit?.district || '');
-                formData.append('state', userEdit?.state || '');
-                formData.append('state_id', state_id || '');
-                formData.append('pincode', userEdit?.pincode || '');
-                formData.append('latitude', localLocation?.lat || '');
-                formData.append('longitude', localLocation?.lng || '');
-                formData.append('location_source', 'Pinned via GPS');
+                apiPayload.append('dhaba_id', dhaba_id || '');
+                apiPayload.append('full_address', formData.address || '');
+                apiPayload.append('landmark', formData.landmark || '');
+                apiPayload.append('district', formData.district || '');
+                apiPayload.append('state', formData.state || '');
+                apiPayload.append('state_id', state_id || '');
+                apiPayload.append('pincode', formData.pincode || '');
+                apiPayload.append('latitude', localLocation?.lat || '');
+                apiPayload.append('longitude', localLocation?.lng || '');
+                apiPayload.append('location_source', 'Pinned via GPS');
 
 
-                // return console.log('formData', formData);
+                // return console.log('apiPayload', apiPayload);
 
-                const response = await axiosInstance.post(END_POINTS.DHABA_BUSSINESS_LOCATION, formData);
+                const response = await axiosInstance.post(END_POINTS.DHABA_BUSSINESS_LOCATION, apiPayload);
 
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('locationDetailsSavedSuccess'));
@@ -345,26 +428,39 @@ export default function ProfileCompletionDhabha() {
         if (step.id === 'facilities') {
             setFinishing(true);
             try {
-                const formData = new FormData();
-                let dhaba_id = userEdit?.dhaba_id;
+                const apiPayload = new FormData();
+                let dhaba_id = formData.dhaba_id;
                 if (!dhaba_id) {
                     dhaba_id = await AsyncStorage.getItem('dhaba_id');
                 }
-                formData.append('dhaba_id', dhaba_id || '');
-                formData.append('sitting_facility', userEdit?.sitting_facility ? '1' : '0');
-                formData.append('clean_restrooms', userEdit?.clean_restrooms ? '1' : '0');
-                formData.append('drinking_water', userEdit?.drinking_water ? '1' : '0');
-                formData.append('parking_small', userEdit?.parking_small ? '1' : '0');
-                formData.append('parking_large', userEdit?.parking_large ? '1' : '0');
-                formData.append('sleeping_area', userEdit?.sleeping_area ? '1' : '0');
-                formData.append('washing_area', userEdit?.washing_area ? '1' : '0');
-                formData.append('electric_point', userEdit?.electric_point ? '1' : '0');
-                formData.append('cctv', userEdit?.cctv ? '1' : '0');
-                formData.append('security_staff', userEdit?.security_staff ? '1' : '0');
-                formData.append('wheel_alignment', userEdit?.wheel_alignment ? '1' : '0');
-                formData.append('mechanic', userEdit?.mechanic ? '1' : '0');
+                apiPayload.append('dhaba_id', dhaba_id || '');
+                // Cast booleans to 1/0
+                // @ts-ignore
+                apiPayload.append('sitting_facility', formData.sitting_facility ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('clean_restrooms', formData.clean_restrooms ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('drinking_water', formData.drinking_water ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('parking_small', formData.parking_small ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('parking_large', formData.parking_large ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('sleeping_area', formData.sleeping_area ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('washing_area', formData.washing_area ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('electric_point', formData.electric_point ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('cctv', formData.cctv ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('security_staff', formData.security_staff ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('wheel_alignment', formData.wheel_alignment ? '1' : '0');
+                // @ts-ignore
+                apiPayload.append('mechanic', formData.mechanic ? '1' : '0');
 
-                const response = await axiosInstance.post(END_POINTS.DHABA_FACILITIES, formData);
+                const response = await axiosInstance.post(END_POINTS.DHABA_FACILITIES, apiPayload);
 
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('facilitiesSavedSuccess') || "Facilities saved!");
@@ -389,16 +485,16 @@ export default function ProfileCompletionDhabha() {
         if (step.id === 'operational_details') {
             const newErrors: { [key: string]: string } = {};
 
-            if (!userEdit?.is_24x7) {
-                if (!userEdit?.opening_time) {
+            if (!formData.is_24x7) {
+                if (!formData.opening_time) {
                     newErrors.opening_time = t('openingTimeRequired') || "Opening time is required";
                 }
-                if (!userEdit?.closing_time) {
+                if (!formData.closing_time) {
                     newErrors.closing_time = t('closingTimeRequired') || "Closing time is required";
                 }
-                if (userEdit?.opening_time && userEdit?.closing_time) {
-                    const openTimeStr = moment(userEdit.opening_time).format('HH:mm');
-                    const closeTimeStr = moment(userEdit.closing_time).format('HH:mm');
+                if (formData.opening_time && formData.closing_time) {
+                    const openTimeStr = moment(formData.opening_time).format('HH:mm');
+                    const closeTimeStr = moment(formData.closing_time).format('HH:mm');
 
                     if (openTimeStr === closeTimeStr) {
                         newErrors.closing_time = t('timesCannotBeSame') || "Opening and closing times cannot be the same";
@@ -414,23 +510,23 @@ export default function ProfileCompletionDhabha() {
 
             setFinishing(true);
             try {
-                const formData = new FormData();
-                let dhaba_id = userEdit?.dhaba_id;
+                const apiPayload = new FormData();
+                let dhaba_id = formData.dhaba_id;
                 if (!dhaba_id) {
                     dhaba_id = await AsyncStorage.getItem('dhaba_id');
                 }
-                formData.append('dhaba_id', dhaba_id || '');
-                formData.append('is_24x7', userEdit?.is_24x7 ? '1' : '0');
+                apiPayload.append('dhaba_id', dhaba_id || '');
+                apiPayload.append('is_24x7', formData.is_24x7 ? '1' : '0');
                 // Only send opening/closing times if not 24x7
-                if (!userEdit?.is_24x7) {
-                    formData.append('opening_time', userEdit?.opening_time ? moment(userEdit.opening_time).format('HH:mm') : '');
-                    formData.append('closing_time', userEdit?.closing_time ? moment(userEdit.closing_time).format('HH:mm') : '');
+                if (!formData.is_24x7) {
+                    apiPayload.append('opening_time', formData.opening_time ? moment(formData.opening_time).format('HH:mm') : '');
+                    apiPayload.append('closing_time', formData.closing_time ? moment(formData.closing_time).format('HH:mm') : '');
                 }
-                formData.append('peak_hours', userEdit?.peak_hours || '');
-                formData.append('avg_wait_time', "15-20 mins");
-                console.log('formData', formData);
+                apiPayload.append('peak_hours', formData.peak_hours || '');
+                apiPayload.append('avg_wait_time', "15-20 mins");
+                console.log('apiPayload', apiPayload);
 
-                const response = await axiosInstance.post(END_POINTS.DHABA_OPERATIONAL_DETAILS, formData);
+                const response = await axiosInstance.post(END_POINTS.DHABA_OPERATIONAL_DETAILS, apiPayload);
 
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('operationalDetailsSavedSuccess') || "Operational details saved!");
@@ -456,11 +552,11 @@ export default function ProfileCompletionDhabha() {
 
         if (step.id === 'food_menu') {
             // Validation
-            if (!userEdit?.food_type || userEdit?.food_type?.length === 0) {
+            if (!formData.food_type || formData.food_type?.length === 0) {
                 showToast(t('pleaseSelectFoodType') || 'Please select food type');
                 return;
             }
-            if (!userEdit?.meal_availability || userEdit?.meal_availability?.length === 0) {
+            if (!formData.meal_availability || formData.meal_availability?.length === 0) {
                 showToast(t('pleaseSelectMealAvailability') || 'Please select meal availability');
                 return;
             }
@@ -472,38 +568,38 @@ export default function ProfileCompletionDhabha() {
 
             setFinishing(true);
             try {
-                const formData = new FormData();
-                let dhaba_id = userEdit?.dhaba_id;
+                const apiPayload = new FormData();
+                let dhaba_id = formData.dhaba_id;
                 if (!dhaba_id) {
                     dhaba_id = await AsyncStorage.getItem('dhaba_id');
                 }
-                formData.append('dhaba_id', dhaba_id || '');
+                apiPayload.append('dhaba_id', dhaba_id || '');
 
                 // Food type - convert to API format and append as array
-                const foodTypeValue = userEdit?.food_type || [];
+                const foodTypeValue = formData.food_type || [];
                 let apiFood: string[] = [];
                 if (foodTypeValue.includes('Veg Only')) apiFood.push('Veg');
                 if (foodTypeValue.includes('Non-Veg Only')) apiFood.push('Non-Veg');
                 if (foodTypeValue.includes('Both Veg & Non-Veg')) apiFood = ['Veg', 'Non-Veg'];
                 // Append each food type individually for proper array handling
-                apiFood.forEach(item => formData.append('food_type[]', item));
+                apiFood.forEach(item => apiPayload.append('food_type[]', item));
 
                 // Special dishes - join array with comma
-                formData.append('special_dishes', specialDishes.join(', '));
+                apiPayload.append('special_dishes', specialDishes.join(', '));
 
                 // Meal availability
-                const meals = userEdit?.meal_availability || [];
-                formData.append('meal_breakfast', meals.includes('Breakfast') ? 1 : 0);
-                formData.append('meal_lunch', meals.includes('Lunch') ? 1 : 0);
-                formData.append('meal_dinner', meals.includes('Dinner') ? 1 : 0);
-                formData.append('meal_night', meals.includes('Late Night') ? 1 : 0);
+                const meals = formData.meal_availability || [];
+                apiPayload.append('meal_breakfast', meals.includes('Breakfast') ? '1' : '0');
+                apiPayload.append('meal_lunch', meals.includes('Lunch') ? '1' : '0');
+                apiPayload.append('meal_dinner', meals.includes('Dinner') ? '1' : '0');
+                apiPayload.append('meal_night', meals.includes('Late Night') ? '1' : '0');
 
                 // Average price range
                 const avgPriceRange = priceRangeFrom && priceRangeTo ? `₹${priceRangeFrom}-₹${priceRangeTo}` : '';
-                formData.append('avg_price_range', avgPriceRange);
-                console.log('formData', formData);
+                apiPayload.append('avg_price_range', avgPriceRange);
+                console.log('apiPayload', apiPayload);
 
-                const response = await axiosInstance.post(END_POINTS.DHABA_FOOD, formData);
+                const response = await axiosInstance.post(END_POINTS.DHABA_FOOD, apiPayload);
 
                 if (response?.data?.status === true || response?.data?.success === true) {
                     showToast(response?.data?.message || t('foodMenuSavedSuccess') || 'Food menu saved!');
@@ -538,30 +634,30 @@ export default function ProfileCompletionDhabha() {
 
             setFinishing(true);
             try {
-                const formData = new FormData();
-                let dhaba_id = userEdit?.dhaba_id;
+                const apiPayload = new FormData();
+                let dhaba_id = formData.dhaba_id;
                 if (!dhaba_id) {
                     dhaba_id = await AsyncStorage.getItem('dhaba_id');
                 }
-                formData.append('dhaba_id', dhaba_id || '');
+                apiPayload.append('dhaba_id', dhaba_id || '');
 
                 // New Payload Structure
-                formData.append('category', 'Interior'); // As requested
-                formData.append('ordering_priority', '1');
-                formData.append('upload_date', moment().format('YYYY-MM-DD'));
+                apiPayload.append('category', 'Interior'); // As requested
+                apiPayload.append('ordering_priority', '1');
+                apiPayload.append('upload_date', moment().format('YYYY-MM-DD'));
 
                 // Append all photos using key 'image_url[]' as requested
                 allPhotos.forEach((photoUri: string, idx: number) => {
                     const fileName = `dhaba_photo_${idx}_${Date.now()}.jpg`;
-                    formData.append(`image_url[${idx}]`, {
+                    apiPayload.append(`image_url[${idx}]`, {
                         uri: photoUri,
                         type: 'image/jpeg',
                         name: fileName,
                     } as any);
                 });
 
-                console.log('formData photos', formData);
-                const response = await axiosInstance.post(END_POINTS.DHABA_PHOTO_UPLOAD, formData, {
+                console.log('formData photos', apiPayload);
+                const response = await axiosInstance.post(END_POINTS.DHABA_PHOTO_UPLOAD, apiPayload, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
 
@@ -606,55 +702,43 @@ export default function ProfileCompletionDhabha() {
     const submitProfile = async () => {
         setFinishing(true);
         try {
-            // Reconstruct payload as per API needs
-            const formData = new FormData();
-
-            // Map Redux state to FormData
-            const fields = [
-                'dhabha_name', 'owner_name', 'mobile', 'email', 'establishment_year', 'dhabha_type',
-                'address', 'landmark', 'state', 'district', 'pincode', 'latitude', 'longitude',
-                'peak_hours', 'account_holder_name', 'bank_name', 'account_number', 'ifsc_code', 'upi_id', 'special_dishes'
-            ];
-
-            fields.forEach(field => {
-                if (userEdit?.[field]) formData.append(field, userEdit[field]);
-            });
-
-            // Times
-            if (userEdit?.opening_time) formData.append('opening_time', moment(userEdit.opening_time).format('HH:mm'));
-            if (userEdit?.closing_time) formData.append('closing_time', moment(userEdit.closing_time).format('HH:mm'));
-            formData.append('is_24x7', userEdit?.is_24x7 ? '1' : '0');
-
-            // Arrays
-            if (userEdit?.facilities) formData.append('facilities', JSON.stringify(userEdit.facilities));
-            if (userEdit?.food_type) formData.append('food_type', JSON.stringify(userEdit.food_type));
-            if (userEdit?.meal_availability) formData.append('meal_availability', JSON.stringify(userEdit.meal_availability));
-
-            console.log('Submitting Profile:', formData);
-
-            // SIMULATED API CALL
-            // const response = await axiosInstance.post(END_POINTS.EDIT_PROFILE, formData);
+            // NOTE: We don't need to post all data again as it was saved in previous steps.
+            // We just need to trigger the final profile fetch for Redux update and Navigation.
 
             try {
                 const profileResponse = await axiosInstance.get(END_POINTS.GET_PROFILE);
                 if (profileResponse?.data?.status) {
-                    // Optimistically update the status to prevent race conditions
+                    // Update Redux - this should trigger navigation via useAuth/Routes
+                    // The Routes component watches 'profileRequiredFieldsStatus' (mapped from dhaba_required_fields_status for dhaba)
+                    // and will automatically switch from ProfileCompletionStack to DhabhaMain
+
                     const updatedData = { ...profileResponse.data };
+
+                    // Ensure the status flag is true at the ROOT level, as expected by user.reducer.tsx
                     updatedData.dhaba_required_fields_status = true;
 
+                    // Also set generic flags just in case structure varies
+                    if (updatedData.data) {
+                        updatedData.data.profile_completed = true;
+                    }
+                    if (updatedData.user) {
+                        updatedData.user.profile_completed = true;
+                    }
+
+                    // We dispatch the updated user data. 
+                    // The Routes component will detect the change and re-render.
                     dispatch(userAction(updatedData));
                     dispatch(userAuthenticatedAction(true));
                     showToast(t('profileSubmittedSuccess'));
-                    // Navigation loop handled by Routes stack switch based on profileRequiredFieldsStatus
                 } else {
-                    // Fallback if fetch fails but we want to let them in (risky but keeps existing flow)
-                    dispatch(userAuthenticatedAction(true));
-                    navigation.navigate(STACKS.DHABHA_BOTTOM as any);
+                    // If fetching profile fails but we know we submitted, we might still want to try to authorize
+                    // But without profile data, Main stack might crash. 
+                    // Ideally we show an error.
+                    showToast(t('failedToSyncProfile'));
                 }
             } catch (err) {
                 console.error('Error fetching profile after completion:', err);
-                dispatch(userAuthenticatedAction(true));
-                navigation.navigate(STACKS.DHABHA_BOTTOM as any);
+                showToast(t('failedToSyncProfile'));
             } finally {
                 setFinishing(false);
             }
@@ -720,7 +804,8 @@ export default function ProfileCompletionDhabha() {
             const updated = [...currentPhotos[categoryId]];
             updated.splice(index, 1);
             currentPhotos[categoryId] = updated;
-            updateUser('dhabha_photos', currentPhotos);
+            // updateUser('dhabha_photos', currentPhotos);
+            setLocalPhotos((prev: any) => ({ ...prev, [categoryId]: updated }));
         }
     };
 
@@ -817,8 +902,10 @@ export default function ProfileCompletionDhabha() {
 
     const confirmMapLocation = () => {
         if (tempMarker) {
-            updateUser('latitude', tempMarker.latitude.toString());
-            updateUser('longitude', tempMarker.longitude.toString());
+            // updateUser('latitude', tempMarker.latitude.toString());
+            // updateUser('longitude', tempMarker.longitude.toString());
+            updateFormData('latitude', tempMarker.latitude.toString());
+            updateFormData('longitude', tempMarker.longitude.toString());
             showToast(t('locationPinnedSuccess') || 'Location pinned successfully!');
         }
         setMapModalVisible(false);
@@ -834,8 +921,8 @@ export default function ProfileCompletionDhabha() {
                 style={styles.classicInput}
                 placeholder="e.g. Sher-e-Punjab Dhaba"
                 placeholderTextColor="#999"
-                value={userEdit?.dhabha_name}
-                onChangeText={(text) => updateUser('dhabha_name', text)}
+                value={formData.dhabha_name}
+                onChangeText={(text) => updateFormData('dhabha_name', text)}
             />
 
             <Space height={16} />
@@ -844,8 +931,8 @@ export default function ProfileCompletionDhabha() {
                 style={styles.classicInput}
                 placeholder="Full Name"
                 placeholderTextColor="#999"
-                value={userEdit?.owner_name}
-                onChangeText={(text) => updateUser('owner_name', text)}
+                value={formData.owner_name}
+                onChangeText={(text) => updateFormData('owner_name', text)}
             />
 
             <Space height={16} />
@@ -856,7 +943,7 @@ export default function ProfileCompletionDhabha() {
                 placeholderTextColor="#999"
                 keyboardType="phone-pad"
                 maxLength={10}
-                value={userEdit?.mobile}
+                value={formData.mobile}
                 editable={false}
             />
 
@@ -868,8 +955,8 @@ export default function ProfileCompletionDhabha() {
                 placeholderTextColor="#999"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                value={userEdit?.email}
-                onChangeText={(text) => updateUser('email', text)}
+                value={formData.email}
+                onChangeText={(text) => updateFormData('email', text)}
             />
 
             <Space height={16} />
@@ -879,8 +966,8 @@ export default function ProfileCompletionDhabha() {
                 onPress={() => setEstablishmentYearPickerOpen(true)}
             >
                 <Text style={styles.datetimeText}>
-                    {userEdit?.establishment_year
-                        ? moment(userEdit.establishment_year).format('YYYY')
+                    {formData.establishment_year
+                        ? moment(formData.establishment_year).format('YYYY')
                         : t('selectDate')}
                 </Text>
                 <Ionicons name="calendar-outline" size={20} color={colors.royalBlue} />
@@ -897,10 +984,10 @@ export default function ProfileCompletionDhabha() {
                 ].map(type => (
                     <TouchableOpacity
                         key={type.key}
-                        style={[styles.chip, userEdit?.dhabha_type === type.key && styles.chipSelected]}
-                        onPress={() => updateUser('dhabha_type', type.key)}
+                        style={[styles.chip, formData.dhabha_type === type.key && styles.chipSelected]}
+                        onPress={() => updateFormData('dhabha_type', type.key)}
                     >
-                        <Text style={[styles.chipText, userEdit?.dhabha_type === type.key && styles.chipTextSelected]}>{type.label}</Text>
+                        <Text style={[styles.chipText, formData.dhabha_type === type.key && styles.chipTextSelected]}>{type.label}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -918,8 +1005,8 @@ export default function ProfileCompletionDhabha() {
                 placeholderTextColor="#999"
                 multiline
                 numberOfLines={4}
-                value={userEdit?.address}
-                onChangeText={(text) => updateUser('address', text)}
+                value={formData.address}
+                onChangeText={(text) => updateFormData('address', text)}
             />
 
             <Space height={16} />
@@ -928,8 +1015,8 @@ export default function ProfileCompletionDhabha() {
                 style={styles.classicInput}
                 placeholder="Near..."
                 placeholderTextColor="#999"
-                value={userEdit?.landmark}
-                onChangeText={(text) => updateUser('landmark', text)}
+                value={formData.landmark}
+                onChangeText={(text) => updateFormData('landmark', text)}
             />
 
             <Space height={16} />
@@ -945,7 +1032,7 @@ export default function ProfileCompletionDhabha() {
                             placeholderTextColor="#999"
                             keyboardType="numeric"
                             maxLength={6}
-                            value={userEdit?.pincode}
+                            value={formData.pincode}
                             onChangeText={handlePincodeChange}
                         />
                         {isPincodeLoading && (
@@ -963,7 +1050,7 @@ export default function ProfileCompletionDhabha() {
                         style={[styles.classicInput, { backgroundColor: '#F3F4F6', color: '#6B7280' }]}
                         placeholder={t('district')}
                         placeholderTextColor="#999"
-                        value={userEdit?.district}
+                        value={formData.district}
                         editable={false}
                     />
                 </View>
@@ -975,7 +1062,7 @@ export default function ProfileCompletionDhabha() {
                 style={[styles.classicInput, { backgroundColor: '#F3F4F6', color: '#6B7280' }]}
                 placeholder={t('state')}
                 placeholderTextColor="#999"
-                value={userEdit?.state}
+                value={formData.state}
                 editable={false}
             />
 
@@ -1031,8 +1118,8 @@ export default function ProfileCompletionDhabha() {
                         ) : null}
                     </View>
                     <TouchableOpacity onPress={() => {
-                        updateUser('latitude', '');
-                        updateUser('longitude', '');
+                        updateFormData('latitude', '');
+                        updateFormData('longitude', '');
                         setLocalLocation(null);
                     }}>
                         <Ionicons name="close-circle-outline" size={22} color="#EF4444" />
@@ -1052,17 +1139,17 @@ export default function ProfileCompletionDhabha() {
                     <Text style={styles.helperText}>{t('allDayServiceAvailability')}</Text>
                 </View>
                 <TouchableOpacity
-                    onPress={() => updateUser('is_24x7', !userEdit?.is_24x7)}
+                    onPress={() => updateFormData('is_24x7', !formData.is_24x7)}
                 >
                     <MaterialCommunityIcons
-                        name={userEdit?.is_24x7 ? "toggle-switch" : "toggle-switch-off-outline"}
+                        name={formData.is_24x7 ? "toggle-switch" : "toggle-switch-off-outline"}
                         size={48}
-                        color={userEdit?.is_24x7 ? colors.royalBlue : '#ccc'}
+                        color={formData.is_24x7 ? colors.royalBlue : '#ccc'}
                     />
                 </TouchableOpacity>
             </View>
 
-            {!userEdit?.is_24x7 && (
+            {!formData.is_24x7 && (
                 <Animated.View entering={FadeIn} layout={Layout.springify()}>
                     <Space height={20} />
                     <View style={styles.rowGap}>
@@ -1073,7 +1160,7 @@ export default function ProfileCompletionDhabha() {
                                 onPress={() => setTimePickerOpen({ visible: true, type: 'opening' })}
                             >
                                 <Text style={styles.datetimeText}>
-                                    {userEdit?.opening_time ? moment(userEdit.opening_time).format('hh:mm A') : '00:00'}
+                                    {formData.opening_time ? moment(formData.opening_time).format('hh:mm A') : '00:00'}
                                 </Text>
                                 <Ionicons name="time-outline" size={20} color={colors.royalBlue} />
                             </TouchableOpacity>
@@ -1086,7 +1173,7 @@ export default function ProfileCompletionDhabha() {
                                 onPress={() => setTimePickerOpen({ visible: true, type: 'closing' })}
                             >
                                 <Text style={styles.datetimeText}>
-                                    {userEdit?.closing_time ? moment(userEdit.closing_time).format('hh:mm A') : '00:00'}
+                                    {formData.closing_time ? moment(formData.closing_time).format('hh:mm A') : '00:00'}
                                 </Text>
                                 <Ionicons name="time-outline" size={20} color={colors.royalBlue} />
                             </TouchableOpacity>
@@ -1102,8 +1189,8 @@ export default function ProfileCompletionDhabha() {
                 style={styles.classicInput}
                 placeholder="e.g. 12 PM - 3 PM, 8 PM - 11 PM"
                 placeholderTextColor="#999"
-                value={userEdit?.peak_hours}
-                onChangeText={(text) => updateUser('peak_hours', text)}
+                value={formData.peak_hours}
+                onChangeText={(text) => updateFormData('peak_hours', text)}
             />
         </View>
     );
@@ -1125,12 +1212,13 @@ export default function ProfileCompletionDhabha() {
         ];
 
         const renderFacilityItem = (item: any) => {
-            const isSelected = !!userEdit?.[item.key];
+            // @ts-ignore
+            const isSelected = !!formData[item.key];
             return (
                 <TouchableOpacity
                     key={item.id}
                     style={[styles.gridItem, isSelected && styles.gridItemSelected]}
-                    onPress={() => updateUser(item.key, !isSelected)}
+                    onPress={() => toggleFormBoolean(item.key)}
                     activeOpacity={0.7}
                 >
                     <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
@@ -1165,10 +1253,12 @@ export default function ProfileCompletionDhabha() {
                 ].map(type => (
                     <TouchableOpacity
                         key={type.key}
-                        style={[styles.chip, userEdit?.food_type?.includes(type.key) && styles.chipSelected]}
-                        onPress={() => updateUser('food_type', [type.key])}
+                        style={[styles.chip, formData.food_type?.includes(type.key) && styles.chipSelected]}
+                        // For simplicity, treating food type as single array or exclusive based on UI, 
+                        // but here keeping array to match original, replace array
+                        onPress={() => updateFormData('food_type', [type.key])}
                     >
-                        <Text style={[styles.chipText, userEdit?.food_type?.includes(type.key) && styles.chipTextSelected]}>{type.label}</Text>
+                        <Text style={[styles.chipText, formData.food_type?.includes(type.key) && styles.chipTextSelected]}>{type.label}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -1184,10 +1274,10 @@ export default function ProfileCompletionDhabha() {
                 ].map(meal => (
                     <TouchableOpacity
                         key={meal.key}
-                        style={[styles.chip, userEdit?.meal_availability?.includes(meal.key) && styles.chipSelected]}
-                        onPress={() => toggleSelection('meal_availability', meal.key)}
+                        style={[styles.chip, formData.meal_availability?.includes(meal.key) && styles.chipSelected]}
+                        onPress={() => toggleFormSelection('meal_availability', meal.key)}
                     >
-                        <Text style={[styles.chipText, userEdit?.meal_availability?.includes(meal.key) && styles.chipTextSelected]}>{meal.label}</Text>
+                        <Text style={[styles.chipText, formData.meal_availability?.includes(meal.key) && styles.chipTextSelected]}>{meal.label}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -1378,8 +1468,8 @@ export default function ProfileCompletionDhabha() {
             { id: 'custom_offer', label: t('customOffer'), icon: 'create-outline', subtitle: t('personalized') },
         ];
 
-        const selectedOffers = userEdit?.driver_offers || [];
-        const currentOfferDetails = userEdit?.offer_details || {};
+        const selectedOffers = formData.driver_offers || [];
+        const currentOfferDetails = formData.offer_details || {};
 
         const toggleOffer = (offerId: string) => {
             if (activeOfferType === offerId) {
@@ -1388,13 +1478,24 @@ export default function ProfileCompletionDhabha() {
                 setActiveOfferType(offerId);
                 if (!selectedOffers.includes(offerId)) {
                     const newOffers = [...selectedOffers, offerId];
-                    updateUser('driver_offers', newOffers);
+                    // updateUser('driver_offers', newOffers);
+                    setFormData(prev => ({
+                        ...prev,
+                        driver_offers: newOffers
+                    }));
 
                     if (!currentOfferDetails[offerId]) {
-                        updateUser('offer_details', {
-                            ...currentOfferDetails,
-                            [offerId]: { visible: true, title: '', description: '' }
-                        });
+                        // updateUser('offer_details', {
+                        //     ...currentOfferDetails,
+                        //     [offerId]: { visible: true, title: '', description: '' }
+                        // });
+                        setFormData(prev => ({
+                            ...prev,
+                            offer_details: {
+                                ...prev.offer_details,
+                                [offerId]: { visible: true, title: '', description: '' }
+                            }
+                        }));
                     }
                 }
             }
@@ -1408,7 +1509,11 @@ export default function ProfileCompletionDhabha() {
                     ...updates,
                 },
             };
-            updateUser('offer_details', newDetails);
+            // updateUser('offer_details', newDetails);
+            setFormData(prev => ({
+                ...prev,
+                offer_details: newDetails
+            }));
         };
 
         // Helper to get subtitle (summary)
@@ -1663,7 +1768,8 @@ export default function ProfileCompletionDhabha() {
                                                 onPress={() => {
                                                     if (!selectedOffers.includes(activeInPair.id)) {
                                                         const newOffers = [...selectedOffers, activeInPair.id];
-                                                        updateUser('driver_offers', newOffers);
+                                                        // updateUser('driver_offers', newOffers);
+                                                        updateFormData('driver_offers', newOffers);
                                                     }
                                                     setActiveOfferType(null);
                                                 }}
@@ -1714,7 +1820,7 @@ export default function ProfileCompletionDhabha() {
                                         <TouchableOpacity
                                             onPress={() => {
                                                 const newOffers = selectedOffers.filter((id: any) => id !== offerId);
-                                                updateUser('driver_offers', newOffers);
+                                                updateFormData('driver_offers', newOffers);
                                             }}
                                             style={{ padding: 10 }}
                                         >
@@ -1853,13 +1959,15 @@ export default function ProfileCompletionDhabha() {
                             {timePickerOpen.type === 'opening' ? t('selectOpeningTime') : t('selectClosingTime')}
                         </Text>
                         <DatePicker
-                            date={userEdit?.[timePickerOpen.type === 'opening' ? 'opening_time' : 'closing_time'] || new Date()}
+                            date={formData?.[timePickerOpen.type === 'opening' ? 'opening_time' : 'closing_time'] || new Date()}
                             mode="time"
                             locale="en-US"
                             is24hourSource="locale"
                             onDateChange={(date) => {
-                                if (timePickerOpen.type === 'opening') updateUser('opening_time', date);
-                                if (timePickerOpen.type === 'closing') updateUser('closing_time', date);
+                                if (timePickerOpen.type) {
+                                    if (timePickerOpen.type === 'opening') updateFormData('opening_time', date);
+                                    if (timePickerOpen.type === 'closing') updateFormData('closing_time', date);
+                                }
                             }}
                         />
                         <TouchableOpacity
@@ -1884,7 +1992,7 @@ export default function ProfileCompletionDhabha() {
                             keyExtractor={(item) => item.toString()}
                             showsVerticalScrollIndicator={false}
                             renderItem={({ item }) => {
-                                const isSelected = userEdit?.establishment_year && moment(userEdit.establishment_year).year() === item;
+                                const isSelected = formData?.establishment_year && moment(formData.establishment_year).year() === item;
                                 return (
                                     <TouchableOpacity
                                         style={{
@@ -1900,7 +2008,7 @@ export default function ProfileCompletionDhabha() {
                                         onPress={() => {
                                             // Set date to Jan 1st of selected year
                                             const date = new Date(item, 0, 1);
-                                            updateUser('establishment_year', date);
+                                            updateFormData('establishment_year', date);
                                             setEstablishmentYearPickerOpen(false);
                                         }}
                                     >
