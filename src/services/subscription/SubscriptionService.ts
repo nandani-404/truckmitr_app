@@ -462,11 +462,12 @@ class SubscriptionService {
         }
 
         // Standard subscription check
-        const hasSubscriptionId = !!subscriptionData.subscription_id;
+        // Updated: subscription_id can be null, so we also accept payment_id
+        const hasValidIdentifier = !!subscriptionData.subscription_id || !!subscriptionData.payment_id;
         const isPaymentCaptured = subscriptionData.payment_status === 'captured';
         const isNotExpired = Date.now() / 1000 < subscriptionData.end_at;
 
-        return hasSubscriptionId && isPaymentCaptured && isNotExpired;
+        return hasValidIdentifier && isPaymentCaptured && isNotExpired;
     }
 
     /**

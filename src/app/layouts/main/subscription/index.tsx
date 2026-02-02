@@ -79,7 +79,7 @@ const COLORS = {
 const getPlanData = (t: (key: string) => string) => [
   {
     id: 99,
-    tier: 'base',
+    tier: 'job_ready',
     name: t('subJobReadyDriver'),
     subtitle: t('subJobReadySubtitle'),
     tagline: t('subJobReadyTagline'),
@@ -1477,9 +1477,17 @@ export default function Subscription({ }: any) {
           let badge = '🚛';
 
           const planName = (apiPlan.name || '').toLowerCase();
-          const amount = apiPlan.amount || apiPlan.price || 0;
+          const amount = parseFloat(apiPlan.amount) || apiPlan.price || 0;
 
-          if (planName.includes('trusted') || planName.includes('premium') || amount >= 400) {
+          // IMPORTANT: Check foreman_pro FIRST (amount >= 900) before trusted (amount >= 400)
+          // Otherwise 999 would match the trusted condition first
+          if (planName.includes('foreman') || amount >= 900) {
+            tier = 'foreman_pro';
+            color = COLORS.primary;
+            bgColor = '#F5F3FF';
+            gradient = ['#4F46E5', '#818CF8'];
+            badge = '�';
+          } else if (planName.includes('foreman_pro') || planName.includes('premium') || amount >= 400) {
             tier = 'trusted';
             color = COLORS.trusted;
             bgColor = COLORS.trustedBg;
@@ -1491,17 +1499,11 @@ export default function Subscription({ }: any) {
             bgColor = COLORS.verifiedBg;
             gradient = ['#10B981', '#34D399'];
             badge = '✅';
-          } else if (planName.includes('foreman') || amount >= 900) {
-            tier = 'trusted'; // Re-using styles for Foreman Pro
-            color = COLORS.primary;
-            bgColor = '#F5F3FF';
-            gradient = ['#4F46E5', '#818CF8'];
-            badge = '👷';
           }
 
           // Special override for 99 Plan to be "JOB READY"
           if (amount === 99 || (amount >= 90 && amount <= 100)) {
-            tier = 'base';
+            tier = 'job_ready';
             color = COLORS.base;
             bgColor = COLORS.baseBg;
             gradient = ['#f9c416ff', '#eaca15ff'];
@@ -1520,7 +1522,7 @@ export default function Subscription({ }: any) {
             t('subBenefitStayJobReady'),
           ];
 
-          if (tier === 'base') {
+          if (tier === 'base' || tier === 'job_ready') {
             // Force benefits for Job Ready
             benefits = jobReadyBenefits;
           } else if (apiPlan.features && Array.isArray(apiPlan.features)) {
@@ -1552,13 +1554,21 @@ export default function Subscription({ }: any) {
                 t('subBenefitBetterShortlisting'),
                 t('subBenefitSupportTruckMitr'),
               ];
+            } else if (tier === 'foreman_pro') {
+              benefits = [
+                t('subForemanBenefit1') || 'Unlimited Driver Access',
+                t('subForemanBenefit2') || 'Foreman Pro Badge',
+                t('subForemanBenefit3') || 'Priority Support',
+                t('subForemanBenefit4') || 'Higher Commission Rates',
+                t('subForemanBenefit5') || 'Exclusive Job Listings'
+              ];
             } else {
               benefits = jobReadyBenefits;
             }
           }
 
           let footerNotes: string[] | undefined = undefined;
-          if (tier === 'base') {
+          if (tier === 'base' || tier === 'job_ready') {
             footerNotes = [
               t('subFooterNoVerification'),
               t('subFooterChooseJobs')
@@ -1577,20 +1587,37 @@ export default function Subscription({ }: any) {
             ];
           }
 
+          let displayName = apiPlan.name || `Plan ${index + 1}`;
+          if (tier === 'base' || tier === 'job_ready') displayName = t('subJobReadyDriver');
+          if (tier === 'foreman_pro') displayName = t('subForemanPro') || 'Foreman Pro';
+          if (role === 'transporter' && (amount === 99 || (amount >= 90 && amount <= 100))) displayName = t('cardLegacyTransporter');
+
+          let displaySubtitle = t('subStartYourJourney');
+          if (tier === 'base' || tier === 'job_ready') displaySubtitle = t('subJobReadySubtitle');
+          else if (role === 'transporter') displaySubtitle = t('subTransporterSubtitle') || 'For Transporters';
+          else if (tier === 'verified') displaySubtitle = t('subVerifiedSubtitle');
+          else if (tier === 'trusted') displaySubtitle = t('subTrustedSubtitle');
+          else if (tier === 'foreman_pro') displaySubtitle = t('subForemanSubtitle') || 'For Pro Foremen';
+
+          let ctaText = t('subGetJobReady');
+          if (tier === 'trusted') ctaText = t('subBecomeTrusted');
+          else if (tier === 'verified') ctaText = t('subBecomeVerified');
+          else if (tier === 'foreman_pro') ctaText = t('subUpgradeToForemanPro') || 'Become Foreman Pro';
+
           return {
             id: apiPlan.id,
             tier,
-            name: (role === 'transporter' && (amount === 99 || (amount >= 90 && amount <= 100))) ? t('cardLegacyTransporter') : (tier === 'base' ? t('subJobReadyDriver') : (apiPlan.name || `Plan ${index + 1}`)),
-            subtitle: tier === 'base' ? t('subJobReadySubtitle') : (role === 'transporter' ? t('subTransporterSubtitle') || 'For Transporters' : (tier === 'verified' ? t('subVerifiedSubtitle') : t('subTrustedSubtitle'))),
-            tagline: tier === 'base' ? t('subJobReadyTagline') : (apiPlan.tagline || (tier === 'trusted' ? t('subTrustedTagline') : tier === 'verified' ? t('subVerifiedTagline') : t('subStartYourJourney'))),
+            name: displayName,
+            subtitle: displaySubtitle,
+            tagline: tier === 'base' || tier === 'job_ready' ? t('subJobReadyTagline') : (apiPlan.tagline || (tier === 'trusted' ? t('subTrustedTagline') : tier === 'verified' ? t('subVerifiedTagline') : tier === 'foreman_pro' ? (t('subForemanTagline') || 'Maximize your earnings') : t('subStartYourJourney'))),
             badge,
             price: amount,
-            duration: apiPlan.duration || (role === 'association' ? t('sixMonths') : t('subYear')),
-            intro: tier === 'base' ? t('subJobReadyIntro') : (apiPlan.description || apiPlan.intro || ''),
+            duration: apiPlan.duration || t('subYear'),
+            intro: tier === 'base' || tier === 'job_ready' ? t('subJobReadyIntro') : (apiPlan.description || apiPlan.intro || (tier === 'foreman_pro' ? (t('subForemanIntro') || 'Unlock exclusive benefits and higher earnings.') : '')),
             benefits,
             footerNotes,
             is_recurring: apiPlan.is_recurring,
-            ctaText: tier === 'trusted' ? t('subBecomeTrusted') : (tier === 'verified' ? t('subBecomeVerified') : t('subGetJobReady')),
+            ctaText: ctaText,
             color,
             bgColor,
             gradient,
@@ -1642,93 +1669,46 @@ export default function Subscription({ }: any) {
     try {
       const amount = plan.price * 100;
       const serverPlanId: number = plan.id;
-      const isRecurring = plan.is_recurring === 1 || plan.is_recurring === true;
 
-      console.log(`Using plan: id=${serverPlanId}, price=${plan.price}, name=${plan.name}, recurring=${isRecurring}`);
+      console.log(`Using plan: id=${serverPlanId}, price=${plan.price}, name=${plan.tier}`);
 
-      if (isRecurring) {
-        // Try creating a subscription
-        try {
-          console.log(`Attempting to create subscription for plan ${serverPlanId}`);
-          const payload = { plan_id: serverPlanId };
-          console.log('=== PAYMENT_SUBSCRIPTION_CREATE PAYLOAD ===', JSON.stringify(payload, null, 2));
-          const response = await axiosInstance.post(END_POINTS.PAYMENT_SUBSCRIPTION_CREATE, payload);
-
-          console.log('=== SUBSCRIPTION CREATE RESPONSE ===');
-          console.log('Full response.data:', JSON.stringify(response?.data, null, 2));
-
-          let subscriptionId =
-            response?.data?.subscription_id ||
-            response?.data?.data?.subscription_id ||
-            response?.data?.data?.id ||
-            response?.data?.id;
-
-          // If success
-          if (subscriptionId) {
-            console.log('Subscription created successfully:', subscriptionId);
-            const subscriptionDates = {
-              start_date: response?.data?.start_at || response?.data?.data?.start_at || response?.data?.current_start || response?.data?.data?.current_start,
-              end_date: response?.data?.end_at || response?.data?.data?.end_at || response?.data?.current_end || response?.data?.data?.current_end
-            };
-            await _onPressPayNow(subscriptionId, true, String(amount), plan, serverPlanId, subscriptionDates);
-            return;
-          }
-
-          // If specific error "not recurring", proceed to fallback (Create Order)
-          if (response?.data?.message === 'This plan is not recurring') {
-            console.log('API returned "not recurring" error. Switching to order creation.');
-            // Fall through to order creation below
-          } else {
-            // Other error
-            throw new Error(response?.data?.message || 'Failed to create subscription');
-          }
-        } catch (subError: any) {
-          const isNotRecurringError = subError.message === 'NOT_RECURRING' ||
-            subError?.response?.data?.message === 'This plan is not recurring';
-
-          if (isNotRecurringError) {
-            console.log('Caught "not recurring" error. Switching to order creation.');
-            // Fall through
-          } else {
-            // Genuine error
-            console.error('Subscription creation failed:', subError);
-            showToast(subError?.response?.data?.message || t('subUnableToLoadContent'));
-            setIsLoading(false);
-            return;
-          }
-        }
-      }
-
-      // Create Order Logic (Reached if !isRecurring OR "not recurring" error occurred)
+      // New Subscription Flow using api/subscription/order
       try {
-        console.log('Creating standard order for plan:', serverPlanId);
-        const orderPayload = {
-          amount: amount,
-          currency: 'INR',
-          notes: {
-            plan_id: serverPlanId,
-            role: user?.role || 'driver'
-          }
-        };
+        let planName = plan.tier;
 
-        const orderResponse = await axiosInstance.post(END_POINTS.CREATE_ORDER, orderPayload);
-        console.log('Order creation response:', orderResponse?.data);
-
-        let orderId = orderResponse?.data?.id || orderResponse?.data?.order_id || (orderResponse?.data?.data ? orderResponse?.data?.data?.id : null);
-
-        if (orderResponse?.data?.success || (orderId && String(orderId).startsWith('order_'))) {
-          if (orderId) {
-            console.log('Order created successfully:', orderId);
-            await _onPressPayNow(orderId, false, String(amount), plan, serverPlanId);
-          } else {
-            throw new Error('Order ID not found in response');
-          }
-        } else {
-          throw new Error(orderResponse?.data?.message || 'Failed to create order');
+        // Custom logic: Transporter purchasing 499 plan should be 'Standard'
+        // Driver purchasing 499 plan remains 'trusted' (which is plan.tier)
+        if (user?.role === 'transporter' && (plan.price === 499 || plan.price === 499.00)) {
+          planName = 'Standard';
         }
-      } catch (orderError: any) {
-        console.error('Order creation failed:', orderError);
-        showToast(t('subUnableToLoadContent') || 'Unable to initiate payment');
+
+        // Special logic for foreman_pro
+        if (user?.role === 'foreman' && plan.tier === 'foreman_pro') {
+          planName = 'foreman_pro';
+        }
+
+        const payload = {
+          plan_name: planName
+        };
+        console.log('Creating subscription order with payload:', payload);
+
+        const response = await axiosInstance.post(END_POINTS.SUBSCRIPTION_ORDER, payload);
+        console.log('Subscription order response:', response?.data);
+
+        // Check for order ID in the response
+        const orderId = response?.data?.id || response?.data?.order_id || (response?.data?.data ? response?.data?.data?.id : null);
+
+        if (orderId) {
+          console.log('Order created successfully:', orderId);
+          // Pass isSubscription = false as we are using the order flow
+          await _onPressPayNow(orderId, false, String(amount), plan, serverPlanId);
+        } else {
+          throw new Error(response?.data?.message || 'Failed to create subscription order');
+        }
+
+      } catch (error: any) {
+        console.error('Subscription order creation failed:', error);
+        showToast(error?.response?.data?.message || t('subUnableToLoadContent') || 'Unable to initiate payment');
         setIsLoading(false);
       }
 

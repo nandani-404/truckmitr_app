@@ -131,16 +131,31 @@ const userReducer = (state = initialState, action: any) => {
                 'JOB READY',
                 'VERIFIED',
                 'TRUSTED',
-                'foreman_pro',
-                'association_pro',
-                'transporter_pro'
+                'trusted',
+                'foreman_pro'
             ];
 
-            // Filter for subscription records - handle all payment types
-            // If payment_type matches known types OR if record has a subscription_id (meaning it's a subscription)
-            const subscriptionRecords = payload.filter((item: any) =>
-                validPaymentTypes.includes(item.payment_type) || !!item.subscription_id
-            );
+            // Helper function to map 'trusted' to 'foreman_pro' in logs/logic if role is foreman
+            // Note: The payload comes from API, so we don't mutate it directly unless needed for UI consistency
+            // but we ensure 'foreman_pro' is considered valid.
+
+            // Helper function to convert item to sortable timestamp
+            const getItemTimestamp = (item: any) => {
+                if (item.created_at) return new Date(item.created_at).getTime();
+                if (item.start_at) return item.start_at * 1000; // start_at is usually unix in seconds
+                return item.id || 0;
+            }
+
+            // FILTER AND SORT: 
+            // 1. Filter relevant items (match valid types OR have IDs)
+            // 2. Sort by latest created/started first to prioritize most recent
+            const sortedRecords = payload
+                .filter((item: any) =>
+                    validPaymentTypes.includes(item.payment_type) ||
+                    !!item.subscription_id ||
+                    !!item.payment_id
+                )
+                .sort((a: any, b: any) => getItemTimestamp(b) - getItemTimestamp(a));
 
             // Find the first active subscription
             const currentTimeInSeconds = Math.floor(Date.now() / 1000);
@@ -223,39 +238,36 @@ const userReducer = (state = initialState, action: any) => {
                     console.log('[userReducer] Legacy transporter detected (Rs 1/99 subscription)');
                     return true;
                 }
-                // Check for association pro subscription
-                if (isAssociationProSubscription(item)) {
-                    console.log('[userReducer] Association Pro detected (association_pro subscription)');
-                    return true;
+
+                // Check for foreman_pro subscription specifically
+                if (item.payment_type === 'foreman_pro' && item.payment_status === 'captured') {
+                    const isNotExpired = currentTimeInSeconds < item.end_at;
+                    if (isNotExpired) {
+                        console.log('[userReducer] Foreman Pro subscription detected');
+                        return true;
+                    }
                 }
-                // Check for transporter pro subscription
-                if (isTransporterProSubscription(item)) {
-                    console.log('[userReducer] Transporter Pro detected (transporter_pro subscription)');
-                    return true;
-                }
-                // Check for foreman pro subscription
-                if (isForemanProSubscription(item)) {
-                    console.log('[userReducer] Foreman Pro detected (foreman_pro subscription)');
-                    return true;
-                }
-                // Standard subscription check
-                const hasSubscriptionId = !!item.subscription_id;
+
+                // Standard subscription check - ALLOW payment_id based subscriptions
+                // Updated logic: Needs either subscription_id OR payment_id
+                const hasId = !!item.subscription_id || !!item.payment_id;
                 const isPaymentCaptured = item.payment_status === 'captured';
-                const endAt = getEndAtTimestamp(item);
-                const isNotExpired = currentTimeInSeconds < endAt;
-                return hasSubscriptionId && isPaymentCaptured && isNotExpired;
+                const isNotExpired = currentTimeInSeconds < item.end_at;
+                return hasId && isPaymentCaptured && isNotExpired;
             };
 
-            let activeSubscription = subscriptionRecords.find((item: any) => isActiveSubscription(item));
+            // Since we sorted by latest first, the first active one we find is the CORRECT current plan
+            let activeSubscription = sortedRecords.find((item: any) => isActiveSubscription(item));
 
-            // If no active subscription found in filtered records, check ALL payload items
-            // This handles cases where payment_type might be something unexpected
+            // If no active subscription found in filtered records, check ALL payload items (sorted)
             if (!activeSubscription && payload.length > 0) {
-                activeSubscription = payload.find((item: any) => isActiveSubscription(item));
+                // Sort payload too just in case
+                const sortedPayload = [...payload].sort((a: any, b: any) => getItemTimestamp(b) - getItemTimestamp(a));
+                activeSubscription = sortedPayload.find((item: any) => isActiveSubscription(item));
             }
 
-            // If no active subscription found, use the first subscription record for details
-            let payloadSubscriptionDetails = activeSubscription || subscriptionRecords[0] || payload[0];
+            // If no active subscription found, use the first sorted record for details (most recent attempt)
+            let payloadSubscriptionDetails = activeSubscription || sortedRecords[0] || payload[0];
 
             // If still no valid subscription details, return empty state
             if (!payloadSubscriptionDetails || !payloadSubscriptionDetails.id) {

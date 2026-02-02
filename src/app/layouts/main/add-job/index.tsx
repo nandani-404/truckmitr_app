@@ -847,6 +847,7 @@ export default function AddJob() {
             // Create subscription order with job_id
             const orderPayload = {
                 plan_id: plan.id,
+                plan_name: plan.name, // Added plan_name required by API
                 number_of_drivers: parseInt(addJob?.Job_Management) || 1,
                 job_id: postedJobId
             };
