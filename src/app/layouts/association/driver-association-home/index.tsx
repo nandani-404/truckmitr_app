@@ -118,111 +118,6 @@ interface DashboardData {
     license_expiring_next_month_count: number;
     pending_driver_subscription_count: number;
 }
-
-// Stat Card Component
-// const StatCard = ({ icon, label, count, color, bgColor }: any) => (
-//     <View style={[styles.statCard, { backgroundColor: bgColor }]}>
-//         <View style={[styles.statIconWrap, { backgroundColor: color + '20' }]}>
-//             <Ionicons name={icon} size={18} color={color} />
-//         </View>
-//         <Text style={[styles.statCount, { color }]}>{count}</Text>
-//         <Text style={styles.statLabel}>{label}</Text>
-//     </View>
-// );
-
-// Driver Card Component
-// const DriverCard = ({ driver, onPress, onCall, onMessage, onMenu }: any) => {
-//     const statusColor = driver.status === 'active' ? COLORS.active : driver.status === 'onTrip' ? COLORS.onTrip : COLORS.inactive;
-//     const scaleAnim = useRef(new Animated.Value(1)).current;
-
-//     const handlePressIn = () => Animated.spring(scaleAnim, { toValue: 0.98, useNativeDriver: true }).start();
-//     const handlePressOut = () => Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
-
-//     return (
-//         <TouchableOpacity activeOpacity={0.9} onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
-//             <Animated.View style={[styles.driverCard, { transform: [{ scale: scaleAnim }] }]}>
-//                 {/* Profile Section */}
-//                 <View style={styles.driverCardTop}>
-//                     <View style={styles.driverProfileRow}>
-//                         <View style={styles.avatarContainer}>
-//                             <Image source={{ uri: driver.image }} style={styles.avatar} />
-//                             <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-//                         </View>
-//                         <View style={styles.driverInfo}>
-//                             <View style={styles.nameRow}>
-//                                 <Text style={styles.driverName}>{driver.name}</Text>
-//                                 {driver.verified && (
-//                                     <View style={styles.verifiedBadge}>
-//                                         <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
-//                                     </View>
-//                                 )}
-//                             </View>
-//                             <Text style={styles.driverId}>{driver.tmId}</Text>
-//                             <Text style={styles.driverPhone}>{driver.phone}</Text>
-//                             <View style={styles.licenseRow}>
-//                                 <View style={styles.licenseChip}>
-//                                     <Text style={styles.licenseText}>{driver.licenseType}</Text>
-//                                 </View>
-//                                 <Text style={styles.experienceText}>{driver.experience}</Text>
-//                             </View>
-//                         </View>
-//                     </View>
-//                     <View style={styles.cardActions}>
-//                         <TouchableOpacity style={styles.actionBtn} onPress={onCall}>
-//                             <Ionicons name="call" size={18} color={COLORS.success} />
-//                         </TouchableOpacity>
-//                         <TouchableOpacity style={styles.actionBtn} onPress={onMessage}>
-//                             <Ionicons name="chatbubble" size={18} color={COLORS.accent} />
-//                         </TouchableOpacity>
-//                         <TouchableOpacity style={styles.actionBtn} onPress={onMenu}>
-//                             <Ionicons name="ellipsis-vertical" size={18} color={COLORS.textSecondary} />
-//                         </TouchableOpacity>
-//                     </View>
-//                 </View>
-
-//                 {/* Badges */}
-//                 <View style={styles.badgesRow}>
-//                     {driver.badges.map((badge: string, idx: number) => (
-//                         <View key={idx} style={[styles.badge, badge === 'Verified' && styles.verifiedChip, badge === 'Top Rated' && styles.topRatedChip]}>
-//                             {badge === 'Verified' && <Ionicons name="shield-checkmark" size={10} color={COLORS.success} style={{ marginRight: 3 }} />}
-//                             {badge === 'Long Route' && <MaterialCommunityIcons name="highway" size={10} color={COLORS.accent} style={{ marginRight: 3 }} />}
-//                             {badge === 'Local' && <Ionicons name="location" size={10} color={COLORS.warning} style={{ marginRight: 3 }} />}
-//                             {badge === 'Top Rated' && <Ionicons name="star" size={10} color="#FFD700" style={{ marginRight: 3 }} />}
-//                             <Text style={[styles.badgeText, badge === 'Top Rated' && { color: '#B8860B' }]}>{badge}</Text>
-//                         </View>
-//                     ))}
-//                     <View style={styles.ratingBadge}>
-//                         <Ionicons name="star" size={11} color="#FFD700" />
-//                         <Text style={styles.ratingText}>{driver.rating}</Text>
-//                     </View>
-//                 </View>
-
-//                 {/* Status Info */}
-//                 <View style={styles.statusRow}>
-//                     <View style={styles.statusItem}>
-//                         <Text style={styles.statusLabel}>Availability</Text>
-//                         <Text style={[styles.statusValue, { color: statusColor }]}>{driver.availability}</Text>
-//                     </View>
-//                     <View style={styles.statusDivider} />
-//                     <View style={styles.statusItem}>
-//                         <Text style={styles.statusLabel}>Last Active</Text>
-//                         <Text style={styles.statusValue}>{driver.lastActive}</Text>
-//                     </View>
-//                     {driver.location && (
-//                         <>
-//                             <View style={styles.statusDivider} />
-//                             <View style={[styles.statusItem, { flex: 1.2 }]}>
-//                                 <Text style={styles.statusLabel}>Location</Text>
-//                                 <Text style={styles.statusValue} numberOfLines={1}>{driver.location}</Text>
-//                             </View>
-//                         </>
-//                     )}
-//                 </View>
-//             </Animated.View>
-//         </TouchableOpacity>
-//     );
-// };
-
 // Main Component
 export default function DriverAssociation() {
     const insets = useSafeAreaInsets();
@@ -312,25 +207,35 @@ export default function DriverAssociation() {
         }
     };
 
+    // Track if we've already shown the modal to prevent loops
+    const hasShownSubscriptionModal = useRef(false);
+
     useFocusEffect(
         useCallback(() => {
             if (user?.id) {
                 fetchDashboardData();
             }
-            // Only open payment modal if:
-            // 1. subscriptionDetails is loaded (not null/undefined)
-            // 2. showSubscriptionModel flag is true (set by reducer when no active subscription)
-            // 3. User is not already recognized as AssociationPro
-            const shouldShowModal =
-                subscriptionDetails?.showSubscriptionModel === true &&
-                !isAssociationPro;
-
-            if (shouldShowModal) {
-                console.log('[AssociationHome] Opening subscription modal - no active subscription detected');
-                dispatch(subscriptionModalAction(true));
-            }
-        }, [user?.id, isAssociationPro, subscriptionDetails?.showSubscriptionModel])
+        }, [user?.id])
     );
+
+    // Handle subscription modal trigger - ONE TIME ONLY
+    React.useEffect(() => {
+        // Only open payment modal if:
+        // 1. subscriptionDetails is loaded (not null/undefined)
+        // 2. showSubscriptionModel flag is true (set by reducer when no active subscription)
+        // 3. User is not already recognized as AssociationPro
+        // 4. We haven't shown it yet in this session
+        const shouldShowModal =
+            subscriptionDetails?.showSubscriptionModel === true &&
+            !isAssociationPro &&
+            !hasShownSubscriptionModal.current;
+
+        if (shouldShowModal) {
+            console.log('[AssociationHome] Opening subscription modal - no active subscription detected');
+            dispatch(subscriptionModalAction(true));
+            hasShownSubscriptionModal.current = true;
+        }
+    }, [isAssociationPro, subscriptionDetails?.showSubscriptionModel]);
 
     const filteredDrivers = MOCK_DRIVERS.filter(d =>
         d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -399,7 +304,6 @@ export default function DriverAssociation() {
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{dashboardData?.unique_id || user?.unique_id || 'TM2501UPTP00001'}</Text>
                                 {/* Association Badge - Plain Text */}
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: '600', lineHeight: responsiveFontSize(1.8) }}>{userBadgeText}</Text>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>{dashboardData?.level?.name ? `${dashboardData.level.name} ${t('association_home_level_suffix')}` : t('association_home_manage_lead_drivers')}</Text>
                             </View>
 
                             <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => navigation.navigate(STACKS.DRIVER_ASSOCIATION_PROFILE as never)}>

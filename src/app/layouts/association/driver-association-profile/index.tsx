@@ -21,7 +21,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Space } from '@truckmitr/src/app/components';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from "react-native-svg";
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Feather from 'react-native-vector-icons/Feather'
 import AntDesign from 'react-native-vector-icons/AntDesign'
@@ -43,10 +43,13 @@ import ViewShot from 'react-native-view-shot';
 import RNShare from 'react-native-share';
 import RNFetchBlob from 'react-native-blob-util';
 import { getUserBadgeText } from '@truckmitr/src/utils/global/userBadge';
+import moment from 'moment';
 
 // Membership Card Asset Images
 const LOGO_IMAGE = require('@truckmitr/src/assets/membership-card/logotrick.png');
-const BACKGROUND_IMAGE = require('@truckmitr/src/assets/membership-card/membershipbg.png');
+// Reusing the background image currently used, or we could switch to a proactive "Pro" background if it exists
+const BACKGROUND_IMAGE = require('@truckmitr/src/assets/membership-card/msc.png');
+// const BACKGROUND_FOREMAN_PRO = require('@truckmitr/src/assets/membership-card/foremancardnew.jpeg'); // Optional if we want to match Foreman exactly
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -55,6 +58,18 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const capitalizeFirst = (str: string): string => {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+// Association Card Config (mimicking the PRO tier from profile/index)
+const ASSOCIATION_CARD_CONFIG = {
+    borderColors: ['#1F2937', '#4B5563', '#9CA3AF', '#4B5563', '#1F2937'], // Gunmetal/Silver style
+    chromeGradient: [
+        { offset: '0', color: '#E0E3E7' },
+        { offset: '0.25', color: '#BFC5CC' },
+        { offset: '0.5', color: '#9AA0A6' },
+        { offset: '0.75', color: '#BFC5CC' },
+        { offset: '1', color: '#E0E3E7' },
+    ],
 };
 
 // Apple-style Confirmation Dialog Component
@@ -671,38 +686,228 @@ export default function DriverAssociationProfile() {
                 )}
 
                 {/* Membership Card Section */}
+
                 <SectionHeader title={t('membership')} />
                 <View style={{ marginHorizontal: responsiveFontSize(2) }}>
-                    <ViewShot ref={membershipCardRef} options={{ format: 'png', quality: 1 }}>
-                        <View style={[styles.membershipCard, { height: 180, borderRadius: 16, overflow: 'hidden' }]}>
-                            <ImageBackground
-                                source={BACKGROUND_IMAGE}
-                                style={{ flex: 1 }}
-                                resizeMode="cover"
-                            >
-                                <View style={{ flex: 1, padding: 16, justifyContent: 'space-between' }}>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <Image source={LOGO_IMAGE} style={{ width: 100, height: 30 }} resizeMode="contain" />
-                                        {/* Badge on card - Plain Text */}
-                                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
-                                            {userBadgeText.toUpperCase()}
-                                        </Text>
-                                    </View>
-                                    <View>
-                                        <Text style={{ color: '#FFD700', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>
-                                            DRIVER ASSOCIATION PRESIDENT
-                                        </Text>
-                                        <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700', letterSpacing: 1.5, marginTop: 4 }}>
-                                            {user?.unique_id || 'TM2501UPTP00001'}
-                                        </Text>
-                                        <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600', marginTop: 2 }}>
-                                            {user?.name?.toUpperCase() || 'USER'}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </ImageBackground>
-                        </View>
-                    </ViewShot>
+                    {(() => {
+                        // --- Data Preparation for Card ---
+                        // Badge Text
+                        const badgeText = "DRIVER ASSOCIATION PRESIDENT"; // Hardcoded specific title or use userBadgeText
+
+                        // User Info
+                        const userName = user?.name?.toUpperCase() || t('memberNameDefault').toUpperCase();
+                        const uniqueId = user?.unique_id || 'TM2501UPTP00001';
+
+                        // Location
+                        const stateName = user?.state_name || user?.state || '';
+                        const cityName = user?.city || '';
+                        const userLocation = (cityName && stateName ? `${cityName}, ${stateName}` : (cityName || stateName)).toUpperCase();
+
+                        // Dates - Default to Today and 1 year later if not available (as requested)
+                        const startDate = subscriptionDetails?.start_at
+                            ? moment.unix(subscriptionDetails.start_at).format('DD/MM/YY')
+                            : moment().format('DD/MM/YY'); // Default: Today
+                        const endDate = subscriptionDetails?.end_at
+                            ? moment.unix(subscriptionDetails.end_at).format('DD/MM/YY')
+                            : moment().add(1, 'year').format('DD/MM/YY'); // Default: 1 Year later
+
+                        // Dimensions matching profile/index.tsx
+                        const cardWidth = responsiveWidth(92);
+                        const cardHeight = cardWidth / 1.586;
+
+                        return (
+                            <ViewShot ref={membershipCardRef} options={{ format: 'png', quality: 1 }}>
+                                <TouchableOpacity
+                                    activeOpacity={0.9}
+                                    style={{
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 6 },
+                                        shadowOpacity: 0.3,
+                                        shadowRadius: 10,
+                                        elevation: 8,
+                                    }}
+                                >
+                                    {/* Outer Metallic Border */}
+                                    <LinearGradient
+                                        colors={ASSOCIATION_CARD_CONFIG.borderColors}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={{
+                                            borderRadius: 16,
+                                            padding: 3,
+                                        }}
+                                    >
+                                        {/* Inner White Border Container */}
+                                        <View style={{
+                                            borderRadius: 14,
+                                            borderWidth: 2,
+                                            borderColor: 'rgba(255,255,255,0.8)',
+                                            overflow: 'hidden',
+                                            height: cardHeight, // Fixed height based on aspect ratio
+                                        }}>
+                                            <ImageBackground
+                                                source={BACKGROUND_IMAGE}
+                                                style={{ flex: 1 }}
+                                                resizeMode="cover"
+                                            >
+                                                {/* Dark Overlay for readability */}
+                                                <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.15)' }} />
+
+                                                <View style={{ flex: 1, padding: 12 }}>
+                                                    {/* Top Row: Logo & Photo */}
+                                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <Image source={LOGO_IMAGE} style={{ width: 120, height: 40 }} resizeMode="contain" />
+
+                                                        {/* Profile Photo with Metallic Border */}
+                                                        <LinearGradient
+                                                            colors={ASSOCIATION_CARD_CONFIG.borderColors}
+                                                            start={{ x: 0, y: 0 }}
+                                                            end={{ x: 1, y: 1 }}
+                                                            style={{ padding: 2, borderRadius: 30 }}
+                                                        >
+                                                            <View style={{ backgroundColor: '#fff', padding: 2, borderRadius: 28 }}>
+                                                                {user?.images ? (
+                                                                    <Image
+                                                                        source={{ uri: `${BASE_URL}public/${user?.images}` }}
+                                                                        style={{ width: 52, height: 52, borderRadius: 26 }}
+                                                                        resizeMode="cover"
+                                                                    />
+                                                                ) : (
+                                                                    <View style={{ width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E0E0E0' }}>
+                                                                        <FontAwesome name="user" size={32} color="#757575" />
+                                                                    </View>
+                                                                )}
+                                                            </View>
+                                                        </LinearGradient>
+                                                    </View>
+
+                                                    {/* Middle Section: Badge & ID */}
+                                                    <View style={{ marginTop: 4 }}>
+                                                        {/* Badge Text with Gradient */}
+                                                        <View style={{ height: 22, width: 250 }}> {/* Increased width for longer title */}
+                                                            <Svg height="100%" width="100%" viewBox="0 0 250 22">
+                                                                <Defs>
+                                                                    <SvgLinearGradient id="chromeGradientCat" x1="0" y1="0" x2="0" y2="1">
+                                                                        {ASSOCIATION_CARD_CONFIG.chromeGradient.map((stop, index) => (
+                                                                            <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
+                                                                        ))}
+                                                                    </SvgLinearGradient>
+                                                                </Defs>
+                                                                <SvgText fill="#000000" fillOpacity="0.7" fontSize="13" fontWeight="900" fontStyle="italic" letterSpacing="1" x="1.5" y="17">
+                                                                    {badgeText.toUpperCase()}
+                                                                </SvgText>
+                                                                <SvgText fill="url(#chromeGradientCat)" stroke="#000" strokeWidth="0.5" fontSize="13" fontWeight="900" fontStyle="italic" letterSpacing="1" x="0" y="15.5">
+                                                                    {badgeText.toUpperCase()}
+                                                                </SvgText>
+                                                            </Svg>
+                                                        </View>
+
+                                                        {/* ID with Gradient */}
+                                                        <View style={{ height: 38, width: '100%', marginTop: 2 }}>
+                                                            <Svg height="100%" width="100%" viewBox="0 0 340 38">
+                                                                <Defs>
+                                                                    <SvgLinearGradient id="chromeGradientId" x1="0" y1="0" x2="0" y2="1">
+                                                                        {ASSOCIATION_CARD_CONFIG.chromeGradient.map((stop, index) => (
+                                                                            <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
+                                                                        ))}
+                                                                    </SvgLinearGradient>
+                                                                </Defs>
+                                                                <SvgText fill="#000000" fillOpacity="0.8" fontSize="24" fontWeight="900" letterSpacing="2" x="2" y="30">
+                                                                    {uniqueId}
+                                                                </SvgText>
+                                                                <SvgText fill="url(#chromeGradientId)" stroke="#000" strokeWidth="0.8" fontSize="24" fontWeight="900" letterSpacing="2" x="0" y="28">
+                                                                    {uniqueId}
+                                                                </SvgText>
+                                                            </Svg>
+                                                        </View>
+                                                    </View>
+
+                                                    {/* Bottom Section: Name, Loc, Dates */}
+                                                    <View style={{ marginTop: 'auto', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                                        {/* Left: Name & Location */}
+                                                        <View style={{ flex: 1 }}>
+                                                            {/* Name with Gradient */}
+                                                            <View style={{ height: 20, width: 200 }}>
+                                                                <Svg height="100%" width="100%" viewBox="0 0 200 20">
+                                                                    <Defs>
+                                                                        <SvgLinearGradient id="chromeGradientName" x1="0" y1="0" x2="0" y2="1">
+                                                                            {ASSOCIATION_CARD_CONFIG.chromeGradient.map((stop, index) => (
+                                                                                <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
+                                                                            ))}
+                                                                        </SvgLinearGradient>
+                                                                    </Defs>
+                                                                    <SvgText fill="#000000" fillOpacity="0.7" fontSize="14" fontWeight="900" letterSpacing="1" x="1" y="16">
+                                                                        {userName}
+                                                                    </SvgText>
+                                                                    <SvgText fill="url(#chromeGradientName)" stroke="#000" strokeWidth="0.4" fontSize="14" fontWeight="900" letterSpacing="1" x="0" y="15">
+                                                                        {userName}
+                                                                    </SvgText>
+                                                                </Svg>
+                                                            </View>
+                                                            <Text style={{
+                                                                color: '#fff',
+                                                                fontSize: responsiveFontSize(1.3),
+                                                                fontWeight: '700',
+                                                                marginTop: 1,
+                                                                textShadowColor: 'rgba(0,0,0,0.8)',
+                                                                textShadowOffset: { width: 1, height: 1 },
+                                                                textShadowRadius: 2,
+                                                            }}>
+                                                                {userLocation}
+                                                            </Text>
+                                                        </View>
+
+                                                        {/* Right: Dates */}
+                                                        <View style={{ alignItems: 'flex-end' }}>
+                                                            <View style={{ flexDirection: 'row', gap: 10 }}>
+                                                                {/* Valid From */}
+                                                                <View style={{ alignItems: 'center' }}>
+                                                                    <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '800' }}>{t('validFrom')?.toUpperCase() || 'VALID FROM'}</Text>
+                                                                    <View style={{ height: 16, width: 60, marginTop: 1 }}>
+                                                                        <Svg height="100%" width="100%" viewBox="0 0 60 16">
+                                                                            <Defs>
+                                                                                <SvgLinearGradient id="chromeGradientDate1" x1="0" y1="0" x2="0" y2="1">
+                                                                                    {ASSOCIATION_CARD_CONFIG.chromeGradient.map((stop, index) => (
+                                                                                        <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
+                                                                                    ))}
+                                                                                </SvgLinearGradient>
+                                                                            </Defs>
+                                                                            <SvgText fill="url(#chromeGradientDate1)" stroke="#000" strokeWidth="0.3" fontSize="11" fontWeight="900" x="30" y="13" textAnchor="middle">
+                                                                                {startDate}
+                                                                            </SvgText>
+                                                                        </Svg>
+                                                                    </View>
+                                                                </View>
+                                                                {/* Valid Until */}
+                                                                <View style={{ alignItems: 'center' }}>
+                                                                    <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '800' }}>{t('validUntil')?.toUpperCase() || 'VALID UNTIL'}</Text>
+                                                                    <View style={{ height: 16, width: 60, marginTop: 1 }}>
+                                                                        <Svg height="100%" width="100%" viewBox="0 0 60 16">
+                                                                            <Defs>
+                                                                                <SvgLinearGradient id="chromeGradientDate2" x1="0" y1="0" x2="0" y2="1">
+                                                                                    {ASSOCIATION_CARD_CONFIG.chromeGradient.map((stop, index) => (
+                                                                                        <Stop key={index} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
+                                                                                    ))}
+                                                                                </SvgLinearGradient>
+                                                                            </Defs>
+                                                                            <SvgText fill="url(#chromeGradientDate2)" stroke="#000" strokeWidth="0.3" fontSize="11" fontWeight="900" x="30" y="13" textAnchor="middle">
+                                                                                {endDate}
+                                                                            </SvgText>
+                                                                        </Svg>
+                                                                    </View>
+                                                                </View>
+                                                            </View>
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                            </ImageBackground>
+                                        </View>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </ViewShot>
+                        );
+                    })()}
+
 
                     {/* Card Action Buttons */}
                     <View style={{ flexDirection: 'row', gap: 12, marginTop: 14 }}>

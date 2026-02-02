@@ -829,6 +829,7 @@ const AssociationSubscriptionModal = ({
       title: t('associationFeatureVerifiedBadge') || 'Association Verified Badge',
       desc: t('associationFeatureVerifiedBadgeDesc') || 'Get your union recognized as a verified partner.',
     },
+
     {
       icon: '✔',
       title: t('associationFeatureDriverManagement') || 'Advanced Driver Management',
@@ -1584,7 +1585,7 @@ export default function Subscription({ }: any) {
             tagline: tier === 'base' ? t('subJobReadyTagline') : (apiPlan.tagline || (tier === 'trusted' ? t('subTrustedTagline') : tier === 'verified' ? t('subVerifiedTagline') : t('subStartYourJourney'))),
             badge,
             price: amount,
-            duration: apiPlan.duration || t('subYear'),
+            duration: apiPlan.duration || (role === 'association' ? t('sixMonths') : t('subYear')),
             intro: tier === 'base' ? t('subJobReadyIntro') : (apiPlan.description || apiPlan.intro || ''),
             benefits,
             footerNotes,
