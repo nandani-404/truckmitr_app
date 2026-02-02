@@ -245,7 +245,7 @@ export const END_POINTS = {
     DHABA_COMMISSION_DETAILS: 'api/dhaba/commission-new-details',
     DHABA_PHOTO_UPLOAD: "api/dhaba/photos",
     DHABA_DRIVER_SEARCH: 'api/dhaba/drivers/search',
-    DHABA_UPDATE_PROFILE: `api/dhaba/update-profile`,
+    DHABA_UPDATE_PROFILE: `api/update-profile-dhaba`,
     DHABA_BANK_DETAILS_FETCH: (id: any) => `api/dhaba/account-details/${id}`,
     DHABA_BANK_DETAILS_UPDATE: `api/dhaba/bank-details`,
     DHABA_WALLET_SUMMARY: `api/dhaba/commission/status-summary`,

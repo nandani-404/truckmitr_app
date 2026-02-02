@@ -83,6 +83,8 @@ const PhotosTab = () => {
             formData.append('ordering_priority', '1');
             formData.append('upload_date', moment().format('YYYY-MM-DD'));
 
+            console.log('Current Photo Slots:', JSON.stringify(photoSlots.map(s => ({ idx: photoSlots.indexOf(s), id: s.id, isLocal: s.isLocal })), null, 2));
+
             let photoAdded = false;
             photoSlots.forEach((slot, idx) => {
                 if (slot.uri && slot.isLocal) {
@@ -94,7 +96,7 @@ const PhotosTab = () => {
                     } as any);
 
                     if (slot.id) {
-                        formData.append(`photo_ids[${idx}]`, slot.id);
+                        formData.append(`photo_ids[${idx}]`, String(slot.id));
                     }
                 }
             });
@@ -105,6 +107,7 @@ const PhotosTab = () => {
                 return;
             }
 
+            console.log('formData', formData);
             const response = await axiosInstance.post(END_POINTS.DHABA_PHOTO_UPLOAD, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
@@ -165,9 +168,13 @@ const PhotosTab = () => {
 
     const removePhoto = (index: number) => {
         const newSlots = [...photoSlots];
-        // If it was existing, we might need a way to track deletion if the backend supports it.
-        // For now, just clear the UI slot.
-        newSlots[index] = { id: null, uri: null, isLocal: false };
+        // Preserve the ID so that if the user adds a new photo here, it replaces the old one (Update)
+        // instead of creating a new record.
+        newSlots[index] = {
+            ...newSlots[index],
+            uri: null,
+            isLocal: false
+        };
         setPhotoSlots(newSlots);
     };
 

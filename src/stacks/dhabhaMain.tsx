@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import LinearGradient from 'react-native-linear-gradient';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import { useColor, useResponsiveScale } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,7 +49,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
     const tabs = [
         { name: STACKS.DHABHA_HOME, label: t('home') || 'Home', icon: 'home' },
         { name: STACKS.DHABHA_ADD_DRIVER, label: t('addDriver') || 'Add Driver', icon: 'person-add' },
-        { name: STACKS.DHABHA_MY_REFERRALS, label: t('myReferrals') || 'My Referrals', icon: 'people' },
+        { name: STACKS.DHABHA_DRIVER_KI_AWAZ, label: '', icon: 'mic', isSpecial: true },
         { name: STACKS.DHABHA_EARNINGS, label: t('wallet') || 'My Wallet', icon: 'wallet' },
         { name: STACKS.DHABHA_PROFILE, label: t('profile') || 'Profile', icon: 'person' },
     ];
@@ -100,6 +101,26 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
                     );
                 };
 
+                if (tab.isSpecial) {
+                    return (
+                        <TouchableOpacity
+                            key={route.key}
+                            onPress={onPress}
+                            style={styles.centerButtonContainer}
+                            activeOpacity={0.9}
+                        >
+                            <LinearGradient
+                                colors={['#EF4444', '#F59E0B']}
+                                style={styles.centerButton}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                <Ionicons name="mic" size={32} color="#FFFFFF" />
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    );
+                }
+
                 return (
                     <TouchableOpacity
                         key={route.key}
@@ -136,7 +157,7 @@ const DhabhaBottomTabs = () => {
         >
             <Tab.Screen name={STACKS.DHABHA_HOME} component={DhabhaHome} />
             <Tab.Screen name={STACKS.DHABHA_ADD_DRIVER} component={DhabhaAddDriver} />
-            <Tab.Screen name={STACKS.DHABHA_MY_REFERRALS} component={DhabhaMyReferralsScreen} />
+            <Tab.Screen name={STACKS.DHABHA_DRIVER_KI_AWAZ} component={DriverKiAwazHome} />
             <Tab.Screen name={STACKS.DHABHA_EARNINGS} component={DhabhaWallet} />
             <Tab.Screen name={STACKS.DHABHA_PROFILE} component={DhabhaMyProfile} />
         </Tab.Navigator>
@@ -163,7 +184,7 @@ export default function DhabhaMain() {
             <Stack.Screen name={STACKS.DHABHA_NEARBY} component={DhabhaNearby} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_DRIVER_SEARCH} component={DhabhaDriverSearch} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_PROFILE_EDIT} component={DhabaProfileEdit} options={{ animation: 'fade' }} />
-            <Stack.Screen name={STACKS.DHABHA_DRIVER_KI_AWAZ} component={DriverKiAwazHome} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DHABHA_MY_REFERRALS} component={DhabhaMyReferralsScreen} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.LANGUAGE_MAIN} component={LanguageMain} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     );
@@ -205,5 +226,24 @@ const styles = StyleSheet.create({
     tabLabel: {
         textAlign: 'center',
         marginTop: 2,
+    },
+    centerButtonContainer: {
+        top: -20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 60,
+    },
+    centerButton: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#EF4444',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 8,
     },
 });

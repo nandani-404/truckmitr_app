@@ -71,7 +71,7 @@ const DhabaProfileEdit = () => {
             const commonOptions = {
                 width: 800,
                 height: 800,
-                cropping: true,
+                cropping: false,
                 cropperCircleOverlay: true,
                 mediaType: 'photo' as const,
                 compressImageQuality: 0.8,
@@ -120,7 +120,7 @@ const DhabaProfileEdit = () => {
 
             if (newProfileImage) {
                 const fileName = newProfileImage.path.split('/').pop() || 'profile.jpg';
-                formData.append('image', {
+                formData.append('profile_image', {
                     uri: newProfileImage.path,
                     type: newProfileImage.mime || 'image/jpeg',
                     name: fileName,
