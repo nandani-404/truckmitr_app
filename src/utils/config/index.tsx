@@ -7,13 +7,11 @@ export const BASE_URL = `https://development.truckmitr.com/`
 export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
 export const AWAZ_URL = 'https://truckmitr.com/'
 export const STATICS = {
-    //Tarun's System
-    // RAYZORPAY_KEY_ID: 'rzp_test_SBEnBfzxKVnCX2',
-    // RAYZORPAY_SECRET: '4q3ZO6b0VBzM1MS0VluJFDeb',
-    // RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
-    // RAYZORPAY_SECRET: 'Jo14oUIoX75fb0WJejakbRvQ', // live
-    RAYZORPAY_KEY_ID: 'rzp_test_bbrUGMV7qq3mYP',  // testing
-    RAYZORPAY_SECRET: 'fU9jFstLp7qdUkNC3KNhuMnS'  // testing
+
+    RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
+    RAYZORPAY_SECRET: 'Jo14oUIoX75fb0WJejakbRvQ', // live
+    // RAYZORPAY_KEY_ID: 'rzp_test_bbrUGMV7qq3mYP',  // testing
+    // RAYZORPAY_SECRET: 'fU9jFstLp7qdUkNC3KNhuMnS'  // testing
 }
 interface FilterState {
     stateId: string;
