@@ -389,8 +389,8 @@ export default function Congratulations() {
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#F8FBFF" />
 
-            {/* Audio Player (Hidden) - Silent for foreman and association roles */}
-            {i18n.language === 'hi' && userData?.role !== 'foreman' && userData?.role !== 'association' && (
+            {/* Audio Player (Hidden) - Silent for foreman, association and transporter roles */}
+            {i18n.language === 'hi' && userData?.role !== 'foreman' && userData?.role !== 'association' && userData?.role !== 'transporter' && (
                 <Video
                     source={audioSource}
                     ref={audioRef}
@@ -403,8 +403,8 @@ export default function Congratulations() {
                 />
             )}
 
-            {/* Play/Mute Button - Only for Hindi, hidden for foreman and association roles */}
-            {i18n.language === 'hi' && userData?.role !== 'foreman' && userData?.role !== 'association' && (
+            {/* Play/Mute Button - Only for Hindi, hidden for foreman, association and transporter roles */}
+            {i18n.language === 'hi' && userData?.role !== 'foreman' && userData?.role !== 'association' && userData?.role !== 'transporter' && (
                 <TouchableOpacity
                     onPress={toggleAudio}
                     style={{
