@@ -101,6 +101,8 @@ const LocationDetailsTab = () => {
             : null
     );
 
+    const [pinnedAddress, setPinnedAddress] = useState<string>('');
+
     // NOTE: We don't sync from userEdit changes because fetchLocationData already 
     // populates the form from API. Syncing from userEdit would cause a race condition
     // where stale Redux data overwrites the fresh API data.
@@ -143,6 +145,16 @@ const LocationDetailsTab = () => {
                         lat: location.latitude,
                         lng: location.longitude
                     });
+
+                    // Fetch address from Maps API using stored coordinates
+                    fetchCompleteLocationDetails({
+                        latitude: parseFloat(location.latitude),
+                        longitude: parseFloat(location.longitude)
+                    }).then((details) => {
+                        if (details?.displayName) {
+                            setPinnedAddress(details.displayName);
+                        }
+                    }).catch(err => console.log('Error fetching address for stored coords:', err));
                 }
 
                 // Update Redux userEdit with fetched location
@@ -204,6 +216,8 @@ const LocationDetailsTab = () => {
                     lat: latitude.toString(),
                     lng: longitude.toString()
                 });
+                // Set pinned address from GPS fetch
+                setPinnedAddress(locationData.displayName || '');
 
                 // Auto-fill address if empty
                 if (!formData.address && locationData.displayName) {
@@ -476,7 +490,6 @@ const LocationDetailsTab = () => {
 
                     {localLocation ? (
                         <View style={styles.gpsInfoBox}>
-                            <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
                             <View style={{ flex: 1, marginLeft: 10 }}>
                                 <Text style={styles.gpsTextTitle}>{t('locationPinned')}</Text>
                                 <Text style={styles.gpsTextCoords}>
@@ -485,8 +498,16 @@ const LocationDetailsTab = () => {
                                 <Text style={styles.gpsTextCoords}>
                                     Lng: {localLocation.lng}
                                 </Text>
+                                {pinnedAddress ? (
+                                    <Text style={[styles.gpsTextCoords, { marginTop: 4, color: '#4B5563' }]}>
+                                        <Text style={{ fontWeight: '600' }}>Address:</Text> {pinnedAddress}
+                                    </Text>
+                                ) : null}
                             </View>
-                            <TouchableOpacity onPress={() => setLocalLocation(null)}>
+                            <TouchableOpacity onPress={() => {
+                                setLocalLocation(null);
+                                setPinnedAddress('');
+                            }}>
                                 <Ionicons name="close-circle-outline" size={22} color="#EF4444" />
                             </TouchableOpacity>
                         </View>

@@ -76,6 +76,8 @@ const PhotosTab = () => {
             if (!dhabaId) {
                 dhabaId = await AsyncStorage.getItem('dhaba_id') || '';
             }
+            // console.log('dhabaId', dhabaId);
+
             formData.append('dhaba_id', dhabaId);
             formData.append('category', 'Interior');
             formData.append('ordering_priority', '1');
@@ -92,7 +94,7 @@ const PhotosTab = () => {
                     } as any);
 
                     if (slot.id) {
-                        formData.append(`id[${idx}]`, slot.id);
+                        formData.append(`photo_ids[${idx}]`, slot.id);
                     }
                 }
             });
