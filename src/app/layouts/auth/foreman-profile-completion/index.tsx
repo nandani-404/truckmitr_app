@@ -102,8 +102,8 @@ export default function ProfileCompletionForeman() {
         if (user) {
             // Map API numeric values to internal values
             const experienceFromApiMap: { [key: string]: string } = {
-                '0': 'less_than_1',
-                '1': '1-2',
+                '0': '0-1',
+                '1': '0-1',
                 '2': '1-2',
                 '3': '3-5',
                 '4': '3-5',
@@ -199,17 +199,9 @@ export default function ProfileCompletionForeman() {
 
             if (userEdit?.DOB) formData.append('dob', moment(userEdit.DOB).format('DD-MM-YYYY'));
 
-            // Map internal experience values to numeric strings for API
+            // Send the range string directly as requested
             if (userEdit?.driving_experience) {
-                const expToApiMap: { [key: string]: string } = {
-                    'less_than_1': '0',
-                    '1-2': '1',
-                    '3-5': '3',
-                    '6-10': '6',
-                    '10+': '10'
-                };
-                const numericExp = expToApiMap[userEdit.driving_experience] || userEdit.driving_experience;
-                formData.append('driving_experience', numericExp);
+                formData.append('driving_experience', userEdit.driving_experience);
             }
 
             if (userEdit?.license_number) formData.append('license_number', userEdit?.license_number);
@@ -324,7 +316,7 @@ export default function ProfileCompletionForeman() {
                         </View>
                         <View style={styles.experienceGrid}>
                             {[
-                                { value: 'less_than_1', label: '< 1 Year' },
+                                { value: '0-1', label: '< 1 Year' }, // Changed from less_than_1 to 0-1
                                 { value: '1-2', label: '1-2 Years' },
                                 { value: '3-5', label: '3-5 Years' },
                                 { value: '6-10', label: '6-10 Years' },

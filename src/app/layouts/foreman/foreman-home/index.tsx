@@ -573,6 +573,20 @@ export default function ForemanHome() {
                     </TouchableOpacity>
                 </View>
 
+                <View style={styles.referralBanner}>
+                    <View style={styles.referralContent}>
+                        <View style={styles.referralIconBox}>
+                            <Ionicons name="ticket-outline" size={24} color="#EA580C" />
+                        </View>
+                        <View style={styles.referralInfo}>
+                            <Text style={styles.referralLabel}>{t('yourReferralCode')}</Text>
+                            <Text style={styles.referralCode}>{user?.Referral_Code || 'N/A'}</Text>
+                        </View>
+                        {/* <TouchableOpacity style={styles.copyButton} onPress={() => { showToast('Code Copied'); }}>
+                            <Ionicons name="copy-outline" size={20} color="#EA580C" />
+                        </TouchableOpacity> */}
+                    </View>
+                </View>
                 {/* Content Section */}
                 <View style={styles.contentContainer}>
                     {/* Quick Action Section */}
@@ -966,7 +980,61 @@ const styles = StyleSheet.create({
         right: 0,
         transform: [{ translateY: 39 }],
     },
-
+    profileDetailRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+    referralBanner: {
+        marginTop: 25,
+        // marginHorizontal: 4,
+        backgroundColor: '#FFF7ED', // Orange 50
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#FDBA74', // Orange 300
+        borderStyle: 'dashed',
+    },
+    referralContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    referralIconBox: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: '#FFEDD5', // Orange 100
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    referralInfo: {
+        flex: 1,
+    },
+    referralLabel: {
+        fontSize: 12,
+        color: '#9A3412', // Orange 800
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    referralCode: {
+        fontSize: 16,
+        color: '#EA580C', // Orange 600
+        fontWeight: '800',
+        letterSpacing: 1,
+    },
+    copyButton: {
+        padding: 8,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#FFEDD5',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    // referralText: { fontSize: 13, color: '#EA580C', flex: 1, },
     // Profile Section with Status
     profileSection: {
         alignItems: 'center',

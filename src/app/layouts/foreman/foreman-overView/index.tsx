@@ -141,13 +141,18 @@ const ProfileOverView = () => {
     const formatExperience = (exp: string | undefined): string => {
         if (!exp) return 'Not Provided';
         const mapping: Record<string, string> = {
-            '0': '0',
-            'less_than_1': '0',
-            '1': '1-2',
-            '3': '3-5',
-            '6': '6-10',
-            '10': '10+',
-            '10+': '10+',
+            '0': '0-1 Years',
+            'less_than_1': '0-1 Years',
+            '0-1': '0-1 Years',
+            '1': '0-1 Years',
+            '1-2': '1-2 Years',
+            '2': '1-2 Years',
+            '3': '3-5 Years',
+            '3-5': '3-5 Years',
+            '6': '6-10 Years',
+            '6-10': '6-10 Years',
+            '10': '10+ Years',
+            '10+': '10+ Years',
         };
         return mapping[exp] || exp;
     };

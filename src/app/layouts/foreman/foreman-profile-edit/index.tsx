@@ -33,11 +33,11 @@ import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { requestCameraPermission, requestPhotoLibraryPermission } from '@truckmitr/src/utils/permissions/imagePermissions';
 
 const EXPERIENCE_OPTIONS = [
-    { label: '0', value: '0' },
-    { label: '1-2', value: '1' },
-    { label: '3-5', value: '3' },
-    { label: '6-10', value: '6' },
-    { label: '10+', value: '10' },
+    { label: '0-1', value: '0-1' },
+    { label: '1-2', value: '1-2' },
+    { label: '3-5', value: '3-5' },
+    { label: '6-10', value: '6-10' },
+    { label: '10+', value: '10+' },
 ];
 
 const DRIVER_COUNT_OPTIONS = [
@@ -65,7 +65,16 @@ const ForemanProfileEdit = () => {
     const [tempDate, setTempDate] = useState(new Date());
     const [formData, setFormData] = useState({
         DOB: user?.DOB || '',
-        Driving_Experience: user?.Driving_Experience?.toString() || '',
+        Driving_Experience: (() => {
+            const exp = user?.Driving_Experience?.toString();
+            if (exp === '0' || exp === '1') return '0-1';
+            if (exp === '2') return '1-2';
+            // If it's single digit representing start of range (old logic), map to new
+            if (exp === '3') return '3-5';
+            if (exp === '6') return '6-10';
+            if (exp === '10') return '10+';
+            return exp || '';
+        })(),
         License_Number: user?.License_Number || '',
         Expiry_date_of_License: user?.Expiry_date_of_License || '',
         PAN_Number: user?.PAN_Number || '',
