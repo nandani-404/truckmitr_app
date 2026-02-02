@@ -23,22 +23,62 @@ export interface UserBadgeParams {
     };
     payment_type?: string;
     subscription_plan_id?: string | number;
-  };
+  } | Array<any>;
   isDriver?: boolean;
 }
+
+/**
+ * Helper to get the active subscription object from details (which can be array or object)
+ */
+const getActiveSubscription = (subscriptionDetails: any) => {
+  if (!subscriptionDetails) return null;
+
+  if (Array.isArray(subscriptionDetails)) {
+    console.log('getActiveSubscription: array input', subscriptionDetails.length);
+    // Sort by latest created/started first to ensure we get the most recent valid subscription
+    const sortedDetails = [...subscriptionDetails].sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : (a.start_at || a.id || 0);
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : (b.start_at || b.id || 0);
+      return timeB - timeA;
+    });
+    console.log('getActiveSubscription: sorted first', sortedDetails[0]?.id, sortedDetails[0]?.amount);
+
+    // Return the first one that looks like a valid subscription
+    // We check for captured status if available, or just take the first one
+    // Also check for foreman_pro payment_type specifically
+    return sortedDetails.find((sub: any) =>
+      ((sub.subscription_id || sub.payment_id) || sub.payment_type === 'foreman_pro') &&
+      (!sub.payment_status || sub.payment_status === 'captured') &&
+      (!sub.end_at || sub.end_at > Date.now() / 1000)
+    ) || sortedDetails[0];
+  }
+  return subscriptionDetails;
+};
 
 /**
  * Get the actual paid amount from subscription
  */
 const getPaidAmount = (subscriptionDetails: any, isDriver: boolean): number => {
+  const sub = getActiveSubscription(subscriptionDetails);
+  // console.log('getPaidAmount: selected sub', sub?.id, sub?.amount);
+
   // Amount is stored directly on subscription object as string (e.g., "99.00")
-  if (subscriptionDetails?.amount) {
-    return parseFloat(subscriptionDetails.amount);
+  if (sub?.amount) {
+    return parseFloat(sub.amount);
   }
   // Fallback to payment_details.amount (in paise, needs /100)
-  if (subscriptionDetails?.payment_details?.amount) {
-    return subscriptionDetails.payment_details.amount / 100;
+  if (sub?.payment_details?.amount) {
+    return sub.payment_details.amount / 100;
   }
+
+  // Try parsing payment_details if it's a string
+  if (typeof sub?.payment_details === 'string') {
+    try {
+      const parsed = JSON.parse(sub.payment_details);
+      if (parsed?.payment?.amount) return parsed.payment.amount / 100;
+    } catch (e) { }
+  }
+
   // Default fallback
   return isDriver ? 199 : 499;
 };
@@ -69,8 +109,11 @@ const capitalizeFirst = (str: string): string => {
 export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBadgeParams): string => {
   const userRole = capitalizeFirst(user?.role || '');
 
+  const sub = getActiveSubscription(subscriptionDetails);
+
   // Check if user has subscription
-  const hasSub = subscriptionDetails && (subscriptionDetails?.id || subscriptionDetails?.payment_id);
+  // Updated to allow payment_id even if subscription_id is null
+  const hasSub = sub && (sub.id || sub.payment_id || sub.subscription_id);
 
   if (!hasSub) {
     // No subscription - show role only
@@ -119,8 +162,8 @@ export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBa
       user?.plan_id == 11 ||
       user?.subscription_plan_id == 11 ||
       user?.payment_type === 'foreman_pro' ||
-      subscriptionDetails?.payment_type === 'foreman_pro' ||
-      subscriptionDetails?.subscription_plan_id == 11;
+      sub?.payment_type === 'foreman_pro' ||
+      sub?.subscription_plan_id == 11;
 
     if (isPro) {
       return 'Foreman Pro';
@@ -138,7 +181,8 @@ export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBa
 export type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'LEGACY' | 'TRANSPORTER PRO' | 'FOREMAN PRO';
 
 export const getUserTier = ({ user, subscriptionDetails, isDriver }: UserBadgeParams): TierType => {
-  const hasSub = subscriptionDetails && (subscriptionDetails?.id || subscriptionDetails?.payment_id);
+  const sub = getActiveSubscription(subscriptionDetails);
+  const hasSub = sub && (sub.id || sub.payment_id || sub.subscription_id);
 
   if (!hasSub) {
     return 'JOB READY';
@@ -186,10 +230,17 @@ export const getUserTier = ({ user, subscriptionDetails, isDriver }: UserBadgePa
  */
 export const shouldShowMembershipCard = ({ user, subscriptionDetails, isDriver }: UserBadgeParams): boolean => {
   const role = user?.role?.toLowerCase();
+  const sub = getActiveSubscription(subscriptionDetails);
 
   // Check if user has subscription
-  const hasSub = subscriptionDetails && (subscriptionDetails?.id || subscriptionDetails?.payment_id);
-  const hasActiveSubscription = Boolean(subscriptionDetails?.hasActiveSubscription || !subscriptionDetails?.showSubscriptionModel);
+  const hasSub = sub && (sub.id || sub.payment_id || sub.subscription_id);
+
+  // Use properties from active sub if available, else fallback to top-level if object
+  const hasActiveSubscription = Boolean(
+    (sub && sub.payment_status === 'captured') ||
+    (subscriptionDetails as any)?.hasActiveSubscription ||
+    !(subscriptionDetails as any)?.showSubscriptionModel
+  );
 
   if (role === 'driver') {
     // Drivers get cards when they have active subscription and subscription ID

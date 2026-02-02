@@ -13,7 +13,7 @@ import {
     RefreshControl,
     ActivityIndicator,
 } from 'react-native';
-import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
+import { subscriptionModalAction, subscriptionDetailsAction } from '@truckmitr/src/redux/actions/user.action';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -173,7 +173,25 @@ export default function ForemanHome() {
         user?.subscription_plan_id === '11' ||
         user?.payment_type === 'foreman_pro' ||
         user?.subscription_status === 'active' ||
-        (subscriptionDetails?.hasActiveSubscription && (subscriptionDetails?.payment_type === 'foreman_pro' || subscriptionDetails?.subscription_plan_id == 11));
+        // Check subscriptionDetails for active foreman_pro subscription
+        (subscriptionDetails?.hasActiveSubscription === true) ||
+        (subscriptionDetails?.payment_type === 'foreman_pro' && subscriptionDetails?.payment_status === 'captured') ||
+        (subscriptionDetails?.subscription_plan_id == 11) ||
+        // Also check if amount is 999 (foreman_pro price)
+        (parseFloat(subscriptionDetails?.amount) === 999 && subscriptionDetails?.payment_status === 'captured');
+
+    // DEBUG: Log subscription details for foreman
+    console.log('=== FOREMAN HOME DEBUG ===');
+    console.log('subscriptionDetails:', JSON.stringify(subscriptionDetails, null, 2));
+    console.log('isForemanPro:', isForemanPro);
+    console.log('user?.is_active:', user?.is_active);
+    console.log('user?.plan_id:', user?.plan_id);
+    console.log('user?.payment_type:', user?.payment_type);
+    console.log('subscriptionDetails?.hasActiveSubscription:', subscriptionDetails?.hasActiveSubscription);
+    console.log('subscriptionDetails?.payment_type:', subscriptionDetails?.payment_type);
+    console.log('subscriptionDetails?.payment_status:', subscriptionDetails?.payment_status);
+    console.log('subscriptionDetails?.amount:', subscriptionDetails?.amount);
+    console.log('=== END DEBUG ===');
 
     const handleFeatureAccess = (action: () => void) => {
         if (isForemanPro) {
@@ -272,15 +290,49 @@ export default function ForemanHome() {
                 }
             };
 
-            fetchData();
+            // Fetch subscription details for foreman
+            const fetchSubscriptionDetails = async () => {
+                try {
+                    console.log('=== FETCHING FOREMAN SUBSCRIPTION ===');
+                    const response = await axiosInstance.get(END_POINTS.PAYMENT_SUBSCRIPTION_DETAILS);
+                    console.log('Foreman subscription response:', JSON.stringify(response?.data, null, 2));
 
-            // Open payment modal if not Pro regarding USER REQUES
-            if (!isForemanPro) {
-                dispatch(subscriptionModalAction(true));
-            }
+                    if (response?.data?.data) {
+                        dispatch(subscriptionDetailsAction(response.data.data));
+
+                        // Check if foreman has active subscription after fetching
+                        const subData = response.data.data;
+                        const hasActiveForeman = Array.isArray(subData) && subData.some((sub: any) =>
+                            (sub.payment_type === 'foreman_pro' && sub.payment_status === 'captured') ||
+                            (parseFloat(sub.amount) === 999 && sub.payment_status === 'captured')
+                        );
+
+                        console.log('hasActiveForeman after fetch:', hasActiveForeman);
+
+                        // Only open payment modal if no active subscription found
+                        if (!hasActiveForeman && isMounted) {
+                            dispatch(subscriptionModalAction(true));
+                        }
+                    } else {
+                        // No subscription data - show modal
+                        if (isMounted) {
+                            dispatch(subscriptionModalAction(true));
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching foreman subscription:', error);
+                    // On error, show payment modal to be safe
+                    if (isMounted) {
+                        dispatch(subscriptionModalAction(true));
+                    }
+                }
+            };
+
+            fetchData();
+            fetchSubscriptionDetails();
 
             return () => { isMounted = false; };
-        }, [fetchDashboardData, isForemanPro])
+        }, [fetchDashboardData])
     );
 
     // Pull to refresh handler

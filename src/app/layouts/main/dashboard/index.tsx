@@ -25,6 +25,7 @@ type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorP
 
 type TierType = 'TRUSTED' | 'VERIFIED' | 'JOB READY' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO';
 
+
 // Helper function to get tier from payment_type
 const getTierFromPaymentType = (paymentType: string, amount?: number, role?: string): TierType => {
     // Legacy driver detection: Rs 49 or Rs 100 payment for DRIVERS
@@ -47,19 +48,6 @@ const getTierFromPaymentType = (paymentType: string, amount?: number, role?: str
     return 'JOB READY';
 };
 
-// Get the actual paid amount from subscription
-const getPaidAmount = (subscriptionDetails: any, isDriver: boolean): number => {
-    // Amount is stored directly on subscription object as string (e.g., "99.00")
-    if (subscriptionDetails?.amount) {
-        return parseFloat(subscriptionDetails.amount);
-    }
-    // Fallback to payment_details.amount (in paise, needs /100)
-    if (subscriptionDetails?.payment_details?.amount) {
-        return subscriptionDetails.payment_details.amount / 100;
-    }
-    // Default fallback
-    return isDriver ? 199 : 499;
-};
 
 const capitalizeFirst = (str: string): string => {
     if (!str) return '';
@@ -526,7 +514,7 @@ export default function Dashboard() {
                             <Text style={{ color: colors.black, fontSize: responsiveFontSize(2.2), fontWeight: '600' }}>{user?.name || 'Transporter'}</Text>
                             <Text style={{ color: colors.blackOpacity(0.6), fontSize: responsiveFontSize(1.6), fontWeight: '400', marginTop: 2 }}>{`${user?.unique_id || 'N/A'}`}</Text>
                             <View style={{ backgroundColor: colors.royalBlueOpacity(0.1), alignSelf: 'flex-start', paddingVertical: responsiveFontSize(.3), paddingHorizontal: responsiveFontSize(1.5), borderRadius: 100, marginTop: responsiveFontSize(.5) }}>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.5), fontWeight: '500' }}>{capitalizeFirst(user?.role) || 'Transporter'}</Text>
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.5), fontWeight: '500' }}>{getUserBadgeText({ user, subscriptionDetails, isDriver })}</Text>
                             </View>
                         </View>
                     </View>

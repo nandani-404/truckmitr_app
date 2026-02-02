@@ -250,7 +250,7 @@ export default function MembershipCard() {
 
     // Check if user has an active subscription
     const hasActiveSubscription = subscriptionDetails?.hasActiveSubscription ||
-        (subscriptionDetails?.subscription_id && subscriptionDetails?.payment_status === 'captured');
+        ((subscriptionDetails?.subscription_id || subscriptionDetails?.payment_id) && subscriptionDetails?.payment_status === 'captured');
 
     if (!hasActiveSubscription) {
         return (

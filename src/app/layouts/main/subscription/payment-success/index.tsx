@@ -311,12 +311,14 @@ export default function PaymentSuccess() {
             const subscriptionId = route?.params?.data?.razorpay_subscription_id;
             const paymentId = route?.params?.data?.razorpay_payment_id;
 
-            if (subscriptionId && paymentId) {
+            if (paymentId) {
                 try {
                     let syncFormData = new FormData();
-                    syncFormData.append('subscription_id', subscriptionId);
+                    if (subscriptionId) {
+                        syncFormData.append('subscription_id', subscriptionId);
+                    }
                     syncFormData.append('payment_id', paymentId);
-                    syncFormData.append('payment_type', 'subscription');
+                    syncFormData.append('payment_type', subscriptionId ? 'subscription' : 'one-time');
                     const subscriptionDates = route?.params?.subscriptionDates;
                     if (subscriptionDates?.start_date) syncFormData.append('start_date', subscriptionDates.start_date);
                     if (subscriptionDates?.end_date) syncFormData.append('end_date', subscriptionDates.end_date);
