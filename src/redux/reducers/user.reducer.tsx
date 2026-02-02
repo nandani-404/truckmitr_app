@@ -80,11 +80,11 @@ const userReducer = (state = initialState, action: any) => {
                 // driver: profile_required_fields_status
                 profileRequiredFieldsStatus:
                     payload?.user?.role === 'foreman'
-                        ? (payload?.foreman_required_fields_status ?? false)
+                        ? (payload?.foreman_required_fields_status ?? state.profileRequiredFieldsStatus ?? true)
                         : (payload?.user?.role === 'associate' || payload?.user?.role === 'association')
-                            ? (payload?.associate_required_fields_status ?? payload?.association_required_fields_status ?? false)
+                            ? (payload?.associate_required_fields_status ?? payload?.association_required_fields_status ?? state.profileRequiredFieldsStatus ?? true)
                             : payload?.user?.role === 'dhaba'
-                                ? (payload?.dhaba_required_fields_status ?? false)
+                                ? (payload?.dhaba_required_fields_status ?? state.profileRequiredFieldsStatus ?? true)
                                 : payload?.user?.role === 'transporter'
                                     ? (payload?.transporter_required_fields_status ?? true)
                                     : (payload?.profile_required_fields_status ?? true),

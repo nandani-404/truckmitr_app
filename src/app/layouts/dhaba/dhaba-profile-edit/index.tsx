@@ -20,23 +20,24 @@ import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@truckmitr/redux/store';
+import { RootState, AppDispatch } from '@truckmitr/redux/store';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS, BASE_URL } from '@truckmitr/utils/config/index';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { useTranslation } from 'react-i18next';
 import ImagePicker from 'react-native-image-crop-picker';
+import { STACKS } from '@truckmitr/stacks/stacks';
 import { requestCameraPermission, requestPhotoLibraryPermission } from '@truckmitr/src/utils/permissions/imagePermissions';
-// import { setUser } from '@truckmitr/redux/slices/userSlice'; // Assuming user slice exists for updates
+import { userAction } from '@truckmitr/redux/actions/user.action';
 
 const DhabaProfileEdit = () => {
     const { t } = useTranslation();
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
     const colors = useColor();
     const { responsiveFontSize, responsiveHeight, responsiveWidth } = useResponsiveScale();
     const { shadow } = useShadow();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
 
     const user = useSelector((state: RootState) => state.user?.user);
 
@@ -132,10 +133,39 @@ const DhabaProfileEdit = () => {
             });
 
             if (response.data && (response.data.status || response.data.success)) {
+                console.log('DEBUG: Profile update success. Response:', response.data);
                 showToast(t('profileUpdated', 'Profile updated successfully'));
-                // Ideally dispatch action to update redux user state here
-                navigation.goBack();
+
+                if (response.data.user) {
+                    // Merge existing user with updated fields only to avoid null overwrites
+                    const updatedUser = {
+                        ...user,
+                        name: response.data.user.name,
+                        email: response.data.user.email,
+                        // Only update image fields if they exist in response
+                        ...(response.data.user.profile_img && { profile_img: response.data.user.profile_img }),
+                        ...(response.data.user.image && { image: response.data.user.image }),
+                        ...(response.data.user.images && { images: response.data.user.images }),
+                    };
+                    console.log('DEBUG: Dispatching updated user:', updatedUser);
+                    dispatch(userAction({ user: updatedUser }));
+                } else {
+                    // Fallback: Optimistic update with local values
+                    const updatedUser = {
+                        ...user,
+                        name,
+                        email,
+                    };
+                    console.log('DEBUG: Dispatching optimistic updated user:', updatedUser);
+                    dispatch(userAction({ user: updatedUser }));
+                }
+
+                console.log('DEBUG: Navigating to DHABHA_BOTTOM -> DHABHA_PROFILE');
+                navigation.navigate(STACKS.DHABHA_BOTTOM as any, {
+                    screen: STACKS.DHABHA_PROFILE
+                });
             } else {
+                console.log('DEBUG: Profile update failed. Response:', response.data);
                 showToast(response.data?.message || t('updateFailed', 'Failed to update profile'));
             }
 
@@ -172,9 +202,11 @@ const DhabaProfileEdit = () => {
                                 source={{
                                     uri: newProfileImage
                                         ? newProfileImage.path
-                                        : (profileImage
-                                            ? (profileImage.startsWith('http') ? profileImage : `${BASE_URL}storage/app/public/${profileImage}`)
-                                            : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png')
+                                        : (user?.images
+                                            ? (user.images.startsWith('http') ? user.images : `${BASE_URL}public/${user.images}`)
+                                            : (profileImage
+                                                ? (profileImage.startsWith('http') ? profileImage : `${BASE_URL}storage/app/public/${profileImage}`)
+                                                : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png'))
                                 }}
                                 style={styles.profileImage}
                                 resizeMode="cover"
