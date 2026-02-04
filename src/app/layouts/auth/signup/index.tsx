@@ -90,6 +90,7 @@ export default function Signup() {
     const getLocation = async () => {
         try {
             const response = await axiosInstance.get(END_POINTS.GETSTATES);
+            console.log('Fetched locations:', JSON.stringify(response));
             if (response?.data?.status) {
                 setLocations(response?.data?.data);
             }
@@ -209,6 +210,7 @@ export default function Signup() {
                     </View>
 
                     <Space height={responsiveHeight(2)} />
+                    {/* <Text style={{ color: colors.black, fontSize: responsiveFontSize(3), fontWeight: '700', textAlign: 'center', letterSpacing: -0.5 }}>role: {role}</Text> */}
                     {/* Title Section */}
                     <View style={{ width: '100%', alignItems: 'center', paddingHorizontal: responsiveWidth(5) }}>
                         <Text style={{
@@ -237,88 +239,6 @@ export default function Signup() {
 
                     {/* Form Container */}
                     <View style={{ width: '100%', paddingHorizontal: responsiveWidth(6) }}>
-
-                        {/* Role Selection Toggle */}
-                        {/* <View style={{ marginBottom: responsiveHeight(1.5) }}>
-                            <Text style={{
-                                fontSize: responsiveFontSize(1.6),
-                                color: colors.black,
-                                fontWeight: '600',
-                                marginLeft: responsiveFontSize(0.5),
-                                marginBottom: responsiveHeight(0.5)
-                            }}>
-                                {t(`iAmA`)}
-                            </Text>
-                            <View style={{
-                                flexDirection: 'row',
-                                backgroundColor: colors.blackOpacity(0.04), // Subtle gray
-                                borderRadius: 12,
-                                padding: 3,
-                                height: responsiveHeight(5.5)
-                            }}>
-                                <TouchableOpacity
-                                    activeOpacity={0.8}
-                                    onPress={() => setRole('driver')}
-                                    style={{
-                                        flex: 1,
-                                        backgroundColor: role === 'driver' ? colors.white : 'transparent',
-                                        borderRadius: 10,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        ...(role === 'driver' ? shadow : {}),
-                                        borderWidth: role === 'driver' ? 0.5 : 0,
-                                        borderColor: colors.blackOpacity(0.05)
-                                    }}
-                                >
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                        <MaterialCommunityIcons
-                                            name="steering"
-                                            size={18}
-                                            color={role === 'driver' ? colors.royalBlue : colors.blackOpacity(0.5)}
-                                        />
-                                        <Text style={{
-                                            color: role === 'driver' ? colors.royalBlue : colors.blackOpacity(0.5),
-                                            fontWeight: '600',
-                                            fontSize: responsiveFontSize(1.7)
-                                        }}>
-                                            {t('driver')}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    activeOpacity={0.8}
-                                    onPress={() => setRole('transporter')}
-                                    style={{
-                                        flex: 1,
-                                        backgroundColor: role === 'transporter' ? colors.white : 'transparent',
-                                        borderRadius: 10,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        ...(role === 'transporter' ? shadow : {}),
-                                        borderWidth: role === 'transporter' ? 0.5 : 0,
-                                        borderColor: colors.blackOpacity(0.05)
-                                    }}
-                                >
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                        <MaterialCommunityIcons
-                                            name="truck-fast"
-                                            size={18}
-                                            color={role === 'transporter' ? colors.royalBlue : colors.blackOpacity(0.5)}
-                                        />
-                                        <Text style={{
-                                            color: role === 'transporter' ? colors.royalBlue : colors.blackOpacity(0.5),
-                                            fontWeight: '600',
-                                            fontSize: responsiveFontSize(1.7)
-                                        }}>
-                                            {t('transporter')}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
-                            {errors.role && (
-                                <Text style={{ color: 'red', fontSize: responsiveFontSize(1.6), marginTop: 2, marginLeft: 4 }}>{errors.role}</Text>
-                            )}
-                        </View> */}
 
                         {/* Name Input */}
                         <View style={{ marginBottom: responsiveHeight(1.2) }}>

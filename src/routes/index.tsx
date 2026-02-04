@@ -2,7 +2,7 @@ import { StatusBar, useColorScheme, View, Image, AppState, Linking, TouchableOpa
 import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { darkTheme, lightTheme } from '@truckmitr/res/colors';
-import { Auth, Main, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack } from '@truckmitr/stacks/index';
+import { Auth, Main, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain, } from '@truckmitr/stacks/index';
 import SystemNavigationBar from 'react-native-system-navigation-bar';
 import BootSplash from 'react-native-bootsplash';
 import { navigationRef } from '@truckmitr/utils/global/global.ref';
@@ -28,6 +28,7 @@ import { AppEventsLogger } from 'react-native-fbsdk-next';
 import { consumePendingNotificationNavigation, resetNotificationFlag } from '../utils/notification';
 import messaging from '@react-native-firebase/messaging';
 import * as TYPES from '@truckmitr/redux/actions/types';
+import PunctureProfileCompletionStack from '../stacks/punctureProfileCompletion';
 // import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 
 export let isNavigationReady = false;
@@ -330,6 +331,8 @@ export default function Routes() {
                 moduleFromRole = 'foreman';
               } else if (userRole === 'associate' || userRole === 'association') {
                 moduleFromRole = 'association';
+              } else if (userRole === 'puncture') {
+                moduleFromRole = 'puncture_shop';
               }
               // Update both AsyncStorage and Redux
               await AsyncStorage.setItem('SELECTED_MODULE', moduleFromRole);
@@ -782,6 +785,8 @@ export default function Routes() {
       {/* <DhabhaMain /> */}
       {/* <Auth /> */}
       {/* <DhabhaProfileCompletionStack /> */}
+      {/* <PunctureProfileCompletionStack /> */}
+      {/* <PunctureMain /> */}
       {!isAuthenticated ? (
         <Auth />
       ) : profileRequiredFieldsStatus === false ? (
@@ -792,6 +797,8 @@ export default function Routes() {
           <DhabhaProfileCompletionStack />
         ) : selectedModule === 'association' || user?.data?.role?.toLowerCase() === 'association' || user?.role?.toLowerCase() === 'association' ? (
           <AssociateProfileCompletionStack />
+        ) : selectedModule === 'puncture_shop' || user?.data?.role?.toLowerCase() === 'puncture' || user?.role?.toLowerCase() === 'puncture' ? (
+          <PunctureProfileCompletionStack />
         ) : (
           <ProfileCompletionStack />
         )
@@ -801,6 +808,8 @@ export default function Routes() {
         <DhabhaMain />
       ) : selectedModule === 'association' || user?.data?.role?.toLowerCase() === 'association' || user?.role?.toLowerCase() === 'association' ? (
         <AssociateMain />
+      ) : selectedModule === 'puncture_shop' || user?.data?.role?.toLowerCase() === 'puncture' || user?.role?.toLowerCase() === 'puncture' ? (
+        <PunctureMain />
       ) : (
         <Main />
       )}

@@ -14,6 +14,7 @@ import {
     Modal,
     FlatList,
     KeyboardAvoidingView, // Added KeyboardAvoidingView
+    PermissionsAndroid,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import Animated, {
@@ -37,10 +38,14 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import DatePicker from 'react-native-date-picker';
 import moment from 'moment';
-// import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
-// import { END_POINTS } from '@truckmitr/src/utils/config';
+import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import ImagePicker from 'react-native-image-crop-picker';
+import Geolocation from 'react-native-geolocation-service';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { fetchCompleteLocationDetails } from '@truckmitr/src/utils/maps/location/location.detail';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -108,9 +113,70 @@ export default function ProfileCompletionPuncture() {
     const [photoModal, setPhotoModal] = useState<{ visible: boolean, categoryId: string | null }>({ visible: false, categoryId: null });
     const [yearPickerVisible, setYearPickerVisible] = useState(false);
     const [tempDate, setTempDate] = useState(new Date());
+    const [shopPhotoInstructionModal, setShopPhotoInstructionModal] = useState(false);
+    const [establishmentYearPickerOpen, setEstablishmentYearPickerOpen] = useState(false);
+
+    // Restored Modals
     const [serviceTimeModal, setServiceTimeModal] = useState(false);
     const [radiusModal, setRadiusModal] = useState(false);
-    const [shopPhotoInstructionModal, setShopPhotoInstructionModal] = useState(false);
+
+    // Location State
+    const [fetchingLocation, setFetchingLocation] = useState(false);
+    const [isPincodeLoading, setIsPincodeLoading] = useState(false);
+    const [gpsAddress, setGpsAddress] = useState(''); // New state for auto-fetched address
+    const [locationWarningModalVisible, setLocationWarningModalVisible] = useState(false);
+
+    // Local State for Form Data
+    const [formData, setFormData] = useState({
+        puncture_name: '',
+        owner_name: '',
+        mobile: user?.mobile || '',
+        email: user?.email || '',
+        establishment_year: null as Date | null,
+        puncture_type: '',
+        puncture_id: null as string | null,
+
+        // Location
+        address: '',
+        landmark: '',
+        state: '',
+        district: '',
+        pincode: '',
+        latitude: '',
+        longitude: '',
+        location_source: '',
+
+        // Operational
+        shop_photos: {} as any,
+        opening_time: '',
+        closing_time: '',
+        is_24x7: false,
+        on_road_service: false,
+        mobile_radius: '',
+        avg_service_time: '',
+    });
+
+    const [statesList, setStatesList] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchStates = async () => {
+            try {
+                const response = await axiosInstance.get(END_POINTS.GETSTATES);
+                if (response?.data?.status) {
+                    setStatesList(response?.data?.data);
+                }
+            } catch (error) {
+                console.error('Error fetching states:', error);
+            }
+        };
+        fetchStates();
+    }, []);
+
+    const years = Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i);
+
+    const updateFormData = (key: string, value: any) => {
+        setFormData(prev => ({ ...prev, [key]: value }));
+    };
 
     // Animation
     const contentOpacity = useSharedValue(1);
@@ -191,45 +257,333 @@ export default function ProfileCompletionPuncture() {
 
         // Validation
         if (step.id === 'basic_info') {
-            if (!userEdit?.shop_name || !userEdit?.owner_name || !userEdit?.mobile) {
-                showToast(t('puncture_err_shop_name'));
+            if (!formData.puncture_name || !formData.owner_name || !formData.mobile) {
+                showToast(t('puncture_err_shop_name')); // You might want to update this key if generic
                 return;
             }
-            if (!userEdit?.shop_type) {
+            if (!formData.puncture_type) {
                 showToast(t('puncture_err_shop_type'));
                 return;
             }
+
+            setFinishing(true);
+            try {
+                const apiPayload = new FormData();
+                apiPayload.append('puncture_name', formData.puncture_name);
+                apiPayload.append('owner_name', formData.owner_name);
+                apiPayload.append('mobile', formData.mobile);
+                apiPayload.append('email', formData.email);
+                apiPayload.append('year_established', formData.establishment_year ? moment(formData.establishment_year).format('YYYY') : '');
+                apiPayload.append('puncture_type', formData.puncture_type);
+
+                // Use the new endpoint
+                const response = await axiosInstance.post(END_POINTS.PUNCTURE_BASIC_INFO, apiPayload);
+
+                if (response?.data?.status === true || response?.data?.success === true) {
+                    showToast(response?.data?.message || t('puncture_basic_info_saved'));
+
+                    const pId = response?.data?.puncture?.id;
+                    if (pId) {
+                        updateFormData('puncture_id', pId);
+                        await AsyncStorage.setItem('puncture_id', pId.toString());
+                    }
+
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    } else {
+                        submitProfile();
+                    }
+                } else {
+                    showToast(response?.data?.message || t('puncture_failed_save_basic'));
+                }
+            } catch (error: any) {
+                console.error('Basic Info API Error:', error);
+                showToast(error?.response?.data?.message || error?.message || t('something_went_wrong'));
+            } finally {
+                setFinishing(false);
+            }
+            return;
         }
         if (step.id === 'location_details') {
-            if (!userEdit?.address) {
+            if (!formData.address) {
                 showToast(t('puncture_err_address'));
                 return;
             }
-            if (!userEdit?.pincode) {
+            if (!formData.pincode) {
                 showToast(t('puncture_err_pincode'));
                 return;
             }
-            if (!userEdit?.state) {
+            if (!formData.state) {
                 showToast(t('puncture_err_state'));
                 return;
             }
-            // GPS Location is currently optional as backend integration is pending
-            /* if (!userEdit?.latitude) {
-                showToast("Please fetch or pin GPS Location");
+            if (!formData.latitude || !formData.longitude) {
+                showToast(t('locationDetailsRequired'));
                 return;
-            } */
+            }
+
+            setFinishing(true);
+            try {
+                const apiPayload = new FormData();
+                let puncture_id = formData.puncture_id;
+                if (!puncture_id) {
+                    puncture_id = await AsyncStorage.getItem('puncture_id');
+                }
+                apiPayload.append('puncture_id', puncture_id || '');
+                apiPayload.append('full_address', formData.address);
+                apiPayload.append('landmark', formData.landmark);
+                apiPayload.append('pincode', formData.pincode);
+                // Find state_id
+                const selectedState = statesList.find(s => s.name?.toLowerCase() === formData.state?.toLowerCase());
+                const state_id = selectedState ? selectedState.id : '';
+
+                apiPayload.append('state', formData.state);
+                apiPayload.append('state_id', state_id || '');
+                apiPayload.append('district', formData.district);
+                apiPayload.append('latitude', formData.latitude);
+                apiPayload.append('longitude', formData.longitude);
+                apiPayload.append('location_source', 'Pinned via GPS');
+                // if (formData.location_source) {
+                //     apiPayload.append('location_source', formData.location_source);
+                // }
+
+                // Use the new endpoint
+                const response = await axiosInstance.post(END_POINTS.PUNCTURE_LOCATION, apiPayload);
+
+                if (response?.data?.status === true || response?.data?.success === true) {
+                    showToast(response?.data?.message || t('puncture_location_saved'));
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    }
+                } else {
+                    showToast(response?.data?.message || t('puncture_failed_save_location'));
+                }
+            } catch (error: any) {
+                console.error('Location API Error:', error);
+                showToast(error?.response?.data?.message || error?.message || t('something_went_wrong'));
+            } finally {
+                setFinishing(false);
+            }
+            return;
         }
         if (step.id === 'operational_details') {
-            if (!userEdit?.is_24x7 && (!userEdit?.opening_time || !userEdit?.closing_time)) {
+            if (!formData.is_24x7 && (!formData.opening_time || !formData.closing_time)) {
                 showToast(t('puncture_err_time'));
                 return;
             }
+
+            setFinishing(true);
+            try {
+                const apiPayload = new FormData();
+                let puncture_id = formData.puncture_id;
+                if (!puncture_id) {
+                    puncture_id = await AsyncStorage.getItem('puncture_id');
+                }
+                apiPayload.append('puncture_id', puncture_id || '');
+                // Format times as HH:mm for the backend
+                apiPayload.append('opening_time', formData.opening_time ? moment(formData.opening_time).format('HH:mm') : '');
+                apiPayload.append('closing_time', formData.closing_time ? moment(formData.closing_time).format('HH:mm') : '');
+                apiPayload.append('is_24x7', formData.is_24x7 ? '1' : '0');
+                apiPayload.append('on_road_service', formData.on_road_service ? '1' : '0');
+                apiPayload.append('mobile_service', formData.mobile_radius);
+                apiPayload.append('average_service_time', formData.avg_service_time);
+
+                console.log('apiPayload', apiPayload);
+                const response = await axiosInstance.post(END_POINTS.PUNCTURE_OPERATION, apiPayload, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                if (response?.data?.status === true || response?.data?.success === true) {
+                    showToast(response?.data?.message || t('puncture_operational_details_saved'));
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    }
+                } else {
+                    showToast(response?.data?.message || t('puncture_failed_save_location'));
+                }
+            } catch (error: any) {
+                console.error('Operational API Error:', error);
+                showToast(error?.response?.data?.message || error?.message || t('something_went_wrong'));
+            } finally {
+                setFinishing(false);
+            }
+            return;
         }
         if (step.id === 'services_offered') {
             if (!userEdit?.services || userEdit?.services.length === 0) {
                 showToast(t('puncture_err_service'));
                 return;
             }
+
+            setFinishing(true);
+            try {
+                const apiPayload = new FormData();
+                let puncture_id = formData.puncture_id;
+                if (!puncture_id) {
+                    puncture_id = await AsyncStorage.getItem('puncture_id');
+                }
+                apiPayload.append('puncture_id', puncture_id || '');
+
+                const serviceMapping: { [key: string]: string } = {
+                    'Tube Puncture': 'tube_puncture',
+                    'Tubeless Tyre Repair': 'tubeless_tyre_repair',
+                    'Tyre Replacement': 'tyre_replacement',
+                    'Nitrogen / Air Filling': 'nitrogen_air_filling',
+                    'Stepney Installation': 'stepney_installation',
+                    'Wheel Balancing': 'wheel_balancing',
+                    'Minor Mechanical Repair': 'minor_mechanical_repair',
+                    'Jump Start / Battery Help': 'jump_start_battery_help',
+                    'Emergency Night Service': 'emergency_night_service'
+                };
+
+                Object.keys(serviceMapping).forEach(uiKey => {
+                    const apiKey = serviceMapping[uiKey];
+                    const isSelected = userEdit?.services?.includes(uiKey);
+                    apiPayload.append(apiKey, isSelected ? '1' : '0');
+                });
+
+                console.log('Services apiPayload', apiPayload);
+                const response = await axiosInstance.post(END_POINTS.SERVICE_OFFERED, apiPayload, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                if (response?.data?.status === true || response?.data?.success === true) {
+                    showToast(response?.data?.message || t('puncture_services_saved') || 'Services saved successfully');
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    }
+                } else {
+                    showToast(response?.data?.message || t('puncture_failed_save_services') || 'Failed to save services');
+                }
+
+            } catch (error: any) {
+                console.error('Services API Error:', error);
+                showToast(error?.response?.data?.message || error?.message || t('something_went_wrong'));
+            } finally {
+                setFinishing(false);
+            }
+            return;
+        }
+
+        if (step.id === 'vehicle_coverage') {
+            if (!userEdit?.vehicle_coverage || userEdit?.vehicle_coverage.length === 0) {
+                showToast(t('puncture_err_vehicle_coverage') || 'Please select at least one vehicle type');
+                return;
+            }
+
+            setFinishing(true);
+            try {
+                const apiPayload = new FormData();
+                let puncture_id = formData.puncture_id;
+                if (!puncture_id) {
+                    puncture_id = await AsyncStorage.getItem('puncture_id');
+                }
+                apiPayload.append('puncture_id', puncture_id || '');
+                apiPayload.append('user_id', user?.id || user?.user_id || '');
+                apiPayload.append('unique_id', user?.unique_id || '');
+
+                const vehicleMapping: { [key: string]: string } = {
+                    'Bike': 'BIKE',
+                    'Car': 'CAR',
+                    'Mini Truck': 'MINI_TRUCK',
+                    'Truck (6 Tyre)': 'TRUCK_6_TYRE',
+                    'Truck (10 / 12 / 14 Tyre)': 'TRUCK_10_12_14_TYRE',
+                    'Trailer': 'TRAILER',
+                    'Bus': 'BUS'
+                };
+
+                const selectedVehicles = userEdit.vehicle_coverage || [];
+                selectedVehicles.forEach((v: string) => {
+                    const apiValue = vehicleMapping[v];
+                    if (apiValue) {
+                        apiPayload.append('vehicle_coverage[]', apiValue);
+                    }
+                });
+
+                console.log('Vehicle Coverage apiPayload', apiPayload);
+                const response = await axiosInstance.post(END_POINTS.VEHICLE_COVERAGE, apiPayload, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                if (response?.data?.status === true || response?.data?.success === true) {
+                    showToast(response?.data?.message || t('puncture_vehicle_coverage_saved') || 'Vehicle coverage saved successfully');
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    }
+                } else {
+                    showToast(response?.data?.message || t('puncture_failed_save_vehicle') || 'Failed to save vehicle coverage');
+                }
+
+            } catch (error: any) {
+                console.error('Vehicle Coverage API Error:', error);
+                showToast(error?.response?.data?.message || error?.message || t('something_went_wrong'));
+            } finally {
+                setFinishing(false);
+            }
+            return;
+        }
+
+        if (step.id === 'photos') {
+            const allPhotos = formData.shop_photos?.all_photos || [];
+
+            if (!allPhotos || allPhotos.length === 0) {
+                showToast(t('pleaseUploadAtLeastOnePhoto') || 'Please upload at least one photo');
+                return;
+            }
+
+            setFinishing(true);
+            try {
+                const apiPayload = new FormData();
+                let puncture_id = formData.puncture_id;
+                if (!puncture_id) {
+                    puncture_id = await AsyncStorage.getItem('puncture_id');
+                }
+                apiPayload.append('puncture_id', puncture_id || '');
+                apiPayload.append('user_id', user?.id || user?.user_id || '');
+                apiPayload.append('unique_id', user?.unique_id || '');
+
+                apiPayload.append('category', 'puncture');
+                apiPayload.append('ordering_priority', '1');
+                apiPayload.append('upload_date', moment().format('YYYY-MM-DD'));
+
+                allPhotos.forEach((photoUri: string, idx: number) => {
+                    const fileName = `puncture_photo_${idx}_${Date.now()}.jpg`;
+                    apiPayload.append(`image_url[${idx}]`, {
+                        uri: photoUri,
+                        type: 'image/jpeg',
+                        name: fileName,
+                    } as any);
+                });
+
+                console.log('Photos apiPayload', apiPayload);
+                const response = await axiosInstance.post(END_POINTS.PUNCTURE_PHOTOS, apiPayload, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                if (response?.data?.status === true || response?.data?.success === true) {
+                    showToast(response?.data?.message || t('photosSavedSuccess') || 'Photos saved successfully!');
+                    if (currentStep < STEPS.length - 1) {
+                        contentOpacity.value = withTiming(0, { duration: 200 });
+                        setTimeout(() => setCurrentStep(prev => prev + 1), 200);
+                    } else {
+                        submitProfile();
+                    }
+                } else {
+                    showToast(response?.data?.message || t('failedToSavePhotos') || 'Failed to save photos');
+                }
+
+            } catch (error: any) {
+                console.error('Photos API Error:', error);
+                showToast(error?.response?.data?.message || error?.message || t('something_went_wrong'));
+            } finally {
+                setFinishing(false);
+            }
+            return;
         }
 
         if (currentStep < STEPS.length - 1) {
@@ -279,38 +633,138 @@ export default function ProfileCompletionPuncture() {
 
         const pickerAction = isCamera
             ? ImagePicker.openCamera(commonOptions)
-            : ImagePicker.openPicker({ ...commonOptions, multiple: true, maxFiles: 50 });
+            : ImagePicker.openPicker({ ...commonOptions, multiple: true, maxFiles: 7 });
 
         pickerAction.then((response: any) => {
             const images = Array.isArray(response) ? response : [response];
-            const currentPhotos = userEdit?.shop_photos || {};
-            const categoryPhotos = currentPhotos[categoryId] || [];
 
-            const newPhotoPaths = images.map((img: any) => img.path);
-            const updatedCategoryPhotos = [...categoryPhotos, ...newPhotoPaths];
+            setFormData(prev => {
+                const currentPhotos = prev.shop_photos?.[categoryId] || [];
+                const newPhotoPaths = images.map((img: any) => img.path);
 
-            updateUser('shop_photos', {
-                ...currentPhotos,
-                [categoryId]: updatedCategoryPhotos
+                // Limit check if needed (e.g. max 7 photos total or per category)
+                if (currentPhotos.length + newPhotoPaths.length > 7) {
+                    showToast(t('youCanAddOnly7Photos') || "You can add only 7 photos");
+                    return prev;
+                }
+
+                const updatedCategoryPhotos = [...currentPhotos, ...newPhotoPaths];
+                return {
+                    ...prev,
+                    shop_photos: {
+                        ...prev.shop_photos,
+                        [categoryId]: updatedCategoryPhotos
+                    }
+                };
             });
 
             setPhotoModal({ visible: false, categoryId: null });
         }).catch((err: any) => {
             if (err?.code !== 'E_PICKER_CANCELLED') {
                 console.warn('ImagePicker Error:', err);
-                showToast("Error picking image");
+                showToast(t('errorPickingImage') || "Error picking image");
             }
             setPhotoModal({ visible: false, categoryId: null });
         });
     };
 
     const removePhoto = (categoryId: string, index: number) => {
-        const currentPhotos = { ...userEdit?.shop_photos };
-        if (currentPhotos[categoryId]) {
-            const updated = [...currentPhotos[categoryId]];
-            updated.splice(index, 1);
-            currentPhotos[categoryId] = updated;
-            updateUser('shop_photos', currentPhotos);
+        setFormData(prev => {
+            const currentList = prev.shop_photos?.[categoryId] || [];
+            const updated = currentList.filter((_: any, idx: number) => idx !== index);
+            return {
+                ...prev,
+                shop_photos: {
+                    ...prev.shop_photos,
+                    [categoryId]: updated
+                }
+            };
+        });
+    };
+
+    // --- Helper Functions ---
+
+    const handlePincodeChange = (text: string) => {
+        const cleaned = text.replace(/[^0-9]/g, '');
+        updateFormData('pincode', cleaned);
+
+        if (cleaned.length === 6) {
+            fetchPincodeDetails(cleaned);
+        }
+    };
+
+    const fetchPincodeDetails = async (pincodeValue: string) => {
+        setIsPincodeLoading(true);
+        try {
+            const response = await axiosInstance.get(`https://api.postalpincode.in/pincode/${pincodeValue}`);
+            if (response?.data && response.data[0]?.Status === 'Success') {
+                const details = response.data[0].PostOffice[0];
+                const district = details.District;
+                const state = details.State;
+
+                setFormData(prev => ({
+                    ...prev,
+                    district: district,
+                    state: state
+                }));
+            }
+        } catch (error) {
+            console.error('Pincode Lookup Error:', error);
+        } finally {
+            setIsPincodeLoading(false);
+        }
+    };
+
+    const requestLocationPermission = async (): Promise<boolean> => {
+        if (Platform.OS === 'ios') {
+            const auth = await Geolocation.requestAuthorization('whenInUse');
+            return auth === 'granted';
+        } else {
+            const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                {
+                    title: t('locationPermission') || 'Location Permission',
+                    message: t('locationPermissionMessage') || 'We need access to your location.',
+                    buttonPositive: t('ok') || 'OK',
+                    buttonNegative: t('cancel') || 'Cancel',
+                }
+            );
+            return granted === PermissionsAndroid.RESULTS.GRANTED;
+        }
+    };
+
+    const getCurrentLocation = async () => {
+        setFetchingLocation(true);
+        console.log('Fetching location...');
+        try {
+            const locationData = await fetchCompleteLocationDetails();
+            console.log('Location Data:', locationData);
+
+            if (locationData && locationData.coords) {
+                const { latitude, longitude } = locationData.coords;
+
+                // If we have display name, use it if address empty? Dhaba does not auto-fill main address usually
+                // but let's stick to Dhaba logic which commented it out mostly.
+
+                updateFormData('latitude', latitude.toString());
+                updateFormData('longitude', longitude.toString());
+                updateFormData('latitude', latitude.toString());
+                updateFormData('longitude', longitude.toString());
+                updateFormData('location_source', 'Auto GPS');
+
+                if (locationData.displayName) {
+                    setGpsAddress(locationData.displayName);
+                }
+
+                showToast(t('locationFetchedSuccess') || 'Location fetched successfully!');
+            } else {
+                showToast(t('failedToGetLocation') || 'Failed to get location. Please try again.');
+            }
+        } catch (error) {
+            console.error('GPS Error:', error);
+            showToast(t('failedToGetLocation') || 'Failed to get location. Please try again.');
+        } finally {
+            setFetchingLocation(false);
         }
     };
 
@@ -322,16 +776,16 @@ export default function ProfileCompletionPuncture() {
                 label={t('puncture_shop_name_label')}
                 icon="storefront-outline"
                 placeholder={t('puncture_shop_name_placeholder')}
-                value={userEdit?.shop_name}
-                onChangeText={(text: string) => updateUser('shop_name', text)}
+                value={formData.puncture_name}
+                onChangeText={(text: string) => updateFormData('puncture_name', text)}
             />
 
             <InputItem
                 label={t('puncture_owner_name_label')}
                 icon="person-outline"
                 placeholder={t('puncture_owner_name_placeholder')}
-                value={userEdit?.owner_name}
-                onChangeText={(text: string) => updateUser('owner_name', text)}
+                value={formData.owner_name}
+                onChangeText={(text: string) => updateFormData('owner_name', text)}
             />
 
             <InputItem
@@ -340,8 +794,9 @@ export default function ProfileCompletionPuncture() {
                 placeholder={t('puncture_mobile_placeholder')}
                 keyboardType="phone-pad"
                 maxLength={10}
-                value={userEdit?.mobile}
-                onChangeText={(text: string) => updateUser('mobile', text.replace(/[^0-9]/g, ''))}
+                value={formData.mobile}
+                editable={false}
+            // onChangeText={(text: string) => updateFormData('mobile', text.replace(/[^0-9]/g, ''))}
             />
 
             <InputItem
@@ -350,53 +805,25 @@ export default function ProfileCompletionPuncture() {
                 placeholder={t('puncture_email_placeholder')}
                 keyboardType="email-address"
                 optional
-                value={userEdit?.email}
-                onChangeText={(text: string) => updateUser('email', text)}
+                value={formData.email}
+                onChangeText={(text: string) => updateFormData('email', text)}
             />
 
-            <InputItem
-                label={t('puncture_year_est_label')}
-                icon="calendar-outline"
-                placeholder="DD MMM YYYY"
-                optional
-                value={userEdit?.estimation_year ? moment(userEdit.estimation_year).format('DD MMM YYYY') : ''}
-                editable={false}
-                onPress={() => {
-                    setTempDate(userEdit?.estimation_year ? moment(userEdit.estimation_year).toDate() : new Date());
-                    setYearPickerVisible(true);
-                }}
-            />
+            <Space height={16} />
+            <Text style={styles.classicLabel}>{t('puncture_year_est_label')} <Text style={styles.optionalText}>{t('puncture_optional')}</Text></Text>
+            <TouchableOpacity
+                style={styles.datetimeBox}
+                onPress={() => setEstablishmentYearPickerOpen(true)}
+            >
+                <Text style={styles.datetimeText}>
+                    {formData.establishment_year
+                        ? moment(formData.establishment_year).format('YYYY')
+                        : t('puncture_select_date')}
+                </Text>
+                <Ionicons name="calendar-outline" size={20} color={colors.royalBlue} />
+            </TouchableOpacity>
 
-            {/* custom calendar modal */}
-            <Modal visible={yearPickerVisible} transparent animationType="fade">
-                <View style={styles.yearPickerOverlay}>
-                    <View style={[styles.yearPickerContainer, { alignItems: 'center' }]}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, width: '100%' }}>
-                            <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>{t('puncture_select_date')}</Text>
-                            <TouchableOpacity onPress={() => setYearPickerVisible(false)}>
-                                <Ionicons name="close" size={24} color="#666" />
-                            </TouchableOpacity>
-                        </View>
-                        <DatePicker
-                            date={tempDate}
-                            onDateChange={setTempDate}
-                            mode="date"
-                            maximumDate={new Date()}
-                        />
-                        <TouchableOpacity
-                            onPress={() => {
-                                updateUser('estimation_year', moment(tempDate).format('YYYY-MM-DD'));
-                                setYearPickerVisible(false);
-                            }}
-                            style={{ backgroundColor: '#246BFD', borderRadius: 12, paddingVertical: 14, marginTop: 20, alignItems: 'center', width: '100%' }}
-                        >
-                            <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>{t('puncture_done')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-
-            <Space height={8} />
+            <Space height={24} />
             <MandatoryLabel text={t('puncture_shop_type_label')} style={{ marginLeft: 4 }} />
             <Text style={[styles.helperText, { marginLeft: 4, marginBottom: 10 }]}>{t('puncture_shop_type_helper')}</Text>
             <View style={styles.shopTypeGrid}>
@@ -408,15 +835,58 @@ export default function ProfileCompletionPuncture() {
                 ].map(item => (
                     <TouchableOpacity
                         key={item.key}
-                        style={[styles.shopTypeCard, userEdit?.shop_type === item.key && styles.shopTypeCardSelected]}
-                        onPress={() => updateUser('shop_type', item.key)}
+                        style={[styles.shopTypeCard, formData.puncture_type === item.key && styles.shopTypeCardSelected]}
+                        onPress={() => updateFormData('puncture_type', item.key)}
                     >
-                        <Text style={[styles.shopTypeText, userEdit?.shop_type === item.key && styles.shopTypeTextSelected]}>
+                        <Text style={[styles.shopTypeText, formData.puncture_type === item.key && styles.shopTypeTextSelected]}>
                             {t(item.label)}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
+
+            {/* Year Picker Modal */}
+            <Modal visible={establishmentYearPickerOpen} transparent animationType="fade" onRequestClose={() => setEstablishmentYearPickerOpen(false)}>
+                <View style={styles.yearPickerOverlay}>
+                    <View style={[styles.yearPickerContainer, { maxHeight: 400 }]}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                            <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>{t('puncture_select_year')}</Text>
+                            <TouchableOpacity onPress={() => setEstablishmentYearPickerOpen(false)}>
+                                <Ionicons name="close" size={24} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={years}
+                            keyExtractor={(item) => item.toString()}
+                            renderItem={({ item }) => {
+                                const isSelected = formData.establishment_year && moment(formData.establishment_year).year() === item;
+                                return (
+                                    <TouchableOpacity
+                                        style={{
+                                            paddingVertical: 15,
+                                            flexDirection: 'row',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            borderBottomWidth: 1,
+                                            borderBottomColor: '#eee',
+                                            width: '100%',
+                                            backgroundColor: isSelected ? '#F0F7FF' : 'transparent'
+                                        }}
+                                        onPress={() => {
+                                            const date = new Date(item, 0, 1);
+                                            updateFormData('establishment_year', date);
+                                            setEstablishmentYearPickerOpen(false);
+                                        }}
+                                    >
+                                        <Text style={{ fontSize: 18, color: isSelected ? colors.royalBlue : '#333', fontWeight: isSelected ? '700' : '400' }}>{item}</Text>
+                                        {isSelected && <Ionicons name="checkmark" size={20} color={colors.royalBlue} style={{ position: 'absolute', right: 20 }} />}
+                                    </TouchableOpacity>
+                                );
+                            }}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 
@@ -429,8 +899,8 @@ export default function ProfileCompletionPuncture() {
                 placeholderTextColor="#999"
                 multiline
                 numberOfLines={4}
-                value={userEdit?.address}
-                onChangeText={(text) => updateUser('address', text)}
+                value={formData.address}
+                onChangeText={(text) => updateFormData('address', text)}
             />
 
             <Space height={16} />
@@ -439,32 +909,41 @@ export default function ProfileCompletionPuncture() {
                 style={styles.classicInput}
                 placeholder={t('puncture_near_placeholder')}
                 placeholderTextColor="#999"
-                value={userEdit?.landmark}
-                onChangeText={(text) => updateUser('landmark', text)}
+                value={formData.landmark}
+                onChangeText={(text) => updateFormData('landmark', text)}
             />
 
             <View style={styles.rowGap}>
                 <View style={{ flex: 1 }}>
                     <Space height={16} />
                     <MandatoryLabel text={t('puncture_pincode')} />
-                    <TextInput
-                        style={styles.classicInput}
-                        placeholder="000000"
-                        placeholderTextColor="#999"
-                        keyboardType="numeric"
-                        maxLength={6}
-                        value={userEdit?.pincode}
-                        onChangeText={(text) => updateUser('pincode', text.replace(/[^0-9]/g, ''))}
-                    />
+                    <View style={{ position: 'relative' }}>
+                        <TextInput
+                            style={styles.classicInput}
+                            placeholder="000000"
+                            placeholderTextColor="#999"
+                            keyboardType="numeric"
+                            maxLength={6}
+                            value={formData.pincode}
+                            onChangeText={handlePincodeChange}
+                        />
+                        {isPincodeLoading && (
+                            <ActivityIndicator
+                                size="small"
+                                color={colors.royalBlue}
+                                style={{ position: 'absolute', right: 10, top: 15 }}
+                            />
+                        )}
+                    </View>
                 </View>
                 <View style={{ flex: 1 }}>
                     <Space height={16} />
                     <MandatoryLabel text={t('puncture_district')} />
                     <TextInput
-                        style={[styles.classicInput, { backgroundColor: '#F3F4F6', color: '#666' }]}
+                        style={[styles.classicInput, { backgroundColor: '#F3F4F6', color: '#6B7280' }]}
                         placeholder={t('puncture_district')}
                         placeholderTextColor="#999"
-                        value={userEdit?.district}
+                        value={formData.district}
                         editable={false}
                     />
                 </View>
@@ -473,63 +952,73 @@ export default function ProfileCompletionPuncture() {
             <Space height={16} />
             <MandatoryLabel text={t('puncture_state')} />
             <TextInput
-                style={[styles.classicInput, { backgroundColor: '#F3F4F6', color: '#666' }]}
+                style={[styles.classicInput, { backgroundColor: '#F3F4F6', color: '#6B7280' }]}
                 placeholder={t('puncture_state')}
                 placeholderTextColor="#999"
-                value={userEdit?.state}
+                value={formData.state}
                 editable={false}
             />
 
             <Space height={24} />
             <Text style={styles.classicLabel}>{t('puncture_gps_location')} <Text style={styles.optionalText}>{t('puncture_optional')}</Text></Text>
-            <TouchableOpacity
-                style={[styles.gpsButton, { backgroundColor: colors.royalBlue }]}
-                activeOpacity={0.8}
-                onPress={() => {
-                    // Simulating GPS fetch
-                    updateUser('latitude', '28.7041');
-                    updateUser('longitude', '77.1025');
-                    updateUser('location_source', 'Auto GPS');
-                    showToast(t('puncture_location_pinned'));
-                }}
-            >
-                <Ionicons name="navigate-circle-outline" size={22} color="white" />
-                <Text style={styles.gpsButtonText}>Fetch Current Location</Text>
-            </TouchableOpacity>
 
-            {userEdit?.latitude && (
-                <View style={styles.gpsInfoBox}>
-                    <Ionicons name="checkmark-circle" size={16} color="green" />
-                    <Text style={styles.gpsText}>
-                        {t('puncture_location_label')}: {userEdit.latitude}, {userEdit.longitude} ({userEdit.location_source || 'Unknown'})
-                    </Text>
+            <View style={styles.gpsButtonsRow}>
+                <TouchableOpacity
+                    style={[styles.gpsButton, { backgroundColor: colors.royalBlue, flex: 1, marginRight: 0 }]}
+                    activeOpacity={0.8}
+                    onPress={() => setLocationWarningModalVisible(true)}
+                    disabled={fetchingLocation}
+                >
+                    {fetchingLocation ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <>
+                            <Ionicons name="navigate-circle-outline" size={22} color="white" />
+                            <Text style={styles.gpsButtonText}>{t('fetchLocation') || 'Fetch Location'}</Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+            </View>
+
+            {(formData.latitude && formData.longitude) ? (
+                <View style={[styles.gpsInfoBox, { flexDirection: 'column', alignItems: 'flex-start' }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="checkmark-circle" size={16} color="green" />
+                        <Text style={styles.gpsText}>
+                            {t('puncture_location_label')}: {parseFloat(formData.latitude).toFixed(4)}, {parseFloat(formData.longitude).toFixed(4)}
+                        </Text>
+                    </View>
+                    {gpsAddress ? (
+                        <Text style={[styles.gpsTextCoords, { marginLeft: 24, marginTop: 4 }]}>
+                            {gpsAddress}
+                        </Text>
+                    ) : null}
                 </View>
-            )}
+            ) : null}
         </View>
     );
 
     const renderOperationalDetails = () => (
-        <View style={styles.stepContainer}>
+        <Animated.View entering={FadeIn} layout={Layout.springify()} style={styles.stepContainer}>
+
             <View style={styles.switchRow}>
                 <View>
                     <Text style={styles.classicLabel}>{t('puncture_is_open_24x7')}</Text>
                     <Text style={styles.helperText}>{t('puncture_all_day_service')}</Text>
                 </View>
-                <TouchableOpacity
-                    onPress={() => updateUser('is_24x7', !userEdit?.is_24x7)}
-                >
+                <TouchableOpacity onPress={() => updateFormData('is_24x7', !formData.is_24x7)}>
                     <MaterialCommunityIcons
-                        name={userEdit?.is_24x7 ? "toggle-switch" : "toggle-switch-off-outline"}
+                        name={formData.is_24x7 ? "toggle-switch" : "toggle-switch-off-outline"}
                         size={48}
-                        color={userEdit?.is_24x7 ? '#246BFD' : '#ccc'}
+                        color={formData.is_24x7 ? '#246BFD' : '#ccc'}
                     />
                 </TouchableOpacity>
             </View>
 
-            {!userEdit?.is_24x7 && (
+            {!formData.is_24x7 && (
                 <Animated.View entering={FadeIn} layout={Layout.springify()}>
-                    <Space height={20} />
-                    <View style={styles.rowGap}>
+                    <Space height={16} />
+                    <View style={{ flexDirection: 'row', gap: 15 }}>
                         <View style={{ flex: 1 }}>
                             <MandatoryLabel text={t('puncture_opening_time')} />
                             <TouchableOpacity
@@ -537,7 +1026,7 @@ export default function ProfileCompletionPuncture() {
                                 onPress={() => setTimePickerOpen({ visible: true, type: 'opening' })}
                             >
                                 <Text style={styles.datetimeText}>
-                                    {userEdit?.opening_time ? moment(userEdit.opening_time).format('hh:mm A') : '00:00'}
+                                    {formData.opening_time ? moment(formData.opening_time).format('hh:mm A') : '00:00'}
                                 </Text>
                                 <Ionicons name="time-outline" size={20} color="#246BFD" />
                             </TouchableOpacity>
@@ -549,7 +1038,7 @@ export default function ProfileCompletionPuncture() {
                                 onPress={() => setTimePickerOpen({ visible: true, type: 'closing' })}
                             >
                                 <Text style={styles.datetimeText}>
-                                    {userEdit?.closing_time ? moment(userEdit.closing_time).format('hh:mm A') : '00:00'}
+                                    {formData.closing_time ? moment(formData.closing_time).format('hh:mm A') : '00:00'}
                                 </Text>
                                 <Ionicons name="time-outline" size={20} color="#246BFD" />
                             </TouchableOpacity>
@@ -565,17 +1054,17 @@ export default function ProfileCompletionPuncture() {
                     <Text style={styles.helperText}>{t('puncture_on_road_service_helper')}</Text>
                 </View>
                 <TouchableOpacity
-                    onPress={() => updateUser('on_road_service', !userEdit?.on_road_service)}
+                    onPress={() => updateFormData('on_road_service', !formData.on_road_service)}
                 >
                     <MaterialCommunityIcons
-                        name={userEdit?.on_road_service ? "toggle-switch" : "toggle-switch-off-outline"}
+                        name={formData.on_road_service ? "toggle-switch" : "toggle-switch-off-outline"}
                         size={48}
-                        color={userEdit?.on_road_service ? '#246BFD' : '#ccc'}
+                        color={formData.on_road_service ? '#246BFD' : '#ccc'}
                     />
                 </TouchableOpacity>
             </View>
 
-            {userEdit?.on_road_service && (
+            {formData.on_road_service && (
                 <Animated.View entering={FadeIn} layout={Layout.springify()}>
                     <Space height={16} />
                     <Text style={styles.classicLabel}>{t('puncture_mobile_radius')}</Text>
@@ -583,8 +1072,8 @@ export default function ProfileCompletionPuncture() {
                         style={[styles.classicInput, { justifyContent: 'center' }]}
                         onPress={() => setRadiusModal(true)}
                     >
-                        <Text style={{ color: userEdit?.mobile_radius ? '#333' : '#999', fontSize: 16 }}>
-                            {userEdit?.mobile_radius ? `${userEdit.mobile_radius} KM` : t('puncture_select_radius')}
+                        <Text style={{ color: formData.mobile_radius ? '#333' : '#999', fontSize: 16 }}>
+                            {formData.mobile_radius ? `${formData.mobile_radius} KM` : t('puncture_select_radius')}
                         </Text>
                         <Ionicons name="caret-down" size={16} color="#999" style={{ position: 'absolute', right: 15 }} />
                     </TouchableOpacity>
@@ -605,14 +1094,14 @@ export default function ProfileCompletionPuncture() {
                                         <TouchableOpacity
                                             style={{ paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', width: '100%' }}
                                             onPress={() => {
-                                                updateUser('mobile_radius', item);
+                                                updateFormData('mobile_radius', item);
                                                 setRadiusModal(false);
                                             }}
                                         >
-                                            <Text style={{ fontSize: 16, color: userEdit?.mobile_radius === item ? '#246BFD' : '#333', fontWeight: userEdit?.mobile_radius === item ? '600' : '400' }}>
+                                            <Text style={{ fontSize: 16, color: formData.mobile_radius === item ? '#246BFD' : '#333', fontWeight: formData.mobile_radius === item ? '600' : '400' }}>
                                                 {item} KM
                                             </Text>
-                                            {userEdit?.mobile_radius === item && (
+                                            {formData.mobile_radius === item && (
                                                 <Ionicons name="checkmark" size={20} color="#246BFD" style={{ position: 'absolute', right: 0, top: 15 }} />
                                             )}
                                         </TouchableOpacity>
@@ -629,8 +1118,8 @@ export default function ProfileCompletionPuncture() {
                 style={[styles.classicInput, { justifyContent: 'center' }]}
                 onPress={() => setServiceTimeModal(true)}
             >
-                <Text style={{ color: userEdit?.avg_service_time ? '#333' : '#999', fontSize: 16 }}>
-                    {userEdit?.avg_service_time || t('puncture_select_time')}
+                <Text style={{ color: formData.avg_service_time ? '#333' : '#999', fontSize: 16 }}>
+                    {formData.avg_service_time || t('puncture_select_time')}
                 </Text>
                 <Ionicons name="caret-down" size={16} color="#999" style={{ position: 'absolute', right: 15 }} />
             </TouchableOpacity>
@@ -651,14 +1140,14 @@ export default function ProfileCompletionPuncture() {
                                 <TouchableOpacity
                                     style={{ paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', width: '100%' }}
                                     onPress={() => {
-                                        updateUser('avg_service_time', item);
+                                        updateFormData('avg_service_time', item);
                                         setServiceTimeModal(false);
                                     }}
                                 >
-                                    <Text style={{ fontSize: 16, color: userEdit?.avg_service_time === item ? '#246BFD' : '#333', fontWeight: userEdit?.avg_service_time === item ? '600' : '400' }}>
+                                    <Text style={{ fontSize: 16, color: formData.avg_service_time === item ? '#246BFD' : '#333', fontWeight: formData.avg_service_time === item ? '600' : '400' }}>
                                         {item}
                                     </Text>
-                                    {userEdit?.avg_service_time === item && (
+                                    {formData.avg_service_time === item && (
                                         <Ionicons name="checkmark" size={20} color="#246BFD" style={{ position: 'absolute', right: 0, top: 15 }} />
                                     )}
                                 </TouchableOpacity>
@@ -667,7 +1156,7 @@ export default function ProfileCompletionPuncture() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </Animated.View>
     );
 
     const renderServices = () => {
@@ -741,7 +1230,7 @@ export default function ProfileCompletionPuncture() {
 
     const renderPhotos = () => {
         const categoryId = 'all_photos';
-        const photos = userEdit?.shop_photos?.[categoryId] || [];
+        const photos = formData.shop_photos?.[categoryId] || [];
 
         return (
             <View style={styles.stepContainer}>
@@ -800,10 +1289,7 @@ export default function ProfileCompletionPuncture() {
                                     />
                                     <TouchableOpacity
                                         style={styles.removePhotoBtn}
-                                        onPress={() => {
-                                            const updatedList = photos.filter((_: string, i: number) => i !== idx);
-                                            updateUser('shop_photos', { ...userEdit.shop_photos, [categoryId]: updatedList });
-                                        }}
+                                        onPress={() => removePhoto(categoryId, idx)}
                                     >
                                         <Ionicons name="close" size={12} color="white" />
                                     </TouchableOpacity>
@@ -872,12 +1358,12 @@ export default function ProfileCompletionPuncture() {
             <Space height={safeAreaInsets.top} />
 
             <View style={styles.header}>
-                {currentStep === 0 && (
+                {currentStep > 0 && (
                     <TouchableOpacity onPress={handleBack} style={styles.backButton}>
                         <Ionicons name="arrow-back" size={24} color="#333" />
                     </TouchableOpacity>
                 )}
-                <View style={[styles.progressContainer, currentStep !== 0 && { marginLeft: 0 }]}>
+                <View style={[styles.progressContainer, currentStep === 0 && { marginLeft: 0 }]}>
                     <Animated.View style={[styles.progressBar, animatedProgressStyle]} />
                 </View>
                 <Text style={styles.stepCount}>{currentStep + 1} / {STEPS.length}</Text>
@@ -939,15 +1425,15 @@ export default function ProfileCompletionPuncture() {
                         </Text>
                         <DatePicker
                             date={
-                                (timePickerOpen.type === 'opening' && userEdit?.opening_time) ? new Date(userEdit.opening_time) :
-                                    (timePickerOpen.type === 'closing' && userEdit?.closing_time) ? new Date(userEdit.closing_time) :
+                                (timePickerOpen.type === 'opening' && formData.opening_time) ? new Date(formData.opening_time) :
+                                    (timePickerOpen.type === 'closing' && formData.closing_time) ? new Date(formData.closing_time) :
                                         new Date()
                             }
                             mode="time"
                             onDateChange={(date) => {
                                 const val = date.toISOString();
-                                if (timePickerOpen.type === 'opening') updateUser('opening_time', val);
-                                else updateUser('closing_time', val);
+                                if (timePickerOpen.type === 'opening') updateFormData('opening_time', val);
+                                else updateFormData('closing_time', val);
                             }}
                         />
                         <TouchableOpacity
@@ -956,6 +1442,45 @@ export default function ProfileCompletionPuncture() {
                         >
                             <Text style={styles.modalBtnText}>{t('puncture_confirm_time')}</Text>
                         </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Location Warning Modal */}
+            <Modal
+                transparent
+                visible={locationWarningModalVisible}
+                animationType="fade"
+                onRequestClose={() => setLocationWarningModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                    <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center' }}>
+                        <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                            <Ionicons name="warning" size={32} color="#D97706" />
+                        </View>
+                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 12, textAlign: 'center' }}>
+                            {t('importantNotice') || 'Important Notice'}
+                        </Text>
+                        <Text style={{ fontSize: 15, color: '#4B5563', textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+                            {t('punctureLocationWarningMessage') || 'Before doing share location please stay near or at your puncture shop to get perfect location.'}
+                        </Text>
+                        <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
+                            <TouchableOpacity
+                                style={{ flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: '#F3F4F6', alignItems: 'center' }}
+                                onPress={() => setLocationWarningModalVisible(false)}
+                            >
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#4B5563' }}>{t('puncture_cancel')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: colors.royalBlue, alignItems: 'center' }}
+                                onPress={() => {
+                                    setLocationWarningModalVisible(false);
+                                    getCurrentLocation();
+                                }}
+                            >
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: 'white' }}>{t('shareLocation') || 'Share Location'}</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -1038,7 +1563,8 @@ const styles = StyleSheet.create({
     iconCircle: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
     gpsInfoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', padding: 10, borderRadius: 8, marginTop: 12 },
     gpsText: { fontSize: 13, color: '#2E7D32', marginLeft: 8, fontWeight: '500' },
-
+    gpsTextCoords: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+    gpsButtonsRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
     switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#eee' },
     datetimeBox: { backgroundColor: 'white', borderRadius: 12, paddingHorizontal: 16, height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#E0E0E0' },
     datetimeText: { fontSize: 16, color: '#333', fontWeight: '500' },

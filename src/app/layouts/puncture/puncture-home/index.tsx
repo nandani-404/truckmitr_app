@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     View,
     Text,
@@ -9,6 +10,7 @@ import {
     StatusBar,
     RefreshControl,
     Dimensions,
+    ToastAndroid,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -18,17 +20,14 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
-import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
+import { END_POINTS } from '@truckmitr/src/utils/config';
 import { useCallback, useState } from 'react';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
-import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
-import Toast from 'react-native-simple-toast';
-
-// ... other imports ...
+import { BASE_URL } from '@truckmitr/src/utils/config';
 
 const PROFILE_PLACEHOLDER = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
 
@@ -82,8 +81,8 @@ const QuickActionCard = ({ icon, title, subtitle, bgColor = '#FFFFFF', borderCol
     );
 };
 
-// Driver Item Component
-interface DriverItemProps {
+// Recent Commission Item Component
+interface CommissionItemProps {
     name: string;
     mobile: string;
     amount: string;
@@ -91,7 +90,7 @@ interface DriverItemProps {
     date: string;
 }
 
-const DriverItem = ({ name, mobile, amount, status, date }: DriverItemProps) => (
+const CommissionItem = ({ name, mobile, amount, status, date }: CommissionItemProps) => (
     <View style={{
         backgroundColor: '#FFFFFF',
         padding: 12,
@@ -101,7 +100,8 @@ const DriverItem = ({ name, mobile, amount, status, date }: DriverItemProps) => 
         alignItems: 'center',
         justifyContent: 'space-between',
         borderWidth: 1,
-        borderColor: '#F3F4F6'
+        borderColor: '#F3F4F6',
+        ...useShadow().shadow
     }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <View style={{
@@ -134,35 +134,58 @@ const DriverItem = ({ name, mobile, amount, status, date }: DriverItemProps) => 
     </View>
 );
 
+// Bottom Tab Item Component
+interface BottomTabItemProps {
+    icon: string;
+    iconType?: 'ionicons' | 'material' | 'feather';
+    label: string;
+    isActive: boolean;
+    onPress?: () => void;
+}
 
-export default function DhabhaHome() {
-    const { t } = useTranslation();
+const BottomTabItem = ({ icon, iconType = 'ionicons', label, isActive, onPress }: BottomTabItemProps) => {
+    const getIcon = () => {
+        const color = isActive ? '#1E3A5F' : '#64748B';
+        const size = 22;
+
+        switch (iconType) {
+            case 'material':
+                return <MaterialCommunityIcons name={icon} size={size} color={color} />;
+            case 'feather':
+                return <Feather name={icon} size={size} color={color} />;
+            default:
+                return <Ionicons name={icon} size={size} color={color} />;
+        }
+    };
+
+    return (
+        <TouchableOpacity style={styles.tabItem} onPress={onPress} activeOpacity={0.7}>
+            {getIcon()}
+            <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{label}</Text>
+        </TouchableOpacity>
+    );
+};
+
+export default function PunctureHome() {
     const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
+    const { t } = useTranslation();
 
 
-    const [activeTab, setActiveTab] = useState('home');
-
-    const colors = useColor();
-    const { shadow } = useShadow();
-    const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
-    const { user, profileCompletion: userProfileCompletion } = useSelector((state: any) => state?.user) || {};
-
+    const [activeTab, setActiveTab] = React.useState('home');
     const [homeData, setHomeData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchHomeData = async () => {
         try {
-            // Only set global loading if not refreshing (to avoid dual loaders)
             if (!refreshing) setLoading(true);
-
-            const response = await axiosInstance.get(END_POINTS.DHABA_HOME);
+            const response = await axiosInstance.get(END_POINTS.PUNCTURE_HOME);
             if (response.data.success) {
                 setHomeData(response.data.data);
             }
         } catch (error) {
-            console.error('Error fetching dhaba home data:', error);
+            console.error('Error fetching puncture home data:', error);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -180,10 +203,14 @@ export default function DhabhaHome() {
         }, [])
     );
 
+    const colors = useColor();
+    const { shadow } = useShadow();
+    const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
+
+    const { user, profileCompletion: userProfileCompletion } = useSelector((state: any) => state?.user) || {};
+
     // Banner Data
-    const profileCompletion = userProfileCompletion || 75;
-    const dhabaName = user?.dhabha_name || user?.name || 'Dhaba Partner';
-    const uniqueId = user?.unique_id || 'TM000000000';
+    const profileCompletion = userProfileCompletion || 85;
     const star_rating = 5;
     const size = responsiveFontSize(8);
     const strokeWidth = 4;
@@ -191,14 +218,24 @@ export default function DhabhaHome() {
     const circumference = 2 * Math.PI * radius;
     const progressOffset = circumference - (profileCompletion / 100) * circumference;
 
-    // Financial Data
+    // Real data from Redux and API
+    const shopName = user?.puncture_name || user?.owner_name || user?.name || 'Shop Partner';
+    const uniqueId = user?.unique_id || 'TM000000000';
+
+    // Financial Data from API
     const totalEarned = homeData ? parseFloat(homeData.total_commission || '0') : 0;
-    const totalRedeemed = homeData ? parseFloat(homeData.paid_commission || '0') : 0; // paid_commission = total redeemed
-    const walletBalance = totalEarned - totalRedeemed; // available balance
+    const totalRedeemed = homeData ? parseFloat(homeData.paid_commission || '0') : 0;
+    const walletBalance = totalEarned - totalRedeemed;
+
+    // Nearby drivers data
+    const nearbyDrivers = [
+        { name: 'Rajesh', distance: '2.3 km', activeTime: '5 min ago', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
+        { name: 'Amit', distance: '3.1 km', activeTime: '10 min ago', avatar: 'https://randomuser.me/api/portraits/men/45.jpg' },
+    ];
 
     // Field agent data
     const fieldAgent = {
-        name: t('yourFieldAgent'),
+        name: 'Your Field Agent',
         zone: 'Panipat Zone',
         avatar: 'https://randomuser.me/api/portraits/men/55.jpg',
     };
@@ -215,8 +252,8 @@ export default function DhabhaHome() {
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        colors={[colors.royalBlue]} // Android
-                        tintColor={colors.royalBlue} // iOS
+                        colors={[colors.royalBlue]}
+                        tintColor={colors.royalBlue}
                     />
                 }
             >
@@ -235,15 +272,16 @@ export default function DhabhaHome() {
                     <View style={{ paddingTop: safeAreaInsets.top + 10, paddingHorizontal: responsiveWidth(3) }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <View>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`${t('hello')}, ${dhabaName} 👋`}</Text>
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`${t('puncture_home_hello')} ${shopName} 👋`}</Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{uniqueId}</Text>
-                                <View style={{ backgroundColor: colors.royalBlueOpacity(0.08), alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 4 }}>
-                                    <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: '600' }}>{t('dhabaPartner') || 'Dhaba Partner'}</Text>
-                                </View>
+                                {/* <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>{t('puncture_home_premium_shop')}</Text> */}
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>{t('puncture_home_verified_partner')}</Text>
                             </View>
 
-                            <TouchableOpacity style={{ alignItems: 'center' }} activeOpacity={0.8}
-                            //  onPress={() => navigation.navigate(STACKS.DHABHA_MY_PROFILE as any)}
+                            <TouchableOpacity
+                                style={{ alignItems: 'center' }}
+                                activeOpacity={0.8}
+                                onPress={() => navigation.navigate(STACKS.PUNCTURE_PROFILE as any)}
                             >
                                 <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
                                     <Svg width={size} height={size} style={{ position: "absolute", top: 0, left: 0 }}>
@@ -277,13 +315,12 @@ export default function DhabhaHome() {
                         </View>
                     </View>
 
-                    {/* Search Bar */}
                     <TouchableOpacity
                         activeOpacity={1}
                         style={{ position: 'absolute', bottom: -responsiveHeight(1.5), width: responsiveWidth(92), flexDirection: 'row', height: responsiveHeight(6), alignSelf: 'center', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'space-between', borderColor: '#000', borderWidth: 1.5, borderRadius: 100, paddingHorizontal: responsiveWidth(3), ...shadow, zIndex: 100, elevation: 10 }}
-                        onPress={() => navigation.navigate(STACKS.DHABHA_DRIVER_SEARCH as any)}
+                        onPress={() => navigation.navigate(STACKS.PUNCTURE_DRIVER_SEARCH as any)}
                     >
-                        <Text style={{ fontSize: responsiveFontSize(1.6), color: 'rgba(0,0,0,0.9)', fontWeight: '500' }}>{t('searchDrivers')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(1.6), color: 'rgba(0,0,0,0.9)', fontWeight: '500' }}>{t('puncture_home_search_drivers')}</Text>
                         <Feather name={'search'} size={18} color={colors.royalBlue} />
                     </TouchableOpacity>
                 </View>
@@ -294,7 +331,7 @@ export default function DhabhaHome() {
                     {/* Wallet Balance Card - Orange Theme (Pixel Perfect) */}
                     <TouchableOpacity
                         activeOpacity={0.9}
-                        onPress={() => navigation.navigate(STACKS.DHABHA_EARNINGS as any)}
+                        // onPress={() => navigation.navigate(STACKS.PUNCTURE_WALLET as any)}
                         style={{
                             marginBottom: 12,
                             marginTop: responsiveHeight(1),
@@ -313,20 +350,21 @@ export default function DhabhaHome() {
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={{
-                                paddingTop: responsiveHeight(1),
+                                paddingTop: 3,
                                 paddingHorizontal: 16,
-                                paddingBottom: responsiveHeight(1.5),
+                                paddingBottom: 2,
                             }}
                         >
+                            {/* Title - Left Aligned */}
                             {/* Title - Left Aligned with Divider */}
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 0 }}>
                                 <Text style={{
                                     fontSize: responsiveFontSize(1.6),
                                     fontWeight: '600',
                                     color: 'rgba(255,255,255,0.9)',
                                     marginRight: 12
                                 }}>
-                                    {t('walletBalance')}
+                                    {t('puncture_home_wallet_balance')}
                                 </Text>
                                 <View style={{
                                     height: 1,
@@ -336,16 +374,16 @@ export default function DhabhaHome() {
                             </View>
 
                             {/* Balance Display - Center Aligned */}
-                            <View style={{ alignItems: 'center' }}>
+                            <View style={{ alignItems: 'center', marginBottom: 4, marginTop: -20 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                                     <Text style={{
-                                        fontSize: responsiveFontSize(4.5),
-                                        fontWeight: '900',
+                                        fontSize: responsiveFontSize(5.2),
+                                        fontWeight: '900', // Ultrabold
                                         color: '#FFFFFF',
                                         marginRight: 4
                                     }}>₹</Text>
                                     <Text style={{
-                                        fontSize: responsiveFontSize(4.5),
+                                        fontSize: responsiveFontSize(5.2), // Slightly adjusted
                                         fontWeight: '900',
                                         color: '#FFFFFF',
                                         letterSpacing: -1.5
@@ -356,9 +394,9 @@ export default function DhabhaHome() {
                                     fontSize: responsiveFontSize(1.3),
                                     color: '#FFFFFF',
                                     fontWeight: '700',
-                                    marginTop: responsiveHeight(0.3)
+                                    marginTop: -5 // Adjusted to prevent overlap
                                 }}>
-                                    {t('availableBalance')}
+                                    {t('puncture_home_available_balance')}
                                 </Text>
                             </View>
                         </LinearGradient>
@@ -374,7 +412,7 @@ export default function DhabhaHome() {
                         }}>
                             {/* Total Earned */}
                             <Text style={{ fontSize: responsiveFontSize(1.3), color: '#9A3412', fontWeight: '500' }}>
-                                {t('totalEarnedLabel')}: <Text style={{ fontWeight: '700' }}>₹{totalEarned}</Text>
+                                {t('puncture_home_total_earned')} <Text style={{ fontWeight: '700' }}>₹{totalEarned}</Text>
                             </Text>
 
                             {/* Divider */}
@@ -388,7 +426,7 @@ export default function DhabhaHome() {
 
                             {/* Total Redeemed */}
                             <Text style={{ fontSize: responsiveFontSize(1.3), color: '#9A3412', fontWeight: '500' }}>
-                                {t('totalRedeemedLabel')}: <Text style={{ fontWeight: '700' }}>₹{totalRedeemed}</Text>
+                                {t('puncture_home_total_redeemed')} <Text style={{ fontWeight: '700' }}>₹{totalRedeemed}</Text>
                             </Text>
                         </View>
 
@@ -401,7 +439,6 @@ export default function DhabhaHome() {
                         }}>
                             <TouchableOpacity
                                 activeOpacity={0.8}
-                                onPress={() => navigation.navigate(STACKS.DHABHA_EARNINGS as any)}
                                 style={{
                                     backgroundColor: '#F97316',
                                     borderRadius: 25,
@@ -424,7 +461,7 @@ export default function DhabhaHome() {
                                     fontSize: responsiveFontSize(1.6),
                                     marginRight: 6
                                 }}>
-                                    {t('redeemMoney')}
+                                    {t('puncture_home_redeem_money')}
                                 </Text>
                                 <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
                             </TouchableOpacity>
@@ -435,7 +472,7 @@ export default function DhabhaHome() {
                     <TouchableOpacity
                         activeOpacity={0.9}
                         style={{ marginBottom: 16 }}
-                        onPress={() => navigation.navigate(STACKS.DHABHA_ADD_DRIVER as any)}
+                        onPress={() => navigation.navigate(STACKS.PUNCTURE_ADD_DRIVER as any)}
                     >
                         <LinearGradient
                             colors={['#16A34A', '#15803D']}
@@ -461,14 +498,14 @@ export default function DhabhaHome() {
                                     fontWeight: '800',
                                     color: '#FFFFFF'
                                 }}>
-                                    {t('addDriverAndEarn')}{' '}
+                                    {t('puncture_home_add_driver_earn')}
                                 </Text>
                                 <Text style={{
                                     fontSize: responsiveFontSize(2.2),
                                     fontWeight: '800',
                                     color: '#FDE047'
                                 }}>
-                                    ₹10
+                                    {t('puncture_home_add_driver_earn_amount')}
                                 </Text>
                             </View>
 
@@ -479,7 +516,7 @@ export default function DhabhaHome() {
                                 fontWeight: '500',
                                 textAlign: 'center'
                             }}>
-                                {t('addDriversUsingReferral')}
+                                {t('puncture_home_add_driver_subtitle')}
                             </Text>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -494,7 +531,7 @@ export default function DhabhaHome() {
                         >
                             <Ionicons name="apps-outline" size={20} color="#EA580C" />
                         </LinearGradient>
-                        <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '700', color: '#1F2937', letterSpacing: 0.5 }}>{t('quickActions')}</Text>
+                        <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '700', color: '#1F2937', letterSpacing: 0.5 }}>{t('puncture_home_quick_actions')}</Text>
                     </View>
 
                     {/* Quick Actions Grid */}
@@ -509,12 +546,12 @@ export default function DhabhaHome() {
                                         resizeMode="contain"
                                     />
                                 }
-                                title={t('myReferrals')}
-                                subtitle={t('viewAddedDrivers')}
+                                title={t('puncture_home_my_referrals')}
+                                subtitle={t('puncture_home_my_referrals_subtitle')}
                                 bgColor="#FFF7ED"
                                 borderColor="#E5E7EB"
                                 iconBgColor="#FED7AA" // Darker than card bg (#FFF7ED)
-                                onPress={() => navigation.navigate(STACKS.DHABHA_MY_REFERRALS as any)}
+                                onPress={() => navigation.navigate(STACKS.PUNCTURE_MY_REFERRALS as any)}
                             />
                             <QuickActionCard
                                 icon={
@@ -524,12 +561,12 @@ export default function DhabhaHome() {
                                         resizeMode="contain"
                                     />
                                 }
-                                title={t('wallet')}
-                                subtitle={t('transactionsAndPayouts')}
+                                title={t('puncture_home_wallet')}
+                                subtitle={t('puncture_home_wallet_subtitle')}
                                 bgColor="#F0F9FF"
                                 borderColor="#E5E7EB"
                                 iconBgColor="#BAE6FD" // Darker than card bg (#F0F9FF)
-                                onPress={() => navigation.navigate(STACKS.DHABHA_EARNINGS as any)}
+                                onPress={() => navigation.navigate(STACKS.PUNCTURE_WALLET as any)}
                             />
                         </View>
 
@@ -543,20 +580,12 @@ export default function DhabhaHome() {
                                         resizeMode="contain"
                                     />
                                 }
-                                title={t('nearbyDriversRadius')}
-                                subtitle={t('truckmitrDriversNearYou')}
+                                title={t('puncture_home_nearby')}
+                                subtitle={t('puncture_home_nearby_subtitle')}
                                 bgColor="#FEF2F2"
                                 borderColor="#E5E7EB"
                                 iconBgColor="#FECACA" // Darker than card bg (#FEF2F2)
-                                onPress={() => {
-                                    // return useToast('Nearby Drivers')
-                                    return Toast.showWithGravity(
-                                        'coming soon',
-                                        Toast.SHORT,
-                                        Toast.BOTTOM
-                                    )
-                                    // navigation.navigate(STACKS.DHABHA_NEARBY as any)
-                                }}
+                                onPress={() => ToastAndroid.show('Coming Soon', ToastAndroid.SHORT)}
                             />
                             <QuickActionCard
                                 icon={
@@ -566,25 +595,24 @@ export default function DhabhaHome() {
                                         resizeMode="contain"
                                     />
                                 }
-                                title={t('myDhaba')}
-                                subtitle={t('photosAndFacilities')}
+                                title={t('puncture_home_my_shop')}
+                                subtitle={t('puncture_home_my_shop_subtitle')}
                                 bgColor="#F0FDF4"
                                 borderColor="#E5E7EB"
-                                iconBgColor="#BBF7D0"
-                                onPress={() => navigation.navigate(STACKS.DHABHA_MY_DHABHA as any)}
+                                iconBgColor="#BBF7D0" // Darker than card bg (#F0FDF4)
+                                onPress={() => navigation.navigate(STACKS.PUNCTURE_MY_SHOP as any)}
                             />
                         </View>
                     </View>
 
-
-                    {/* Referred Drivers List */}
+                    {/* Recent Commissions Section */}
                     {homeData?.drivers && homeData?.drivers?.length > 0 && (
                         <View style={styles.sectionContainer}>
                             <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>{t('recentCommissions') || 'Recent Commissions'}</Text>
+                                <Text style={styles.sectionTitle}>{t('puncture_home_recent_commissions') || 'Recent Commissions'}</Text>
                             </View>
                             {homeData.drivers.slice(0, 5).map((driver: any, index: number) => (
-                                <DriverItem
+                                <CommissionItem
                                     key={index}
                                     name={driver.driver_name}
                                     mobile={driver.driver_mobile}
@@ -604,7 +632,7 @@ export default function DhabhaHome() {
                                 style={styles.fieldAgentAvatar}
                             />
                             <View style={styles.fieldAgentInfo}>
-                                <Text style={styles.fieldAgentTitle}>{fieldAgent.name}</Text>
+                                <Text style={styles.fieldAgentTitle}>{t('puncture_home_your_field_agent')}</Text>
                                 <Text style={styles.fieldAgentZone}>{fieldAgent.zone}</Text>
                             </View>
                         </View>
@@ -613,13 +641,13 @@ export default function DhabhaHome() {
                                 <View style={styles.callIconBg}>
                                     <Ionicons name="call" size={18} color="#FFFFFF" />
                                 </View>
-                                <Text style={styles.actionButtonLabel}>{t('call')}</Text>
+                                <Text style={styles.actionButtonLabel}>{t('puncture_home_call')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.whatsappButton}>
                                 <View style={styles.whatsappIconBg}>
                                     <FontAwesome name="whatsapp" size={18} color="#FFFFFF" />
                                 </View>
-                                <Text style={styles.actionButtonLabel}>{t('whatsapp')}</Text>
+                                <Text style={styles.actionButtonLabel}>{t('puncture_home_whatsapp')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View> */}
@@ -631,18 +659,17 @@ export default function DhabhaHome() {
                                 <MaterialCommunityIcons name="bullhorn" size={24} color="#DC2626" />
                             </View>
                             <View style={styles.awazContent}>
-                                <Text style={styles.awazTitle}>{t('driverKiAwaz')}</Text>
-                                <Text style={styles.awazSubtitle}>{t('seeLatestUpdatesFrom')} <Text style={{ color: '#1E88E5' }}>TruckMitr</Text> {t('drivers')}</Text>
+                                <Text style={styles.awazTitle}>{t('puncture_home_driver_ki_awaz')}</Text>
+                                <Text style={styles.awazSubtitle}>{t('puncture_home_driver_ki_awaz_subtitle')}</Text>
                             </View>
                         </View>
-                        <TouchableOpacity style={styles.openButton} onPress={() => navigation.navigate(STACKS.DHABHA_DRIVER_KI_AWAZ as any)}>
-                            <Text style={styles.openButtonText}>{t('open')}</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate(STACKS.PUNCTURE_DRIVER_KI_AWAZ)} style={styles.openButton}>
+                            <Text style={styles.openButtonText}>{t('puncture_home_open')}</Text>
                         </TouchableOpacity>
                     </View>
+
                 </View>
             </ScrollView >
-
-
         </View >
     );
 }

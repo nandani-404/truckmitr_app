@@ -85,9 +85,11 @@ const userReducer = (state = initialState, action: any) => {
                             ? (payload?.associate_required_fields_status ?? payload?.association_required_fields_status ?? state.profileRequiredFieldsStatus ?? true)
                             : payload?.user?.role === 'dhaba'
                                 ? (payload?.dhaba_required_fields_status ?? state.profileRequiredFieldsStatus ?? true)
-                                : payload?.user?.role === 'transporter'
-                                    ? (payload?.transporter_required_fields_status ?? true)
-                                    : (payload?.profile_required_fields_status ?? true),
+                                : payload?.user?.role === 'puncture'
+                                    ? (payload?.puncture_required_fields_status ?? state.profileRequiredFieldsStatus ?? true)
+                                    : payload?.user?.role === 'transporter'
+                                        ? (payload?.transporter_required_fields_status ?? true)
+                                        : (payload?.profile_required_fields_status ?? true),
                 missingFields:
                     payload?.user?.role === 'foreman'
                         ? (payload?.foreman_missing_fields || [])
@@ -95,9 +97,11 @@ const userReducer = (state = initialState, action: any) => {
                             ? (payload?.associate_missing_fields || payload?.association_missing_fields || [])
                             : payload?.user?.role === 'dhaba'
                                 ? (payload?.dhaba_missing_fields || [])
-                                : payload?.user?.role === 'transporter'
-                                    ? (payload?.transporter_missing_fields || [])
-                                    : (payload?.missing_required_fields || []),
+                                : payload?.user?.role === 'puncture'
+                                    ? (payload?.puncture_missing_fields || [])
+                                    : payload?.user?.role === 'transporter'
+                                        ? (payload?.transporter_missing_fields || [])
+                                        : (payload?.missing_required_fields || []),
                 dashboard: payload?.dashboard_status,
                 rank: payload?.rank,
                 star_rating: payload?.star_rating,

@@ -1,16 +1,16 @@
 
-export const BASE_URL = `https://development.truckmitr.com/`
+// export const BASE_URL = `https://development.truckmitr.com/`
 // export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.29.156:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
-// export const BASE_URL = 'https://devtruckmitr.in/'
+export const BASE_URL = 'https://devtruckmitr.in/'
 export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
 export const AWAZ_URL = 'https://truckmitr.com/'
 export const STATICS = {
-    RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
-    RAYZORPAY_SECRET: 'Jo14oUIoX75fb0WJejakbRvQ', // live
-    // RAYZORPAY_KEY_ID: 'rzp_test_bbrUGMV7qq3mYP',  // testing
-    // RAYZORPAY_SECRET: 'fU9jFstLp7qdUkNC3KNhuMnS'  // testing
+    // RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
+    // RAYZORPAY_SECRET: 'Jo14oUIoX75fb0WJejakbRvQ', // live
+    RAYZORPAY_KEY_ID: 'rzp_test_bbrUGMV7qq3mYP',  // testing
+    RAYZORPAY_SECRET: 'fU9jFstLp7qdUkNC3KNhuMnS'  // testing
 }
 interface FilterState {
     stateId: string;
@@ -249,4 +249,30 @@ export const END_POINTS = {
     DHABA_BANK_DETAILS_FETCH: (id: any) => `api/dhaba/account-details/${id}`,
     DHABA_BANK_DETAILS_UPDATE: `api/dhaba/bank-details`,
     DHABA_WALLET_SUMMARY: `api/dhaba/commission/status-summary`,
+
+    // ++++++++++++++++++++++++
+    //puncture related api
+    // ++++++++++++++++++++++++
+    PUNCTURE_ADD_DRIVER: `api/puncture/add-driver`,
+    PUNCTURE_DRIVER_SEARCH: 'api/puncture/drivers/search',
+    PUNCTURE_HOME: 'api/puncture/commission-new',
+    PUNCTURE_WALLET_SUMMARY: `api/puncture/commission/status-summary`,
+    PUNCTURE_BASIC_INFO: `api/puncture/business-info`,
+    PUNCTURE_LOCATION: `api/puncture/location`,
+    GET_PUNCTURE_LOCATION: `api/puncture/locations`,
+    PUNCTURE_OPERATION: `api/puncture/operation`,
+    GET_PUNCTURE_OPERATION: `api/puncture/operations`,
+    SERVICE_OFFERED: `api/puncture/services`,
+    VEHICLE_COVERAGE: `api/puncture/vehicle-coverage`,
+    PUNCTURE_FOOD: `api/puncture/food`,
+    GET_PUNCTURE_FOOD: `api/puncture/foods`,
+    PUNCTURE_PHOTOS: `api/puncture/photos`,
+    PUNCTURE_PHOTO_UPLOAD: "api/puncture/photos",
+    PUNCTURE_UPDATE_PROFILE: `api/update-profile-puncture`,
+    PUNCTURE_BANK_DETAILS_FETCH: (id: any) => `api/puncture/account-details/${id}`,
+    PUNCTURE_BANK_DETAILS_UPDATE: `api/puncture/bank-details`,
+    GET_BASIC_INFO: `api/puncture/get-puncture-info`,
+    GET_SERVICE_OFFERED: `api/puncture/servicess`,
+    GET_VEHICLE_COVERAGE: `api/puncture/vehicle-coverages`,
+    GET_PUNCTURE_PHOTOS: `api/puncture/photos`,
 }

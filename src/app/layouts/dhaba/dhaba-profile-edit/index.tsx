@@ -121,7 +121,7 @@ const DhabaProfileEdit = () => {
 
             if (newProfileImage) {
                 const fileName = newProfileImage.path.split('/').pop() || 'profile.jpg';
-                formData.append('profile_image', {
+                formData.append('images', {
                     uri: newProfileImage.path,
                     type: newProfileImage.mime || 'image/jpeg',
                     name: fileName,

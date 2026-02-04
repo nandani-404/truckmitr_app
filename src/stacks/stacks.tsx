@@ -177,6 +177,21 @@ export type NavigatorParams = {
     dhabhaDriverSearch: undefined;
     dhabhaProfileEdit: undefined;
     dhabhaDriverKiAwaz: undefined;
+
+    // Puncture Module
+    punctureBottomTab: any;
+    punctureHome: undefined;
+    punctureProfile: undefined;
+    punctureProfileCompletion: undefined;
+    punctureMyReferrals: undefined;
+    punctureWallet: undefined;
+    punctureAddDriver: undefined;
+    punctureBankDetails: undefined;
+    punctureMyShop: undefined;
+    punctureNearby: undefined;
+    punctureDriverSearch: undefined;
+    punctureProfileEdit: undefined;
+    punctureDriverKiAwaz: undefined;
 };
 
 export const STACKS = {
@@ -394,8 +409,23 @@ export const STACKS = {
     DHABHA_ADD_DRIVER: 'dhabhaAddDriver',
     DHABHA_BANK_DETAILS: 'dhabhaBankDetails',
     DHABHA_MY_DHABHA: 'dhabhaMyDhabha',
-    DHABHA_NEARBY: 'dhabhaNearby',
     DHABHA_DRIVER_SEARCH: 'dhabhaDriverSearch',
     DHABHA_PROFILE_EDIT: 'dhabhaProfileEdit',
     DHABHA_DRIVER_KI_AWAZ: 'dhabhaDriverKiAwaz',
+
+    // PUNCTURE MODULE
+    PUNCTURE_BOTTOM: 'punctureBottomTab',
+    PUNCTURE_HOME: 'punctureHome',
+    PUNCTURE_PROFILE: 'punctureProfile',
+    PUNCTURE_PROFILE_COMPLETION: 'punctureProfileCompletion',
+    PUNCTURE_MY_REFERRALS: 'punctureMyReferrals',
+    PUNCTURE_WALLET: 'punctureWallet',
+    PUNCTURE_ADD_DRIVER: 'punctureAddDriver',
+    PUNCTURE_BANK_DETAILS: 'punctureBankDetails',
+    PUNCTURE_MY_SHOP: 'punctureMyShop',
+    PUNCTURE_NEARBY: 'punctureNearby',
+    PUNCTURE_DRIVER_SEARCH: 'punctureDriverSearch',
+    PUNCTURE_PROFILE_EDIT: 'punctureProfileEdit',
+    PUNCTURE_DRIVER_KI_AWAZ: 'punctureDriverKiAwaz',
+    PUNCTURE_PROFILE_OVERVIEW: 'punctureProfileOverview',
 } as const;
