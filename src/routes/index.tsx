@@ -797,7 +797,7 @@ export default function Routes() {
         <Main />
       )}
       {subscriptionModal && <Subscription />}
-      <InAppUpdatePopup />
+      {/* <InAppUpdatePopup /> */}
     </NavigationContainer>
   );
 }

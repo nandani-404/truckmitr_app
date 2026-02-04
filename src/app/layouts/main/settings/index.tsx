@@ -161,16 +161,16 @@ export default function Settings() {
         <MaterialIcons name={'keyboard-arrow-right'} size={24} color={colors.blackOpacity(.3)} />
       </TouchableOpacity>
 
-      {(isDriver || isTransporter) && getPaidAmount() > 0 && (
-        <TouchableOpacity onPress={() => setShowCancelMembershipDialog(true)} style={{ width: responsiveWidth(100), flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(5), paddingVertical: responsiveFontSize(2) }}>
-          {cancellingSubscription
-            ? <ActivityIndicator size="small" color="#FF3B30" />
-            : <MaterialCommunityIcons name="card-remove-outline" size={22} color="#FF3B30" />
-          }
-          <Text style={{ flex: 1, color: '#FF3B30', fontSize: responsiveFontSize(2), fontWeight: '400', marginHorizontal: responsiveFontSize(2.5) }}>{t('cancelMembership') || 'Cancel Membership'}</Text>
-          <MaterialIcons name={'keyboard-arrow-right'} size={24} color={colors.blackOpacity(.3)} />
-        </TouchableOpacity>
-      )}
+      {/* {(isDriver || isTransporter) && getPaidAmount() > 0 && (
+        // <TouchableOpacity onPress={() => setShowCancelMembershipDialog(true)} style={{ width: responsiveWidth(100), flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(5), paddingVertical: responsiveFontSize(2) }}>
+        //   {cancellingSubscription
+        //     ? <ActivityIndicator size="small" color="#FF3B30" />
+        //     : <MaterialCommunityIcons name="card-remove-outline" size={22} color="#FF3B30" />
+        //   }
+        //   <Text style={{ flex: 1, color: '#FF3B30', fontSize: responsiveFontSize(2), fontWeight: '400', marginHorizontal: responsiveFontSize(2.5) }}>{t('cancelMembership') || 'Cancel Membership'}</Text>
+        //   <MaterialIcons name={'keyboard-arrow-right'} size={24} color={colors.blackOpacity(.3)} />
+        // </TouchableOpacity>
+      )} */}
       {/* <TouchableOpacity onPress={_navigatePreferredColour} style={{ width: responsiveWidth(100), flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(5), paddingVertical: responsiveFontSize(2) }}>
         <Ionicons name={'color-palette-outline'} size={22} color={colors.black} />
         <Text style={{ flex: 1, color: colors.black, fontSize: responsiveFontSize(2), fontWeight: '400', marginHorizontal: responsiveFontSize(2.5) }}>{t('preferredColour')}</Text>

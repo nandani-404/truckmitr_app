@@ -2848,6 +2848,7 @@
     "association_home_manage_plan": "Manage Plan",
     "association_home_view_plans": "View Plans",
     "association_home_pending": "Pending",
+    "verifiedAt": "Verified At",
     "association_home_profile": "Profile",
     "association_home_complete_driver_profiles": "Complete driver profiles",
     "association_home_renew_driver_plans": "Renew driver plans",
