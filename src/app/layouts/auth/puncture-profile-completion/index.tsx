@@ -1439,6 +1439,9 @@ export default function ProfileCompletionPuncture() {
                                         new Date()
                             }
                             mode="time"
+                            // @ts-ignore
+                            textColor="#000000"
+                            theme="light"
                             onDateChange={(date) => {
                                 const val = date.toISOString();
                                 if (timePickerOpen.type === 'opening') updateFormData('opening_time', val);

@@ -387,7 +387,7 @@ export default function DhabhaMyProfile() {
                             fontSize: responsiveFontSize(1.4),
                         }
                     ]}>
-                        Dhabha Partner
+                        {t('dhabaPartner') || 'Dhaba Partner'}
                     </Text>
                 </View>
             </View>

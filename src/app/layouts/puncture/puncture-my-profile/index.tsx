@@ -1042,7 +1042,7 @@ ${userName}
                                     fontSize: responsiveFontSize(1.4),
                                 }
                             ]}>
-                                {t('punctureShop') || 'Puncture Shop'}
+                                {t('puncture_home_verified_partner') || 'Puncture Shop'}
                             </Text>
                         </View>
 

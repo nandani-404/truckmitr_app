@@ -1448,7 +1448,7 @@ export default function ProfileCompletionDhabha() {
                                     style={[styles.modalBtn, { marginTop: 0, width: '100%', height: 50, alignItems: 'center', justifyContent: 'center' }]}
                                     onPress={() => setShopPhotoInstructionModal(false)}
                                 >
-                                    <Text style={styles.modalBtnText}>{t('gotItUpload') || 'Got it, let me upload'}</Text>
+                                    <Text allowFontScaling={false} style={styles.modalBtnText}>{t('gotItUpload') || 'Got it, let me upload'}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>

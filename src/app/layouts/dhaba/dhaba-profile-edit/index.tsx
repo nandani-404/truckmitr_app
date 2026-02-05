@@ -100,17 +100,17 @@ const DhabaProfileEdit = () => {
             return;
         }
 
-        if (!email || !email.trim()) {
-            showToast(t('emailRequired', 'Email is mandatory'));
-            return;
-        }
+        // if (!email || !email.trim()) {
+        //     showToast(t('emailRequired', 'Email is mandatory'));
+        //     return;
+        // }
 
         // Simple email format validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            showToast(t('invalidEmail', 'Please enter a valid email address'));
-            return;
-        }
+        // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // if (!emailRegex.test(email)) {
+        //     showToast(t('invalidEmail', 'Please enter a valid email address'));
+        //     return;
+        // }
 
         setLoading(true);
         try {

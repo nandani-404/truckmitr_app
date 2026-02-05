@@ -18,6 +18,7 @@ import { useResponsiveScale, useStatusBarStyle } from '@truckmitr/src/app/hooks'
 import { hitSlop } from '@truckmitr/src/app/functions';
 import LinearGradient from 'react-native-linear-gradient';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
+import { useTranslation } from 'react-i18next'; // Added useTranslation hook
 
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
@@ -31,6 +32,7 @@ export default function DhabhaWallet() {
     const navigation = useNavigation();
     const safeAreaInsets = useSafeAreaInsets();
     useStatusBarStyle('dark-content');
+    const { t } = useTranslation(); // Initialize translation hook
 
     // States
     const [balance, setBalance] = useState(0);
@@ -125,7 +127,7 @@ export default function DhabhaWallet() {
                     />
                 </View>
                 <View style={styles.txnContent}>
-                    <Text style={styles.txnTitle}>{item.driver_name || 'Driver Commission'}</Text>
+                    <Text style={styles.txnTitle}>{item.driver_name || t('wallet_driver_commission')}</Text>
                     <Text style={styles.txnSubtitle}>{item.driver_mobile}</Text>
                     <Text style={styles.txnDate}>{item.date}</Text>
                 </View>
@@ -136,7 +138,7 @@ export default function DhabhaWallet() {
                     <Text style={[styles.txnStatus,
                     item.status?.toLowerCase() === 'pending' ? { color: '#D97706' } : { color: '#059669' }
                     ]}>
-                        {item.status}
+                        {item.status?.toLowerCase() === 'pending' ? t('wallet_pending') : item.status}
                     </Text>
                 </View>
             </View>
@@ -154,7 +156,7 @@ export default function DhabhaWallet() {
                 >
                     <Ionicons name="arrow-back" size={24} color="#1F2937" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Wallet</Text>
+                <Text style={styles.headerTitle}>{t('wallet_my_wallet')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -172,7 +174,7 @@ export default function DhabhaWallet() {
                     end={{ x: 1, y: 1 }}
                 >
                     <View>
-                        <Text style={styles.balanceLabel}>Current Balance</Text>
+                        <Text style={styles.balanceLabel}>{t('wallet_current_balance')}</Text>
                         <Text style={styles.balanceValue}>₹{balance}</Text>
                     </View>
                     <TouchableOpacity
@@ -180,7 +182,7 @@ export default function DhabhaWallet() {
                         activeOpacity={0.8}
                         onPress={() => setIsRedeemModalVisible(true)}
                     >
-                        <Text style={styles.redeemBtnText}>Request Redeem</Text>
+                        <Text style={styles.redeemBtnText}>{t('wallet_request_redeem')}</Text>
                         <Ionicons name="chevron-forward" size={16} color="#EA580C" />
                     </TouchableOpacity>
                 </LinearGradient>
@@ -189,21 +191,21 @@ export default function DhabhaWallet() {
                 <View style={styles.statsGrid}>
                     <View style={styles.statCard}>
                         <Text style={styles.statValue}>₹{totalEarned}</Text>
-                        <Text style={styles.statLabel}>Total Earned</Text>
+                        <Text style={styles.statLabel}>{t('wallet_total_earned')}</Text>
                     </View>
                     <View style={styles.statCard}>
                         <Text style={styles.statValue}>₹{totalRedeemed}</Text>
-                        <Text style={styles.statLabel}>Total Redeemed</Text>
+                        <Text style={styles.statLabel}>{t('wallet_total_redeemed')}</Text>
                     </View>
                     <View style={[styles.statCard, { borderRightWidth: 0 }]}>
                         <Text style={[styles.statValue, { color: '#D97706' }]}>₹{pendingRedemption}</Text>
-                        <Text style={styles.statLabel}>Pending</Text>
+                        <Text style={styles.statLabel}>{t('wallet_pending')}</Text>
                     </View>
                 </View>
 
                 {/* Transactions Title */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Transactions</Text>
+                    <Text style={styles.sectionTitle}>{t('wallet_transactions')}</Text>
                     <Ionicons name="calendar-outline" size={20} color="#6B7280" />
                 </View>
 
@@ -216,7 +218,7 @@ export default function DhabhaWallet() {
                     contentContainerStyle={{ paddingHorizontal: 20 }}
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', padding: 20 }}>
-                            <Text style={{ color: '#9CA3AF' }}>No transactions found</Text>
+                            <Text style={{ color: '#9CA3AF' }}>{t('wallet_no_transactions')}</Text>
                         </View>
                     }
                 />
@@ -236,28 +238,28 @@ export default function DhabhaWallet() {
                                 <View style={styles.successIcon}>
                                     <Ionicons name="checkmark" size={32} color="#FFF" />
                                 </View>
-                                <Text style={styles.successTitle}>Requests Submitted</Text>
+                                <Text style={styles.successTitle}>{t('wallet_requests_submitted')}</Text>
                                 <Text style={styles.successMsg}>
-                                    Your redemption request for ₹{redeemAmount} has been submitted successfully.
+                                    {t('wallet_redemption_success_msg', { amount: redeemAmount })}
                                 </Text>
-                                <Text style={styles.refId}>Ref ID: TXN123456789</Text>
+                                <Text style={styles.refId}>{t('wallet_ref_id')}: TXN123456789</Text>
                                 <TouchableOpacity style={styles.doneBtn} onPress={resetRedeem}>
-                                    <Text style={styles.doneBtnText}>Done</Text>
+                                    <Text style={styles.doneBtnText}>{t('wallet_done')}</Text>
                                 </TouchableOpacity>
                             </View>
                         ) : (
                             <>
                                 <View style={styles.modalHeader}>
-                                    <Text style={styles.modalTitle}>Redeem Funds</Text>
+                                    <Text style={styles.modalTitle}>{t('wallet_redeem_funds')}</Text>
                                     <TouchableOpacity onPress={resetRedeem} disabled={redeemStatus === 'PROCESSING'}>
                                         <Ionicons name="close" size={24} color="#1F2937" />
                                     </TouchableOpacity>
                                 </View>
 
-                                <Text style={styles.inputLabel}>Amount to Redeem (₹)</Text>
+                                <Text style={styles.inputLabel}>{t('wallet_amount_to_redeem')}</Text>
                                 <TextInput
                                     style={styles.amountInput}
-                                    placeholder="Enter amount"
+                                    placeholder={t('wallet_enter_amount')}
                                     placeholderTextColor="#9CA3AF"
                                     keyboardType="number-pad"
                                     value={redeemAmount}
@@ -265,7 +267,7 @@ export default function DhabhaWallet() {
                                     editable={redeemStatus !== 'PROCESSING'}
                                 />
                                 <Text style={styles.helperText}>
-                                    Available: <Text style={{ fontWeight: '700' }}>₹{balance}</Text> • Min: ₹{MIN_REDEEM_AMOUNT}
+                                    {t('wallet_available')}: <Text style={{ fontWeight: '700' }}>₹{balance}</Text> • {t('wallet_min')}: ₹{MIN_REDEEM_AMOUNT}
                                 </Text>
 
 
@@ -280,7 +282,7 @@ export default function DhabhaWallet() {
                                     {redeemStatus === 'PROCESSING' ? (
                                         <ActivityIndicator color="#FFF" />
                                     ) : (
-                                        <Text style={styles.confirmBtnText}>Request Redemption</Text>
+                                        <Text style={styles.confirmBtnText}>{t('wallet_request_redemption')}</Text>
                                     )}
                                 </TouchableOpacity>
                             </>

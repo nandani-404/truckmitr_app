@@ -54,6 +54,7 @@ export default function DriverAssociationProfileEdit() {
     // State
     const [loading, setLoading] = useState(false);
     const [imagePickerOpen, setImagePickerOpen] = useState(false);
+    const [photoModal, setPhotoModal] = useState(false);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -200,16 +201,31 @@ export default function DriverAssociationProfileEdit() {
         </Modal>
     );
 
-    const handlePickImage = async () => {
+    const handlePickImage = async (source?: 'camera' | 'gallery') => {
         try {
-            const hasPermission = await requestPhotoLibraryPermission();
-            if (!hasPermission) { showToast('Photo permission required'); return; }
-            const image = await ImagePicker.openPicker({ mediaType: 'photo', compressImageQuality: 0.8, });
-            if (image?.path) {
-                setProfileImage({ uri: image.path, type: image.mime, name: image.filename || 'profile.jpg' });
+            if (source === 'camera') {
+                const hasPermission = await requestCameraPermission();
+                if (!hasPermission) { showToast('Camera permission required'); return; }
+                const image = await ImagePicker.openCamera({ mediaType: 'photo', compressImageQuality: 0.8 });
+                if (image?.path) {
+                    setProfileImage({ uri: image.path, type: image.mime, name: image.filename || 'profile.jpg' });
+                    setPhotoModal(false);
+                }
+            } else if (source === 'gallery') {
+                const hasPermission = await requestPhotoLibraryPermission();
+                if (!hasPermission) { showToast('Photo permission required'); return; }
+                const image = await ImagePicker.openPicker({ mediaType: 'photo', compressImageQuality: 0.8 });
+                if (image?.path) {
+                    setProfileImage({ uri: image.path, type: image.mime, name: image.filename || 'profile.jpg' });
+                    setPhotoModal(false);
+                }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('Image Picker Error:', error);
+            if (error?.code !== 'E_PICKER_CANCELLED') {
+                showToast(t('errorPickingImage') || "Error picking image");
+            }
+            setPhotoModal(false);
         }
     };
 
@@ -245,7 +261,7 @@ export default function DriverAssociationProfileEdit() {
                             source={userProfileDisplay ? userProfileDisplay : { uri: DEFAULT_AVATAR }}
                             style={styles.avatarImage}
                         />
-                        <TouchableOpacity style={styles.editBadge} onPress={handlePickImage}>
+                        <TouchableOpacity style={styles.editBadge} onPress={() => setPhotoModal(true)}>
                             <MaterialIcons name="camera-alt" size={20} color="#FFF" />
                         </TouchableOpacity>
                     </View>
@@ -410,6 +426,50 @@ export default function DriverAssociationProfileEdit() {
             </View>
 
             {renderStatePicker()}
+
+            {/* Photo Source Selection Modal */}
+            <Modal visible={photoModal} transparent animationType="fade" onRequestClose={() => setPhotoModal(false)}>
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setPhotoModal(false)}
+                >
+                    <View style={[styles.modalContainer, { width: '90%', padding: 20 }]}>
+                        <Text style={[styles.modalTitle, { marginBottom: 10 }]}>{t('choosePhotoSource') || 'Choose Photo Source'}</Text>
+                        <Text style={{ color: '#666', marginBottom: 20 }}>{t('selectHowToAddPhotos') || 'Select how you want to add photos'}</Text>
+
+                        <View style={{ flexDirection: 'row', gap: 20, width: '100%' }}>
+                            <TouchableOpacity
+                                style={styles.photoSourceBtn}
+                                onPress={() => handlePickImage('camera')}
+                            >
+                                <View style={[styles.photoSourceIcon, { backgroundColor: '#E3F2FD' }]}>
+                                    <Ionicons name="camera" size={30} color="#1976D2" />
+                                </View>
+                                <Text style={styles.photoSourceText}>{t('camera') || 'Camera'}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.photoSourceBtn}
+                                onPress={() => handlePickImage('gallery')}
+                            >
+                                <View style={[styles.photoSourceIcon, { backgroundColor: '#E8F5E9' }]}>
+                                    <Ionicons name="images" size={30} color="#2E7D32" />
+                                </View>
+                                <Text style={styles.photoSourceText}>{t('gallery') || 'Gallery'}</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <Space height={20} />
+                        <TouchableOpacity
+                            onPress={() => setPhotoModal(false)}
+                            style={[styles.modalDoneButton, { backgroundColor: '#f0f0f0', elevation: 0, marginTop: 0 }]}
+                        >
+                            <Text style={[styles.modalDoneButtonText, { color: '#333' }]}>{t('cancel') || 'Cancel'}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 }
@@ -677,4 +737,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
     },
+    photoSourceBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 15, borderRadius: 16, borderWidth: 1, borderColor: '#eee', backgroundColor: '#fafafa' },
+    photoSourceIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+    photoSourceText: { fontSize: 16, fontWeight: '600', color: '#333' },
 });
