@@ -1,5 +1,14 @@
 {
     "interiorPhotos": "Interior Photos",
+    "module_selection_driver": "Driver",
+    "module_selection_transporter": "Transporter",
+    "module_selection_driver_foreman": "Driver Foreman",
+    "module_selection_driver_association": "Driver Association",
+    "module_selection_dhaba_sathi": "Dhaba Sathi",
+    "module_selection_puncture_point": "Puncture Point",
+    "module_selection_title": "Select your <1>role</1>",
+    "module_selection_subtitle": "This helps us personalize features and services for you",
+    "module_selection_continue": "Continue",
     "importantNotice": "Important Notice",
     "punctureLocationWarningMessage": "Before doing share location please stay near or at your puncture shop to get perfect location.",
     "puncture_use_gps_title": "Use GPS Location?",
@@ -2871,6 +2880,7 @@
     "association_home_manage_plan": "Manage Plan",
     "association_home_view_plans": "View Plans",
     "association_home_pending": "Pending",
+    "verifiedAt": "Verified At",
     "association_home_profile": "Profile",
     "association_home_complete_driver_profiles": "Complete driver profiles",
     "association_home_renew_driver_plans": "Renew driver plans",
@@ -3553,5 +3563,12 @@
     "selectPhoto": "Select Photo",
     "takePhoto": "Take Photo",
     "chooseFromGallery": "Choose from Gallery",
-    "errorPickingImage": "Error picking image"
+    "errorPickingImage": "Error picking image",
+    "consent_required": "Consent Required",
+    "consent_msg_start": "To continue using the application, you must agree to our updated ",
+    "terms_conditions": "Terms and Conditions",
+    "and": " and ",
+    "privacy_policy": "Privacy Policy",
+    "consent_msg_end": ".",
+    "i_agree": "I Agree"
 }

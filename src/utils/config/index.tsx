@@ -139,6 +139,9 @@ export const END_POINTS = {
     DL_VERIFY: `api/kyc/dl`,
     PAN_VERIFY: `api/kyc/pan`,
     AADHAAR_VERIFY: `api/kyc/aadhaar`,
+    AADHAAR_MASKING: `api/kyc/aadhar-masking`,
+    AADHAAR_VERIFICATION_STATUS: `api/kyc/aadhar-verification`,
+    AADHAAR_PAN_MATCH: `api/kyc/aadhar-pan-match`,
     VOTER_VERIFY: `api/kyc/voter`,
     CHALLAN_VERIFY: `api/kyc/challan`,
     DIGITAL_ADDRESS_VERIFY: `api/kyc/dav`,
@@ -275,4 +278,6 @@ export const END_POINTS = {
     GET_SERVICE_OFFERED: `api/puncture/servicess`,
     GET_VEHICLE_COVERAGE: `api/puncture/vehicle-coverages`,
     GET_PUNCTURE_PHOTOS: `api/puncture/photos`,
+    // Consent update endpoint
+    UPDATE_CONSENT: `api/saveConsent`,
 }

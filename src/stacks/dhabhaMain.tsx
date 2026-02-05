@@ -181,7 +181,7 @@ export default function DhabhaMain() {
             <Stack.Screen name={STACKS.PRIVACY} component={Privacy} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_BANK_DETAILS} component={DhabaBankDetails} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_MY_DHABHA} component={DhabhaMyDhabha} options={{ animation: 'fade' }} />
-            <Stack.Screen name={STACKS.DHABHA_NEARBY} component={DhabhaNearby} options={{ animation: 'fade' }} />
+            {/* <Stack.Screen name={STACKS.DHABHA_NEARBY} component={DhabhaNearby} options={{ animation: 'fade' }} /> */}
             <Stack.Screen name={STACKS.DHABHA_DRIVER_SEARCH} component={DhabhaDriverSearch} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_PROFILE_EDIT} component={DhabaProfileEdit} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_MY_REFERRALS} component={DhabhaMyReferralsScreen} options={{ animation: 'fade' }} />

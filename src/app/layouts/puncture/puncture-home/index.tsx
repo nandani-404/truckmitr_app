@@ -29,6 +29,7 @@ import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hook
 import { useSelector } from 'react-redux';
 import { BASE_URL } from '@truckmitr/src/utils/config';
 
+
 const PROFILE_PLACEHOLDER = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
 
 
@@ -203,11 +204,22 @@ export default function PunctureHome() {
         }, [])
     );
 
+
     const colors = useColor();
     const { shadow } = useShadow();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
 
-    const { user, profileCompletion: userProfileCompletion } = useSelector((state: any) => state?.user) || {};
+    const { user, profileCompletion: userProfileCompletion, consent_check } = useSelector((state: any) => state?.user) || {};
+
+    useFocusEffect(
+        useCallback(() => {
+            if (consent_check === false) {
+                // @ts-ignore
+                navigation.navigate(STACKS.CONSENT_MODAL_SCREEN);
+            }
+        }, [consent_check, navigation])
+    );
+
 
     // Banner Data
     const profileCompletion = userProfileCompletion || 85;
@@ -670,6 +682,10 @@ export default function PunctureHome() {
 
                 </View>
             </ScrollView >
+            {/* Force Consent Popup - Shows above everything if consent_check is false */}
+            {/* Force Consent Popup - Shows above everything if consent_check is false */}
+            {/* <ConsentModal visible={consent_check === false} /> */}
+
         </View >
     );
 }

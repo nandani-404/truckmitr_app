@@ -35,19 +35,24 @@ const { width } = Dimensions.get('window');
 // Image source
 const GROUP_IMAGE_SOURCE = require('@truckmitr/src/assets/role-selection-2.png');
 
-// Role definitions with specific colors
+import { useTranslation, Trans } from 'react-i18next';
+import { useColor } from '@truckmitr/src/app/hooks/colors';
+
+// Role definitions with specific colors and translation keys
 const ROLE_DATA = [
-    { id: 'driver', label: 'Driver', color: '#4A90E2', icon: 'directions-car', module: 'hiring' }, // Blue
-    { id: 'transporter', label: 'Transporter', color: '#F5A623', icon: 'local-shipping', module: 'hiring' }, // Orange
-    { id: 'foreman', label: 'Foreman', color: '#9013FE', icon: 'engineering', module: 'foreman' }, // Purple
-    { id: 'association', label: 'Association', color: '#E74C3C', icon: 'groups', module: 'association' }, // Red
-    { id: 'dhaba', label: 'TruckMitr Dhabha', color: '#2ECC71', icon: 'restaurant', module: 'dhaba' }, // Green
-    { id: 'puncture', label: 'Puncture Shop', color: '#F1C40F', icon: 'build', module: 'puncture_shop' }, // Yellow
+    { id: 'driver', labelKey: 'module_selection_driver', color: '#4A90E2', icon: 'directions-car', module: 'hiring' }, // Blue
+    { id: 'transporter', labelKey: 'module_selection_transporter', color: '#F5A623', icon: 'local-shipping', module: 'hiring' }, // Orange
+    { id: 'foreman', labelKey: 'module_selection_driver_foreman', color: '#9013FE', icon: 'engineering', module: 'foreman' }, // Purple
+    { id: 'association', labelKey: 'module_selection_driver_association', color: '#E74C3C', icon: 'groups', module: 'association' }, // Red
+    { id: 'dhaba', labelKey: 'module_selection_dhaba_sathi', color: '#2ECC71', icon: 'restaurant', module: 'dhaba' }, // Green
+    { id: 'puncture', labelKey: 'module_selection_puncture_point', color: '#F1C40F', icon: 'build', module: 'puncture_shop' }, // Yellow
 ];
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 const ModuleSelection = () => {
+    const { t } = useTranslation();
+    const colors = useColor();
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
     const dispatch = useDispatch();
@@ -111,10 +116,13 @@ const ModuleSelection = () => {
                 {/* Header Section */}
                 <View style={styles.header}>
                     <Text style={styles.titleText}>
-                        Select your <Text style={{ color: '#FF69B4' }}>role</Text>
+                        <Trans
+                            i18nKey="module_selection_title"
+                            components={{ 1: <Text style={{ color: colors.royalBlue }} /> }}
+                        />
                     </Text>
                     <Text style={styles.subtitleText}>
-                        This helps us personalize features and services for you
+                        {t('module_selection_subtitle')}
                     </Text>
                 </View>
 
@@ -140,7 +148,7 @@ const ModuleSelection = () => {
                                 activeOpacity={0.8}
                             >
                                 <Text style={[styles.roleLabel, isSelected && { color: '#FFF', fontWeight: '700' }]}>
-                                    {item.label}
+                                    {t(item.labelKey)}
                                 </Text>
                             </TouchableOpacity>
                         );
@@ -175,7 +183,7 @@ const ModuleSelection = () => {
                                 { backgroundColor: '#000080' }
                             ]}
                         >
-                            <Text style={styles.continueButtonText}>CONTINUE</Text>
+                            <Text style={styles.continueButtonText}>{t('module_selection_continue')}</Text>
                             <MaterialIcons name="arrow-forward" size={20} color="#FFF" />
                         </TouchableOpacity>
                     </View>

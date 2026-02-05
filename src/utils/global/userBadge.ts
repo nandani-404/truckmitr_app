@@ -116,6 +116,9 @@ export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBa
   const hasSub = sub && (sub.id || sub.payment_id || sub.subscription_id);
 
   if (!hasSub) {
+    if (user?.role?.toLowerCase() === 'association') {
+      return 'Driver Association';
+    }
     // No subscription - show role only
     return userRole;
   }
@@ -186,9 +189,9 @@ export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBa
       subscriptionDetails?.hasActiveSubscription;
 
     if (isPro) {
-      return 'Association Pro';
+      return 'Driver Association Pro';
     }
-    return userRole;
+    return 'Driver Association';
   }
 
   // Fallback for unknown roles

@@ -66,7 +66,17 @@ const Home = React.forwardRef((props, ref) => {
     const isFocused = useIsFocused();
     const [showWelcome, setShowWelcome] = useState(false)
 
-    const { user, isDriver, isTransporter, whatsapp_link, profileCompletion, subscriptionDetails, subscriptionModal, rank, star_rating } = useSelector((state: any) => { return state?.user }) || {};
+    const { user, isDriver, isTransporter, whatsapp_link, profileCompletion, subscriptionDetails, subscriptionModal, rank, star_rating, consent_check } = useSelector((state: any) => { return state?.user }) || {};
+
+    useFocusEffect(
+        useCallback(() => {
+            if (consent_check === false) {
+                // @ts-ignore
+                navigation.navigate(STACKS.CONSENT_MODAL_SCREEN);
+            }
+        }, [consent_check, navigation])
+    );
+
 
     const IMAGES = [
         isDriver ? 'https://truckmitr.com/public/front/assets/images/BNR.jpg' : 'https://i.pinimg.com/736x/e7/bb/ea/e7bbea6ce9d1688158fde5d7160fcf5b.jpg'
@@ -2062,6 +2072,10 @@ const Home = React.forwardRef((props, ref) => {
             </Modal>
             <PollSurveyModal />
             <TopClassPopup />
+            {/* Force Consent Popup - Shows above everything if consent_check is false */}
+            {/* Force Consent Popup - Shows above everything if consent_check is false */}
+            {/* <ConsentModal visible={consent_check === false} /> */}
+
         </View >
     )
 })

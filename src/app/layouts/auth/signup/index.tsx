@@ -157,6 +157,8 @@ export default function Signup() {
         formData.append('states', state);
         formData.append('user_lang', currentLang)
         formData.append('code', code)
+        formData.append('consent', 1)
+
         try {
             const response = await axiosInstance.post(END_POINTS.SIGNUP, formData);
             if (response?.data?.success) {

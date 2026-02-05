@@ -606,13 +606,22 @@ export default function ProfileCompletionPuncture() {
     const submitProfile = async () => {
         setFinishing(true);
         try {
-            // Simulated submission
-            setTimeout(() => {
-                setFinishing(false);
-                showToast(t('puncture_profile_submitted'));
-                dispatch(userAuthenticatedAction(true));
-                // navigation.navigate(STACKS.PUNCTURE_BOTTOM as any);
-            }, 1500);
+            // Finalize profile submission logic here if any additional API call is needed
+            // For now, assume previous step's API call was the final one or this just switches state
+            setFinishing(false);
+            showToast(t('puncture_profile_submitted'));
+
+            // Dispatch action to update Redux state
+            dispatch(userAuthenticatedAction(true));
+            dispatch(userEditAction({ ...userEdit, profile_completed: true })); // Ensure profile completion flag is set locally if needed
+
+            // Navigate to Puncture Main Stack
+            // navigation.reset({
+            //     index: 0,
+            //     routes: [{ name: STACKS.PUNCTURE_MAIN as any }],
+            // });
+            // Alternatively, if Puncture Main is a nested stack:
+            navigation.navigate(STACKS.PUNCTURE_BOTTOM as any);
         } catch (error: any) {
             setFinishing(false);
             showToast(error?.message || t('puncture_failed_submit'));

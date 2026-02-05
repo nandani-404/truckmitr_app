@@ -392,13 +392,13 @@ export default function ProfileCompletionAssociation() {
             <Space height={20} />
 
             {/* Coverage Area */}
-            <Text style={styles.classicLabel}>{t('associate_profile_completion_coverage_area_optional')}</Text>
+            {/* <Text style={styles.classicLabel}>{t('associate_profile_completion_coverage_area_optional')}</Text>
             <TextInput
                 style={styles.classicInput}
                 placeholder={t('associate_profile_completion_coverage_area_placeholder')}
                 value={coverageArea}
                 onChangeText={setCoverageArea}
-            />
+            /> */}
 
             {/* State Picker Modal */}
             <Modal visible={statePickerOpen} transparent animationType="fade">

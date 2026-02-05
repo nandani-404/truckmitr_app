@@ -102,6 +102,8 @@ const PhotosTab = () => {
             }
 
             formData.append('category', 'puncture');
+            formData.append('user_id', user?.id || user?.user_id || '');
+            formData.append('unique_id', user?.unique_id || '');
             formData.append('ordering_priority', '1');
             formData.append('upload_date', moment().format('YYYY-MM-DD'));
 

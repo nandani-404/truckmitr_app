@@ -241,7 +241,45 @@ interface FaceMatchStatusResponse {
     verification_status: string;
 }
 
-type TabType = 'DL' | 'PAN' | 'FACE';
+interface AadhaarVerificationCheckResponse {
+    status: number;
+    message: string;
+    result?: {
+        txn_id?: string;
+        card_number?: string;
+        name_on_card?: string;
+        gender?: string;
+        date_of_birth?: string;
+        address?: string;
+        front_image_status?: boolean;
+        back_image_status?: boolean;
+        verified_at?: string;
+        [key: string]: any;
+    };
+}
+
+interface AadhaarPanMatchResponse {
+    status: number;
+    message: string;
+    aadhar_verified?: boolean;
+    pan_verified?: boolean;
+    match_results?: {
+        aadhar_number_match: boolean;
+        name_match: boolean;
+        dob_match: boolean;
+        overall_match: boolean;
+    };
+    details?: {
+        aadhar_last_4: string;
+        pan_linked_aadhar_last_4: string;
+        aadhar_name: string;
+        pan_name: string;
+        aadhar_dob: string;
+        pan_dob: string;
+    };
+}
+
+type TabType = 'DL' | 'PAN' | 'FACE' | 'AADHAAR';
 
 export default function DocumentVerification() {
     const route: any = useRoute();
@@ -302,6 +340,11 @@ export default function DocumentVerification() {
     const [faceImage1, setFaceImage1] = useState<any>(null);
     const [faceImage2, setFaceImage2] = useState<any>(null);
     const [faceThreshold, setFaceThreshold] = useState('80');
+
+    // Aadhaar Verification State
+    const [aadhaarFrontImage, setAadhaarFrontImage] = useState<any>(null);
+    const [aadhaarBackImage, setAadhaarBackImage] = useState<any>(null);
+    const [aadhaarPanMatchResult, setAadhaarPanMatchResult] = useState<AadhaarPanMatchResponse | null>(null);
 
     // Loading & Result States
     const [isLoading, setIsLoading] = useState(false);
@@ -588,7 +631,7 @@ export default function DocumentVerification() {
                             first_name: data.first_name,
                             last_name: data.last_name,
                             gender: data.gender,
-                            dob: formatDate(data.dob), // DOB not returned in check API
+                            dob: data.dob || '', // DOB not returned in check API
                             email: data.email || '',
                             mobile: data.mobile || '',
                             address: {
@@ -612,10 +655,10 @@ export default function DocumentVerification() {
             }
         };
 
-        if (user) {
+        if (user && activeTab === 'PAN') {
             checkPANVerificationStatus();
         }
-    }, [user]);
+    }, [user, activeTab]);
 
     // Check if Face Match is already verified on screen load
     useEffect(() => {
@@ -650,6 +693,47 @@ export default function DocumentVerification() {
 
         checkFaceMatchStatus();
     }, [user]);
+
+    // Check Aadhaar Verification Status on Load
+    useEffect(() => {
+        const checkAadhaarStatus = async () => {
+            if (!user) return;
+            try {
+                if (!isFetchingProfile) setIsFetchingProfile(true);
+                const response = await axiosInstance.get(END_POINTS.AADHAAR_VERIFICATION_STATUS);
+                const data: AadhaarVerificationCheckResponse = response?.data;
+
+                if (data?.status === 1) { // User is fully verified or has history
+                    console.log('Aadhaar Verification Status:', data);
+                    const transformedResult: AadhaarVerificationResponse = {
+                        status: 1,
+                        message: 'Aadhar already verified',
+                        result: data.result
+                    };
+                    setAadhaarResult(transformedResult);
+                }
+            } catch (err: any) {
+                console.log('Aadhaar Status Check Error:', err?.response?.data || err?.message);
+            } finally {
+                setIsFetchingProfile(false);
+            }
+        };
+
+        const checkAadhaarPanMatch = async () => {
+            if (!user) return;
+            try {
+                const response = await axiosInstance.get(END_POINTS.AADHAAR_PAN_MATCH);
+                setAadhaarPanMatchResult(response?.data);
+            } catch (err: any) {
+                console.log('Aadhaar PAN Match Error:', err?.response?.data || err?.message);
+            }
+        };
+
+        if (activeTab === 'AADHAAR') {
+            checkAadhaarStatus();
+            checkAadhaarPanMatch();
+        }
+    }, [user, activeTab]);
 
     // Animate success card
     // Animate success card
@@ -835,6 +919,41 @@ export default function DocumentVerification() {
         }
     };
 
+    // Aadhaar Camera Handlers
+    const handleCaptureAadhaarFront = async () => {
+        try {
+            const image = await ImagePicker.openCamera({
+                width: 800,
+                height: 500,
+                cropping: false, // User requested raw camera capture mostly, but cropping usually helps. "Camera capture... not from gallery".
+                mediaType: 'photo',
+                includeBase64: true,
+                compressImageQuality: 0.8,
+            });
+            setAadhaarFrontImage(image);
+            setInputError(null);
+        } catch (error) {
+            console.log('Camera Error (Aadhaar Front):', error);
+        }
+    };
+
+    const handleCaptureAadhaarBack = async () => {
+        try {
+            const image = await ImagePicker.openCamera({
+                width: 800,
+                height: 500,
+                cropping: false,
+                mediaType: 'photo',
+                includeBase64: true,
+                compressImageQuality: 0.8,
+            });
+            setAadhaarBackImage(image);
+            setInputError(null);
+        } catch (error) {
+            console.log('Camera Error (Aadhaar Back):', error);
+        }
+    };
+
     const validateFaceVerification = (): boolean => {
         if (!faceImage1) {
             setInputError(t('sourceImageRequired') || 'Source face image is required');
@@ -966,6 +1085,56 @@ export default function DocumentVerification() {
             } finally {
                 setIsLoading(false);
             }
+        } else if (activeTab === 'AADHAAR') {
+            if (!aadhaarFrontImage) {
+                showToast('Front Aadhaar image is required');
+                return;
+            }
+            if (!aadhaarBackImage) {
+                showToast('Back Aadhaar image is required');
+                return;
+            }
+            if (!consentChecked) {
+                showToast('Consent is mandatory to proceed');
+                return;
+            }
+
+            try {
+                setIsLoading(true);
+                // Ensure base64 string is clean and available
+                const frontBase64 = aadhaarFrontImage?.data || aadhaarFrontImage?.base64 || '';
+                const backBase64 = aadhaarBackImage?.data || aadhaarBackImage?.base64 || '';
+
+                const payload = {
+                    doc_front: `data:${aadhaarFrontImage?.mime || 'image/jpeg'};base64,${frontBase64}`,
+                    doc_back: `data:${aadhaarBackImage?.mime || 'image/jpeg'};base64,${backBase64}`,
+                    consent: 'Y',
+                    consent_text: "We confirm obtaining valid customer consent to access/process their aadhaar data. Consent remains valid, informed, and unwithdrawn."
+                };
+
+                const config = { headers: { 'Content-Type': 'application/json' } };
+                console.log('Aadhaar Payload:', JSON.stringify({ ...payload, doc_front: payload.doc_front.substring(0, 50) + '...', doc_back: payload.doc_back.substring(0, 50) + '...' }, null, 2));
+                console.log('Full Aadhaar Payload (without truncation):', JSON.stringify(payload));
+                const response = await axiosInstance.post(END_POINTS.AADHAAR_MASKING, payload, config);
+
+                if (response?.data?.status === 1) {
+                    setAadhaarResult(response.data);
+                    cardScale.value = 0;
+                    // Refresh match check
+                    try {
+                        const matchResp = await axiosInstance.get(END_POINTS.AADHAAR_PAN_MATCH);
+                        setAadhaarPanMatchResult(matchResp?.data);
+                    } catch (e) { }
+                } else {
+                    const apiError = response?.data?.message || 'Unable to verify Aadhaar';
+                    processError(apiError);
+                }
+            } catch (err: any) {
+                const msg = err?.response?.data?.message || 'Unable to verify Aadhaar';
+                processError(msg);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -980,7 +1149,8 @@ export default function DocumentVerification() {
     // Render Logic
     const isSuccess = activeTab === 'DL' ? !!(dlResult?.status === 1) :
         activeTab === 'PAN' ? !!(panResult?.status === 1) :
-            activeTab === 'FACE' ? !!(faceResult?.status === 1) : false;
+            activeTab === 'FACE' ? !!(faceResult?.status === 1) :
+                activeTab === 'AADHAAR' ? (!!(aadhaarResult?.status === 1) || !!aadhaarResult?.message?.includes('verified')) : false;
 
     const renderSuccessView = () => {
         if (activeTab === 'DL' && dlResult?.result) {
@@ -1037,6 +1207,100 @@ export default function DocumentVerification() {
                                 </View>
                             </View>
                         )}
+                    </Animated.View>
+                </View>
+            );
+        } else if (activeTab === 'AADHAAR' && aadhaarResult?.result) {
+            const data = aadhaarResult.result;
+            return (
+                <View>
+                    {/* Aadhaar Details Card */}
+                    <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.detailsCard}>
+                        <View style={styles.detailsHeader}>
+                            <MaterialCommunityIcons name="card-account-details" size={24} color={COLORS.primary} />
+                            <Text style={styles.detailsTitle}>{t('aadhaarDetails') || 'Aadhaar Details / आधार विवरण'}</Text>
+                        </View>
+                        <View style={styles.detailsGrid}>
+                            <DetailRow icon="person" label={t('name') || 'Name / नाम'} value={data.name_on_card || '-'} />
+                            <DetailRow icon="card" label={t('aadhaarNumber') || 'Aadhaar Number / आधार संख्या'} value={data.card_number || '-'} highlight />
+                            <DetailRow icon="male-female" label={t('gender') || 'Gender / लिंग'} value={data.gender || '-'} />
+                            <DetailRow icon="calendar" label={t('dateOfBirth') || 'Date of Birth / जन्म तिथि'} value={data.date_of_birth || '-'} />
+                            <DetailRow icon="time" label={t('verifiedAt') || 'Verified At / सत्यापित समय'} value={data.verified_at || '-'} />
+
+                            <DetailRow
+                                icon="location"
+                                label={t('address') || 'Address / पता'}
+                                value={data.address || [data.address_line_one, data.address_line_two, data.city, data.state, data.pin].filter(Boolean).join(', ') || '-'}
+                                multiline
+                            />
+
+                            {/* Image Verification Status */}
+                            <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' }}>
+                                <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.textMuted, marginBottom: 8 }}>{t('documentQuality') || 'Document Quality / दस्तावेज़ गुणवत्ता'}</Text>
+                                <View style={{ flexDirection: 'row', gap: 12 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                        <Ionicons name="image" size={14} color={COLORS.textMuted} />
+                                        <Text style={{ fontSize: 13, color: COLORS.text }}>{t('front') || 'Front / सामने'}: </Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: data.front_image_status ? COLORS.success : COLORS.error }}>
+                                            {data.front_image_status ? 'Clear' : 'Failed'}
+                                        </Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                        <Ionicons name="image" size={14} color={COLORS.textMuted} />
+                                        <Text style={{ fontSize: 13, color: COLORS.text }}>{t('back') || 'Back / पीछे'}: </Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: data.back_image_status ? COLORS.success : COLORS.error }}>
+                                            {data.back_image_status ? 'Clear' : 'Failed'}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Aadhaar-PAN Match Status */}
+                            {aadhaarPanMatchResult && (
+                                <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F3F4F6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.textMuted }}>Aadhaar-PAN Link</Text>
+                                        <Text style={{
+                                            fontSize: 15,
+                                            fontWeight: '700',
+                                            color: (aadhaarPanMatchResult.match_results?.overall_match || aadhaarPanMatchResult.pan_verified) ? COLORS.success : COLORS.warning,
+                                            marginTop: 2
+                                        }}>
+                                            {(aadhaarPanMatchResult.match_results?.overall_match || aadhaarPanMatchResult.pan_verified) ? 'Verified & Linked' : 'Verification Pending / Mismatch'}
+                                        </Text>
+
+                                        {/* Detailed Status Message */}
+                                        {!(aadhaarPanMatchResult.match_results?.overall_match || aadhaarPanMatchResult.pan_verified) && (
+                                            <View style={{ marginTop: 4 }}>
+                                                <Text style={{ fontSize: 11, color: COLORS.textMuted }}>
+                                                    {aadhaarPanMatchResult.match_results
+                                                        ? 'Details do not match perfectly. Please check PAN details.'
+                                                        : (aadhaarPanMatchResult.message || 'Both documents must be verified')}
+                                                </Text>
+
+                                                {/* Specific Mismatches if available */}
+                                                {aadhaarPanMatchResult.match_results && !aadhaarPanMatchResult.match_results.overall_match && (
+                                                    <View style={{ marginTop: 2 }}>
+                                                        {!aadhaarPanMatchResult.match_results.name_match && <Text style={{ fontSize: 10, color: COLORS.error }}>• Name mismatch</Text>}
+                                                        {!aadhaarPanMatchResult.match_results.dob_match && <Text style={{ fontSize: 10, color: COLORS.error }}>• DOB mismatch</Text>}
+                                                    </View>
+                                                )}
+                                            </View>
+                                        )}
+                                    </View>
+
+                                    {!(aadhaarPanMatchResult.match_results?.overall_match || aadhaarPanMatchResult.pan_verified) && (
+                                        <TouchableOpacity
+                                            onPress={() => setActiveTab('PAN')}
+                                            style={{ backgroundColor: '#EFF6FF', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginLeft: 8 }}
+                                        >
+                                            <Text style={{ color: COLORS.primary, fontSize: 13, fontWeight: '600' }}>Check PAN</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            )}
+
+                        </View>
                     </Animated.View>
                 </View>
             );
@@ -1129,9 +1393,14 @@ export default function DocumentVerification() {
             {/* Required Documents Title */}
             <Text style={styles.requiredDocsTitle}>{t('requiredDocuments') || 'Required Documents'}</Text>
 
-            {/* Tab Buttons Row */}
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* Tab Buttons Row 1 */}
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
                 <TabButton type='DL' label='DL' icon='car-outline' />
+                <TabButton type='AADHAAR' label='Aadhaar' icon='finger-print-outline' />
+            </View>
+
+            {/* Tab Buttons Row 2 */}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TabButton type='PAN' label='PAN' icon='card-outline' />
                 <TabButton type='FACE' label={t('face') || 'Face'} icon='scan-outline' />
             </View>
@@ -1208,28 +1477,7 @@ export default function DocumentVerification() {
 
                             {renderSuccessView()}
 
-                            {(activeTab !== 'FACE' || (activeTab === 'FACE' && !faceResult?.verified)) && (
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        // Reset to allow verify other doc or update
-                                        if (activeTab === 'DL') setDlResult(null);
-                                        else if (activeTab === 'PAN') setPanResult(null);
-                                        else if (activeTab === 'FACE') {
-                                            setFaceResult(null);
-                                            setFaceImage1(null);
-                                            setFaceImage2(null);
-                                        }
-                                        setConsentChecked(false);
-                                    }}
-                                    style={styles.secondaryButton}
-                                >
-                                    <Text style={styles.secondaryButtonText}>
-                                        {activeTab === 'FACE'
-                                            ? (t('verifyAnotherFace') || 'Verify Another Face')
-                                            : (t('verifyAnother') || 'Verify Another Document')}
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
+
                         </View>
                     ) : (
                         <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.formCard}>
@@ -1484,6 +1732,115 @@ export default function DocumentVerification() {
                                 )
                             )}
 
+                            {activeTab === 'AADHAAR' && (
+                                canAccessIdVerification ? (
+                                    <View>
+                                        <View style={styles.faceVerifyHeader}>
+                                            <MaterialCommunityIcons name="fingerprint" size={28} color={COLORS.primary} />
+                                            <View style={{ marginLeft: 12, flex: 1 }}>
+                                                <Text style={styles.faceVerifyTitle}>{t('aadhaarVerification') || 'Aadhaar Verification / आधार सत्यापन'}</Text>
+                                                <Text style={styles.faceVerifySubtitle}>{t('captureAadhaarDesc') || 'Capture front and back of your Aadhaar card / अपने आधार कार्ड के आगे और पीछे की फोटो लें'}</Text>
+                                            </View>
+                                        </View>
+
+                                        {/* Front Image */}
+                                        <View style={styles.inputGroup}>
+                                            <Text style={styles.inputLabel}>
+                                                <Ionicons name="camera" size={14} color={COLORS.textMuted} /> {t('frontAadhaar') || 'Front Aadhaar / आधार का सामने का भाग'}
+                                            </Text>
+                                            <View style={styles.faceImageContainer}>
+                                                {aadhaarFrontImage ? (
+                                                    <View style={styles.faceImagePreviewWrapper}>
+                                                        <Image source={{ uri: aadhaarFrontImage.path }} style={[styles.faceImagePreview, { width: 220, height: 140, resizeMode: 'cover' }]} />
+                                                        <TouchableOpacity
+                                                            onPress={() => setAadhaarFrontImage(null)}
+                                                            style={styles.faceImageRemoveBtn}
+                                                        >
+                                                            <Ionicons name="close" size={14} color={COLORS.white} />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ) : (
+                                                    <TouchableOpacity onPress={handleCaptureAadhaarFront} style={styles.faceImageActionBtn}>
+                                                        <View style={styles.faceImageActionIconBg}>
+                                                            <Ionicons name="camera" size={24} color={COLORS.primary} />
+                                                        </View>
+                                                        <Text style={styles.faceImageActionText}>{t('captureFrontSide') || 'Capture Front Side / सामने का हिस्सा कैप्चर करें'}</Text>
+                                                    </TouchableOpacity>
+                                                )}
+                                            </View>
+                                        </View>
+
+                                        {/* Back Image */}
+                                        <View style={styles.inputGroup}>
+                                            <Text style={styles.inputLabel}>
+                                                <Ionicons name="camera" size={14} color={COLORS.textMuted} /> {t('backAadhaar') || 'Back Aadhaar / आधार का पीछे का भाग'}
+                                            </Text>
+                                            <View style={styles.faceImageContainer}>
+                                                {aadhaarBackImage ? (
+                                                    <View style={styles.faceImagePreviewWrapper}>
+                                                        <Image source={{ uri: aadhaarBackImage.path }} style={[styles.faceImagePreview, { width: 220, height: 140, resizeMode: 'cover' }]} />
+                                                        <TouchableOpacity
+                                                            onPress={() => setAadhaarBackImage(null)}
+                                                            style={styles.faceImageRemoveBtn}
+                                                        >
+                                                            <Ionicons name="close" size={14} color={COLORS.white} />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ) : (
+                                                    <TouchableOpacity onPress={handleCaptureAadhaarBack} style={styles.faceImageActionBtn}>
+                                                        <View style={styles.faceImageActionIconBg}>
+                                                            <Ionicons name="camera" size={24} color={COLORS.primary} />
+                                                        </View>
+                                                        <Text style={styles.faceImageActionText}>{t('captureBackSide') || 'Capture Back Side / पीछे का हिस्सा कैप्चर करें'}</Text>
+                                                    </TouchableOpacity>
+                                                )}
+                                            </View>
+                                        </View>
+                                    </View>
+                                ) : (
+                                    // Upgrade Prompt for Aadhaar
+                                    <Animated.View entering={FadeInDown.duration(500).springify()} style={{ alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
+                                        <Animated.View
+                                            entering={ZoomIn.delay(200).duration(400).springify()}
+                                            style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#1E3A8A', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, elevation: 8 }}
+                                        >
+                                            <MaterialCommunityIcons name="fingerprint" size={50} color="#1E3A8A" />
+                                        </Animated.View>
+                                        <Animated.Text entering={FadeInDown.delay(300).duration(400)} style={{ fontSize: 22, fontWeight: '700', color: COLORS.text, textAlign: 'center', marginBottom: 12 }}>
+                                            Aadhaar Verification Locked
+                                        </Animated.Text>
+                                        <Animated.Text entering={FadeInDown.delay(400).duration(400)} style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 10 }}>
+                                            Upgrade to the Verified Driver plan (₹199/year) or higher to unlock Aadhaar Verification.
+                                        </Animated.Text>
+                                        <Animated.View entering={FadeInUp.delay(500).duration(400).springify()} style={{ width: '100%' }}>
+                                            <TouchableOpacity
+                                                onPress={() => dispatch(subscriptionModalAction({ visible: true, minPrice: 199 }))}
+                                                activeOpacity={0.9}
+                                                style={{ width: '100%', borderRadius: 16, overflow: 'hidden', shadowColor: '#2563EB', shadowOpacity: 0.4, shadowOffset: { width: 0, height: 6 }, shadowRadius: 12, elevation: 6 }}
+                                            >
+                                                <LinearGradient
+                                                    colors={['#1E3A8A', '#3B82F6', '#60A5FA']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 0 }}
+                                                    style={{ paddingVertical: 16, paddingHorizontal: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+                                                >
+                                                    <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.white} />
+                                                    <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '700', flexShrink: 1 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                                                        {t('upgradeToVerified') || 'Upgrade to Verified Driver @ ₹199'}
+                                                    </Text>
+                                                </LinearGradient>
+                                            </TouchableOpacity>
+                                        </Animated.View>
+                                        <Animated.View entering={FadeIn.delay(600).duration(400)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, backgroundColor: '#EFF6FF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 }}>
+                                            <Ionicons name="shield-checkmark" size={18} color={COLORS.primary} />
+                                            <Text style={{ marginLeft: 8, fontSize: 13, color: COLORS.primary, fontWeight: '500' }}>
+                                                {t('verifiedBenefits') || 'Includes DL Check, PAN Check & Face Match'}
+                                            </Text>
+                                        </Animated.View>
+                                    </Animated.View>
+                                )
+                            )}
+
                             {inputError && <Text style={styles.errorText}>{inputError}</Text>}
 
                             {activeTab === 'DL' && canAccessIdVerification && (
@@ -1492,6 +1849,17 @@ export default function DocumentVerification() {
                                         {consentChecked && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
                                     </View>
                                     <Text style={styles.consentText}>{t('dlConsentText') || 'I consent to verify my driving license for KYC purposes.'}</Text>
+                                </TouchableOpacity>
+                            )}
+
+                            {activeTab === 'AADHAAR' && canAccessIdVerification && (
+                                <TouchableOpacity onPress={() => setConsentChecked(!consentChecked)} activeOpacity={0.7} style={styles.consentRow}>
+                                    <View style={[styles.checkbox, consentChecked && styles.checkboxChecked]}>
+                                        {consentChecked && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
+                                    </View>
+                                    <Text style={styles.consentText}>
+                                        {t('aadhaarConsent') || 'We confirm obtaining valid customer consent to access/process their Aadhaar data. / हम पुष्टि करते हैं कि हमें उनके आधार डेटा तक पहुंचने/संसाधित करने के लिए वैध ग्राहक सहमति प्राप्त हुई है।'}
+                                    </Text>
                                 </TouchableOpacity>
                             )}
 
@@ -1519,10 +1887,10 @@ export default function DocumentVerification() {
                                     <TouchableOpacity
                                         onPress={handleVerify}
                                         activeOpacity={0.9}
-                                        disabled={isLoading || (activeTab === 'DL' && !consentChecked)}
+                                        disabled={isLoading || (activeTab === 'DL' && !consentChecked) || (activeTab === 'AADHAAR' && (!consentChecked || !aadhaarFrontImage || !aadhaarBackImage))}
                                         style={[
                                             styles.verifyButtonContainer,
-                                            (isLoading || (activeTab === 'DL' && !consentChecked)) && styles.verifyButtonDisabled
+                                            (isLoading || (activeTab === 'DL' && !consentChecked) || (activeTab === 'AADHAAR' && (!consentChecked || !aadhaarFrontImage || !aadhaarBackImage))) && styles.verifyButtonDisabled
                                         ]}
                                     >
                                         <LinearGradient colors={['#1E3A8A', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.verifyButton}>

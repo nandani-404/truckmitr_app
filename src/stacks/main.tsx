@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import Bottom from './tabs/bottom';
-import { AddDriver, AddJob, AddLoad, AppliedJob, AvailableJob, ContactUs, Dashboard, DriverDrivingDetailsByTransporter, DriverList, DriverProfileEditByTransporter, DriverUploadDocumentsByTransporter, DrivingDetails, DrivingDetailsTransporter, ExcelImport, HealthHygiene, JobStep2, JobStep3, LanguageMain, LocationSearch, LocationMap, Modules, Notification, PaymentSuccess, Player, PreferredColor, Privacy, ProfileEdit, ProfileEditNew, ProfileEditTransporter, Quiz, QuizResult, Rating, Search, Settings, SuitsJob, TransporterAppliedJob, TransporterVerificationScreen, UploadDocuments, UploadDocumentsTransporter, ViewJobs, DLVerification, DriverKiAwazInfo, CallJobManagerList, CallJobManagerInfo, ChallanCheckInfo, ChallanCheckResult, CourtCheckInfo, DigitalAddressCheckInfo, DriverInvites, RcCheckInfo, IdCheckInfo, Convoy, Training } from '@truckmitr/layouts/index';
+import { AddDriver, AddJob, AddLoad, AppliedJob, AvailableJob, ContactUs, Dashboard, DriverDrivingDetailsByTransporter, DriverList, DriverProfileEditByTransporter, DriverUploadDocumentsByTransporter, DrivingDetails, DrivingDetailsTransporter, ExcelImport, HealthHygiene, JobStep2, JobStep3, LanguageMain, LocationSearch, LocationMap, Modules, Notification, PaymentSuccess, Player, PreferredColor, Privacy, Terms, ProfileEdit, ProfileEditNew, ProfileEditTransporter, Quiz, QuizResult, Rating, Search, Settings, SuitsJob, TransporterAppliedJob, TransporterVerificationScreen, UploadDocuments, UploadDocumentsTransporter, ViewJobs, DLVerification, DriverKiAwazInfo, CallJobManagerList, CallJobManagerInfo, ChallanCheckInfo, ChallanCheckResult, CourtCheckInfo, DigitalAddressCheckInfo, DriverInvites, RcCheckInfo, IdCheckInfo, Convoy, Training } from '@truckmitr/layouts/index';
 import { setupFirebaseNotifications, initializeNotificationChannel } from '@truckmitr/src/utils/notification';
 import { DocumentUploadScreen, JobSummary, VerificationStatusScreen, } from '../app/layouts/main';
 import EditJob from '../app/layouts/main/edit-job';
@@ -11,6 +11,7 @@ import ProfileOverview from '../app/layouts/main/profile-overview';
 import InviteDriver from '@truckmitr/src/app/layouts/main/all-driver-list/all-drivers-invitation-tab';
 import { Referral } from '../app/layouts/main/home/referral-driver';
 import TransporterConsent from '../app/layouts/main/add-job/transporter-consent';
+import ConsentScreen from '../app/layouts/main/consent-screen';
 import DriverConsent from '../app/layouts/main/add-job/driver-consent';
 import SubscriptionConsent from '../app/layouts/main/subscription/subscription-consent';
 import VerificationDriversByTransporter from '../app/layouts/main/transporter-verification/verification-driver';
@@ -148,9 +149,20 @@ export default function Main() {
       <Stack.Screen name={STACKS.RATING} component={Rating} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.CONTACT_US} component={ContactUs} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.PRIVACY} component={Privacy} options={{ animation: 'fade' }} />
+      <Stack.Screen name={STACKS.TERMS} component={Terms} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.TRANSPORTER_CONSENT} component={TransporterConsent} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.DRIVER_CONSENT} component={DriverConsent} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.SUBSCRIPTION_CONSENT} component={SubscriptionConsent} options={{ animation: 'fade' }} />
+      <Stack.Screen
+        name={STACKS.CONSENT_MODAL_SCREEN}
+        component={ConsentScreen}
+        options={{
+          presentation: 'transparentModal',
+          animation: 'fade',
+          headerShown: false,
+          gestureEnabled: false
+        }}
+      />
 
       <Stack.Screen name={STACKS.ADD_JOB} component={AddJob} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.JOB_STEP2} component={JobStep2} options={{ animation: 'fade' }} />

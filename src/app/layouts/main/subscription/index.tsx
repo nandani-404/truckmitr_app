@@ -1186,7 +1186,7 @@ interface PlanDataType {
   tagline: string;
   badge: string;
   price: number;
-  duration: string;
+  duration?: string;
   intro: string;
   benefits: string[];
   ctaText: string;
@@ -1278,7 +1278,7 @@ const PlanCard = React.memo(({
                 <Text style={[styles.priceAmount, { color: plan.color, fontSize: responsiveFontSize(3) }]}>
                   ₹{plan.price}
                 </Text>
-                <Text style={styles.priceDuration}>/{plan.duration}</Text>
+                <Text style={styles.priceDuration}>/{plan.duration || t('subYear')}</Text>
               </View>
               <Text style={[styles.priceTagline, { fontSize: responsiveFontSize(1.2) }]}>
                 {plan.tagline}
@@ -1612,7 +1612,7 @@ export default function Subscription({ }: any) {
             tagline: tier === 'base' || tier === 'job_ready' ? t('subJobReadyTagline') : (apiPlan.tagline || (tier === 'trusted' ? t('subTrustedTagline') : tier === 'verified' ? t('subVerifiedTagline') : tier === 'foreman_pro' ? (t('subForemanTagline') || 'Maximize your earnings') : t('subStartYourJourney'))),
             badge,
             price: amount,
-            duration: apiPlan.duration || t('subYear'),
+            duration: apiPlan.duration,
             intro: tier === 'base' || tier === 'job_ready' ? t('subJobReadyIntro') : (apiPlan.description || apiPlan.intro || (tier === 'foreman_pro' ? (t('subForemanIntro') || 'Unlock exclusive benefits and higher earnings.') : '')),
             benefits,
             footerNotes,

@@ -10,6 +10,7 @@ export type NavigatorParams = {
     preferredColor: undefined
     paymentSuccess: any
     signup: { preSelectedRole?: string } | undefined
+    consentModalScreen: undefined
     moduleSelection: undefined
     congratulations: any
     profileCompletion: undefined
@@ -206,6 +207,7 @@ export const STACKS = {
     PREFERRED_COLOR: 'preferredColor',
     PAYMENT_SUCCESS: 'paymentSuccess',
     SIGNUP: 'signup',
+    CONSENT_MODAL_SCREEN: 'consentModalScreen',
     MODULE_SELECTION: 'moduleSelection',
     CONGRATULATIONS: 'congratulations',
     PROFILE_COMPLETION: 'profileCompletion',

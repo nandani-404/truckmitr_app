@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import Toast from 'react-native-simple-toast';
 
+
 // ... other imports ...
 
 const PROFILE_PLACEHOLDER = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
@@ -146,7 +147,7 @@ export default function DhabhaHome() {
     const colors = useColor();
     const { shadow } = useShadow();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
-    const { user, profileCompletion: userProfileCompletion } = useSelector((state: any) => state?.user) || {};
+    const { user, profileCompletion: userProfileCompletion, consent_check } = useSelector((state: any) => state?.user) || {};
 
     const [homeData, setHomeData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -179,6 +180,16 @@ export default function DhabhaHome() {
             fetchHomeData();
         }, [])
     );
+
+    useFocusEffect(
+        useCallback(() => {
+            if (consent_check === false) {
+                // @ts-ignore
+                navigation.navigate(STACKS.CONSENT_MODAL_SCREEN);
+            }
+        }, [consent_check, navigation])
+    );
+
 
     // Banner Data
     const profileCompletion = userProfileCompletion || 75;
@@ -641,8 +652,9 @@ export default function DhabhaHome() {
                     </View>
                 </View>
             </ScrollView >
-
-
+            {/* Force Consent Popup - Shows above everything if consent_check is false */}
+            {/* Force Consent Popup - Shows above everything if consent_check is false */}
+            {/* <ConsentModal visible={consent_check === false} /> */}
         </View >
     );
 }

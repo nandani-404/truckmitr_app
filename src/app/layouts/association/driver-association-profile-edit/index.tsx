@@ -379,7 +379,7 @@ export default function DriverAssociationProfileEdit() {
                     </View>
 
                     {/* Coverage Area */}
-                    <View style={styles.inputGroup}>
+                    {/* <View style={styles.inputGroup}>
                         <Text style={styles.inputLabel}>{t('associate_profile_completion_coverage_area_optional') || 'Coverage Area'}</Text>
                         <TextInput
                             style={styles.textInput}
@@ -388,7 +388,7 @@ export default function DriverAssociationProfileEdit() {
                             placeholder="Enter coverage area"
                             placeholderTextColor="#94A3B8"
                         />
-                    </View>
+                    </View> */}
                 </View>
 
                 <Space height={120} />
