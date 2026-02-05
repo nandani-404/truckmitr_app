@@ -176,17 +176,18 @@ export const getUserBadgeText = ({ user, subscriptionDetails, isDriver }: UserBa
 
   if (role === 'association') {
     // Association logic
-    // Check amounts or explicit plan indicators
+    // Check amounts or explicit plan indicators (1299 is the new price)
     const isPro =
+      paidAmount === 1299 ||
       paidAmount === 999 ||
       user?.plan_id == 12 ||
       user?.subscription_plan_id == 12 ||
       user?.subscription_plan_id === '12' ||
       user?.payment_type === 'association_pro' ||
-      subscriptionDetails?.payment_type === 'association_pro' ||
-      subscriptionDetails?.subscription_plan_id == 12 ||
-      subscriptionDetails?.subscription_plan_id === '12' ||
-      subscriptionDetails?.hasActiveSubscription;
+      sub?.payment_type === 'association_pro' ||
+      sub?.subscription_plan_id == 12 ||
+      sub?.subscription_plan_id === '12' ||
+      (subscriptionDetails as any)?.hasActiveSubscription;
 
     if (isPro) {
       return 'Driver Association Pro';
@@ -245,17 +246,18 @@ export const getUserTier = ({ user, subscriptionDetails, isDriver }: UserBadgePa
   }
 
   if (role === 'association') {
-    // Check for association pro subscription
+    // Check for association pro subscription (1299 is the new price)
     const isPro =
+      paidAmount === 1299 ||
       paidAmount === 999 ||
       user?.plan_id == 12 ||
       user?.subscription_plan_id == 12 ||
       user?.subscription_plan_id === '12' ||
       user?.payment_type === 'association_pro' ||
-      subscriptionDetails?.payment_type === 'association_pro' ||
-      subscriptionDetails?.subscription_plan_id == 12 ||
-      subscriptionDetails?.subscription_plan_id === '12' ||
-      subscriptionDetails?.hasActiveSubscription;
+      sub?.payment_type === 'association_pro' ||
+      sub?.subscription_plan_id == 12 ||
+      sub?.subscription_plan_id === '12' ||
+      (subscriptionDetails as any)?.hasActiveSubscription;
 
     if (isPro) {
       return 'ASSOCIATION PRO';
@@ -268,40 +270,52 @@ export const getUserTier = ({ user, subscriptionDetails, isDriver }: UserBadgePa
 
 /**
  * Check if user should show membership card
- * Currently only drivers get cards, but future-ready for transporters
+ * Only shows card when user actually has a valid, active subscription
  */
 export const shouldShowMembershipCard = ({ user, subscriptionDetails, isDriver }: UserBadgeParams): boolean => {
   const role = user?.role?.toLowerCase();
   const sub = getActiveSubscription(subscriptionDetails);
 
-  // Check if user has subscription
-  const hasSub = sub && (sub.id || sub.payment_id || sub.subscription_id);
+  // First, check if user has any subscription at all
+  // Must have a valid subscription ID, payment ID, or subscription object ID
+  const hasSub = Boolean(sub && (sub.id || sub.payment_id || sub.subscription_id));
 
-  // Use properties from active sub if available, else fallback to top-level if object
+  // If no subscription exists, don't show the card
+  if (!hasSub) {
+    return false;
+  }
+
+  // Check if the subscription is active
+  // 1. Must be captured
+  // 2. Must NOT be expired (if end_at is present)
+  // 3. OR relying on flags from profile/response
+
+  const isNotExpired = !sub.end_at || sub.end_at > Date.now() / 1000;
+  const isCapturedAndActive = sub.payment_status === 'captured' && isNotExpired;
+
   const hasActiveSubscription = Boolean(
-    (sub && sub.payment_status === 'captured') ||
-    (subscriptionDetails as any)?.hasActiveSubscription ||
-    !(subscriptionDetails as any)?.showSubscriptionModel
+    isCapturedAndActive ||
+    (subscriptionDetails as any)?.hasActiveSubscription === true ||
+    (subscriptionDetails as any)?.showSubscriptionModel === false
   );
 
   if (role === 'driver') {
     // Drivers get cards when they have active subscription and subscription ID
-    return Boolean(isDriver && hasActiveSubscription && hasSub);
-  }
-
-  if (role === 'transporter') {
-    // Future: Transporters will get cards based on similar logic
-    // To enable transporter cards, simply change this to:
-    // return Boolean(hasActiveSubscription && hasSub);
-    return Boolean(hasActiveSubscription && hasSub);
-  }
-
-  if (role === 'foreman') {
-    return Boolean(hasActiveSubscription && hasSub);
+    return Boolean(isDriver && hasActiveSubscription);
   }
 
   if (role === 'association') {
-    return Boolean(hasActiveSubscription && hasSub);
+    // STRICT check for association: Must be captured and active.
+    // Ignore showSubscriptionModel flags which might be misleading for this role
+    return isCapturedAndActive;
+  }
+
+  if (role === 'transporter') {
+    return hasActiveSubscription;
+  }
+
+  if (role === 'foreman') {
+    return hasActiveSubscription;
   }
 
   return false;

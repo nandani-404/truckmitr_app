@@ -784,10 +784,10 @@ export default function Routes() {
       {/* <AssociateProfileCompletionStack /> */}
       {/* <DhabhaMain /> */}
       {/* <Auth /> */}
-      <DhabhaProfileCompletionStack />
+      {/* <DhabhaProfileCompletionStack /> */}
       {/* <PunctureProfileCompletionStack /> */}
       {/* <PunctureMain /> */}
-      {/* {!isAuthenticated ? (
+      {!isAuthenticated ? (
         <Auth />
       ) : profileRequiredFieldsStatus === false ? (
         // Module-specific profile completion
@@ -812,7 +812,7 @@ export default function Routes() {
         <PunctureMain />
       ) : (
         <Main />
-      )} */}
+      )}
       {subscriptionModal && <Subscription />}
       {/* <InAppUpdatePopup /> */}
     </NavigationContainer>
