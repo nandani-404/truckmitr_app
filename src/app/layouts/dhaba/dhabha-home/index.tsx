@@ -545,7 +545,7 @@ export default function DhabhaHome() {
                         </View>
 
                         {/* Row 2 */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
                             <QuickActionCard
                                 icon={
                                     <Image
@@ -585,6 +585,26 @@ export default function DhabhaHome() {
                                 onPress={() => navigation.navigate(STACKS.DHABHA_MY_DHABHA as any)}
                             />
                         </View>
+
+                        {/* Row 3 - My Drivers */}
+                        {/* <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <QuickActionCard
+                                icon={
+                                    <Image
+                                        source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}
+                                        style={{ width: 28, height: 28 }}
+                                        resizeMode="contain"
+                                    />
+                                }
+                                title={t('dhaba_my_drivers')}
+                                subtitle={t('dhaba_home_my_drivers_subtitle')}
+                                bgColor="#FFF7ED"
+                                borderColor="#E5E7EB"
+                                iconBgColor="#FDBA74" // Orange shade for Dhaba theme
+                                onPress={() => navigation.navigate(STACKS.DHABHA_MY_DRIVERS as any)}
+                            />
+                            <View style={{ width: '48%' }} />
+                        </View> */}
                     </View>
 
 

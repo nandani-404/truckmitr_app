@@ -3570,5 +3570,17 @@
     "and": " and ",
     "privacy_policy": "Privacy Policy",
     "consent_msg_end": ".",
-    "i_agree": "I Agree"
+    "i_agree": "I Agree",
+    "puncture_home_my_drivers_subtitle": "View your added drivers",
+    "dhaba_home_my_drivers_subtitle": "View your added drivers",
+    "puncture_my_drivers": "My Drivers",
+    "dhaba_my_drivers": "My Drivers",
+    "puncture_driver_mobile": "Mobile",
+    "dhaba_driver_mobile": "Mobile",
+    "puncture_driver_added_on": "Added On",
+    "dhaba_driver_added_on": "Added On",
+    "puncture_no_drivers_title": "No Drivers Yet",
+    "puncture_no_drivers_desc": "Drivers you add will appear here",
+    "dhaba_no_drivers_title": "No Drivers Yet",
+    "dhaba_no_drivers_desc": "Drivers you add will appear here"
 }

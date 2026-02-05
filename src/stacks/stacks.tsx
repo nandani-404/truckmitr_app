@@ -174,6 +174,7 @@ export type NavigatorParams = {
     dhabhaAddDriver: undefined;
     dhabhaBankDetails: undefined;
     dhabhaMyDhabha: undefined;
+    dhabhaMyDrivers: undefined;
     dhabhaNearby: undefined;
     dhabhaDriverSearch: undefined;
     dhabhaProfileEdit: undefined;
@@ -189,6 +190,7 @@ export type NavigatorParams = {
     punctureAddDriver: undefined;
     punctureBankDetails: undefined;
     punctureMyShop: undefined;
+    punctureMyDrivers: undefined;
     punctureNearby: undefined;
     punctureDriverSearch: undefined;
     punctureProfileEdit: undefined;
@@ -411,6 +413,7 @@ export const STACKS = {
     DHABHA_ADD_DRIVER: 'dhabhaAddDriver',
     DHABHA_BANK_DETAILS: 'dhabhaBankDetails',
     DHABHA_MY_DHABHA: 'dhabhaMyDhabha',
+    DHABHA_MY_DRIVERS: 'dhabhaMyDrivers',
     DHABHA_DRIVER_SEARCH: 'dhabhaDriverSearch',
     DHABHA_PROFILE_EDIT: 'dhabhaProfileEdit',
     DHABHA_DRIVER_KI_AWAZ: 'dhabhaDriverKiAwaz',
@@ -425,6 +428,7 @@ export const STACKS = {
     PUNCTURE_ADD_DRIVER: 'punctureAddDriver',
     PUNCTURE_BANK_DETAILS: 'punctureBankDetails',
     PUNCTURE_MY_SHOP: 'punctureMyShop',
+    PUNCTURE_MY_DRIVERS: 'punctureMyDrivers',
     PUNCTURE_NEARBY: 'punctureNearby',
     PUNCTURE_DRIVER_SEARCH: 'punctureDriverSearch',
     PUNCTURE_PROFILE_EDIT: 'punctureProfileEdit',

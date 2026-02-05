@@ -780,14 +780,14 @@ export default function Routes() {
     >
       <StatusBar translucent backgroundColor="transparent" />
       {/* <ZegoCallInvitationDialog /> */}
-      {/* <AssociateMain /> */}
-      {/* <AssociateProfileCompletionStack /> */}
-      {/* <DhabhaMain /> */}
-      {/* <Auth /> */}
+      {/* <AssociateMain />
+      <AssociateProfileCompletionStack />
+      <DhabhaMain />
+      <Auth />
       <DhabhaProfileCompletionStack />
-      {/* <PunctureProfileCompletionStack /> */}
-      {/* <PunctureMain /> */}
-      {/* {!isAuthenticated ? (
+      <PunctureProfileCompletionStack />
+      <PunctureMain /> */}
+      {!isAuthenticated ? (
         <Auth />
       ) : profileRequiredFieldsStatus === false ? (
         // Module-specific profile completion
@@ -812,7 +812,7 @@ export default function Routes() {
         <PunctureMain />
       ) : (
         <Main />
-      )} */}
+      )}
       {subscriptionModal && <Subscription />}
       {/* <InAppUpdatePopup /> */}
     </NavigationContainer>

@@ -23,6 +23,7 @@ import DriverKiAwazHome from '@truckmitr/src/app/layouts/main/driver-ki-awaz-inf
 import { Settings, Rating, ContactUs, Privacy, LanguageMain } from '@truckmitr/layouts/index';
 import DhabaBankDetails from '@truckmitr/src/app/layouts/dhaba/dhaba-bank-details';
 import DhabhaMyDhabha from '@truckmitr/src/app/layouts/dhaba/dhabha-my-dhabha';
+import DhabhaMyDrivers from '@truckmitr/src/app/layouts/dhaba/dhaba-my-drivers';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -185,6 +186,7 @@ export default function DhabhaMain() {
             <Stack.Screen name={STACKS.DHABHA_DRIVER_SEARCH} component={DhabhaDriverSearch} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_PROFILE_EDIT} component={DhabaProfileEdit} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_MY_REFERRALS} component={DhabhaMyReferralsScreen} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DHABHA_MY_DRIVERS} component={DhabhaMyDrivers} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.LANGUAGE_MAIN} component={LanguageMain} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     );

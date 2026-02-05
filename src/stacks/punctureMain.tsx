@@ -38,6 +38,7 @@ const PlaceholderScreen = ({ title }: { title: string }) => (
 // Import shared screens
 import { Settings, Rating, ContactUs, Privacy, LanguageMain } from '@truckmitr/layouts/index';
 import PunctureMyReferrals from '../app/layouts/puncture/puncture-my-referrals';
+import PunctureMyDrivers from '../app/layouts/puncture/puncture-my-drivers';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -175,6 +176,7 @@ export default function PunctureMain() {
             <Stack.Screen name={STACKS.PUNCTURE_PROFILE_EDIT} component={PunctureProfileEdit} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name={STACKS.PUNCTURE_MY_SHOP} component={PunctureMyShop} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name={STACKS.PUNCTURE_MY_REFERRALS} component={PunctureMyReferrals} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.PUNCTURE_MY_DRIVERS} component={PunctureMyDrivers} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name={STACKS.PUNCTURE_DRIVER_SEARCH} component={PunctureDriverSearch} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     );
