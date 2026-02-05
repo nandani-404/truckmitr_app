@@ -3490,5 +3490,6 @@
     "wallet_available": "उपलब्ध",
     "wallet_min": "न्यूनतम",
     "wallet_request_redemption": "रिडेम्पशन का अनुरोध करें",
-    "wallet_driver_commission": "ड्राइवर कमीशन"
+    "wallet_driver_commission": "ड्राइवर कमीशन",
+    "puncture_select_year": "वर्ष चुनें"
 }

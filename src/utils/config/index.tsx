@@ -247,6 +247,7 @@ export const END_POINTS = {
     DHABA_HOME: 'api/dhaba/commission-new',
     DHABA_COMMISSION_DETAILS: 'api/dhaba/commission-new-details',
     DHABA_PHOTO_UPLOAD: "api/dhaba/photos",
+    DHABA_DRIVERS: 'api/dhaba/drivers',
     DHABA_DRIVER_SEARCH: 'api/dhaba/drivers/search',
     DHABA_UPDATE_PROFILE: `api/update-profile-dhaba`,
     DHABA_BANK_DETAILS_FETCH: (id: any) => `api/dhaba/account-details/${id}`,
@@ -257,6 +258,7 @@ export const END_POINTS = {
     //puncture related api
     // ++++++++++++++++++++++++
     PUNCTURE_ADD_DRIVER: `api/puncture/add-driver`,
+    PUNCTURE_DRIVERS: 'api/puncture/drivers',
     PUNCTURE_DRIVER_SEARCH: 'api/puncture/drivers/search',
     PUNCTURE_HOME: 'api/puncture/commission-new',
     PUNCTURE_WALLET_SUMMARY: `api/puncture/commission/status-summary`,
@@ -276,6 +278,7 @@ export const END_POINTS = {
     PUNCTURE_BANK_DETAILS_UPDATE: `api/puncture/bank-details`,
     GET_BASIC_INFO: `api/puncture/get-puncture-info`,
     GET_SERVICE_OFFERED: `api/puncture/servicess`,
+    GET_REFERRAL_CODE_DETAILS: `api/puncture/commission-new-details`,
     GET_VEHICLE_COVERAGE: `api/puncture/vehicle-coverages`,
     GET_PUNCTURE_PHOTOS: `api/puncture/photos`,
     // Consent update endpoint

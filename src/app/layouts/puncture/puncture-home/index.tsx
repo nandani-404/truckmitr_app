@@ -598,7 +598,7 @@ export default function PunctureHome() {
                         </View>
 
                         {/* Row 2 */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
                             <QuickActionCard
                                 icon={
                                     <Image
@@ -630,6 +630,26 @@ export default function PunctureHome() {
                                 onPress={() => navigation.navigate(STACKS.PUNCTURE_MY_SHOP as any)}
                             />
                         </View>
+
+                        {/* Row 3 - My Drivers */}
+                        {/* <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <QuickActionCard
+                                icon={
+                                    <Image
+                                        source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}
+                                        style={{ width: 28, height: 28 }}
+                                        resizeMode="contain"
+                                    />
+                                }
+                                title={t('puncture_my_drivers')}
+                                subtitle={t('puncture_home_my_drivers_subtitle')}
+                                bgColor="#ECFDF5"
+                                borderColor="#E5E7EB"
+                                iconBgColor="#A7F3D0" // Darker than card bg (#ECFDF5)
+                                onPress={() => navigation.navigate(STACKS.PUNCTURE_MY_DRIVERS as any)}
+                            />
+                            <View style={{ width: '48%' }} />
+                        </View> */}
                     </View>
 
                     {/* Recent Commissions Section */}

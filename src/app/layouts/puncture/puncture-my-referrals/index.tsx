@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,62 +7,18 @@ import {
     FlatList,
     Modal,
     Platform,
-    ScrollView
+    ScrollView,
+    RefreshControl,
+    ActivityIndicator
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useResponsiveScale, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { useTranslation } from 'react-i18next';
 import { hitSlop } from '@truckmitr/src/app/functions';
-
-// Mock Data
-const MOCK_REFERRALS = [
-    {
-        id: '1',
-        name: 'Rajesh Kumar',
-        mobile: '98******12',
-        state: 'Haryana',
-        date: '27 Jan 2024, 10:30 AM',
-        timestamp: new Date('2024-01-27T10:30:00').getTime(),
-        status: 'Paid',
-        walletStatus: 'Credited',
-        amount: 10
-    },
-    {
-        id: '2',
-        name: 'Amit Singh',
-        mobile: '99******45',
-        state: 'Punjab',
-        date: '26 Jan 2024, 02:15 PM',
-        timestamp: new Date('2024-01-26T14:15:00').getTime(),
-        status: 'Pending',
-        walletStatus: 'Pending',
-        amount: 10
-    },
-    {
-        id: '4',
-        name: 'Suresh Patel',
-        mobile: '91******23',
-        state: 'Gujarat',
-        date: '24 Jan 2024, 04:45 PM',
-        timestamp: new Date('2024-01-24T16:45:00').getTime(),
-        status: 'Paid',
-        walletStatus: 'Credited',
-        amount: 10
-    },
-    {
-        id: '5',
-        name: 'Dinesh Karthik',
-        mobile: '78******56',
-        state: 'Tamil Nadu',
-        date: '23 Jan 2024, 09:20 AM',
-        timestamp: new Date('2024-01-23T09:20:00').getTime(),
-        status: 'Pending',
-        walletStatus: 'Pending',
-        amount: 10
-    }
-];
+import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/src/utils/config';
 
 const StatusBadge = ({ status, t }: { status: string; t: any }) => {
     let bg = '#F3F4F6';
@@ -96,6 +52,11 @@ export default function PunctureMyReferrals() {
     const safeAreaInsets = useSafeAreaInsets();
     useStatusBarStyle('dark-content');
 
+    // API State
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [referrals, setReferrals] = useState<any[]>([]);
+
     // Filter State
     const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
 
@@ -116,22 +77,104 @@ export default function PunctureMyReferrals() {
         'Lakshadweep', 'Puducherry'
     ];
 
+    // API Stats from response
+    const [apiStats, setApiStats] = useState({
+        totalCommission: 0,
+        pendingCommission: 0,
+        paidCommission: 0,
+        driverCount: 0
+    });
+
+    // Fetch Referral Details API
+    const fetchReferralDetails = async () => {
+        try {
+            if (!refreshing) setLoading(true);
+            const response = await axiosInstance.get(END_POINTS.GET_REFERRAL_CODE_DETAILS);
+            if (response.data.success) {
+                const data = response.data.data;
+
+                // Update stats from API response
+                setApiStats({
+                    totalCommission: parseFloat(data.total_commission) || 0,
+                    pendingCommission: parseFloat(data.pending_commission) || 0,
+                    paidCommission: parseFloat(data.paid_commission) || 0,
+                    driverCount: data.driver_count || 0
+                });
+
+                // Parse drivers array from API response
+                if (data.drivers && Array.isArray(data.drivers)) {
+                    const formattedReferrals = data.drivers.map((driver: any, index: number) => ({
+                        id: driver.driver_id?.toString() || `${index + 1}`,
+                        name: driver.driver_name || 'Unknown',
+                        mobile: driver.driver_mobile || '',
+                        state: driver.state?.name || '',
+                        date: driver.date ? formatDate(driver.date) : '',
+                        timestamp: driver.date ? new Date(driver.date).getTime() : Date.now(),
+                        status: driver.status === 'pending' ? 'Pending' : driver.status === 'paid' ? 'Paid' : driver.status,
+                        walletStatus: driver.status === 'pending' ? 'Pending' : driver.status === 'paid' ? 'Credited' : driver.status,
+                        amount: parseFloat(driver.amount) || 0,
+                        image: driver.driver_images || null
+                    }));
+                    setReferrals(formattedReferrals);
+                } else {
+                    setReferrals([]);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching referral details:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    // Format date helper
+    const formatDate = (dateString: string) => {
+        if (!dateString || dateString === 'null') return '';
+        try {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.toLocaleString('en-US', { month: 'short' });
+            const year = date.getFullYear();
+            const hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedHours = hours % 12 || 12;
+            return `${day} ${month} ${year}, ${formattedHours}:${minutes} ${ampm}`;
+        } catch {
+            return dateString;
+        }
+    };
+
+    // Pull to refresh
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchReferralDetails();
+    }, []);
+
+    // Fetch on focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchReferralDetails();
+        }, [])
+    );
+
     // Filter Logic
     const filteredData = useMemo(() => {
-        return MOCK_REFERRALS.filter(item => {
+        return referrals.filter(item => {
             // 1. Status Check
             if (statusFilter !== 'All' && item.status !== statusFilter) return false;
 
             // 2. State Check
             if (selectedStates.length > 0 && !selectedStates.includes(item.state)) return false;
 
-            // 3. Date Check (Mock Logic)
+            // 3. Date Check
             const now = new Date().getTime();
             const OneDay = 24 * 60 * 60 * 1000;
             const diff = now - item.timestamp;
 
             if (dateRange === 'Today') {
-                if (diff > OneDay) return false; // Rough check
+                if (diff > OneDay) return false;
             } else if (dateRange === 'Last 7 Days') {
                 if (diff > 7 * OneDay) return false;
             } else if (dateRange === 'Last 30 Days') {
@@ -140,13 +183,12 @@ export default function PunctureMyReferrals() {
 
             return true;
         });
-    }, [statusFilter, selectedStates, dateRange]);
+    }, [referrals, statusFilter, selectedStates, dateRange]);
 
-    // Calculate Stats based on filtered data OR total data? Usually total stats shown, but filtered list.
-    // Let's show Total stats always.
-    const totalReferrals = MOCK_REFERRALS.length;
-    const totalEarned = MOCK_REFERRALS.reduce((sum, item) => sum + (item.amount || 0), 0);
-    const pendingCount = MOCK_REFERRALS.filter(item => item.status === 'Pending').length;
+    // Calculate Stats from API response
+    const totalReferrals = apiStats.driverCount;
+    const totalEarned = apiStats.totalCommission;
+    const pendingCount = referrals.filter(item => item.status === 'Pending').length;
 
     const toggleStateSelection = (state: string) => {
         setSelectedStates(prev =>
@@ -293,22 +335,37 @@ export default function PunctureMyReferrals() {
             </View>
 
             {/* Drivers List */}
-            <FlatList
-                data={filteredData}
-                keyExtractor={item => item.id}
-                contentContainerStyle={[styles.listContent, { paddingBottom: safeAreaInsets.bottom + 20 }]}
-                renderItem={renderItem}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Ionicons name="search-outline" size={48} color="#D1D5DB" />
-                        <Text style={styles.emptyText}>{t('puncture_referrals_no_drivers')}</Text>
-                        <TouchableOpacity onPress={clearFilters}>
-                            <Text style={styles.clearFilterLink}>{t('puncture_referrals_clear_filters')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                }
-            />
+            {loading && !refreshing ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#475569" />
+                    <Text style={styles.loadingText}>{t('puncture_referrals_loading') || 'Loading...'}</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredData}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={[styles.listContent, { paddingBottom: safeAreaInsets.bottom + 20 }]}
+                    renderItem={renderItem}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={['#475569']}
+                            tintColor="#475569"
+                        />
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+                            <Text style={styles.emptyText}>{t('puncture_referrals_no_drivers')}</Text>
+                            <TouchableOpacity onPress={clearFilters}>
+                                <Text style={styles.clearFilterLink}>{t('puncture_referrals_clear_filters')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    }
+                />
+            )}
 
             {/* Comprehensive Filter Modal */}
             <Modal
@@ -546,6 +603,10 @@ const styles = StyleSheet.create({
     emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
     emptyText: { marginTop: 16, fontSize: 15, color: '#6B7280' },
     clearFilterLink: { marginTop: 8, fontSize: 15, color: '#475569', fontWeight: '600' },
+
+    // Loading State
+    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
+    loadingText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
 
     // Filter Modal
     modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

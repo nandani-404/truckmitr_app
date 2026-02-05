@@ -31,7 +31,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
-import { userEditAction, userAuthenticatedAction } from '@truckmitr/src/redux/actions/user.action';
+import { userEditAction, userAuthenticatedAction, userAction } from '@truckmitr/src/redux/actions/user.action';
 import { useTranslation } from 'react-i18next';
 import { Space } from '@truckmitr/src/app/components';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -606,25 +606,32 @@ export default function ProfileCompletionPuncture() {
     const submitProfile = async () => {
         setFinishing(true);
         try {
-            // Finalize profile submission logic here if any additional API call is needed
-            // For now, assume previous step's API call was the final one or this just switches state
-            setFinishing(false);
-            showToast(t('puncture_profile_submitted'));
+            const profileResponse = await axiosInstance.get(END_POINTS.GET_PROFILE);
+            if (profileResponse?.data?.status) {
+                const updatedData = { ...profileResponse.data };
 
-            // Dispatch action to update Redux state
-            dispatch(userAuthenticatedAction(true));
-            dispatch(userEditAction({ ...userEdit, profile_completed: true })); // Ensure profile completion flag is set locally if needed
+                // Ensure the status flag is true at the ROOT level
+                updatedData.puncture_required_fields_status = true;
 
-            // Navigate to Puncture Main Stack
-            // navigation.reset({
-            //     index: 0,
-            //     routes: [{ name: STACKS.PUNCTURE_MAIN as any }],
-            // });
-            // Alternatively, if Puncture Main is a nested stack:
-            navigation.navigate(STACKS.PUNCTURE_BOTTOM as any);
+                // Also set generic flags just in case
+                if (updatedData.data) {
+                    updatedData.data.profile_completed = true;
+                }
+                if (updatedData.user) {
+                    updatedData.user.profile_completed = true;
+                }
+
+                dispatch(userAction(updatedData));
+                dispatch(userAuthenticatedAction(true));
+                showToast(t('puncture_profile_submitted'));
+            } else {
+                showToast(t('failedToSyncProfile'));
+            }
         } catch (error: any) {
-            setFinishing(false);
+            console.error('Error submitting profile:', error);
             showToast(error?.message || t('puncture_failed_submit'));
+        } finally {
+            setFinishing(false);
         }
     };
 
