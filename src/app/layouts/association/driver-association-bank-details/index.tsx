@@ -133,7 +133,8 @@ const AssociationBankDetails = () => {
         value: string,
         key: keyof typeof bankData,
         keyboardType: any = 'default',
-        autoCapitalize: any = 'words'
+        autoCapitalize: any = 'words',
+        maxLength?: number
     ) => (
         <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.blackOpacity(0.5), fontSize: responsiveFontSize(1.4) }]}>
@@ -175,11 +176,18 @@ const AssociationBankDetails = () => {
                             }
                         ]}
                         value={value}
-                        onChangeText={(text) => setBankData({ ...bankData, [key]: text })}
+                        onChangeText={(text) => {
+                            let newText = text;
+                            if (key === 'bank_name') {
+                                newText = text.replace(/[^a-zA-Z\s]/g, '');
+                            }
+                            setBankData({ ...bankData, [key]: newText });
+                        }}
                         keyboardType={keyboardType}
                         autoCapitalize={autoCapitalize}
                         placeholder={`${t('enter')} ${label}`}
                         placeholderTextColor={colors.blackOpacity(0.3)}
+                        maxLength={maxLength}
                     />
                 )
             ) : (
@@ -289,9 +297,9 @@ const AssociationBankDetails = () => {
                         <View style={styles.flatContainer}>
                             {renderInput(t('accountHolderName'), bankData.account_holder_name, 'account_holder_name')}
                             <View style={styles.divider} />
-                            {renderInput(t('accountNumber'), bankData.account_number, 'account_number', 'numeric')}
+                            {renderInput(t('accountNumber'), bankData.account_number, 'account_number', 'number-pad', 'words', 18)}
                             <View style={styles.divider} />
-                            {renderInput(t('bankName'), bankData.bank_name, 'bank_name')}
+                            {renderInput(t('bankName'), bankData.bank_name, 'bank_name', 'default', 'characters')}
                             <View style={styles.divider} />
                             {renderInput(t('branchName'), bankData.branch_name, 'branch_name')}
                             <View style={styles.divider} />
