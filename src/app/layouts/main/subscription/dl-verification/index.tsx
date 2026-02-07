@@ -1259,14 +1259,14 @@ export default function DocumentVerification() {
                             {aadhaarPanMatchResult && (
                                 <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F3F4F6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.textMuted }}>Aadhaar-PAN Link</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.textMuted }}>{t('aadhaarPanLink') || 'Aadhaar-PAN Link / आधार-पैन लिंक'}</Text>
                                         <Text style={{
                                             fontSize: 15,
                                             fontWeight: '700',
                                             color: (aadhaarPanMatchResult.match_results?.overall_match || aadhaarPanMatchResult.pan_verified) ? COLORS.success : COLORS.warning,
                                             marginTop: 2
                                         }}>
-                                            {(aadhaarPanMatchResult.match_results?.overall_match || aadhaarPanMatchResult.pan_verified) ? 'Verified & Linked' : 'Verification Pending / Mismatch'}
+                                            {(aadhaarPanMatchResult.match_results?.overall_match || aadhaarPanMatchResult.pan_verified) ? (t('verifiedAndLinked') || 'Verified & Linked / सत्यापित और लिंक') : (t('verificationPendingMismatch') || 'Verification Pending / Mismatch / सत्यापन लंबित / बेमेल')}
                                         </Text>
 
                                         {/* Detailed Status Message */}
@@ -1274,15 +1274,15 @@ export default function DocumentVerification() {
                                             <View style={{ marginTop: 4 }}>
                                                 <Text style={{ fontSize: 11, color: COLORS.textMuted }}>
                                                     {aadhaarPanMatchResult.match_results
-                                                        ? 'Details do not match perfectly. Please check PAN details.'
-                                                        : (aadhaarPanMatchResult.message || 'Both documents must be verified')}
+                                                        ? (t('detailsDoNotMatch') || 'Details do not match perfectly. Please check PAN details. / विवरण पूरी तरह मेल नहीं खाते। कृपया पैन विवरण देखें।')
+                                                        : (aadhaarPanMatchResult.message || (t('bothDocumentsVerified') || 'Both documents must be verified / दोनों दस्तावेजों का सत्यापन आवश्यक है'))}
                                                 </Text>
 
                                                 {/* Specific Mismatches if available */}
                                                 {aadhaarPanMatchResult.match_results && !aadhaarPanMatchResult.match_results.overall_match && (
                                                     <View style={{ marginTop: 2 }}>
-                                                        {!aadhaarPanMatchResult.match_results.name_match && <Text style={{ fontSize: 10, color: COLORS.error }}>• Name mismatch</Text>}
-                                                        {!aadhaarPanMatchResult.match_results.dob_match && <Text style={{ fontSize: 10, color: COLORS.error }}>• DOB mismatch</Text>}
+                                                        {!aadhaarPanMatchResult.match_results.name_match && <Text style={{ fontSize: 10, color: COLORS.error }}>• {t('nameMismatch') || 'Name mismatch / नाम बेमेल'}</Text>}
+                                                        {!aadhaarPanMatchResult.match_results.dob_match && <Text style={{ fontSize: 10, color: COLORS.error }}>• {t('dobMismatch') || 'DOB mismatch / जन्म तिथि बेमेल'}</Text>}
                                                     </View>
                                                 )}
                                             </View>
@@ -1294,7 +1294,7 @@ export default function DocumentVerification() {
                                             onPress={() => setActiveTab('PAN')}
                                             style={{ backgroundColor: '#EFF6FF', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginLeft: 8 }}
                                         >
-                                            <Text style={{ color: COLORS.primary, fontSize: 13, fontWeight: '600' }}>Check PAN</Text>
+                                            <Text style={{ color: COLORS.primary, fontSize: 13, fontWeight: '600' }}>{t('checkPan') || 'Check PAN / पैन की जाँच करें'}</Text>
                                         </TouchableOpacity>
                                     )}
                                 </View>
@@ -1807,10 +1807,10 @@ export default function DocumentVerification() {
                                             <MaterialCommunityIcons name="fingerprint" size={50} color="#1E3A8A" />
                                         </Animated.View>
                                         <Animated.Text entering={FadeInDown.delay(300).duration(400)} style={{ fontSize: 22, fontWeight: '700', color: COLORS.text, textAlign: 'center', marginBottom: 12 }}>
-                                            Aadhaar Verification Locked
+                                            {t('aadhaarVerificationLocked') || 'Aadhaar Verification Locked / आधार सत्यापन लॉक है'}
                                         </Animated.Text>
                                         <Animated.Text entering={FadeInDown.delay(400).duration(400)} style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 10 }}>
-                                            Upgrade to the Verified Driver plan (₹199/year) or higher to unlock Aadhaar Verification.
+                                            {t('aadhaarVerificationUpgradeMessage') || 'Upgrade to the Verified Driver plan (₹199/year) or higher to unlock Aadhaar Verification. / आधार सत्यापन अनलॉक करने के लिए वेरिफाइड ड्राइवर प्लान (₹199/वर्ष) या उच्चतर में अपग्रेड करें।'}
                                         </Animated.Text>
                                         <Animated.View entering={FadeInUp.delay(500).duration(400).springify()} style={{ width: '100%' }}>
                                             <TouchableOpacity
@@ -1826,7 +1826,7 @@ export default function DocumentVerification() {
                                                 >
                                                     <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.white} />
                                                     <Text style={{ color: COLORS.white, fontSize: 15, fontWeight: '700', flexShrink: 1 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                                                        {t('upgradeToVerified') || 'Upgrade to Verified Driver @ ₹199'}
+                                                        {t('upgradeToVerified') || 'Upgrade to Verified Driver @ ₹199 / वेरिफाइड ड्राइवर प्लान (₹199) में अपग्रेड करें'}
                                                     </Text>
                                                 </LinearGradient>
                                             </TouchableOpacity>
@@ -1834,7 +1834,7 @@ export default function DocumentVerification() {
                                         <Animated.View entering={FadeIn.delay(600).duration(400)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, backgroundColor: '#EFF6FF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 }}>
                                             <Ionicons name="shield-checkmark" size={18} color={COLORS.primary} />
                                             <Text style={{ marginLeft: 8, fontSize: 13, color: COLORS.primary, fontWeight: '500' }}>
-                                                {t('verifiedBenefits') || 'Includes DL Check, PAN Check & Face Match'}
+                                                {t('verifiedBenefits') || 'Includes DL Check, PAN Check & Face Match / डीएल, पैन और फेस मैच शामिल है'}
                                             </Text>
                                         </Animated.View>
                                     </Animated.View>

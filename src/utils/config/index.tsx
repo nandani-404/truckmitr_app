@@ -5,6 +5,7 @@ export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
 // export const BASE_URL = 'https://devtruckmitr.in/'
 export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
+// export const DRIVER_KI_AWAZ_STREAM = 'https://driverkiawaz.truckmitr.com/' //+ filepath(1770288688561.mp4)
 export const AWAZ_URL = 'https://truckmitr.com/'
 export const STATICS = {
     RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
@@ -220,6 +221,7 @@ export const END_POINTS = {
     // Driver Ki Awaz
     DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
     DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,
+    DKA_STREAM: `${DRIVER_KI_AWAZ_BASE}api/feed/stream`,
     DKA_LIKE: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}/like`,
     DKA_COMMENT: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}/comment`,
     DKA_GET_COMMENTS: (id: any) => `${DRIVER_KI_AWAZ_BASE}api/feed/${id}/getcomments`,
