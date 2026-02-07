@@ -664,7 +664,7 @@ export default function PunctureMyProfile() {
 
     const _navigateRating = () => navigation.navigate(STACKS.RATING)
     const _navigateContactUs = () => navigation.navigate(STACKS.CONTACT_US)
-    const _navigateProfileEdit = () => navigation.navigate('punctureProfileEdit' as never)
+    const _navigateProfileEdit = () => navigation.navigate(STACKS.PUNCTURE_MY_SHOP, { initialTab: 'Profile' })
     const _navigatePrivacy = () => navigation.navigate(STACKS.PRIVACY)
     const _navigateSetting = () => navigation.navigate(STACKS.SETTINGS)
     const _navigateBankDetails = () => navigation.navigate('punctureBankDetails' as never)
@@ -1065,7 +1065,7 @@ ID: ${userId}
                 </View>
 
                 {/* Profile Incomplete Card */}
-                {/* {Number(profileCompletion) !== 100 && (
+                {Number(profileCompletion) !== 100 && (
                     <>
                         <View style={[
                             styles.incompleteCard,
@@ -1133,7 +1133,7 @@ ID: ${userId}
                         </View>
                         <Space height={responsiveFontSize(1)} />
                     </>
-                )} */}
+                )}
 
                 {/* Dynamic Membership Card - Show when user has an active subscription (only for drivers) */}
                 {isDriver && (subscriptionDetails?.hasActiveSubscription || !subscriptionDetails?.showSubscriptionModel) && subscriptionDetails?.id && (() => {

@@ -667,7 +667,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                                 />
                                 <View style={styles.mediaTypeOverlay}>
                                     <Ionicons name="image" size={20} color="#FFFFFF" />
-                                    <Text style={styles.mediaTypeText}>Image</Text>
+                                    <Text style={styles.mediaTypeText}>{t('image')}</Text>
                                 </View>
                             </>
                         ) : null}
@@ -729,7 +729,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             styles.typeText,
                             { color: theme.subText },
                             selectedType === 'IMAGE' && styles.typeTextActive
-                        ]}>Image</Text>
+                        ]}>{t('image')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -994,7 +994,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                         color={activeScreenTab === 'myComments' ? theme.activeTab : theme.tabText}
                     />
                     <Text style={[styles.tabText, { color: activeScreenTab === 'myComments' ? theme.activeTab : theme.tabText }]}>
-                        Comments
+                        {t('comments')}
                     </Text>
                 </TouchableOpacity>
             </View>

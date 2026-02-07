@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     View,
     Text,
@@ -39,6 +40,7 @@ interface CommentsModalProps {
 }
 
 const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose, onCommentAdded }) => {
+    const { t } = useTranslation();
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(false);
     const [newComment, setNewComment] = useState('');
@@ -132,7 +134,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
                         <View style={styles.handle} />
                     </View>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Comments</Text>
+                        <Text style={styles.title}>{t('comments')}</Text>
                         <TouchableOpacity onPress={onClose}>
                             <Ionicons name="close" size={24} color="#FFFFFF" />
                         </TouchableOpacity>

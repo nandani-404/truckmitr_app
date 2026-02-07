@@ -266,7 +266,11 @@ export default function PunctureProfileOverview() {
     )
 
     const navigateToEdit = (stepId?: string) => {
-        navigation.navigate('punctureProfileEdit', { stepId });
+        let tabName = 'Profile';
+        if (stepId === 'basic_info') tabName = 'Basic Info';
+        if (stepId === 'photos') tabName = 'Photos';
+
+        navigation.navigate(STACKS.PUNCTURE_MY_SHOP, { initialTab: tabName });
     }
 
     const getImageUri = (imagePath: string | undefined): string | undefined => {

@@ -189,7 +189,7 @@ export type NavigatorParams = {
     punctureWallet: undefined;
     punctureAddDriver: undefined;
     punctureBankDetails: undefined;
-    punctureMyShop: undefined;
+    punctureMyShop: { initialTab?: string } | undefined;
     punctureMyDrivers: undefined;
     punctureNearby: undefined;
     punctureDriverSearch: undefined;

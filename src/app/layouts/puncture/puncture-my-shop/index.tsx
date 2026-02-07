@@ -9,7 +9,7 @@ import {
     Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +20,7 @@ import OperationalDetailsTab from './tabs/OperationalDetailsTab';
 import ServicesTab from './tabs/ServicesTab';
 import VehicleCoverageTab from './tabs/VehicleCoverageTab';
 import PhotosTab from './tabs/PhotosTab';
+import ProfileTab from './tabs/ProfileTab';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -29,12 +30,39 @@ const TABS = {
     OPERATIONAL: 'Operational',
     SERVICES: 'Services',
     VEHICLE_COVERAGE: 'Vehicle Coverage',
-    PHOTOS: 'Photos'
+    PHOTOS: 'Photos',
+    PROFILE: 'Profile'
 };
 
 const PunctureMyShopContent = () => {
     const navigation = useNavigation();
+    const route = useRoute<any>();
     const { t } = useTranslation();
+    const showProfileTab = route.params?.initialTab === TABS.PROFILE;
+    const [activeTab, setActiveTab] = React.useState(route.params?.initialTab || TABS.BASIC_INFO);
+
+    React.useEffect(() => {
+        if (route.params?.initialTab) {
+            // Small timeout to ensure navigator is ready
+            setTimeout(() => {
+                navigation.navigate(route.params.initialTab as never);
+            }, 100);
+        }
+    }, [route.params?.initialTab]);
+
+    const getHeaderTitle = () => {
+        if (activeTab === TABS.PROFILE) {
+            return t('my_profile') || "My Profile";
+        }
+        return t('puncture_my_shop') || "My Shop";
+    };
+
+    const getHeaderSubtitle = () => {
+        if (activeTab === TABS.PROFILE) {
+            return t('manage_personal_details') || "Manage Personal Details";
+        }
+        return t('puncture_manage_profile') || "Manage Profile & Photos";
+    };
 
     return (
         <View style={styles.container}>
@@ -47,8 +75,8 @@ const PunctureMyShopContent = () => {
                         <Ionicons name="arrow-back" size={24} color="#111827" />
                     </TouchableOpacity>
                     <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>{t('puncture_my_shop') || "My Shop"}</Text>
-                        <Text style={styles.headerSubtitle}>{t('puncture_manage_profile') || "Manage Profile & Photos"}</Text>
+                        <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+                        <Text style={styles.headerSubtitle}>{getHeaderSubtitle()}</Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -64,7 +92,15 @@ const PunctureMyShopContent = () => {
                     tabBarInactiveTintColor: '#9CA3AF',
                     lazy: true,
                 }}
+                screenListeners={({ route }) => ({
+                    focus: () => {
+                        setActiveTab(route.name);
+                    },
+                })}
             >
+                {showProfileTab && (
+                    <Tab.Screen name={TABS.PROFILE} component={ProfileTab} options={{ title: t('profile') || "Profile" }} />
+                )}
                 <Tab.Screen name={TABS.BASIC_INFO} component={BasicInfoTab} options={{ title: t('puncture_basic_info') || "Basic Info" }} />
                 <Tab.Screen name={TABS.LOCATION} component={LocationDetailsTab} options={{ title: t('puncture_location_address') || "Location" }} />
                 <Tab.Screen name={TABS.OPERATIONAL} component={OperationalDetailsTab} options={{ title: t('puncture_operational_details') || "Operational" }} />
@@ -72,7 +108,6 @@ const PunctureMyShopContent = () => {
                 <Tab.Screen name={TABS.VEHICLE_COVERAGE} component={VehicleCoverageTab} options={{ title: t('puncture_vehicle_coverage') || "Vehicle Coverage" }} />
                 <Tab.Screen name={TABS.PHOTOS} component={PhotosTab} options={{ title: t('puncture_shop_photos') || "Photos" }} />
             </Tab.Navigator>
-
         </View>
     );
 };
