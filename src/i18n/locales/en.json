@@ -33,6 +33,7 @@
     "shareLocation": "Share Location",
     "fetchLocation": "Fetch Location",
     "locationDetailsRequired": "Location details are mandatory. Please fetch your location.",
+    "location_updated_successfully": "Location updated successfully",
     "welcome": "Welcome",
     "premiumJobLabel": "Premium Job",
     "superPremium": "Super Premium",

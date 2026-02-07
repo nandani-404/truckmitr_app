@@ -123,6 +123,7 @@ const BasicInfoTab = () => {
                 <InputItem
                     label={t('puncture_mobile_number_label')}
                     icon="call-outline"
+                    editable={false}
                     placeholder={t('puncture_mobile_placeholder')}
                     keyboardType="phone-pad"
                     maxLength={10}

@@ -1479,14 +1479,22 @@ export default function Subscription({ }: any) {
           const planName = (apiPlan.name || '').toLowerCase();
           const amount = parseFloat(apiPlan.amount) || apiPlan.price || 0;
 
+          // Handle association plans first - they come from association-specific API
+          if (role === 'association' || planName.includes('association')) {
+            tier = 'association_pro';
+            color = COLORS.primary;
+            bgColor = '#F5F3FF';
+            gradient = ['#4F46E5', '#818CF8'];
+            badge = '🏢';
+          }
           // IMPORTANT: Check foreman_pro FIRST (amount >= 900) before trusted (amount >= 400)
           // Otherwise 999 would match the trusted condition first
-          if (planName.includes('foreman') || amount >= 900) {
+          else if (planName.includes('foreman') || (role === 'foreman' && amount >= 900)) {
             tier = 'foreman_pro';
             color = COLORS.primary;
             bgColor = '#F5F3FF';
             gradient = ['#4F46E5', '#818CF8'];
-            badge = '�';
+            badge = '👷';
           } else if (planName.includes('foreman_pro') || planName.includes('premium') || amount >= 400) {
             tier = 'trusted';
             color = COLORS.trusted;
@@ -1685,6 +1693,11 @@ export default function Subscription({ }: any) {
         // Special logic for foreman_pro
         if (user?.role === 'foreman' && plan.tier === 'foreman_pro') {
           planName = 'foreman_pro';
+        }
+
+        // Special logic for association_pro
+        if (user?.role === 'association') {
+          planName = 'association_pro';
         }
 
         const payload = {

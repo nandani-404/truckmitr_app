@@ -733,9 +733,7 @@ export default function PunctureMyProfile() {
             const shareMessage = `👋 Hi! Check out my ${userRole} profile on TruckMitr:
 
 ${userName}
-🆔 ID: ${userId}
-
-� Vienw my profile: ${profileUrl}
+ID: ${userId}
 
 📥 Download TruckMitr: https://play.google.com/store/apps/details?id=com.truckmitr`;
 

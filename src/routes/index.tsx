@@ -813,8 +813,8 @@ export default function Routes() {
       ) : (
         <Main />
       )}
-      {/* {subscriptionModal && <Subscription />}
-       <InAppUpdatePopup /> */}
+      {subscriptionModal && <Subscription />}
+      {/* <InAppUpdatePopup /> */}
     </NavigationContainer>
   );
 }

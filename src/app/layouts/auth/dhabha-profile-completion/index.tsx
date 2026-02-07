@@ -54,11 +54,11 @@ type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorP
 
 // Dhabha Steps
 const DHABHA_STEPS = [
-    // { id: 'basic_info', title: 'basicBusinessInfo', subtitle: 'enterBasicInfo' },
-    // { id: 'location_details', title: 'locationAddress', subtitle: 'enterLocationDetails' },
-    // { id: 'operational_details', title: 'operationalDetails', subtitle: 'enterOperationalDetails' },
-    // { id: 'facilities', title: 'facilitiesAmenities', subtitle: 'selectFacilities' },
-    // { id: 'food_menu', title: 'foodMenuInfo', subtitle: 'enterFoodDetails' },
+    { id: 'basic_info', title: 'basicBusinessInfo', subtitle: 'enterBasicInfo' },
+    { id: 'location_details', title: 'locationAddress', subtitle: 'enterLocationDetails' },
+    { id: 'operational_details', title: 'operationalDetails', subtitle: 'enterOperationalDetails' },
+    { id: 'facilities', title: 'facilitiesAmenities', subtitle: 'selectFacilities' },
+    { id: 'food_menu', title: 'foodMenuInfo', subtitle: 'enterFoodDetails' },
     { id: 'photos', title: 'dhabhaPhotos', subtitle: 'uploadPhotos' },
     // { id: 'offers_for_drivers', title: 'offersForDrivers', subtitle: 'addOffersSubtitle' },
 ];

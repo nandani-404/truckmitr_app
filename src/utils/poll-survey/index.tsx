@@ -206,7 +206,7 @@ const PollSurveyModal = () => {
                         {surveyData.questions.map((q, index) => (
                             <View key={q.id} style={styles.questionContainer}>
                                 <Text style={[styles.questionText, { fontSize: responsiveFontSize(1.9), color: colors.text }]}>
-                                    {index + 1}. {q.question} {q.is_required === '1' && <Text style={styles.required}>*</Text>}
+                                    {q.question} {q.is_required === '1' && <Text style={styles.required}>*</Text>}
                                 </Text>
                                 <View style={styles.optionsContainer}>
                                     {q.options.map((opt) => {

@@ -12,6 +12,8 @@ export const MandatoryLabel = ({ text, style }: { text: string, style?: any }) =
 
 export const InputItem = ({ label, icon, placeholder, value, onChangeText, keyboardType, maxLength, optional, onPress, editable = true }: any) => {
     const { t } = useTranslation();
+    const isDisabled = !editable && !onPress;
+
     return (
         <View style={{ marginBottom: 16 }}>
             <Text style={[styles.classicLabel, { marginLeft: 4, marginBottom: 6 }]}>
@@ -19,10 +21,10 @@ export const InputItem = ({ label, icon, placeholder, value, onChangeText, keybo
                 {!optional && <Text style={{ color: 'red' }}>*</Text>}
             </Text>
             <TouchableOpacity activeOpacity={onPress ? 0.7 : 1} onPress={onPress}>
-                <View style={styles.inputWrapper}>
-                    <Ionicons name={icon} size={20} color="#9CA3AF" style={{ marginRight: 12 }} />
+                <View style={[styles.inputWrapper, isDisabled && { backgroundColor: '#F3F4F6', opacity: 0.8 }]}>
+                    <Ionicons name={icon} size={20} color={isDisabled ? "#9CA3AF" : "#9CA3AF"} style={{ marginRight: 12 }} />
                     <TextInput
-                        style={styles.cleanInput}
+                        style={[styles.cleanInput, isDisabled && { color: '#6B7280' }]}
                         placeholder={placeholder}
                         placeholderTextColor="#9CA3AF"
                         value={value}

@@ -976,8 +976,8 @@ export default function ProfileCompletionPuncture() {
             />
 
             <Space height={24} />
-            <Text style={styles.classicLabel}>{t('puncture_gps_location')} <Text style={styles.optionalText}>{t('puncture_optional')}</Text></Text>
-
+            {/* <Text style={styles.classicLabel}>{t('puncture_gps_location')} <Text style={styles.optionalText}>{t('puncture_optional')}</Text></Text> */}
+            <MandatoryLabel text={t('puncture_gps_location')} style={{ marginLeft: 4 }} />
             <View style={styles.gpsButtonsRow}>
                 <TouchableOpacity
                     style={[styles.gpsButton, { backgroundColor: colors.royalBlue, flex: 1, marginRight: 0 }]}

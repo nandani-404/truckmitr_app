@@ -428,7 +428,7 @@ export default function PunctureMyReferrals() {
 
                             {/* State Section */}
                             {/* State Section */}
-                            <Text style={styles.filterSectionTitle}>{t('puncture_referrals_state')}</Text>
+                            {/* <Text style={styles.filterSectionTitle}>{t('puncture_referrals_state')}</Text>
                             <View>
                                 <TouchableOpacity
                                     style={styles.dropdownHeader}
@@ -462,7 +462,7 @@ export default function PunctureMyReferrals() {
                                         ))}
                                     </View>
                                 )}
-                            </View>
+                            </View> */}
 
                         </ScrollView>
 

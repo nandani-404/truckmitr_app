@@ -280,50 +280,57 @@ export default function PunctureHome() {
                         />
                     </View>
 
-                    {/* Header Content */}
                     <View style={{ paddingTop: safeAreaInsets.top + 10, paddingHorizontal: responsiveWidth(3) }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <View>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`${t('puncture_home_hello')} ${shopName} 👋`}</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <View style={{ flex: 1, marginRight: 12 }}>
+                                <Text
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                    style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}
+                                >
+                                    {`${t('puncture_home_hello')} ${shopName} 👋`}
+                                </Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{uniqueId}</Text>
-                                {/* <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: 'bold', lineHeight: responsiveFontSize(1.8) }}>{t('puncture_home_premium_shop')}</Text> */}
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.2), fontStyle: 'italic', lineHeight: responsiveFontSize(1.6) }}>{t('puncture_home_verified_partner')}</Text>
                             </View>
 
-                            <TouchableOpacity
-                                style={{ alignItems: 'center' }}
-                                activeOpacity={0.8}
-                                onPress={() => navigation.navigate(STACKS.PUNCTURE_PROFILE as any)}
-                            >
-                                <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-                                    <Svg width={size} height={size} style={{ position: "absolute", top: 0, left: 0 }}>
-                                        <Defs>
-                                            <SvgGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                <Stop offset="0" stopColor="#FFD700" stopOpacity="1" />
-                                                <Stop offset="1" stopColor="#FFA500" stopOpacity="1" />
-                                            </SvgGradient>
-                                        </Defs>
-                                        <Circle
-                                            cx={size / 2}
-                                            cy={size / 2}
-                                            r={radius}
-                                            stroke="url(#grad)"
-                                            strokeWidth={4}
-                                            fill="none"
-                                            strokeDasharray={circumference}
-                                            strokeDashoffset={progressOffset}
-                                            strokeLinecap="round"
-                                            rotation="90"
-                                            origin={`${size / 2}, ${size / 2}`}
-                                        />
-                                    </Svg>
-                                    <Image style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }} source={{ uri: user?.images ? `${BASE_URL}public/${user.images}` : PROFILE_PLACEHOLDER }} />
-                                    <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
-                                        <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${profileCompletion}%`}</Text>
-                                    </View>
-                                </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
 
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={{ alignItems: 'center' }}
+                                    activeOpacity={0.8}
+                                    onPress={() => navigation.navigate(STACKS.PUNCTURE_PROFILE as any)}
+                                >
+                                    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+                                        <Svg width={size} height={size} style={{ position: "absolute", top: 0, left: 0 }}>
+                                            <Defs>
+                                                <SvgGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                    <Stop offset="0" stopColor="#FFD700" stopOpacity="1" />
+                                                    <Stop offset="1" stopColor="#FFA500" stopOpacity="1" />
+                                                </SvgGradient>
+                                            </Defs>
+                                            <Circle
+                                                cx={size / 2}
+                                                cy={size / 2}
+                                                r={radius}
+                                                stroke="url(#grad)"
+                                                strokeWidth={4}
+                                                fill="none"
+                                                strokeDasharray={circumference}
+                                                strokeDashoffset={progressOffset}
+                                                strokeLinecap="round"
+                                                rotation="90"
+                                                origin={`${size / 2}, ${size / 2}`}
+                                            />
+                                        </Svg>
+                                        <Image style={{ height: size - strokeWidth, width: size - strokeWidth, borderRadius: 100, backgroundColor: colors.white }} source={{ uri: user?.images ? `${BASE_URL}public/${user.images}` : PROFILE_PLACEHOLDER }} />
+                                        <View style={{ backgroundColor: 'white', paddingHorizontal: responsiveFontSize(1.8), paddingVertical: responsiveFontSize(0.24), borderRadius: 100, position: 'absolute', bottom: -10, ...shadow }}>
+                                            <Text style={{ fontSize: responsiveFontSize(1.0), color: 'green', fontWeight: '700' }}>{`${profileCompletion}%`}</Text>
+                                        </View>
+                                    </View>
+
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
 
@@ -466,6 +473,7 @@ export default function PunctureHome() {
                         }}>
                             <TouchableOpacity
                                 activeOpacity={0.8}
+                                onPress={() => navigation.navigate(STACKS.PUNCTURE_WALLET as any, { openRedeem: true })}
                                 style={{
                                     backgroundColor: '#F97316',
                                     borderRadius: 25,
