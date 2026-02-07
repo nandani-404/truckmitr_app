@@ -28,7 +28,7 @@ import Orientation from 'react-native-orientation-locker';
 import CommentsModal from '../components/CommentsModal';
 
 import { DriverKiAwazService } from '../services';
-import { DRIVER_KI_AWAZ_BASE, AWAZ_URL } from '@truckmitr/src/utils/config';
+import { DRIVER_KI_AWAZ_BASE, AWAZ_URL, END_POINTS } from '@truckmitr/src/utils/config';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 40; // Approximate tab bar height
@@ -238,10 +238,10 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
                     onBuffer={handleBuffer}
                     onLoad={handleLoad}
                     bufferConfig={{
-                        minBufferMs: 2000,
-                        maxBufferMs: 30000,
-                        bufferForPlaybackMs: 100,
-                        bufferForPlaybackAfterRebufferMs: 500,
+                        minBufferMs: 1000,
+                        maxBufferMs: 5000,
+                        bufferForPlaybackMs: 50,
+                        bufferForPlaybackAfterRebufferMs: 100,
                     }}
                     playInBackground={false}
                     playWhenInactive={false}
@@ -407,17 +407,20 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }>
                     const newReels: ReelData[] = feedData
                         .filter((item: any) => item.media_type === 'video')
                         .map((item: any) => {
-                            // Check if URL is already absolute
-                            const rawUrl = item.media_url || '';
-                            const hasHttp = rawUrl.startsWith('http');
-                            // Clean leading slash if appending
-                            const cleanPath = rawUrl && rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
-                            // Construct final URL
-                            const finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
+                            // Construct Video URL
+                            let finalUrl = '';
+                            if (item.video_file) {
+                                finalUrl = `${END_POINTS.DKA_STREAM}/${item.video_file}`;
+                            } else {
+                                const rawUrl = item.media_url || '';
+                                const hasHttp = rawUrl && rawUrl.startsWith('http');
+                                const cleanPath = rawUrl && rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
+                                finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
+                            }
 
                             // Avatar Logic
                             const rawAvatar = item.user_avatar || item.user?.avatar || '';
-                            const hasAvatarHttp = rawAvatar.startsWith('http');
+                            const hasAvatarHttp = rawAvatar && rawAvatar.startsWith('http');
                             const cleanAvatarPath = rawAvatar && rawAvatar.startsWith('/') ? rawAvatar.substring(1) : rawAvatar;
                             const finalAvatarUrl = !rawAvatar
                                 ? 'https://via.placeholder.com/150'
