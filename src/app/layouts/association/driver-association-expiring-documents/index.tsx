@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -9,12 +9,17 @@ import {
     StatusBar,
     Share,
     Clipboard,
+    ActivityIndicator,
+    Linking,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { useTranslation } from 'react-i18next';
 import ScreenHeader from '@truckmitr/src/app/components/screen-header';
+import { useSelector } from 'react-redux';
+import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
+import { END_POINTS, BASE_URL } from '@truckmitr/src/utils/config';
 
 
 
@@ -34,59 +39,31 @@ interface DriverWithExpiringDocs {
     documents: ExpiringDocument[];
 }
 
-// Sample data - drivers with expiring documents
-const DRIVERS_WITH_EXPIRING_DOCS: DriverWithExpiringDocs[] = [
-    {
-        id: '1',
-        name: 'Rajesh Kumar',
-        tmId: 'TM2503UDPR00001',
-        mobile: '+91 98765 43210',
-        image: 'https://randomuser.me/api/portraits/men/1.jpg',
-        documents: [
-            { type: 'Driving License', daysLeft: 3 },
-            { type: 'Vehicle Insurance', daysLeft: 10 },
-        ],
-    },
-    {
-        id: '2',
-        name: 'Suresh Yadav',
-        tmId: 'TM2503UDPR00002',
-        mobile: '+91 87654 32109',
-        image: 'https://randomuser.me/api/portraits/men/2.jpg',
-        documents: [
-            { type: 'RC Book', daysLeft: 5 },
-        ],
-    },
-    {
-        id: '4',
-        name: 'Vikram Patel',
-        tmId: 'TM2503UDPR00004',
-        mobile: '+91 65432 10987',
-        image: 'https://randomuser.me/api/portraits/men/4.jpg',
-        documents: [
-            { type: 'Driving License', daysLeft: 17 },
-        ],
-    },
-    {
-        id: '5',
-        name: 'Manoj Sharma',
-        tmId: 'TM2503UDPR00005',
-        mobile: '+91 54321 09876',
-        image: 'https://randomuser.me/api/portraits/men/5.jpg',
-        documents: [
-            { type: 'Vehicle Insurance', daysLeft: 15 },
-            { type: 'Road Tax', daysLeft: 21 },
-        ],
-    },
-];
 
 const DriverCard = ({ driver }: { driver: DriverWithExpiringDocs }) => {
     const { t } = useTranslation();
 
     const handleShareWhatsApp = () => {
-        const docsList = driver.documents.map(d => `• ${d.type} - ${d.daysLeft} days left`).join('\n');
-        const msg = `Hi ${driver.name}, your following documents are expiring soon:\n\n${docsList}\n\nPlease update them on TruckMitr app.\n\nTM ID: ${driver.tmId}`;
-        Share.share({ message: msg });
+        const docsList = driver.documents.map(d => t('whatsappDocLine', { type: d.type, daysLeft: d.daysLeft })).join('\n');
+        const msg = `${t('whatsappGreeting', { name: driver.name })}${docsList}${t('whatsappFooter', { tmId: driver.tmId })}`;
+
+        let phoneNumber = driver.mobile;
+        // Basic cleaning to remove spaces or special chars
+        phoneNumber = phoneNumber.replace(/[^\d+]/g, '');
+        // Add 91 if missing for 10 digit numbers (assuming Indian context as per app)
+        if (phoneNumber.length === 10) {
+            phoneNumber = `91${phoneNumber}`;
+        }
+
+        const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(msg)}`;
+
+        Linking.canOpenURL(url).then(supported => {
+            if (supported) {
+                return Linking.openURL(url);
+            } else {
+                showToast(t('whatsapp_not_installed', 'WhatsApp is not installed'));
+            }
+        }).catch(err => console.error('An error occurred', err));
     };
 
     const handleCopy = () => {
@@ -112,7 +89,7 @@ const DriverCard = ({ driver }: { driver: DriverWithExpiringDocs }) => {
                     <Text style={styles.name}>{driver.name}</Text>
                     <Text style={styles.tmId}>{driver.tmId}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: urgencyColor.bg }]}>
-                        <Text style={[styles.statusBadgeText, { color: urgencyColor.text }]}>Documents Expiring</Text>
+                        <Text style={[styles.statusBadgeText, { color: urgencyColor.text }]}>{t('expiringDocsTitle')}</Text>
                     </View>
                 </View>
                 <TouchableOpacity style={styles.copyBtn} onPress={handleCopy}>
@@ -138,7 +115,7 @@ const DriverCard = ({ driver }: { driver: DriverWithExpiringDocs }) => {
                             </View>
                             <View style={[styles.expiryBadge, { backgroundColor: doc.daysLeft <= 7 ? '#FEE2E2' : doc.daysLeft <= 15 ? '#FEF3C7' : '#DBEAFE' }]}>
                                 <Text style={[styles.expiryText, { color: docColor }]}>
-                                    {doc.daysLeft <= 7 ? `${doc.daysLeft}d left` : `${doc.daysLeft} days`}
+                                    {doc.daysLeft <= 7 ? t('daysLeftShort', { count: doc.daysLeft }) : t('daysCount', { count: doc.daysLeft })}
                                 </Text>
                             </View>
                         </View>
@@ -155,8 +132,51 @@ const DriverCard = ({ driver }: { driver: DriverWithExpiringDocs }) => {
     );
 };
 
+
 export default function DriverAssociationExpiringDocuments() {
     const { t } = useTranslation();
+    const { user } = useSelector((state: any) => state?.user) || {};
+    const [loading, setLoading] = useState(true);
+    const [drivers, setDrivers] = useState<DriverWithExpiringDocs[]>([]);
+
+    useEffect(() => {
+        fetchExpiringDocuments();
+    }, []);
+
+    const fetchExpiringDocuments = async () => {
+        try {
+            const response = await axiosInstance.get(END_POINTS.ASSOCIATION_EXPIRING_DOCUMENTS(user?.id));
+            if (response.data && response.data.success) {
+                const apiDrivers = response.data.drivers.map((driver: any) => ({
+                    id: driver.id,
+                    name: driver.name,
+                    tmId: driver.unique_id,
+                    mobile: driver.mobile,
+                    image: driver.images ? `${BASE_URL}${driver.images}` : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png',
+                    documents: [
+                        {
+                            type: t('drivingLicense'),
+                            daysLeft: parseInt(driver.remaining_days) || 0,
+                        }
+                    ]
+                }));
+                setDrivers(apiDrivers);
+            }
+        } catch (error) {
+            console.error('Error fetching expiring documents:', error);
+            showToast(t('failedToFetchDocs'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#1E3A5F" />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -165,14 +185,14 @@ export default function DriverAssociationExpiringDocuments() {
             {/* Header */}
             <ScreenHeader
                 title={t('association_expiring_documents')}
-                titleCount={DRIVERS_WITH_EXPIRING_DOCS.length > 0 ? DRIVERS_WITH_EXPIRING_DOCS.length : undefined}
+                titleCount={drivers.length > 0 ? drivers.length : undefined}
             />
 
             <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-                {DRIVERS_WITH_EXPIRING_DOCS.map((driver) => (
+                {drivers.map((driver) => (
                     <DriverCard key={driver.id} driver={driver} />
                 ))}
-                {DRIVERS_WITH_EXPIRING_DOCS.length === 0 && (
+                {drivers.length === 0 && (
                     <View style={styles.emptyState}>
                         <MaterialCommunityIcons name="file-check" size={48} color="#22C55E" />
                         <Text style={styles.emptyText}>{t('association_no_expiring_documents')}</Text>

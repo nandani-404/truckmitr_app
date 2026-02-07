@@ -180,6 +180,7 @@ export default function DriverAssociation() {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+    const [expiringDocsCount, setExpiringDocsCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -195,9 +196,17 @@ export default function DriverAssociation() {
         else setLoading(true);
 
         try {
-            const response = await axiosInstance.get(END_POINTS.ASSOCIATION_HOME_DASHBOARD(user?.id));
-            if (response.data) {
-                setDashboardData(response.data);
+            const [dashboardResponse, expiringResponse] = await Promise.all([
+                axiosInstance.get(END_POINTS.ASSOCIATION_HOME_DASHBOARD(user?.id)),
+                axiosInstance.get(END_POINTS.ASSOCIATION_EXPIRING_DOCUMENTS(user?.id))
+            ]);
+
+            if (dashboardResponse.data) {
+                setDashboardData(dashboardResponse.data);
+            }
+
+            if (expiringResponse.data && expiringResponse.data.success) {
+                setExpiringDocsCount(expiringResponse.data.total_expiring_licenses || 0);
             }
         } catch (error) {
             console.error('Error fetching association dashboard:', error);
@@ -703,7 +712,7 @@ export default function DriverAssociation() {
                                         <Text style={{ fontSize: 12, fontWeight: '600', color: '#1E293B', lineHeight: 15 }}>{t('association_home_documents')}</Text>
                                     </View>
                                     <View style={{ backgroundColor: '#EC489915', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
-                                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#EC4899' }}>{dashboardData?.license_expiring_next_month_count || 0}</Text>
+                                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#EC4899' }}>{expiringDocsCount}</Text>
                                     </View>
                                 </View>
                                 <Text style={{ fontSize: 9, color: '#64748B', marginTop: 4 }}>{t('association_home_update_driver_docs')}</Text>
@@ -866,7 +875,7 @@ export default function DriverAssociation() {
                                     borderColor: '#D1D5DB',
                                 }}
                                 activeOpacity={0.7}
-                                onPress={() => navigation.navigate(STACKS.DRIVER_ASSOCIATION_RECRUITMENTS as never)}
+                                onPress={() => showToast(t('comingSoon') || 'Coming Soon')}
                             >
                                 <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
                                     <Image

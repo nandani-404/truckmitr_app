@@ -3656,5 +3656,11 @@
     "and": " and ",
     "privacy_policy": "Privacy Policy",
     "consent_msg_end": ".",
-    "i_agree": "I Agree"
+    "i_agree": "I Agree",
+    "expiringDocsTitle": "Documents Expiring",
+    "whatsappGreeting": "Hi {{name}}, your following documents are expiring soon:\\n\\n",
+    "whatsappDocLine": "• {{type}} - {{daysLeft}} days left",
+    "whatsappFooter": "\\n\\nPlease update them on TruckMitr app.\\n\\nTM ID: {{tmId}}",
+    "failedToFetchDocs": "Failed to fetch expiring documents",
+    "comingSoon": "Coming Soon"
 }

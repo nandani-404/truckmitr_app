@@ -1,9 +1,9 @@
 
 // export const BASE_URL = `https://development.truckmitr.com/`
-export const BASE_URL = `https://truckmitr.com/`
+// export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.29.156:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
-// export const BASE_URL = 'https://devtruckmitr.in/'
+export const BASE_URL = 'https://devtruckmitr.in/'
 export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
 // export const DRIVER_KI_AWAZ_STREAM = 'https://driverkiawaz.truckmitr.com/' //+ filepath(1770288688561.mp4)
 export const AWAZ_URL = 'https://truckmitr.com/'
@@ -218,6 +218,7 @@ export const END_POINTS = {
     ASSOCIATION_HOME_DASHBOARD: (association_id: any) => `/api/association/${association_id}/commission-summary`,
     ASSOCIATION_EARNINGS: (association_id: any) => `/api/association/${association_id}/commission`,
     ASSOCIATION_APPLICATIONS: (association_id: any) => `api/association/jobs/applied-drivers/${association_id}`,
+    ASSOCIATION_EXPIRING_DOCUMENTS: (association_id: any) => `api/association/drivers/license-expiring-next-month/${association_id}`,
     // Driver Ki Awaz
     DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
     DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,

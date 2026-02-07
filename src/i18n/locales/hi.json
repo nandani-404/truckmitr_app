@@ -3594,5 +3594,11 @@
     "and": " और ",
     "privacy_policy": "गोपनीयता नीति",
     "consent_msg_end": " से सहमत होना होगा।",
-    "i_agree": "मैं सहमत हूँ"
+    "i_agree": "मैं सहमत हूँ",
+    "expiringDocsTitle": "दस्तावेज़ की समाप्ति",
+    "whatsappGreeting": "नमस्ते {{name}}, आपके निम्नलिखित दस्तावेज़ जल्द समाप्त हो रहे हैं:\\n\\n",
+    "whatsappDocLine": "• {{type}} - {{daysLeft}} दिन शेष",
+    "whatsappFooter": "\\n\\nकृपया उन्हें ट्रकमित्र ऐप पर अपडेट करें।\\n\\nटीएम आईडी: {{tmId}}",
+    "failedToFetchDocs": "दस्तावेज़ लाने में विफल",
+    "comingSoon": "जल्द आ रहा है"
 }
