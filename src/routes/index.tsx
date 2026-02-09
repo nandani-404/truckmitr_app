@@ -515,14 +515,28 @@ export default function Routes() {
       handleDeepLink(url);
     });
 
+    const parseDeepLink = (url: string) => {
+      let raw = url;
+      if (raw.startsWith('truckmitr://')) {
+        raw = raw.replace('truckmitr://', '');
+      } else if (raw.startsWith('https://truckmitr.com')) {
+        raw = raw.replace('https://truckmitr.com', '');
+        raw = raw.replace(/^\/+/, '');
+      }
+
+      const [path, query = ''] = raw.split('?');
+      const params = new URLSearchParams(query);
+      const reelId = params.get('reelId') || undefined;
+      return { path, reelId };
+    };
+
     // Function to handle deep link navigation
     const handleDeepLink = (url: string) => {
       console.log('🔍 Processing deep link:', url);
       console.log('🔍 Current navigation state:', navigationRef.current?.getRootState());
 
-      // Parse the URL to see what we're trying to navigate to
-      const urlParts = url.replace('truckmitr://', '').split('/');
-      console.log('🔍 URL parts:', urlParts);
+      const { path, reelId } = parseDeepLink(url);
+      console.log('🔍 Deep link path:', path, 'reelId:', reelId);
 
       if (!navigationRef.current) {
         console.log('❌ Navigation ref not available');
@@ -533,8 +547,6 @@ export default function Routes() {
         console.log('❌ User not authenticated, cannot navigate');
         return;
       }
-
-      const path = urlParts[0];
 
       // Handle different deep link paths
       switch (path) {
@@ -550,6 +562,13 @@ export default function Routes() {
           break;
         case 'training':
           (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
+          break;
+        case 'driverKiAwazInfo':
+        case 'driver-ki-awaz':
+          (navigationRef.current as any)?.navigate('bottomTab', {
+            screen: 'driverKiAwazInfo',
+            params: reelId ? { reelId } : undefined,
+          });
           break;
         default:
           console.log('🔍 Deep link path not recognized:', path);
@@ -572,9 +591,9 @@ export default function Routes() {
 
       // Add extra delay for kill state to ensure everything is fully loaded
       setTimeout(() => {
-        const urlParts = url.replace('truckmitr://', '').split('/');
+        const { path, reelId } = parseDeepLink(url);
 
-        if (urlParts[0] === 'profile') {
+        if (path === 'profile') {
           console.log('🎯 Processing pending profile navigation');
 
           const attemptNavigation = (attempt = 1) => {
@@ -595,6 +614,12 @@ export default function Routes() {
           };
 
           attemptNavigation();
+        } else if (path === 'driverKiAwazInfo' || path === 'driver-ki-awaz') {
+          console.log('🎯 Processing pending Driver Ki Awaz navigation');
+          navigationRef.current?.navigate('bottomTab', {
+            screen: 'driverKiAwazInfo',
+            params: reelId ? { reelId } : undefined,
+          });
         }
       }, 2000); // Extra delay for kill state
     }

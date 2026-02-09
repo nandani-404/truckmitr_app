@@ -353,7 +353,7 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
     );
 });
 
-const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }> = ({ isScreenFocused, tabBarHeight = TAB_BAR_HEIGHT }) => {
+const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; initialReelId?: string }> = ({ isScreenFocused, tabBarHeight = TAB_BAR_HEIGHT, initialReelId }) => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const insets = useSafeAreaInsets();
     const CONTENT_HEIGHT = SCREEN_HEIGHT - tabBarHeight - insets.top; // Adjust for tab bar and status bar
@@ -367,6 +367,7 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }>
     const [showComments, setShowComments] = useState(false);
     const [activeReelId, setActiveReelId] = useState<string | null>(null);
     const flatListRef = useRef<FlatList>(null);
+    const initialScrollDoneRef = useRef(false);
 
     // Lock Orientation to Portrait
     useEffect(() => {
@@ -533,14 +534,31 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number }>
 
     const shareReel = async (reel: ReelData) => {
         try {
+            const shareUrl = 'https://play.google.com/store/apps/details?id=com.truckmitr';
             await Share.share({
-                message: `Check out this reel by ${reel.userName} on Driver Ki Awaz! 🚛\n${reel.description}\n\n#DriverKiAwaz ${reel.hashtags.map(t => `#${t}`).join(' ')}`,
+                message: `Watch this Driver Ki Awaz reel on TruckMitr.\n\nDownload the app: ${shareUrl}`,
+                url: shareUrl,
+                title: 'Driver Ki Awaz Reel',
             });
             await DriverKiAwazService.sharePost(reel.id);
         } catch (error) {
             console.log('Share error:', error);
         }
     };
+
+    useEffect(() => {
+        if (initialScrollDoneRef.current) return;
+        if (!initialReelId || reels.length === 0) return;
+
+        const index = reels.findIndex(r => r.id === initialReelId);
+        if (index >= 0) {
+            initialScrollDoneRef.current = true;
+            setActiveIndex(index);
+            setTimeout(() => {
+                flatListRef.current?.scrollToIndex({ index, animated: true });
+            }, 0);
+        }
+    }, [initialReelId, reels]);
 
     const getItemLayout = (_: any, index: number) => ({
         length: CONTENT_HEIGHT,
