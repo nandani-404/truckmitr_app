@@ -146,6 +146,7 @@ export const END_POINTS = {
     VOTER_VERIFY: `api/kyc/voter`,
     CHALLAN_VERIFY: `api/kyc/challan`,
     DIGITAL_ADDRESS_VERIFY: `api/kyc/dav`,
+    DAV_PROFILE: `api/kyc/dav-profile`, // get dav profile
     CHALLAN_HISTORY: `api/kyc/challans`,
     COURT_CASE: (user_id: any) => `api/kyc/court-case/user_id/${user_id}`,
     // GET 

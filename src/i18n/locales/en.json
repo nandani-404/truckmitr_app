@@ -720,6 +720,7 @@
     "accepted": "Accepted",
     "enterYearOfEstablishment": "Enter Year Of Establishment",
     "enterValidYearOfEstablishment": "Enter Valid Year Of Establishment",
+    "associationProBadge": "Association Pro",
     "youHaventPostedAnyJobsYetPleaseAddJobNow": "You haven't posted any jobs yet. Please add a job now.",
     "viewAll": "View All",
     "youNeedToUpdateYourProfileFirstToSeeJobs": "You need to update your profile first to see jobs that match your preferences.",
@@ -3842,5 +3843,12 @@
     "driverAssociationPro": "Driver Association Pro",
     "basicDriver": "Basic Driver",
     "noDriversAddedYet": "No drivers added yet",
-    "addedLabel": "Added:"
+    "addedLabel": "Added:",
+    "davVerificationPending": "Verification Pending",
+    "davVerificationPendingDesc": "Your digital address verification is in progress. Please wait while we verify your address.",
+    "davAddressVerified": "Address Verified",
+    "davAddressVerifiedDesc": "Your digital address has been successfully verified.",
+    "davDownloadPdf": "Download Verification PDF",
+    "davVerificationTime": "Verification usually takes up to 24 hours. You will be updated once it is completed.",
+    "davVerifiedAddress": "Verified Address"
 }

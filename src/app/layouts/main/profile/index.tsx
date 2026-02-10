@@ -57,7 +57,7 @@ const BACKGROUND_TRANSPORTER_PRO = require('@truckmitr/src/assets/membership-car
 const BACKGROUND_FOREMAN_PRO = require('@truckmitr/src/assets/membership-card/foremancardnew.jpeg');
 
 // Card tier configurations
-type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO' | 'LEGACY TRANSPORTER' | 'FOREMAN PRO';
+type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO' | 'LEGACY TRANSPORTER' | 'FOREMAN PRO' | 'ASSOCIATION PRO';
 
 interface TierConfig {
   background: any;
@@ -162,6 +162,18 @@ const getTierConfigs = (t: any): Record<TierType, TierConfig> => ({
       { offset: '1', color: '#E0E3E7' },
     ],
     categoryText: t('foremanProBadge') || 'FOREMAN PRO',
+  },
+  'ASSOCIATION PRO': {
+    background: BACKGROUND_FOREMAN_PRO,
+    borderColors: ['#1E3A5F', '#4B5563', '#FFD700', '#4B5563', '#1E3A5F'],
+    chromeGradient: [
+      { offset: '0', color: '#FFF6C8' },
+      { offset: '0.25', color: '#C9A23F' },
+      { offset: '0.5', color: '#A67C00' },
+      { offset: '0.75', color: '#C9A23F' },
+      { offset: '1', color: '#FFF6C8' },
+    ],
+    categoryText: t('associationProBadge') || 'ASSOCIATION PRO',
   },
 });
 

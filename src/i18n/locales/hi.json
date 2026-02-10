@@ -696,6 +696,7 @@
     "accepted": "स्वीकृत",
     "enterYearOfEstablishment": "स्थापना वर्ष दर्ज करें",
     "enterValidYearOfEstablishment": "मान्य स्थापना वर्ष दर्ज करें",
+    "associationProBadge": "एसोसिएशन प्रो",
     "youHaventPostedAnyJobsYetPleaseAddJobNow": "आपने अभी तक कोई नौकरियां नहीं जोड़ी हैं। कृपया अब एक नौकरी जोड़ें।",
     "viewAll": "सभी देखें",
     "youNeedToUpdateYourProfileFirstToSeeJobs": "नौकरियाँ जो आपकी प्रोफ़ाइल के अनुसार हैं उन्हें देखने के लिए पहले अपना प्रोफ़ाइल अपडेट करें।",
@@ -3761,5 +3762,12 @@
     "driverAssociationPro": "ड्राइवर एसोसिएशन प्रो",
     "basicDriver": "बेसिक ड्राइवर",
     "noDriversAddedYet": "अभी तक कोई ड्राइवर नहीं जोड़ा गया",
-    "addedLabel": "जोड़ा गया:"
+    "addedLabel": "जोड़ा गया:",
+    "davVerificationPending": "सत्यापन लंबित",
+    "davVerificationPendingDesc": "आपका डिजिटल पता सत्यापन प्रगति पर है। कृपया प्रतीक्षा करें जब तक हम आपका पता सत्यापित करते हैं।",
+    "davAddressVerified": "पता सत्यापित",
+    "davAddressVerifiedDesc": "आपका डिजिटल पता सफलतापूर्वक सत्यापित हो गया है।",
+    "davDownloadPdf": "सत्यापन PDF डाउनलोड करें",
+    "davVerificationTime": "सत्यापन में आमतौर पर 24 घंटे तक का समय लगता है। पूरा होने पर आपको सूचित किया जाएगा।",
+    "davVerifiedAddress": "सत्यापित पता"
 }
