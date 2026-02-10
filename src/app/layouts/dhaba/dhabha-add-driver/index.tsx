@@ -58,7 +58,7 @@ export default function DhabhaAddDriver() {
     const [stateSearchText, setStateSearchText] = useState('');
 
     // OTP Modal State
-    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [showOtpModal, setShowOtpModal] = useState(true);
     const [otp, setOtp] = useState('');
     const [otpLoading, setOtpLoading] = useState(false);
     const [otpError, setOtpError] = useState('');
@@ -413,7 +413,7 @@ export default function DhabhaAddDriver() {
                             style={styles.resendButton}
                         >
                             <Text style={styles.resendText}>
-                                {t('didntReceiveCode') || "Didn't receive code?"}{' '}
+                                {t('didntReceivedCode') || "Didn't receive code?"}{' '}
                                 <Text style={styles.resendLink}>{t('resendOtp')}</Text>
                             </Text>
                         </TouchableOpacity>

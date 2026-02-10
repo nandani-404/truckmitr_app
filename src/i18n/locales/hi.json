@@ -3620,5 +3620,17 @@
     "wallet_min": "न्यूनतम",
     "wallet_request_redemption": "रिडेम्पशन का अनुरोध करें",
     "wallet_driver_commission": "ड्राइवर कमीशन",
-    "puncture_select_year": "वर्ष चुनें"
+    "puncture_select_year": "वर्ष चुनें",
+    "expiringDocsTitle": "दस्तावेज़ की समाप्ति",
+    "whatsappGreeting": "नमस्ते {{name}}, आपके निम्नलिखित दस्तावेज़ जल्द समाप्त हो रहे हैं:\\n\\n",
+    "whatsappDocLine": "• {{type}} - {{daysLeft}} दिन शेष",
+    "whatsappFooter": "\\n\\nकृपया उन्हें ट्रकमित्र ऐप पर अपडेट करें।\\n\\nटीएम आईडी: {{tmId}}",
+    "failedToFetchDocs": "दस्तावेज़ लाने में विफल",
+    "comingSoon": "जल्द आ रहा है",
+    "didntReceivedCode": "कोड प्राप्त नहीं हुआ?",
+    "addBankDetails": "बैंक विवरण जोड़ें",
+    "pleaseFillField": "कृपया सभी फ़ील्ड भरें",
+    "foodDetailsSavedSuccess": "खाद्य विवरण सफलतापूर्वक सहेजा गया",
+    "failedToSaveFoodDetails": "खाद्य विवरण सहेजने में विफल",
+    "addMore": "और जोड़ें"
 }

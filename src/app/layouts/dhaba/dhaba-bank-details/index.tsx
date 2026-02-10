@@ -122,8 +122,9 @@ const DhabaBankDetails = () => {
                 unique_id: user?.unique_id || '',
             };
             const response = await axiosInstance.post(END_POINTS.DHABA_BANK_DETAILS_UPDATE, payload);
+            console.log("response?.data", response?.data);
 
-            if (response?.data?.success) {
+            if (response?.data?.status) {
                 showToast(t('detailsUpdatedSuccessfully', 'Details updated successfully!'));
                 setIsEditing(false);
                 fetchBankDetails(); // Refresh data
@@ -274,15 +275,7 @@ const DhabaBankDetails = () => {
                     <Text style={[styles.headerTitle, { color: colors.black, fontSize: responsiveFontSize(2.2) }]}>
                         {t('bankDetails')}
                     </Text>
-                    <TouchableOpacity
-                        onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
-                        style={styles.editButton}
-                        disabled={saving}
-                    >
-                        <Text style={[styles.editButtonText, { color: colors.royalBlue, fontSize: responsiveFontSize(1.7) }]}>
-                            {saving ? t('saving') : isEditing ? t('save') : t('edit')}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={{ width: 40 }} />
                 </View>
             </View>
 
@@ -310,7 +303,27 @@ const DhabaBankDetails = () => {
                             <View style={styles.divider} />
                             {renderInput(t('accountType'), bankData.account_type, 'account_type')}
                         </View>
-
+                        <TouchableOpacity
+                            onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
+                            style={[
+                                styles.saveButton,
+                                { backgroundColor: colors.royalBlue }
+                            ]}
+                            disabled={saving}
+                        >
+                            {saving ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text style={[styles.saveButtonText, { color: 'white', fontSize: responsiveFontSize(2) }]}>
+                                    {isEditing ? t('save') : (
+                                        !bankData.account_number &&
+                                        !bankData.account_holder_name &&
+                                        !bankData.bank_name &&
+                                        !bankData.ifsc_code
+                                    ) ? t('addBankDetails') : t('edit')}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
                         <View style={styles.noticeBox}>
                             <Ionicons name="shield-checkmark" size={18} color="#059669" />
                             <Text style={styles.noticeText}>
@@ -357,15 +370,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'flex-start',
     },
-    editButton: {
-        width: 70,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'flex-end',
-    },
-    editButtonText: {
-        fontWeight: '600',
-    },
+
     scrollContent: {
         paddingVertical: 10,
         paddingBottom: 40,

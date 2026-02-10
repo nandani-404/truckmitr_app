@@ -117,7 +117,7 @@ const LocationDetailsTab = () => {
         try {
             console.log('LocationDetailsTab: Fetching location data from API...');
             const response: any = await axiosInstance.get(END_POINTS.GET_DHABA_BUSSINESS_LOCATION);
-            // console.log('LocationDetailsTab: API Response:', response?.data);
+            console.log('LocationDetailsTab: API Response:', response?.data);
             // console.log('success: API Response:', response?.data?.success);
             // console.log('location: API Response:', response?.data?.location);
             if (response?.data?.success && response?.data?.location) {
@@ -126,7 +126,8 @@ const LocationDetailsTab = () => {
                 // Map state from state_id
                 let mappedState = '';
                 if (location.state_id) {
-                    const stateFromId = statesList.find(s => s.id === location.state_id);
+                    // Convert to string for comparison to handle number/string mismatch
+                    const stateFromId = statesList.find(s => s.id === String(location.state_id));
                     mappedState = stateFromId?.name || '';
                 }
 
@@ -138,6 +139,7 @@ const LocationDetailsTab = () => {
                     state: mappedState,
                     pincode: location.pincode || '',
                 });
+
 
                 // Update local location
                 if (location.latitude && location.longitude) {
@@ -300,7 +302,7 @@ const LocationDetailsTab = () => {
                 const selectedState = statesList.find(s => s.name?.toLowerCase() === userEdit.state?.toLowerCase());
                 state_id = selectedState ? selectedState.id : '';
             }
-            console.log('LocationDetailsTab: state_id for API:', state_id);
+            // console.log('LocationDetailsTab: state_id for API:', state_id);
 
             const apiFormData = new FormData();
 

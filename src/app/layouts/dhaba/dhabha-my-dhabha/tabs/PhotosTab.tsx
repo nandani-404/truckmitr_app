@@ -113,10 +113,10 @@ const PhotosTab = () => {
             });
 
             if (response?.data?.status || response?.data?.success) {
-                showToast(response?.data?.message || t('photosSavedSuccess'));
+                showToast(t('photosSavedSuccess'));
                 fetchPhotos(); // Refresh to get IDs for new photos
             } else {
-                showToast(response?.data?.message || t('failedToSavePhotos'));
+                showToast(t('failedToSavePhotos'));
             }
         } catch (error: any) {
             console.error('Photos Save Error:', error);

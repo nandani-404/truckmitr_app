@@ -22,23 +22,27 @@ const FacilitiesTab = () => {
                 const response: any = await axiosInstance.get(END_POINTS.GET_DHABA_FACILITIES);
                 console.log('GET_DHABA_FACILITIES response:', response?.data);
                 if (response?.data?.success && response?.data?.facilities) {
+                    // console.log('Facilities:', response.data);
+
                     const f = response.data.facilities;
+                    console.log('Facilities:', f);
+
                     setProfileData(prev => ({
                         ...prev,
                         facilities: {
-                            sitting_facility: f.sitting_facility === "1",
-                            clean_restrooms: f.clean_restrooms === "1",
-                            drinking_water: f.drinking_water === "1",
-                            parking_small: f.parking_small === "1",
-                            parking_large: f.parking_large === "1",
-                            sleeping_area: f.sleeping_area === "1",
-                            washing_area: f.washing_area === "1",
-                            electric_point: f.electric_point === "1",
-                            cctv: f.cctv === "1",
-                            security_staff: f.security_staff === "1",
-                            wheel_alignment: f.wheel_alignment === "1",
-                            mechanic: f.mechanic === "1",
-                            wifi: f.wifi === "1"
+                            sitting_facility: f?.sitting_facility === 1,
+                            clean_restrooms: f?.clean_restrooms === 1,
+                            drinking_water: f?.drinking_water === 1,
+                            parking_small: f?.parking_small === 1,
+                            parking_large: f?.parking_large === 1,
+                            sleeping_area: f?.sleeping_area === 1,
+                            washing_area: f?.washing_area === 1,
+                            electric_point: f?.electric_point === 1,
+                            cctv: f?.cctv === 1,
+                            security_staff: f?.security_staff === 1,
+                            wheel_alignment: f?.wheel_alignment === 1,
+                            mechanic: f?.mechanic === 1,
+                            wifi: f?.wifi === 1
                         }
                     }));
                 }

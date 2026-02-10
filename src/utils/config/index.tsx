@@ -218,6 +218,7 @@ export const END_POINTS = {
     ASSOCIATION_HOME_DASHBOARD: (association_id: any) => `/api/association/${association_id}/commission-summary`,
     ASSOCIATION_EARNINGS: (association_id: any) => `/api/association/${association_id}/commission`,
     ASSOCIATION_APPLICATIONS: (association_id: any) => `api/association/jobs/applied-drivers/${association_id}`,
+    ASSOCIATION_EXPIRING_DOCUMENTS: (association_id: any) => `api/association/drivers/license-expiring-next-month/${association_id}`,
     // Driver Ki Awaz
     DKA_POST: `${DRIVER_KI_AWAZ_BASE}api/feed/post`,
     DKA_FEED: `${DRIVER_KI_AWAZ_BASE}api/feed`,

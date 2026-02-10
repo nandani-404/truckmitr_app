@@ -153,7 +153,7 @@ const FoodAvailableTab = () => {
             const response = await axiosInstance.post(END_POINTS.DHABA_FOOD, formData);
 
             if (response?.data?.status || response?.data?.success) {
-                showToast(response?.data?.message || t('foodDetailsSavedSuccess'));
+                showToast(t('foodDetailsSavedSuccess'));
                 if (response?.data?.food) {
                     dispatch(userEditAction({
                         ...userEdit,
@@ -161,7 +161,7 @@ const FoodAvailableTab = () => {
                     }));
                 }
             } else {
-                showToast(response?.data?.message || t('failedToSaveFoodDetails'));
+                showToast(t('failedToSaveFoodDetails'));
             }
         } catch (error: any) {
             console.error('Food Save Error:', error);

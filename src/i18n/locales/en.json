@@ -3694,5 +3694,17 @@
     "wallet_min": "Min",
     "wallet_request_redemption": "Request Redemption",
     "wallet_driver_commission": "Driver Commission",
-    "puncture_select_year": "Select Year"
+    "puncture_select_year": "Select Year",
+    "expiringDocsTitle": "Documents Expiring",
+    "whatsappGreeting": "Hi {{name}}, your following documents are expiring soon:\\n\\n",
+    "whatsappDocLine": "• {{type}} - {{daysLeft}} days left",
+    "whatsappFooter": "\\n\\nPlease update them on TruckMitr app.\\n\\nTM ID: {{tmId}}",
+    "failedToFetchDocs": "Failed to fetch expiring documents",
+    "comingSoon": "Coming Soon",
+    "didntReceivedCode": "Didn't receive code?",
+    "addBankDetails": "Add Bank Details",
+    "pleaseFillField": "Please fill all the fields",
+    "foodDetailsSavedSuccess": "Food details saved successfully",
+    "failedToSaveFoodDetails": "Failed to save food details",
+    "addMore": "Add More"
 }

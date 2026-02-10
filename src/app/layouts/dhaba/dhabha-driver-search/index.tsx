@@ -76,21 +76,13 @@ const DhabhaDriverSearch = () => {
         setLoading(true);
         setHasSearched(true);
         try {
-            const formData = new FormData();
-            formData.append('search', query);
-
-            const response = await axiosInstance({
-                method: 'post', // Changed to POST as per likely API requirement for search
-                url: END_POINTS.DHABA_DRIVER_SEARCH,
-                data: formData,
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            const response = await axiosInstance.get(END_POINTS.DHABA_DRIVER_SEARCH, {
+                params: {
+                    search: query
+                }
             });
 
-            if (response.data && response.data.status) { // Check for status true as per typical API response
-                // Assuming response structure similar to Association: { status: true, drivers: [...] } or { data: [...] }
-                // Adjust based on actual API response. Fallback to check multiple keys.
+            if (response.data && (response.data.success || response.data.status)) {
                 setResults(response.data.drivers || response.data.data || []);
             } else {
                 setResults([]);

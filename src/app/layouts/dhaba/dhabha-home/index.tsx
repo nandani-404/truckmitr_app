@@ -427,7 +427,7 @@ export default function DhabhaHome() {
                         }}>
                             <TouchableOpacity
                                 activeOpacity={0.8}
-                                onPress={() => navigation.navigate(STACKS.DHABHA_EARNINGS as any)}
+                                onPress={() => navigation.navigate(STACKS.DHABHA_EARNINGS as any, { openRedeem: true })}
                                 style={{
                                     backgroundColor: '#F97316',
                                     borderRadius: 25,

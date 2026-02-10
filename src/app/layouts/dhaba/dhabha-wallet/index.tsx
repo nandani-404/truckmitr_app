@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { useResponsiveScale, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import LinearGradient from 'react-native-linear-gradient';
@@ -30,6 +30,7 @@ import moment from 'moment';
 
 export default function DhabhaWallet() {
     const navigation = useNavigation();
+    const route = useRoute<any>();
     const safeAreaInsets = useSafeAreaInsets();
     useStatusBarStyle('dark-content');
     const { t } = useTranslation(); // Initialize translation hook
@@ -72,6 +73,15 @@ export default function DhabhaWallet() {
         React.useCallback(() => {
             fetchWalletData();
         }, [])
+    );
+
+    useFocusEffect(
+        React.useCallback(() => {
+            if (route.params?.openRedeem) {
+                setIsRedeemModalVisible(true);
+                navigation.setParams({ openRedeem: undefined } as any);
+            }
+        }, [route.params])
     );
 
     const handleRedeem = async () => {

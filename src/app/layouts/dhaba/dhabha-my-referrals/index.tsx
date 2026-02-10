@@ -99,6 +99,8 @@ export default function DhabhaMyReferrals() {
             });
 
             if (response.data && response.data.success && response.data.data) {
+                console.log(`response.data.data`, response.data.data);
+
                 const apiData = response.data.data;
                 const driversList = apiData.drivers || [];
                 setReferrals(driversList);
@@ -169,25 +171,14 @@ export default function DhabhaMyReferrals() {
                     </Text>
                 </View>
 
-                <View style={[styles.walletStatus,
-                item.status?.toLowerCase() === 'paid' ? styles.walletSuccess :
-                    item.status?.toLowerCase() === 'pending' ? styles.walletPending : styles.walletError
-                ]}>
-                    <Ionicons
-                        name={item.status?.toLowerCase() === 'paid' ? 'wallet' : 'wallet-outline'}
-                        size={14}
-                        color={
-                            item.status?.toLowerCase() === 'paid' ? '#15803D' :
-                                item.status?.toLowerCase() === 'pending' ? '#B45309' : '#B91C1C'
-                        }
-                    />
-                    <Text style={[styles.walletText, {
-                        color: item.status?.toLowerCase() === 'paid' ? '#15803D' :
-                            item.status?.toLowerCase() === 'pending' ? '#B45309' : '#B91C1C'
-                    }]}>
-                        {item.status?.toLowerCase() === 'paid' ? `₹${item.amount || 0}` : item.status}
-                    </Text>
-                </View>
+                {item.status?.toLowerCase() === 'paid' && (
+                    <View style={[styles.walletStatus, styles.walletSuccess]}>
+                        <Ionicons name="wallet" size={14} color="#15803D" />
+                        <Text style={[styles.walletText, { color: '#15803D' }]}>
+                            ₹{item.amount || 0}
+                        </Text>
+                    </View>
+                )}
             </View>
         </View>
     );
