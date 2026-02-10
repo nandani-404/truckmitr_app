@@ -62,7 +62,6 @@
     "requestingEarnings": "अनुरोध कर रहा है...",
     "hereYouCanWatchCommunityPostsAndUpdates": "यहां आप सामुदायिक पोस्ट और अपडेट देख सकते हैं",
     "expiringDocuments": "समाप्त होने वाले दस्तावेज़",
-    "pendingProfiles": "लंबित प्रोफ़ाइल",
     "pendingSubscription": "लंबित सदस्यता",
     "pendingTraining": "लंबित प्रशिक्षण",
     "allCaughtUp": "सब कुछ पूरा!",
@@ -71,6 +70,7 @@
     "notSpecified": "निर्दिष्ट नहीं",
     "viewDetails": "विवरण देखें",
     "shareWithDrivers": "ड्राइवरों के साथ साझा करें",
+    "shareJobDetails": "नौकरी विवरण साझा करें",
     "selectDrivers": "ड्राइवर चुनें",
     "selectAll": "सभी चुनें",
     "shareJob": "नौकरी साझा करें",
@@ -3753,5 +3753,13 @@
     "shareTheApp": "ऐप साझा करें",
     "shareMyProfile": "मेरी प्रोफ़ाइल साझा करें",
     "logins": "लॉगिन",
-    "hello": "नमस्ते"
+    "hello": "नमस्ते",
+    "error": "त्रुटि",
+    "failedToFetchPendingProfiles": "लंबित प्रोफ़ाइल लाने में विफल। कृपया पुनः प्रयास करें।",
+    "pendingProfileShareMessage": "नमस्ते {{name}}, आपकी TruckMitr प्रोफ़ाइल पूर्णता लंबित है ({{percentage}}%)। कृपया नौकरी पाना शुरू करने के लिए इसे पूरा करें। TM ID: {{tmId}}",
+    "driverAssociation": "ड्राइवर एसोसिएशन",
+    "driverAssociationPro": "ड्राइवर एसोसिएशन प्रो",
+    "basicDriver": "बेसिक ड्राइवर",
+    "noDriversAddedYet": "अभी तक कोई ड्राइवर नहीं जोड़ा गया",
+    "addedLabel": "जोड़ा गया:"
 }

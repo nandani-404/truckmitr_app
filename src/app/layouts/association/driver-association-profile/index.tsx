@@ -319,8 +319,8 @@ export default function DriverAssociationProfile() {
         user?.plan_id === 12 ||
         user?.payment_type === 'association_pro';
 
-    // Get the user badge text (Association Pro / Association)
-    const userBadgeText = getUserBadgeText({ user, subscriptionDetails });
+    // Get the user badge text (Association Pro / Association) - translated
+    const userBadgeText = isAssociationPro ? t('driverAssociationPro') : t('driverAssociation');
 
     const progress = profileCompletion || 0;
     const size = responsiveFontSize(12);

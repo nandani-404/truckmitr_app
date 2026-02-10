@@ -49,22 +49,22 @@ const formatDate = (dateString: string) => {
     return `${day} ${month} ${year}`;
 };
 
-const getSubscriptionBadgeStyle = (type: string | null) => {
+const getSubscriptionBadgeStyle = (type: string | null, t: any) => {
     switch (type?.toLowerCase()) {
         case 'verified':
-            return { bg: '#DBEAFE', text: '#2563EB', label: 'Verified Driver' };
+            return { bg: '#DBEAFE', text: '#2563EB', label: t('verifiedDriver') };
         case 'trusted':
-            return { bg: '#F3E8FF', text: '#9333EA', label: 'Trusted Driver' };
+            return { bg: '#F3E8FF', text: '#9333EA', label: t('trustedDriver') };
         case 'job_ready':
-            return { bg: '#DCFCE7', text: '#16A34A', label: 'Job Ready Driver' };
+            return { bg: '#DCFCE7', text: '#16A34A', label: t('jobReadyDriver') };
         default:
-            return { bg: '#F1F5F9', text: '#64748B', label: 'Basic Driver' };
+            return { bg: '#F1F5F9', text: '#64748B', label: t('basicDriver') };
     }
 };
 
-const DriverCard = ({ driver }: { driver: Driver }) => {
+const DriverCard = ({ driver, t }: { driver: Driver, t: any }) => {
     const navigation = useNavigation<NavigatorProp>();
-    const badgeStyle = getSubscriptionBadgeStyle(driver.payment_type);
+    const badgeStyle = getSubscriptionBadgeStyle(driver.payment_type, t);
 
     const handleViewDetails = () => {
         // @ts-ignore
@@ -153,13 +153,13 @@ const DriverCard = ({ driver }: { driver: Driver }) => {
                 </View>
                 <View style={styles.detailItem}>
                     <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>Added: {formatDate(driver.created_at)}</Text>
+                    <Text style={styles.detailText}>{t('addedLabel')} {formatDate(driver.created_at)}</Text>
                 </View>
             </View>
 
             {/* View Details Button */}
             <TouchableOpacity style={styles.viewDetailsBtn} onPress={handleViewDetails}>
-                <Text style={styles.viewDetailsBtnText}>View Details</Text>
+                <Text style={styles.viewDetailsBtnText}>{t('viewDetails')}</Text>
                 <Ionicons name="chevron-forward" size={16} color="#6366F1" />
             </TouchableOpacity>
         </View>
@@ -220,7 +220,7 @@ export default function DriverAssociationMyDrivers() {
                 <FlatList
                     data={drivers}
                     keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => <DriverCard driver={item} />}
+                    renderItem={({ item }) => <DriverCard driver={item} t={t} />}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
@@ -229,7 +229,7 @@ export default function DriverAssociationMyDrivers() {
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="people-outline" size={48} color="#94A3B8" />
-                            <Text style={styles.emptyText}>No drivers added yet</Text>
+                            <Text style={styles.emptyText}>{t('noDriversAddedYet')}</Text>
                         </View>
                     }
                 />

@@ -71,6 +71,7 @@
     "notSpecified": "Not specified",
     "viewDetails": "View Details",
     "shareWithDrivers": "Share with Drivers",
+    "shareJobDetails": "Share Job Details",
     "selectDrivers": "Select Drivers",
     "selectAll": "Select All",
     "shareJob": "Share Job",
@@ -3766,7 +3767,6 @@
     "membershipCardSharedSuccessfully": "Membership card shared successfully",
     "failedToShareMembershipCard": "Failed to share membership card",
     "memberNameDefault": "MEMBER NAME",
-    "pendingProfiles": "Pending Profiles",
     "profileCompletionPending": "Profile completion is pending",
     "addedOn": "Added on",
     "allCaughtUp": "All Caught Up!",
@@ -3834,5 +3834,13 @@
     "shareDeadlineLabel": "*Deadline:*",
     "shareDescriptionLabel": "*Description:*",
     "shareInterestedCTA": "Interested? Apply now on the TruckMitr app!",
-    "checkDetailsInApp": "Check details in app"
+    "checkDetailsInApp": "Check details in app",
+    "error": "Error",
+    "failedToFetchPendingProfiles": "Failed to fetch pending profiles. Please try again.",
+    "pendingProfileShareMessage": "Hello {{name}}, your TruckMitr profile completion is pending ({{percentage}}%). Please complete it to start getting jobs. TM ID: {{tmId}}",
+    "driverAssociation": "Driver Association",
+    "driverAssociationPro": "Driver Association Pro",
+    "basicDriver": "Basic Driver",
+    "noDriversAddedYet": "No drivers added yet",
+    "addedLabel": "Added:"
 }
