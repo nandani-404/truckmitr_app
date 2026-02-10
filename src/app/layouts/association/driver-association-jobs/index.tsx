@@ -17,7 +17,8 @@ import {
     SafeAreaView,
     Platform,
     TouchableWithoutFeedback,
-    Pressable
+    Pressable,
+    Share
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -294,6 +295,39 @@ const DriverAssociationJobs = () => {
         }
     };
 
+    // --- Native Share (via phone share sheet) ---
+    const handleNativeShare = async (job: Job) => {
+        const appLink = Platform.OS === 'ios'
+            ? 'https://apps.apple.com/app/truckmitr/id123456789'
+            : 'https://play.google.com/store/apps/details?id=com.truckmitr';
+
+        const message =
+            `🚛 *Job Opportunity – TruckMitr*\n\n` +
+            `📌 *${job.job_title}*\n` +
+            `📍 Location: ${job.job_location}\n` +
+            `💰 Salary: ${formatSalary(job.Salary_Range, t)}\n` +
+            `🏅 Experience: ${job.Required_Experience || 'N/A'} years\n` +
+            `🪪 License: ${job.Type_of_License || 'N/A'}\n` +
+            `🚗 Vehicle Type: ${job.vehicle_type || 'N/A'}\n` +
+            `📅 Deadline: ${formatDate(job.Application_Deadline)}\n` +
+            (job.Job_Description
+                ? `\n📝 Description:\n${job.Job_Description.substring(0, 200)}${job.Job_Description.length > 200 ? '...' : ''}\n`
+                : '') +
+            `\n👉 Download TruckMitr & Apply Now:\n${appLink}`;
+
+        try {
+            await Share.share({
+                message,
+                title: job.job_title,
+            });
+        } catch (error: any) {
+            if (error?.message !== 'User did not share') {
+                console.error('Share error:', error);
+                showToast(t('somethingWentWrong'));
+            }
+        }
+    };
+
     // --- Renderers ---
 
     const renderJobItem = ({ item }: { item: Job }) => {
@@ -487,9 +521,9 @@ const DriverAssociationJobs = () => {
                                             <Text style={styles.descText}>{selectedJob.Job_Description?.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n')}</Text>
                                         </View>
 
-                                        <TouchableOpacity style={styles.shareFullBtn} onPress={() => { closeDetails(); setTimeout(() => openShare(selectedJob), 300); }}>
+                                        <TouchableOpacity style={styles.shareFullBtn} onPress={() => handleNativeShare(selectedJob)}>
                                             <Ionicons name="share-social" size={18} color="#fff" />
-                                            <Text style={styles.shareFullText}>{t('shareWithDrivers')}</Text>
+                                            <Text style={styles.shareFullText}>{t('shareJobDetails')}</Text>
                                         </TouchableOpacity>
                                     </Pressable>
                                 </ScrollView>

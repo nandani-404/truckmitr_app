@@ -10,6 +10,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { useSelector } from 'react-redux';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS, BASE_URL } from '@truckmitr/src/utils/config';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -72,7 +73,7 @@ const formatDate = (dateString: string) => {
 };
 
 // Pending Driver Card Component
-const PendingDriverCard = ({ driver, onPress, onShare }: { driver: Driver, onPress: () => void, onShare: () => void }) => {
+const PendingDriverCard = ({ driver, onPress, onShare, t }: { driver: Driver, onPress: () => void, onShare: () => void, t: any }) => {
     const getStatusColor = () => {
         if (driver.profile_completion_percentage >= 70) return COLORS.success;
         if (driver.profile_completion_percentage >= 40) return COLORS.warning;
@@ -142,7 +143,7 @@ const PendingDriverCard = ({ driver, onPress, onShare }: { driver: Driver, onPre
             <View style={styles.pendingStatusSection}>
                 <View style={styles.pendingStatusRow}>
                     <Ionicons name="information-circle" size={16} color={COLORS.warning} />
-                    <Text style={styles.pendingStatusText}>Profile completion is pending</Text>
+                    <Text style={styles.pendingStatusText}>{t('profileCompletionPending')}</Text>
                 </View>
             </View>
 
@@ -150,11 +151,11 @@ const PendingDriverCard = ({ driver, onPress, onShare }: { driver: Driver, onPre
             <View style={styles.cardFooter}>
                 <View style={styles.timeInfo}>
                     <Ionicons name="time-outline" size={14} color={COLORS.textMuted} />
-                    <Text style={styles.timeText}>Added on : {formatDate(driver.created_at)}</Text>
+                    <Text style={styles.timeText}>{t('addedOn')} : {formatDate(driver.created_at)}</Text>
                 </View>
                 <TouchableOpacity style={styles.shareBtn} onPress={onShare}>
                     <Ionicons name="share-social" size={16} color={COLORS.white} />
-                    <Text style={styles.shareBtnText}>Share</Text>
+                    <Text style={styles.shareBtnText}>{t('share')}</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
@@ -165,6 +166,7 @@ const PendingDriverCard = ({ driver, onPress, onShare }: { driver: Driver, onPre
 export default function DriverAssociationPendingProfiles() {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
+    const { t } = useTranslation();
     const { user } = useSelector((state: any) => state?.user) || {};
 
     const [loading, setLoading] = useState(true);
@@ -182,7 +184,7 @@ export default function DriverAssociationPendingProfiles() {
             }
         } catch (error) {
             console.error('Error fetching pending profiles:', error);
-            Alert.alert('Error', 'Failed to fetch pending profiles. Please try again.');
+            Alert.alert(t('error'), t('failedToFetchPendingProfiles'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -217,7 +219,11 @@ export default function DriverAssociationPendingProfiles() {
     };
 
     const handleShare = async (driver: Driver) => {
-        const message = `Hello ${driver.driver_name}, your TruckMitr profile completion is pending (${driver.profile_completion_percentage}%). Please complete it to start getting jobs. TM ID: ${driver.unique_id}`;
+        const message = t('pendingProfileShareMessage', {
+            name: driver.driver_name,
+            percentage: driver.profile_completion_percentage,
+            tmId: driver.unique_id,
+        });
 
         try {
             await Share.share({
@@ -231,9 +237,9 @@ export default function DriverAssociationPendingProfiles() {
     const renderEmptyState = () => (
         <View style={styles.emptyState}>
             <Ionicons name="checkmark-circle" size={64} color={COLORS.success} />
-            <Text style={styles.emptyTitle}>All Caught Up!</Text>
+            <Text style={styles.emptyTitle}>{t('allCaughtUp')}</Text>
             <Text style={styles.emptySubtitle}>
-                No pending profiles found
+                {t('noPendingProfilesFound')}
             </Text>
         </View>
     );
@@ -247,7 +253,7 @@ export default function DriverAssociationPendingProfiles() {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Pending Profiles</Text>
+                <Text style={styles.headerTitle}>{t('pendingProfiles')}</Text>
             </View>
 
             {loading ? (
@@ -263,6 +269,7 @@ export default function DriverAssociationPendingProfiles() {
                             driver={item}
                             onPress={() => handleDriverPress(item)}
                             onShare={() => handleShare(item)}
+                            t={t}
                         />
                     )}
                     contentContainerStyle={styles.contentContainer}
