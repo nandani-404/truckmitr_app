@@ -353,7 +353,7 @@ export default function DriverAssociationProfile() {
         navigation.navigate(STACKS.ASSOCIATION_PROFILE_EDIT)
     }
 
-    const _navigateRating = () => navigation.navigate(STACKS.RATING)
+    const _navigateRating = () => navigation.navigate(STACKS.RATING);
     const _navigateContactUs = () => navigation.navigate(STACKS.CONTACT_US)
     const _navigatePrivacy = () => navigation.navigate(STACKS.PRIVACY)
     const _navigateSetting = () => navigation.navigate(STACKS.SETTINGS)
@@ -532,7 +532,7 @@ export default function DriverAssociationProfile() {
             <AppleConfirmDialog
                 visible={showLogoutDialog}
                 title={t('logout')}
-                message={t('areYouSureLogout') || 'Are you sure you want to logout from your account?'}
+                message={t('areYouSureLogout')}
                 confirmText={t('logout')}
                 cancelText={t('cancel')}
                 isDestructive={false}
@@ -543,8 +543,8 @@ export default function DriverAssociationProfile() {
             <AppleConfirmDialog
                 visible={showDeleteDialog}
                 title={t('deleteAccount')}
-                message={t('areYouSureDeleteAccount') || 'This action cannot be undone. All your data will be permanently deleted.'}
-                confirmText={t('delete') || 'Delete'}
+                message={t('areYouSureDeleteAccount')}
+                confirmText={t('delete')}
                 cancelText={t('cancel')}
                 isDestructive={true}
                 onConfirm={deleteAccount}
@@ -743,7 +743,7 @@ export default function DriverAssociationProfile() {
                             {(() => {
                                 // --- Data Preparation for Card ---
                                 // Badge Text
-                                const badgeText = "ASSOCIATION PRO"; // Hardcoded specific title or use userBadgeText
+                                const badgeText = t('associationPro');
 
                                 // User Info
                                 const userName = user?.name?.toUpperCase() || t('memberNameDefault').toUpperCase();
@@ -913,7 +913,7 @@ export default function DriverAssociationProfile() {
                                                                     <View style={{ flexDirection: 'row', gap: 10 }}>
                                                                         {/* Valid From */}
                                                                         <View style={{ alignItems: 'center' }}>
-                                                                            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '800' }}>{t('validFrom')?.toUpperCase() || 'VALID FROM'}</Text>
+                                                                            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '800' }}>{t('validFrom')?.toUpperCase()}</Text>
                                                                             <View style={{ height: 16, width: 60, marginTop: 1 }}>
                                                                                 <Svg height="100%" width="100%" viewBox="0 0 60 16">
                                                                                     <Defs>
@@ -931,7 +931,7 @@ export default function DriverAssociationProfile() {
                                                                         </View>
                                                                         {/* Valid Until */}
                                                                         <View style={{ alignItems: 'center' }}>
-                                                                            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '800' }}>{t('validUntil')?.toUpperCase() || 'VALID UNTIL'}</Text>
+                                                                            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '800' }}>{t('validUntil')?.toUpperCase()}</Text>
                                                                             <View style={{ height: 16, width: 60, marginTop: 1 }}>
                                                                                 <Svg height="100%" width="100%" viewBox="0 0 60 16">
                                                                                     <Defs>
@@ -1018,7 +1018,7 @@ export default function DriverAssociationProfile() {
                     <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
                     <MenuItem
                         icon={<MaterialCommunityIcons name="chart-bar" size={20} color="#8B5CF6" />}
-                        title={t('earningsChart') || 'Earning Chart'}
+                        title={t('earningsChart')}
                         onPress={() => navigation.navigate(STACKS.DRIVER_ASSOCIATION_EARNINGS_INFO)}
                     />
                 </CardContainer>

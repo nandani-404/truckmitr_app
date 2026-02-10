@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import AssociateBottom from './tabs/associate-bottom';
-import { Settings, Notification, ContactUs, Privacy, LanguageMain, PreferredColor } from '@truckmitr/layouts/index';
+import { Settings, Notification, ContactUs, Privacy, LanguageMain, PreferredColor, Rating } from '@truckmitr/layouts/index';
 import { setupFirebaseNotifications, initializeNotificationChannel } from '@truckmitr/src/utils/notification';
 import { useSelector } from 'react-redux';
 import {
@@ -100,6 +100,7 @@ export default function AssociateMain() {
             <Stack.Screen name={STACKS.ASSOCIATION_BANK_DETAILS} component={AssociationBankDetails} />
             <Stack.Screen name={STACKS.DRIVER_ASSOCIATION_EARNINGS_INFO} component={DriverAssociationEarningsInfo} />
             <Stack.Screen name={STACKS.ASSOCIATION_PROFILE_EDIT} component={DriverAssociationProfileEdit} />
+            <Stack.Screen name={STACKS.RATING} component={Rating} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_MY_POSTS} component={MyPostsScreen} />
 
         </Stack.Navigator>
