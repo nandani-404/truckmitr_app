@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useColor, useShadow } from '@truckmitr/src/app/hooks';
 import { DhabhaProfileProvider } from './DhabhaProfileContext';
@@ -23,14 +23,42 @@ import FoodAvailableTab from './tabs/FoodAvailableTab';
 import FacilitiesTab from './tabs/FacilitiesTab';
 import PhotosTab from './tabs/PhotosTab';
 import DriverOfferTab from './tabs/DriverOfferTab';
+import ProfileTab from './tabs/ProfileTab';
 
 const Tab = createMaterialTopTabNavigator();
 
 const DhabhaMyProfileContent = () => {
     const navigation = useNavigation();
+    const route = useRoute<any>();
     const { t } = useTranslation();
     const colors = useColor();
     const { shadow } = useShadow();
+
+    const showProfileTab = route.params?.initialTab === 'Profile';
+    const [activeTab, setActiveTab] = useState(route.params?.initialTab || t('basicInfoTab'));
+
+    useEffect(() => {
+        if (route.params?.initialTab) {
+            // Small timeout to ensure navigator is ready
+            setTimeout(() => {
+                navigation.navigate(route.params.initialTab as never);
+            }, 100);
+        }
+    }, [route.params?.initialTab]);
+
+    const getHeaderTitle = () => {
+        if (activeTab === 'Profile') {
+            return t('my_profile') || "My Profile";
+        }
+        return t('myDhaba');
+    };
+
+    const getHeaderSubtitle = () => {
+        if (activeTab === 'Profile') {
+            return t('manage_personal_details') || "Manage Personal Details";
+        }
+        return t('manageProfileAndPhotos');
+    };
 
     return (
         <View style={styles.container}>
@@ -43,8 +71,8 @@ const DhabhaMyProfileContent = () => {
                         <Ionicons name="arrow-back" size={24} color="#000" />
                     </TouchableOpacity>
                     <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>{t('myDhaba')}</Text>
-                        <Text style={styles.headerSubtitle}>{t('manageProfileAndPhotos')}</Text>
+                        <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+                        <Text style={styles.headerSubtitle}>{getHeaderSubtitle()}</Text>
                     </View>
 
                 </View>
@@ -62,7 +90,15 @@ const DhabhaMyProfileContent = () => {
                     tabBarInactiveTintColor: '#6B7280',
                     lazy: true,
                 }}
+                screenListeners={({ route }) => ({
+                    focus: () => {
+                        setActiveTab(route.name);
+                    },
+                })}
             >
+                {showProfileTab && (
+                    <Tab.Screen name="Profile" component={ProfileTab} options={{ title: t('profile') || "Profile" }} />
+                )}
                 <Tab.Screen name={t('basicInfoTab')} component={BasicInfoTab} />
                 <Tab.Screen name={t('locationTab')} component={LocationDetailsTab} />
                 <Tab.Screen name={t('operationalTab')} component={OperationalDetailsTab} />

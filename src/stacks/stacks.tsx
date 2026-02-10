@@ -173,7 +173,7 @@ export type NavigatorParams = {
     dhabhaEarnings: undefined;
     dhabhaAddDriver: undefined;
     dhabhaBankDetails: undefined;
-    dhabhaMyDhabha: undefined;
+    dhabhaMyDhabha: { initialTab?: string } | undefined;
     dhabhaMyDrivers: undefined;
     dhabhaNearby: undefined;
     dhabhaDriverSearch: undefined;

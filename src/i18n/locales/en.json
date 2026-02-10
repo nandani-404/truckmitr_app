@@ -198,6 +198,7 @@
     "addDriversFromContacts": "Add Drivers from Contacts",
     "bulkImportSubtitle": "Quickly add multiple drivers from phone contacts",
     "selectContacts": "Select Contacts",
+    "selectFromContactList": "Select from Contact List",
     "driverFullName": "Driver full name",
     "driverMobileNumber": "Driver mobile number",
     "emailId": "Email ID",

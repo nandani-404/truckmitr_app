@@ -394,7 +394,7 @@ export default function DhabhaMyProfile() {
 
             {/* Edit Button */}
             <TouchableOpacity
-                onPress={() => navigation.navigate(STACKS.DHABHA_PROFILE_EDIT as any)}
+                onPress={() => navigation.navigate(STACKS.DHABHA_MY_DHABHA as any, { initialTab: 'Profile' })}
                 activeOpacity={0.7}
                 style={[
                     styles.editButton,
@@ -424,7 +424,7 @@ export default function DhabhaMyProfile() {
                             onPress={() =>
                                 // console.log('profile')
 
-                                navigation.navigate(STACKS.DHABHA_PROFILE_EDIT as any)
+                                navigation.navigate(STACKS.DHABHA_MY_DHABHA as any, { initialTab: 'Profile' })
                             }
                         />
 

@@ -11,7 +11,9 @@ import {
     Alert,
     Platform,
     Animated,
-    TouchableWithoutFeedback
+    TouchableWithoutFeedback,
+    PermissionsAndroid,
+    StatusBar
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +21,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NavigatorParams } from '@truckmitr/stacks/stacks';
-import { useResponsiveScale, useStatusBarStyle } from '@truckmitr/src/app/hooks';
+import { useResponsiveScale, useStatusBarStyle, useColor } from '@truckmitr/src/app/hooks';
+import Contacts from 'react-native-contacts';
 import { useTranslation } from 'react-i18next';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
@@ -57,8 +60,17 @@ export default function DhabhaAddDriver() {
     const [isStateModalVisible, setIsStateModalVisible] = useState(false);
     const [stateSearchText, setStateSearchText] = useState('');
 
+
+    // Contact Import State
+    const [showContactListModal, setShowContactListModal] = useState(false);
+    const [allContacts, setAllContacts] = useState<any[]>([]);
+    const [filteredContacts, setFilteredContacts] = useState<any[]>([]);
+    const [contactSearchText, setContactSearchText] = useState('');
+    const [loadingContacts, setLoadingContacts] = useState(false);
+    const [isImportedFromContacts, setIsImportedFromContacts] = useState(false);
+
     // OTP Modal State
-    const [showOtpModal, setShowOtpModal] = useState(true);
+    const [showOtpModal, setShowOtpModal] = useState(false);
     const [otp, setOtp] = useState('');
     const [otpLoading, setOtpLoading] = useState(false);
     const [otpError, setOtpError] = useState('');
@@ -108,6 +120,123 @@ export default function DhabhaAddDriver() {
             setLocations([]);
         }
     };
+
+    // Contact Permission & Import Logic
+    const requestContactPermission = async (): Promise<boolean> => {
+        if (Platform.OS === 'android') {
+            try {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+                    {
+                        title: t('contactPermissionTitle'),
+                        message: t('contactPermissionMessage'),
+                        buttonPositive: t('allow'),
+                        buttonNegative: t('notNow'),
+                    }
+                );
+                return granted === PermissionsAndroid.RESULTS.GRANTED;
+            } catch (err) {
+                console.log('Permission error:', err);
+                return false;
+            }
+        }
+        return true; // iOS handles permissions differently
+    };
+
+    const handleSelectFromContacts = async () => {
+        const hasPermission = await requestContactPermission();
+        if (!hasPermission) {
+            Alert.alert(t('permissionDenied'), t('contactPermissionRequired'));
+            return;
+        }
+        openContactPicker();
+    };
+
+    const openContactPicker = () => {
+        setLoadingContacts(true);
+        setShowContactListModal(true);
+        setContactSearchText('');
+
+        Contacts.getAll()
+            .then((contacts) => {
+                // Filter invalid contacts
+                const validContacts = contacts.filter(c => c.phoneNumbers && c.phoneNumbers.length > 0);
+
+                // Deduplicate
+                const uniqueContactsMap = new Map();
+                validContacts.forEach((contact) => {
+                    const displayName = `${contact.givenName || ''} ${contact.familyName || ''}`.trim() || 'Unknown';
+
+                    if (!uniqueContactsMap.has(displayName)) {
+                        uniqueContactsMap.set(displayName, {
+                            ...contact,
+                            displayName,
+                            uniqueId: contact.recordID || `${displayName}-${Math.random()}`
+                        });
+                    }
+                });
+
+                const contactsWithPhones = Array.from(uniqueContactsMap.values())
+                    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+                setAllContacts(contactsWithPhones);
+                setFilteredContacts(contactsWithPhones);
+                setLoadingContacts(false);
+
+                if (contactsWithPhones.length === 0) {
+                    showToast(t('noContactsWithPhone'));
+                }
+            })
+            .catch((e) => {
+                console.log('Error getting contacts:', e);
+                setLoadingContacts(false);
+                showToast(t('errorAccessingContacts'));
+            });
+    };
+
+    const handleContactSelected = (contact: any) => {
+        const name = `${contact.givenName || ''} ${contact.familyName || ''}`.trim();
+
+        // Extract phone numbers
+        const phoneNumbers = contact.phoneNumbers
+            ? contact.phoneNumbers.map((p: any) => p.number.replace(/[^0-9]/g, '').slice(-10))
+            : [];
+
+        // Filter valid 10-digit numbers
+        const validNumbers = [...new Set(phoneNumbers.filter((n: string) => n.length === 10))];
+
+        if (validNumbers.length > 0) {
+            // Automatically select the first valid number
+            setFullName(name);
+            setMobileNumber(validNumbers[0] as string);
+            setIsImportedFromContacts(true);
+            // Clear email if strictly following "name and mobile autofills"
+            // setEmail(''); 
+            setShowContactListModal(false);
+            setErrors(prev => {
+                const newErrs = { ...prev };
+                delete newErrs.name;
+                delete newErrs.mobile;
+                return newErrs;
+            });
+        } else {
+            showToast(t('noValidMobileNumberFound'));
+        }
+    };
+
+    // Filter contacts
+    useEffect(() => {
+        if (contactSearchText.trim() === '') {
+            setFilteredContacts(allContacts);
+        } else {
+            const searchLower = contactSearchText.toLowerCase();
+            const filtered = allContacts.filter(c =>
+                c.displayName.toLowerCase().includes(searchLower) ||
+                c.phoneNumbers?.some((p: any) => p.number.includes(contactSearchText))
+            );
+            setFilteredContacts(filtered);
+        }
+    }, [contactSearchText, allContacts]);
 
     const validateForm = () => {
         const newErrors: { [key: string]: string } = {};
@@ -248,6 +377,33 @@ export default function DhabhaAddDriver() {
             >
 
                 {/* Clean Referral Banner */}
+                <TouchableOpacity
+                    onPress={handleSelectFromContacts}
+                    style={styles.contactImportCard}
+                    activeOpacity={0.8}
+                >
+                    <View style={styles.contactImportLeft}>
+                        <View style={styles.contactIconContainer}>
+                            <MaterialCommunityIcons name="card-account-phone" size={24} color={'#EA580C'} />
+                        </View>
+                        <View style={styles.contactImportTextContainer}>
+                            <Text style={styles.contactImportTitle}>
+                                {t('addDriversFromContacts')}
+                            </Text>
+                            <Text style={styles.contactImportSubtitle}>
+                                {t('selectFromContactList')}
+                            </Text>
+                        </View>
+                    </View>
+                    {/* <View style={styles.selectContactButton}>
+                        <MaterialCommunityIcons name="contacts" size={16} color={'#EA580C'} />
+                        <Text style={styles.selectContactButtonText}>
+                            {t('select')}
+                        </Text>
+                    </View> */}
+                </TouchableOpacity>
+
+                {/* Clean Referral Banner */}
                 <View style={styles.referralBanner}>
                     <Ionicons name="ticket-outline" size={18} color="#EA580C" />
                     <Text style={styles.referralText}>
@@ -264,7 +420,10 @@ export default function DhabhaAddDriver() {
                         placeholder={t('driversName')}
                         placeholderTextColor="#9CA3AF"
                         value={fullName}
-                        onChangeText={setFullName}
+                        onChangeText={(text) => {
+                            setFullName(text);
+                            if (isImportedFromContacts && text !== fullName) setIsImportedFromContacts(false);
+                        }}
                     />
                 </View>
 
@@ -279,7 +438,10 @@ export default function DhabhaAddDriver() {
                             keyboardType="number-pad"
                             maxLength={10}
                             value={mobileNumber}
-                            onChangeText={setMobileNumber}
+                            onChangeText={(text) => {
+                                setMobileNumber(text);
+                                if (isImportedFromContacts && text !== mobileNumber) setIsImportedFromContacts(false);
+                            }}
                         />
                     </View>
                     <Text style={styles.fieldError}>{errors.mobile}</Text>
@@ -540,6 +702,98 @@ export default function DhabhaAddDriver() {
                 </View>
             </Modal>
 
+            {/* Contact List Modal */}
+            <Modal
+                visible={showContactListModal}
+                animationType="slide"
+                onRequestClose={() => setShowContactListModal(false)}
+            >
+                <View style={styles.contactModalContainer}>
+                    <View style={[styles.contactModalHeader, { paddingTop: safeAreaInsets.top + 10 }]}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowContactListModal(false);
+                                setContactSearchText('');
+                            }}
+                            hitSlop={hitSlop(10)}
+                            style={styles.contactModalCloseBtn}
+                        >
+                            <Ionicons name="close" size={24} color="#1F2937" />
+                        </TouchableOpacity>
+                        <Text style={styles.contactModalTitle}>
+                            {t('selectContacts')}
+                        </Text>
+                        <View style={{ width: 32 }} />
+                    </View>
+
+                    <View style={styles.contactSearchContainer}>
+                        <View style={styles.contactSearchBox}>
+                            <Ionicons name="search-outline" size={18} color="#9CA3AF" />
+                            <TextInput
+                                value={contactSearchText}
+                                onChangeText={setContactSearchText}
+                                placeholder={t('searchContact')}
+                                placeholderTextColor="#9CA3AF"
+                                style={styles.contactSearchInput}
+                                autoFocus={false}
+                            />
+                            {contactSearchText.length > 0 && (
+                                <TouchableOpacity onPress={() => setContactSearchText('')} hitSlop={hitSlop(10)}>
+                                    <Ionicons name="close-circle" size={16} color="#D1D5DB" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </View>
+
+                    {loadingContacts ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color="#EA580C" />
+                            <Text style={styles.loadingText}>{t('loadingContacts')}</Text>
+                        </View>
+                    ) : (
+                        <FlatList
+                            data={filteredContacts}
+                            keyExtractor={(item) => item.uniqueId}
+                            contentContainerStyle={styles.contactListMinimal}
+                            ItemSeparatorComponent={() => <View style={styles.contactDivider} />}
+                            renderItem={({ item }) => {
+                                const primaryPhone = item.phoneNumbers?.[0]?.number || '';
+                                return (
+                                    <TouchableOpacity
+                                        onPress={() => handleContactSelected(item)}
+                                        style={styles.contactRowMinimal}
+                                        activeOpacity={0.6}
+                                    >
+                                        <View style={styles.contactAvatarMinimal}>
+                                            <Text style={styles.contactAvatarLetterMinimal}>
+                                                {item.displayName.charAt(0).toUpperCase()}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.contactDetailsMinimal}>
+                                            <Text style={styles.contactNameMinimal} numberOfLines={1}>
+                                                {item.displayName}
+                                            </Text>
+                                            <Text style={styles.contactPhoneMinimal} numberOfLines={1}>
+                                                {primaryPhone}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            }}
+                            ListEmptyComponent={
+                                <View style={styles.emptyStateContainer}>
+                                    <MaterialCommunityIcons name="account-search" size={48} color="#D1D5DB" />
+                                    <Text style={styles.emptyStateText}>
+                                        {t('noContactsFound')}
+                                    </Text>
+                                </View>
+                            }
+                        />
+                    )}
+                </View>
+            </Modal>
+
+
         </View>
     );
 }
@@ -762,4 +1016,118 @@ const styles = StyleSheet.create({
         color: '#EA580C',
         fontWeight: '600',
     },
+
+    // Contact Import Styles
+    contactImportCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#EFF6FF',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#BFDBFE',
+    },
+    contactImportLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    contactIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    contactImportTextContainer: {
+        flex: 1,
+    },
+    contactImportTitle: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#1E293B', // Slate 800
+        marginBottom: 2,
+    },
+    contactImportSubtitle: {
+        fontSize: 13,
+        color: '#64748B', // Slate 500
+    },
+    selectContactButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        gap: 4,
+    },
+    selectContactButtonText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#EA580C',
+    },
+
+    // Contact Modal Styles
+    contactModalContainer: { flex: 1, backgroundColor: '#FFFFFF' },
+    contactModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F3F4F6'
+    },
+    contactModalCloseBtn: { padding: 4 },
+    contactModalTitle: { fontSize: 17, fontWeight: '600', color: '#111827' },
+    contactSearchContainer: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F3F4F6',
+        backgroundColor: '#FFFFFF'
+    },
+    contactSearchBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F9FAFB',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        height: 44,
+        borderWidth: 1,
+        borderColor: '#E5E7EB'
+    },
+    contactSearchInput: { flex: 1, marginLeft: 8, fontSize: 15, color: '#1F2937' },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loadingText: { marginTop: 12, fontSize: 15, color: '#6B7280' },
+    contactListMinimal: { paddingHorizontal: 16 },
+    contactDivider: { height: 1, backgroundColor: '#F3F4F6' },
+    contactRowMinimal: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    contactAvatarMinimal: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#F3F4F6',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    contactAvatarLetterMinimal: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#4B5563',
+    },
+    contactDetailsMinimal: { flex: 1 },
+    contactNameMinimal: { fontSize: 15, fontWeight: '500', color: '#1F2937', marginBottom: 2 },
+    contactPhoneMinimal: { fontSize: 13, color: '#6B7280' },
+    emptyStateContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
+    emptyStateText: { marginTop: 12, fontSize: 16, color: '#9CA3AF' },
 });
