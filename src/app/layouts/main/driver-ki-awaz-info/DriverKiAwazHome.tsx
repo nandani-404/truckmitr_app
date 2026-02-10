@@ -14,7 +14,7 @@ import {
     StatusBar,
     BackHandler,
 } from 'react-native';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useIsFocused, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -25,10 +25,12 @@ type TabType = 'reels' | 'feed' | 'create';
 
 const DriverKiAwazHome: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
+    const route = useRoute<any>();
     const { t } = useTranslation();
     const isFocused = useIsFocused();
     const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab] = useState<TabType>('reels');
+    const initialReelId = route?.params?.reelId;
 
     // Handle Hardware Back Button
     useEffect(() => {
@@ -69,6 +71,12 @@ const DriverKiAwazHome: React.FC = () => {
         navigation.navigate(STACKS.DRIVER_KI_AWAZ_MY_POSTS);
     };
 
+    useEffect(() => {
+        if (initialReelId) {
+            setActiveTab('reels');
+        }
+    }, [initialReelId]);
+
     return (
         <View style={styles.container}>
             <StatusBar
@@ -99,7 +107,10 @@ const DriverKiAwazHome: React.FC = () => {
                 ) : (
                     <View style={styles.reelsContainer}>
                         {/* Reels Content */}
-                        <ReelsScreen isScreenFocused={isFocused && activeTab === 'reels'} />
+                        <ReelsScreen
+                            isScreenFocused={isFocused && activeTab === 'reels'}
+                            initialReelId={initialReelId}
+                        />
 
                         {/* Overlay Header for Reels */}
                         <View style={[styles.overlayHeader, { paddingTop: insets.top + 8 }]}>
