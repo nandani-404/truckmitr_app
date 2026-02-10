@@ -1,5 +1,7 @@
 {
     "interiorPhotos": "Interior Photos",
+    "referralCodeCopied": "Referral Code Copied",
+    "shareReferralMessage": "Use my referral code to join TruckMitr:",
     "module_selection_driver": "Driver",
     "module_selection_transporter": "Transporter",
     "module_selection_driver_foreman": "Driver Foreman",

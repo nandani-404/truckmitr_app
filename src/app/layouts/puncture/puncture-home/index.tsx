@@ -28,6 +28,11 @@ import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from 'react-na
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import { useSelector } from 'react-redux';
 import { BASE_URL } from '@truckmitr/src/utils/config';
+import ShimmerText from '@truckmitr/src/utils/shimmerText';
+import Clipboard from '@react-native-clipboard/clipboard';
+import Toast from 'react-native-simple-toast';
+import Share from 'react-native-share';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 
 
 const PROFILE_PLACEHOLDER = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
@@ -252,6 +257,51 @@ export default function PunctureHome() {
         avatar: 'https://randomuser.me/api/portraits/men/55.jpg',
     };
 
+    const handleCopy = () => {
+        if (user?.Referral_Code) {
+            Clipboard.setString(user.Referral_Code);
+            Toast.showWithGravity(t('referralCodeCopied') || 'Referral Code Copied', Toast.SHORT, Toast.BOTTOM);
+        }
+    };
+
+    const handleShare = async () => {
+        if (user?.Referral_Code) {
+            try {
+                let imageUrl = '';
+                let imagePath = null;
+                try {
+                    // Fetch generic app logo or specific banner image
+                    // Using PROFILE_PLACEHOLDER as a fallback if no specific banner URL is provided
+                    const imageToShare = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
+                    const res = await ReactNativeBlobUtil.config({
+                        fileCache: true,
+                    }).fetch('GET', imageToShare);
+                    imagePath = res.path();
+                    const base64Data = await res.readFile('base64');
+                    imageUrl = `data:image/png;base64,${base64Data}`;
+                } catch (err) {
+                    console.log('Error preparing image for share:', err);
+                }
+
+                const options: { message: string; url?: string } = {
+                    message: `${t('shareReferralMessage') || 'Use my referral code to join TruckMitr:'} ${user.Referral_Code}`,
+                };
+
+                if (imageUrl) {
+                    options.url = imageUrl;
+                }
+
+                await Share.open(options);
+
+                if (imagePath) {
+                    ReactNativeBlobUtil.fs.unlink(imagePath).catch(() => { });
+                }
+            } catch (error) {
+                console.log('Error sharing:', error);
+            }
+        }
+    };
+
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -350,8 +400,25 @@ export default function PunctureHome() {
                             <Ionicons name="ticket-outline" size={24} color="#EA580C" />
                         </View>
                         <View style={styles.referralInfo}>
-                            <Text style={styles.referralLabel}>{t('yourReferralCode')}</Text>
-                            <Text style={styles.referralCode}>{user?.Referral_Code || 'N/A'}</Text>
+                            <ShimmerText
+                                text={t('yourReferralCode')}
+                                textStyle={styles.referralLabel}
+                                colors={['#EA580C', '#FFFFFF', '#EA580C']}
+                            />
+                            <ShimmerText
+                                text={user?.Referral_Code || 'N/A'}
+                                textStyle={styles.referralCode}
+                                colors={['#EA580C', '#FFFFFF', '#EA580C']}
+                            />
+                        </View>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <TouchableOpacity onPress={handleCopy} style={{ padding: 8 }}>
+                                <Ionicons name="copy-outline" size={20} color="#EA580C" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleShare} style={{ padding: 8 }}>
+                                <Ionicons name="share-social-outline" size={20} color="#EA580C" />
+                            </TouchableOpacity>
                         </View>
                         {/* <TouchableOpacity style={styles.copyButton} onPress={() => { showToast('Code Copied'); }}>
                             <Ionicons name="copy-outline" size={20} color="#EA580C" />
