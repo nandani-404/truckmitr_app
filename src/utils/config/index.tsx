@@ -1,9 +1,9 @@
 
 // export const BASE_URL = `https://development.truckmitr.com/`
-// export const BASE_URL = `https://truckmitr.com/`
+export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.29.156:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
-export const BASE_URL = 'https://devtruckmitr.in/'
+// export const BASE_URL = 'https://devtruckmitr.in/'
 export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
 // export const DRIVER_KI_AWAZ_STREAM = 'https://driverkiawaz.truckmitr.com/' //+ filepath(1770288688561.mp4)
 export const AWAZ_URL = 'https://truckmitr.com/'
@@ -146,6 +146,7 @@ export const END_POINTS = {
     VOTER_VERIFY: `api/kyc/voter`,
     CHALLAN_VERIFY: `api/kyc/challan`,
     DIGITAL_ADDRESS_VERIFY: `api/kyc/dav`,
+    DAV_PROFILE: `api/kyc/dav-profile`, // get dav profile
     CHALLAN_HISTORY: `api/kyc/challans`,
     COURT_CASE: (user_id: any) => `api/kyc/court-case/user_id/${user_id}`,
     // GET 

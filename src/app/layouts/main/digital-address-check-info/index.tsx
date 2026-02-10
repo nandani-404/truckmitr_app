@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, ScrollView, TouchableOpacity, Linking, TextInput, ActivityIndicator, Modal, Platform, KeyboardAvoidingView, Pressable } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -9,7 +9,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import { useDispatch, useSelector } from 'react-redux';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
-import { END_POINTS } from '@truckmitr/src/utils/config';
+import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import { ScreenHeader } from '@truckmitr/src/app/components';
@@ -74,6 +74,17 @@ interface DavHistoryItem {
     result: any;
 }
 
+interface DavProfileData {
+    id: number;
+    unique_id: string;
+    name: string;
+    mobile: string;
+    address: string;
+    address_type: string | null;
+    verification_status: 'pending' | 'verified' | null | string;
+    pdf: string | null;
+}
+
 const DigitalAddressCheckInfo = () => {
     const navigation = useNavigation<any>();
     const dispatch = useDispatch();
@@ -101,10 +112,13 @@ const DigitalAddressCheckInfo = () => {
     // UI State
     const [loading, setLoading] = useState(false);
     const [profileLoading, setProfileLoading] = useState(true);
+    const [davProfileLoading, setDavProfileLoading] = useState(true);
     const [inputModalVisible, setInputModalVisible] = useState(false);
     const [subscriptionModalVisible, setSubscriptionModalVisible] = useState(false);
     const [davHistory, setDavHistory] = useState<DavHistoryItem[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const [davProfile, setDavProfile] = useState<DavProfileData | null>(null);
+    const hasAutoOpenedDavFormRef = useRef(false);
 
     // Check if subscription is active (₹199 or ₹499 plan)
     const checkSubscriptionActive = () => {
@@ -163,9 +177,33 @@ const DigitalAddressCheckInfo = () => {
         }
     };
 
+    const fetchDavProfile = async () => {
+        try {
+            setDavProfileLoading(true);
+            const response: any = await axiosInstance.get(END_POINTS.DAV_PROFILE);
+            if (response?.data?.status) {
+                setDavProfile(response?.data?.data || null);
+            } else {
+                setDavProfile(null);
+            }
+        } catch (error) {
+            console.log('Error fetching DAV profile:', error);
+            setDavProfile(null);
+        } finally {
+            setDavProfileLoading(false);
+        }
+    };
+
     useFocusEffect(
         useCallback(() => {
-            fetchProfileData();
+            const loadScreenData = async () => {
+                // Keep DAV profile as the first API call for this screen.
+                await fetchDavProfile();
+                await fetchProfileData();
+            };
+
+            hasAutoOpenedDavFormRef.current = false;
+            loadScreenData();
         }, [])
     );
 
@@ -212,6 +250,7 @@ const DigitalAddressCheckInfo = () => {
                     showToast(response?.data?.message || t('davSubmittedSuccessfully') || 'Digital address verification submitted successfully');
                     // Refresh profile data after successful submission
                     fetchProfileData();
+                    fetchDavProfile();
                 } else {
                     showToast(response?.data?.message || t('davSubmissionFailed') || 'Digital address verification submission failed');
                 }
@@ -240,7 +279,50 @@ const DigitalAddressCheckInfo = () => {
     };
 
     const _refreshPage = () => {
+        fetchDavProfile();
         fetchProfileData();
+    };
+
+    const verificationStatus = (davProfile?.verification_status || '').toString().toLowerCase() || null;
+    const isVerificationPending = verificationStatus === 'pending';
+    const isVerificationVerified = verificationStatus === 'verified';
+    const canSubmitVerification = !verificationStatus;
+
+    useEffect(() => {
+        if (profileLoading || davProfileLoading) return;
+        if (!canSubmitVerification) return;
+        if (hasAutoOpenedDavFormRef.current) return;
+
+        hasAutoOpenedDavFormRef.current = true;
+        if (profileCompletion !== undefined && profileCompletion !== null && Number(profileCompletion) < 100) {
+            setProfileModalVisible(true);
+            return;
+        }
+        setInputModalVisible(true);
+    }, [profileLoading, davProfileLoading, canSubmitVerification, profileCompletion]);
+
+    const _handleDownloadDavPdf = async () => {
+        if (!davProfile?.pdf) {
+            showToast(t('pdfNotAvailable') || 'PDF not available yet');
+            return;
+        }
+
+        const isAbsoluteUrl = /^https?:\/\//i.test(davProfile.pdf);
+        const pdfUrl = isAbsoluteUrl
+            ? davProfile.pdf
+            : `${BASE_URL}storage/app/public/${davProfile.pdf.replace(/^\/+/, '')}`;
+
+        try {
+            const canOpen = await Linking.canOpenURL(pdfUrl);
+            if (!canOpen) {
+                showToast(t('unableToOpenPdf') || 'Unable to open PDF');
+                return;
+            }
+            await Linking.openURL(pdfUrl);
+        } catch (error) {
+            console.log('Error opening DAV PDF:', error);
+            showToast(t('unableToOpenPdf') || 'Unable to open PDF');
+        }
     };
 
     const formatDate = (dateString: string) => {
@@ -369,15 +451,138 @@ const DigitalAddressCheckInfo = () => {
                 }
             />
 
-            {profileLoading ? (
+            {profileLoading || davProfileLoading ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color={colors.royalBlue} />
                     <Text style={{ marginTop: 12, color: '#64748B', fontSize: responsiveFontSize(1.8) }}>
-                        {t('loadingProfile') || 'Loading profile...'}
+                        {t('loadingProfile') || 'Loading details...'}
                     </Text>
                 </View>
             ) : (
-                <ScrollView contentContainerStyle={{ padding: responsiveWidth(4), paddingBottom: responsiveHeight(14) }} showsVerticalScrollIndicator={false}>
+                <ScrollView contentContainerStyle={{ padding: responsiveWidth(4), paddingBottom: responsiveHeight(8) }} showsVerticalScrollIndicator={false}>
+
+                    {/* Verified Status - Full Card */}
+                    {isVerificationVerified && (
+                        <View style={{ backgroundColor: '#ECFDF5', borderRadius: 16, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), borderWidth: 1.5, borderColor: '#86EFAC' }}>
+                            {/* Verified Badge */}
+                            <View style={{ alignItems: 'center', marginBottom: 16 }}>
+                                <View style={{ width: 70, height: 70, borderRadius: 35, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                                    <Ionicons name="shield-checkmark" size={38} color="#FFFFFF" />
+                                </View>
+                                <Text style={{ fontSize: responsiveFontSize(2.6), fontWeight: '800', color: '#166534', textAlign: 'center' }}>
+                                    {t('davAddressVerified')}
+                                </Text>
+                                <Text style={{ fontSize: responsiveFontSize(1.7), color: '#15803D', textAlign: 'center', marginTop: 6, lineHeight: 22 }}>
+                                    {t('davAddressVerifiedDesc')}
+                                </Text>
+                            </View>
+
+                            {/* Verified Details */}
+                            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#F0FDF4' }}>
+                                    <Ionicons name="person-outline" size={18} color="#16A34A" style={{ marginRight: 10 }} />
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('fullName') || 'Name'}</Text>
+                                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600' }}>{davProfile?.name || fullName || '-'}</Text>
+                                    </View>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#F0FDF4' }}>
+                                    <Ionicons name="call-outline" size={18} color="#16A34A" style={{ marginRight: 10 }} />
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('mobileNumber') || 'Mobile'}</Text>
+                                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600' }}>{davProfile?.mobile || mobileNumber || '-'}</Text>
+                                    </View>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#F0FDF4' }}>
+                                    <Ionicons name="location-outline" size={18} color="#16A34A" style={{ marginRight: 10, marginTop: 2 }} />
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('davVerifiedAddress') || 'Verified Address'}</Text>
+                                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#0F172A', fontWeight: '600', lineHeight: 22 }}>{davProfile?.address || '-'}</Text>
+                                    </View>
+                                </View>
+                                {davProfile?.address_type && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Ionicons name="document-text-outline" size={18} color="#16A34A" style={{ marginRight: 10 }} />
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('addressType') || 'Address Type'}</Text>
+                                            <Text style={{ fontSize: responsiveFontSize(1.7), color: '#0F172A', fontWeight: '600' }}>{davProfile.address_type}</Text>
+                                        </View>
+                                    </View>
+                                )}
+                            </View>
+
+                            {/* Download PDF Button */}
+                            <TouchableOpacity
+                                onPress={_handleDownloadDavPdf}
+                                disabled={!davProfile?.pdf}
+                                style={{
+                                    backgroundColor: davProfile?.pdf ? '#16A34A' : '#A7F3D0',
+                                    paddingVertical: responsiveHeight(2),
+                                    borderRadius: 14,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexDirection: 'row',
+                                    ...shadow
+                                }}
+                            >
+                                <Ionicons name="download-outline" size={20} color="#FFFFFF" style={{ marginRight: 10 }} />
+                                <Text style={{ color: '#FFFFFF', fontSize: responsiveFontSize(2), fontWeight: '700' }}>
+                                    {t('davDownloadPdf')}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+                    {/* Pending Status - Full Card */}
+                    {isVerificationPending && (
+                        <View style={{ backgroundColor: '#FFFBEB', borderRadius: 16, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), borderWidth: 1.5, borderColor: '#FDE68A' }}>
+                            {/* Pending Badge */}
+                            <View style={{ alignItems: 'center', marginBottom: 16 }}>
+                                <View style={{ width: 70, height: 70, borderRadius: 35, backgroundColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                                    <Ionicons name="hourglass-outline" size={38} color="#FFFFFF" />
+                                </View>
+                                <Text style={{ fontSize: responsiveFontSize(2.6), fontWeight: '800', color: '#92400E', textAlign: 'center' }}>
+                                    {t('davVerificationPending')}
+                                </Text>
+                                <Text style={{ fontSize: responsiveFontSize(1.7), color: '#B45309', textAlign: 'center', marginTop: 6, lineHeight: 22 }}>
+                                    {t('davVerificationPendingDesc')}
+                                </Text>
+                            </View>
+
+                            {/* Submitted Details */}
+                            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#FEF3C7' }}>
+                                    <Ionicons name="person-outline" size={18} color="#F59E0B" style={{ marginRight: 10 }} />
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('fullName') || 'Name'}</Text>
+                                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600' }}>{davProfile?.name || fullName || '-'}</Text>
+                                    </View>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#FEF3C7' }}>
+                                    <Ionicons name="call-outline" size={18} color="#F59E0B" style={{ marginRight: 10 }} />
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('mobileNumber') || 'Mobile'}</Text>
+                                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600' }}>{davProfile?.mobile || mobileNumber || '-'}</Text>
+                                    </View>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                                    <Ionicons name="location-outline" size={18} color="#F59E0B" style={{ marginRight: 10, marginTop: 2 }} />
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.4), color: '#64748B' }}>{t('currentAddress') || 'Address'}</Text>
+                                        <Text style={{ fontSize: responsiveFontSize(1.7), color: '#0F172A', fontWeight: '600', lineHeight: 22 }}>{davProfile?.address || '-'}</Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* 24 Hours Time Note */}
+                            <View style={{ backgroundColor: '#FEF3C7', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name="time-outline" size={22} color="#92400E" style={{ marginRight: 10 }} />
+                                <Text style={{ flex: 1, fontSize: responsiveFontSize(1.6), color: '#92400E', fontWeight: '600', lineHeight: 22 }}>
+                                    {t('davVerificationTime')}
+                                </Text>
+                            </View>
+                        </View>
+                    )}
 
                     {/* 🏠 Hero Card */}
                     <View style={{ backgroundColor: '#EAF3FF', borderRadius: 16, padding: responsiveWidth(5), marginBottom: responsiveHeight(2), alignItems: 'center' }}>
@@ -391,6 +596,16 @@ const DigitalAddressCheckInfo = () => {
                             {t('digitalAddressCheckDesc') || 'Verify your current address digitally for enhanced trust and credibility'}
                         </Text>
                     </View>
+
+                    {/* 24 Hours Note for New Users */}
+                    {canSubmitVerification && (
+                        <View style={{ backgroundColor: '#EFF6FF', borderRadius: 12, padding: 16, marginBottom: responsiveHeight(2), flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#BFDBFE' }}>
+                            <Ionicons name="time-outline" size={24} color="#2563EB" style={{ marginRight: 12 }} />
+                            <Text style={{ flex: 1, fontSize: responsiveFontSize(1.7), color: '#1E40AF', fontWeight: '600', lineHeight: 22 }}>
+                                {t('davVerificationTime')}
+                            </Text>
+                        </View>
+                    )}
 
                     {/* ❓ What is Digital Address Check */}
                     <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
@@ -407,95 +622,95 @@ const DigitalAddressCheckInfo = () => {
                         </Text>
                     </View>
 
-                    {/* 📝 Pre-filled Information Preview */}
-                    <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                            <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155' }}>
-                                {t('yourDetails') || 'Your Details'}
-                            </Text>
-                            <TouchableOpacity onPress={() => navigation.navigate(STACKS.PROFILE_OVERVIEW)}>
-                                <Feather name="edit-2" size={18} color={colors.royalBlue} />
-                            </TouchableOpacity>
-                        </View>
+                    {/* 📝 Pre-filled Information Preview - Only for new users */}
+                    {canSubmitVerification && (
+                        <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                                <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155' }}>
+                                    {t('yourDetails') || 'Your Details'}
+                                </Text>
+                                <TouchableOpacity onPress={() => navigation.navigate(STACKS.PROFILE_OVERVIEW)}>
+                                    <Feather name="edit-2" size={18} color={colors.royalBlue} />
+                                </TouchableOpacity>
+                            </View>
 
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
-                            <Ionicons name="phone-portrait-outline" size={20} color="#2563EB" style={{ marginRight: 12 }} />
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B' }}>{t('mobileNumber') || 'Mobile Number'}</Text>
-                                <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600' }}>{mobileNumber || '-'}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+                                <Ionicons name="phone-portrait-outline" size={20} color="#2563EB" style={{ marginRight: 12 }} />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B' }}>{t('mobileNumber') || 'Mobile Number'}</Text>
+                                    <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600' }}>{mobileNumber || '-'}</Text>
+                                </View>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+                                <Ionicons name="person-outline" size={20} color="#2563EB" style={{ marginRight: 12 }} />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B' }}>{t('fullName') || 'Full Name'}</Text>
+                                    <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600' }}>{fullName || '-'}</Text>
+                                </View>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 8 }}>
+                                <Ionicons name="home-outline" size={20} color="#2563EB" style={{ marginRight: 12, marginTop: 2 }} />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B' }}>{t('currentAddress') || 'Current Address'}</Text>
+                                    <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600', lineHeight: 24 }}>
+                                        {[currentAddress, city, state, pincode].filter(Boolean).join(', ') || '-'}
+                                    </Text>
+                                </View>
                             </View>
                         </View>
+                    )}
 
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
-                            <Ionicons name="person-outline" size={20} color="#2563EB" style={{ marginRight: 12 }} />
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B' }}>{t('fullName') || 'Full Name'}</Text>
-                                <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600' }}>{fullName || '-'}</Text>
-                            </View>
-                        </View>
-
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 8 }}>
-                            <Ionicons name="home-outline" size={20} color="#2563EB" style={{ marginRight: 12, marginTop: 2 }} />
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.5), color: '#64748B' }}>{t('currentAddress') || 'Current Address'}</Text>
-                                <Text style={{ fontSize: responsiveFontSize(1.8), color: '#0F172A', fontWeight: '600', lineHeight: 24 }}>
-                                    {[currentAddress, city, state, pincode].filter(Boolean).join(', ') || '-'}
+                    {/* 🔄 How It Works - Only for new users */}
+                    {canSubmitVerification && (
+                        <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
+                            <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155', marginBottom: 18 }}>{t('howItWorks') || 'How it works'}</Text>
+                            {[
+                                t('enterMobileNameAddress') || "Enter your mobile, name & address",
+                                t('receiveVerificationCall') || "Receive a verification call",
+                                t('getAddressVerificationLink') || "Get address verification link",
+                                t('openLinkFillForm') || "Open link and fill the form",
+                                t('submitToStartVerification') || "Submit to start verification"
+                            ].map((step, index) => (
+                                <View key={index} style={{ flexDirection: 'row', marginBottom: 18, alignItems: 'center' }}>
+                                    <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
+                                        <Text style={{ color: '#2563EB', fontWeight: 'bold', fontSize: responsiveFontSize(1.8) }}>{index + 1}</Text>
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155' }}>{step}</Text>
+                                    </View>
+                                </View>
+                            ))}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, paddingLeft: 4 }}>
+                                <Ionicons name="time-outline" size={18} color="#059669" style={{ marginRight: 8 }} />
+                                <Text style={{ fontSize: responsiveFontSize(1.7), color: '#059669', fontWeight: '600' }}>
+                                    {t('resultsSentQuickly') || 'Results are shared quickly after submission'}
                                 </Text>
                             </View>
                         </View>
-                    </View>
+                    )}
 
-                    {/* 🔄 How It Works */}
-                    <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                        <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155', marginBottom: 18 }}>{t('howItWorks') || 'How it works'}</Text>
-                        {[
-                            t('enterMobileNameAddress') || "Enter your mobile, name & address",
-                            t('receiveVerificationCall') || "Receive a verification call",
-                            t('getAddressVerificationLink') || "Get address verification link",
-                            t('openLinkFillForm') || "Open link and fill the form",
-                            t('submitToStartVerification') || "Submit to start verification"
-                        ].map((step, index) => (
-                            <View key={index} style={{ flexDirection: 'row', marginBottom: 18, alignItems: 'center' }}>
-                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
-                                    <Text style={{ color: '#2563EB', fontWeight: 'bold', fontSize: responsiveFontSize(1.8) }}>{index + 1}</Text>
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155' }}>{step}</Text>
-                                </View>
-                            </View>
-                        ))}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, paddingLeft: 4 }}>
-                            <Ionicons name="time-outline" size={18} color="#059669" style={{ marginRight: 8 }} />
-                            <Text style={{ fontSize: responsiveFontSize(1.7), color: '#059669', fontWeight: '600' }}>
-                                {t('resultsSentQuickly') || 'Results are shared quickly after submission'}
+                    {/* 💳 Subscription Requirement - Only for new users */}
+                    {canSubmitVerification && (
+                        <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
+                            <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155', marginBottom: 14 }}>
+                                {t('subscriptionRequirement') || 'Subscription Requirement'}
                             </Text>
-                        </View>
-                    </View>
-
-                    {/* 💳 Subscription Requirement */}
-                    <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), ...shadow, shadowColor: 'rgba(0,0,0,0.06)' }}>
-                        <Text style={{ fontSize: responsiveFontSize(2.1), fontWeight: '700', color: '#334155', marginBottom: 14 }}>
-                            {t('subscriptionRequirement') || 'Subscription Requirement'}
-                        </Text>
-                        <Text style={{ fontSize: responsiveFontSize(1.8), color: '#475569', marginBottom: 12 }}>
-                            {t('davIncludedWith') || 'Digital Address Check is included with:'}
-                        </Text>
-                        {/* {!isTransporter && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                            <Text style={{ fontSize: responsiveFontSize(1.8), color: '#475569', marginBottom: 12 }}>
+                                {t('davIncludedWith') || 'Digital Address Check is included with:'}
+                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
                                 <Ionicons name="checkmark-circle" size={22} color="#16A34A" style={{ marginRight: 10 }} />
-                                <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', fontWeight: '600' }}>₹199 {t('plan') || 'Plan'}</Text>
+                                <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', fontWeight: '600' }}>₹499 {t('plan') || 'Plan'}</Text>
                             </View>
-                        )} */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
-                            <Ionicons name="checkmark-circle" size={22} color="#16A34A" style={{ marginRight: 10 }} />
-                            <Text style={{ fontSize: responsiveFontSize(1.9), color: '#334155', fontWeight: '600' }}>₹499 {t('plan') || 'Plan'}</Text>
+                            <View style={{ backgroundColor: '#FFF7ED', padding: 14, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#F97316' }}>
+                                <Text style={{ fontSize: responsiveFontSize(1.7), color: '#9A3412', lineHeight: 23 }}>
+                                    {t('ensureSubscriptionActive') || 'Please ensure your subscription is active to use this feature.'}
+                                </Text>
+                            </View>
                         </View>
-                        <View style={{ backgroundColor: '#FFF7ED', padding: 14, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#F97316' }}>
-                            <Text style={{ fontSize: responsiveFontSize(1.7), color: '#9A3412', lineHeight: 23 }}>
-                                ⚠️ {t('ensureSubscriptionActive') || 'Please ensure your subscription is active to use this feature.'}
-                            </Text>
-                        </View>
-                    </View>
+                    )}
 
                     {/* 🔐 Data Security */}
                     <View style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: responsiveWidth(4), marginBottom: responsiveHeight(2), borderWidth: 1, borderColor: '#E2E8F0', flexDirection: 'row', alignItems: 'center' }}>
@@ -519,24 +734,26 @@ const DigitalAddressCheckInfo = () => {
                 </ScrollView>
             )}
 
-            {/* 📌 Sticky CTA Button */}
-            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: responsiveWidth(4), paddingBottom: responsiveHeight(4), backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: '#E5E7EB', ...shadow }}>
-                <TouchableOpacity
-                    onPress={_handleStartCheck}
-                    disabled={profileLoading}
-                    style={{
-                        backgroundColor: profileLoading ? '#CBD5E1' : colors.royalBlue,
-                        paddingVertical: responsiveHeight(2),
-                        borderRadius: 14,
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}
-                >
-                    <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.2), fontWeight: 'bold' }}>
-                        {t('startDigitalAddressCheck') || 'Start Digital Address Check'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
+            {/* 📌 Sticky CTA Button - Only for new users */}
+            {canSubmitVerification && (
+                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: responsiveWidth(4), paddingBottom: responsiveHeight(4), backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: '#E5E7EB', ...shadow }}>
+                    <TouchableOpacity
+                        onPress={_handleStartCheck}
+                        disabled={profileLoading || davProfileLoading}
+                        style={{
+                            backgroundColor: (profileLoading || davProfileLoading) ? '#CBD5E1' : colors.royalBlue,
+                            paddingVertical: responsiveHeight(2),
+                            borderRadius: 14,
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.2), fontWeight: 'bold' }}>
+                            {t('startDigitalAddressCheck') || 'Start Digital Address Check'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             {/* 🪟 Input Modal */}
             <Modal
