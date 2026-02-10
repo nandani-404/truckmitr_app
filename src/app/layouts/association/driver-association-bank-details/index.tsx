@@ -49,6 +49,8 @@ const AssociationBankDetails = () => {
         account_type: user?.account_type || '',
     });
 
+    const hasBankDetails = Boolean(bankData.account_number && bankData.account_holder_name);
+
     // Fetch bank details from API
     const fetchBankDetails = useCallback(async () => {
         if (!userId) {
@@ -98,7 +100,7 @@ const AssociationBankDetails = () => {
 
         for (const [key, label] of Object.entries(requiredFields)) {
             if (!bankData[key as keyof typeof bankData]) {
-                showToast(t('pleaseFillField', { field: label }));
+                showToast(t('pleaseFillFields', { field: label }));
                 return;
             }
         }
@@ -113,7 +115,7 @@ const AssociationBankDetails = () => {
             const response = await axiosInstance.post(END_POINTS.UPDATE_ASSOCIATION_BANK_DETAILS, payload);
 
             if (response?.data?.success) {
-                showToast(t('detailsUpdatedSuccessfully', 'Details updated successfully!'));
+                showToast(t('detailsUpdatedSuccessfully', 'Association bank details saved successfully'));
                 setIsEditing(false);
                 fetchBankDetails(); // Refresh data
             } else {
@@ -233,7 +235,7 @@ const AssociationBankDetails = () => {
                                         styles.optionText,
                                         { color: bankData.account_type === type ? colors.royalBlue : colors.black }
                                     ]}>
-                                        {type}
+                                        {type === 'Savings' ? t('savingsAccount') : type === 'Current' ? t('currentAccount') : type}
                                     </Text>
                                     {bankData.account_type === type && (
                                         <Ionicons name="checkmark" size={20} color={colors.royalBlue} />
@@ -271,15 +273,18 @@ const AssociationBankDetails = () => {
                     <Text style={[styles.headerTitle, { color: colors.black, fontSize: responsiveFontSize(2.2) }]}>
                         {t('bankDetails')}
                     </Text>
-                    <TouchableOpacity
-                        onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
-                        style={styles.editButton}
-                        disabled={saving}
-                    >
-                        <Text style={[styles.editButtonText, { color: colors.royalBlue, fontSize: responsiveFontSize(1.7) }]}>
-                            {saving ? t('saving') : isEditing ? t('save') : t('edit')}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={{ width: 40 }} />
+                    {/* {hasBankDetails && !isEditing && (
+                        <TouchableOpacity
+                            onPress={() => setIsEditing(true)}
+                            style={styles.editButton}
+                            disabled={saving}
+                        >
+                            <Text style={[styles.editButtonText, { color: colors.royalBlue, fontSize: responsiveFontSize(1.7) }]}>
+                                {t('edit')}
+                            </Text>
+                        </TouchableOpacity>
+                    )} */}
                 </View>
             </View>
 
@@ -311,12 +316,27 @@ const AssociationBankDetails = () => {
                         <View style={styles.noticeBox}>
                             <Ionicons name="shield-checkmark" size={18} color="#059669" />
                             <Text style={styles.noticeText}>
-                                {t('bankSecurityNotice', 'Your bank details are encrypted and stored securely for payout purposes only.')}
+                                {t('bankSecureNotice', 'Your bank details are encrypted and stored securely for payout purposes only.')}
                             </Text>
                         </View>
                     </ScrollView>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
+
+            {(!hasBankDetails || isEditing) && (
+                <View style={[styles.bottomButtonContainer, { paddingBottom: safeAreaInsets.bottom || 20, backgroundColor: colors.white }]}>
+                    <TouchableOpacity
+                        style={[styles.saveButton, { backgroundColor: colors.royalBlue, marginBottom: 0, marginHorizontal: 0 }]}
+                        onPress={() => isEditing ? handleSave() : setIsEditing(true)}
+                        disabled={saving}
+                    >
+                        <Text style={[styles.saveButtonText, { color: colors.white }]}>
+                            {saving ? t('saving') : isEditing ? t('updateBankDetails', 'Update Bank Details') : t('addBankDetails', 'Add Bank Details')}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
             {renderAccountTypeModal()}
         </View>
     );
@@ -463,6 +483,12 @@ const styles = StyleSheet.create({
     optionText: {
         fontSize: 16,
         fontWeight: '600',
+    },
+    bottomButtonContainer: {
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.05)',
     },
 });
 

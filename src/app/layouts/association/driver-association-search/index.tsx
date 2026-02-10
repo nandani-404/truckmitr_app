@@ -77,16 +77,12 @@ const DriverAssociationSearch = () => {
         setHasSearched(true);
         try {
             // Updated to POST with body as per user request
-            const formData = new FormData();
-            formData.append('search', query);
-
             const response = await axiosInstance({
-                method: 'get',
+                method: 'post',
                 url: END_POINTS.ASSOCIATION_DRIVER_SEARCH,
-                data: formData,
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                data: {
+                    search: query
+                }
             });
             if (response.data && response.data.success) {
                 setResults(response.data.drivers || []);

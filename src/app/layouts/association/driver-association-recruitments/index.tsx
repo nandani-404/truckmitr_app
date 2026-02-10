@@ -284,7 +284,7 @@ export default function DriverAssociationRecruitments() {
                                             paddingVertical: 2,
                                             borderRadius: 6
                                         }}>
-                                            <Text style={{ fontSize: 9, fontWeight: '700', color: '#FFFFFF' }}>TRUSTED</Text>
+                                            <Text style={{ fontSize: 9, fontWeight: '700', color: '#FFFFFF' }}>{t('trusted').toUpperCase()}</Text>
                                         </View>
                                     )}
                                 </View>
@@ -302,7 +302,7 @@ export default function DriverAssociationRecruitments() {
                                 borderWidth: 1,
                                 borderColor: statusStyle.border,
                             }}>
-                                <Text style={{ fontSize: 10, fontWeight: '700', color: statusStyle.text }}>{item.status}</Text>
+                                <Text style={{ fontSize: 10, fontWeight: '700', color: statusStyle.text }}>{t(item.status.toLowerCase())}</Text>
                             </View>
                         </View>
 
@@ -339,7 +339,7 @@ export default function DriverAssociationRecruitments() {
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Ionicons name="calendar-outline" size={14} color="#64748B" />
                         <Text style={{ fontSize: 12, color: '#64748B', marginLeft: 4 }}>
-                            Joined: {moment(item.joining_date).format('DD MMM YYYY')}
+                            {t('joined')}: {moment(item.joining_date).format('DD MMM YYYY')}
                         </Text>
                     </View>
                 </View>
@@ -360,7 +360,7 @@ export default function DriverAssociationRecruitments() {
                         }}
                     >
                         <Text style={{ color: '#2563EB', fontWeight: '600', fontSize: responsiveFontSize(1.6) }}>
-                            View Recruitment Details
+                            {t('viewDetails')}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -369,6 +369,7 @@ export default function DriverAssociationRecruitments() {
     };
 
     // Empty State
+
     const EmptyState = () => (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: responsiveHeight(15) }}>
             <View style={{
@@ -403,6 +404,9 @@ export default function DriverAssociationRecruitments() {
         );
     }
 
+    // ... imports
+    // ...
+
     return (
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
             {/* Header */}
@@ -413,14 +417,32 @@ export default function DriverAssociationRecruitments() {
 
             {/* Summary Section */}
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: responsiveWidth(4), marginBottom: 16 }}>
-                <SummaryPill label="Total" value={stats.total} color="#2563EB" />
-                <SummaryPill label="Active" value={stats.active} color="#16A34A" />
-                <SummaryPill label="Completed" value={stats.completed} color="#6B7280" />
+                <SummaryPill label={t('total')} value={stats.total} color="#2563EB" />
+                <SummaryPill label={t('active')} value={stats.active} color="#16A34A" />
+                <SummaryPill label={t('completed')} value={stats.completed} color="#6B7280" />
             </View>
 
             {/* Recruitment List */}
             {recruitments.length === 0 ? (
-                <EmptyState />
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: responsiveHeight(15) }}>
+                    <View style={{
+                        width: 100,
+                        height: 100,
+                        borderRadius: 50,
+                        backgroundColor: colors.blueOpacity(0.1),
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 20,
+                    }}>
+                        <MaterialCommunityIcons name="account-group-outline" size={48} color={colors.royalBlue} />
+                    </View>
+                    <Text style={{ fontSize: responsiveFontSize(2), fontWeight: '600', color: colors.black, textAlign: 'center', marginBottom: 8 }}>
+                        {t('noRecruitmentsYet')}
+                    </Text>
+                    <Text style={{ fontSize: responsiveFontSize(1.5), color: colors.blackOpacity(0.6), textAlign: 'center', lineHeight: 22 }}>
+                        {t('selectDriversFromApplications')}
+                    </Text>
+                </View>
             ) : (
                 <FlatList
                     data={recruitments}
@@ -461,7 +483,7 @@ export default function DriverAssociationRecruitments() {
                         >
                             <Ionicons name="chevron-back" size={26} color="#0F172A" />
                         </TouchableOpacity>
-                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#0F172A' }}>Recruitment Details</Text>
+                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#0F172A' }}>{t('recruitmentDetails')}</Text>
                     </View>
 
                     <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -526,15 +548,15 @@ export default function DriverAssociationRecruitments() {
 
                                     {/* Job Details Section */}
                                     <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#F1F5F9' }}>
-                                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 16 }}>Job Assignment</Text>
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 16 }}>{t('jobAssignment')}</Text>
                                         <View style={{ gap: 16 }}>
                                             {[
-                                                ['Job Title', job.title],
-                                                ['Route', job.route],
-                                                ['Truck Type', job.truck_type],
-                                                ['Salary', job.salary],
-                                                ['Joining Date', moment(selectedRecruitment.joining_date).format('DD MMM YYYY')],
-                                                ['Contract', selectedRecruitment.contract_duration || 'Open-ended'],
+                                                [t('jobTitle'), job.title],
+                                                [t('route'), job.route],
+                                                [t('truckType'), job.truck_type],
+                                                [t('salary'), job.salary],
+                                                [t('joiningDate'), moment(selectedRecruitment.joining_date).format('DD MMM YYYY')],
+                                                [t('contract'), selectedRecruitment.contract_duration || 'Open-ended'],
                                             ].map(([label, value]) => (
                                                 <View key={label as string} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                                     <Text style={{ fontSize: 14, color: '#64748B' }}>{label}</Text>
@@ -551,7 +573,7 @@ export default function DriverAssociationRecruitments() {
                                             backgroundColor: '#16A34A', paddingVertical: 14, borderRadius: 12, gap: 8
                                         }}>
                                             <Ionicons name="call" size={20} color="#FFFFFF" />
-                                            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 15 }}>Call Driver</Text>
+                                            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 15 }}>{t('callDriver')}</Text>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity onPress={() => handleMessage(driver.mobile, driver.name)} style={{
@@ -560,7 +582,7 @@ export default function DriverAssociationRecruitments() {
                                             borderWidth: 1, borderColor: '#25D366'
                                         }}>
                                             <FontAwesome name="whatsapp" size={20} color="#25D366" />
-                                            <Text style={{ color: '#25D366', fontWeight: '700', fontSize: 15 }}>WhatsApp</Text>
+                                            <Text style={{ color: '#25D366', fontWeight: '700', fontSize: 15 }}>{t('association_whatsapp_remind')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>

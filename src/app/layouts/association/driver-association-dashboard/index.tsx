@@ -13,6 +13,7 @@ import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 import LinearGradientLib from 'react-native-linear-gradient';
 import { getUserBadgeText } from '@truckmitr/src/utils/global/userBadge';
+import { useTranslation } from 'react-i18next';
 
 // Dashboard API Response Interface
 interface DashboardData {
@@ -48,6 +49,7 @@ interface DashboardData {
 }
 
 export default function DriverAssociationDashboard() {
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const colors = useColor();
@@ -86,9 +88,31 @@ export default function DriverAssociationDashboard() {
 
         try {
             setLoading(true);
-            const response = await axiosInstance.get(END_POINTS.ASSOCIATION_DASHBOARD(user.id));
-            if (response.data?.success) {
-                setDashboardData(response.data);
+            // Fetch both dashboard stats and jobs list to get accurate job count as per user request
+            const [dashboardResponse, jobsResponse] = await Promise.all([
+                axiosInstance.get(END_POINTS.ASSOCIATION_DASHBOARD(user.id)),
+                axiosInstance.get(END_POINTS.ALL_JOBS_AND_SEARCH(''))
+            ]);
+
+            if (dashboardResponse.data?.success) {
+                const data = dashboardResponse.data;
+                let jobsCount = 0;
+
+                // If jobs API returns data, get the count
+                if (jobsResponse?.data?.status && Array.isArray(jobsResponse?.data?.data)) {
+                    jobsCount = jobsResponse.data.data.length;
+                }
+
+                // Create updated data object
+                const updatedData = {
+                    ...data,
+                    jobs: {
+                        ...(data.jobs || { total_applications: 0 }),
+                        total_jobs: jobsCount > 0 ? jobsCount : (data.jobs?.total_jobs || 0)
+                    }
+                };
+
+                setDashboardData(updatedData);
             }
         } catch (error) {
             console.error('Error fetching association dashboard data:', error);
@@ -154,7 +178,7 @@ export default function DriverAssociationDashboard() {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={'#1F2937'} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: '#1F2937' }]}>Dashboard</Text>
+                <Text style={[styles.headerTitle, { color: '#1F2937' }]}>{t('dashboard')}</Text>
             </View>
 
             <ScrollView contentContainerStyle={{ paddingBottom: responsiveHeight(5) }} showsVerticalScrollIndicator={false}>
@@ -184,7 +208,7 @@ export default function DriverAssociationDashboard() {
                         ) : (
                             <View>
                                 <Text style={[styles.greeting, { color: colors.royalBlue, fontSize: responsiveFontSize(2.2), lineHeight: responsiveFontSize(3) }]}>
-                                    {`Hello, ${dashboardData?.forman_name || user?.name || 'Transporter'} 👋`}
+                                    {`${t('hello')}, ${dashboardData?.forman_name || user?.name || t('module_selection_transporter')} 👋`}
                                 </Text>
                                 <Text style={[styles.tmId, { color: colors.royalBlue, fontSize: responsiveFontSize(1.6), lineHeight: responsiveFontSize(2.2) }]}>
                                     {user?.unique_id || 'TM2501UPTP00001'}
@@ -194,7 +218,7 @@ export default function DriverAssociationDashboard() {
                                     {userBadgeText}
                                 </Text>
                                 <Text style={[styles.subTitle, { color: colors.royalBlue, fontSize: responsiveFontSize(1.2), lineHeight: responsiveFontSize(1.6) }]}>
-                                    Manage Your Fleet Drivers
+                                    {t('manageYourFleetDrivers')}
                                 </Text>
                             </View>
                         )}
@@ -249,31 +273,31 @@ export default function DriverAssociationDashboard() {
 
                 {/* Work Overview Section */}
                 <View style={styles.sectionContainer}>
-                    {renderSectionHeader('Work Overview', 'briefcase-outline')}
+                    {renderSectionHeader(t('workOverview'), 'briefcase-outline')}
                     <View style={styles.cardsRow}>
-                        {renderStatsCard('My Drivers', dashboardData?.total_drivers || 0, require('../../../../assets/my_drivers_card_icon.png'))}
-                        {renderStatsCard('Job Applications', dashboardData?.jobs?.total_applications || 0, require('../../../../assets/applications_card_icon.png'))}
-                        {renderStatsCard('Jobs', dashboardData?.jobs?.total_jobs || 0, require('../../../../assets/jobs_card_icon.png'))}
+                        {renderStatsCard(t('myDrivers'), dashboardData?.total_drivers || 0, require('../../../../assets/my_drivers_card_icon.png'))}
+                        {renderStatsCard(t('jobApplications'), dashboardData?.jobs?.total_applications || 0, require('../../../../assets/applications_card_icon.png'))}
+                        {renderStatsCard(t('jobs'), dashboardData?.jobs?.total_jobs || 0, require('../../../../assets/jobs_card_icon.png'))}
                     </View>
                 </View>
 
                 {/* Driver Readiness Status Section */}
                 <View style={styles.sectionContainer}>
-                    {renderSectionHeader('Driver Readiness Status', 'shield-checkmark-outline')}
+                    {renderSectionHeader(t('driverReadinessStatus'), 'shield-checkmark-outline')}
                     <View style={styles.cardsRow}>
-                        {renderStatsCard('Subscription', dashboardData ? `₹ ${(dashboardData?.commission?.job_ready || 0) + (dashboardData?.commission?.trusted || 0) + (dashboardData?.commission?.verified || 0)}` : '₹ 0', require('../../../../assets/pending_subscription_icon.png'), false)}
-                        {renderStatsCard('Training', dashboardData?.training?.pending || 0, require('../../../../assets/pending_training_icon.png'), false)}
-                        {renderStatsCard('Profile', dashboardData?.completed_profiles_count || 0, require('../../../../assets/pending_profile_icon.png'), false)}
+                        {renderStatsCard(t('subscription'), dashboardData ? `₹ ${(dashboardData?.commission?.job_ready || 0) + (dashboardData?.commission?.trusted || 0) + (dashboardData?.commission?.verified || 0)}` : '₹ 0', require('../../../../assets/pending_subscription_icon.png'), false)}
+                        {renderStatsCard(t('trainingLabel'), dashboardData?.training?.pending || 0, require('../../../../assets/pending_training_icon.png'), false)}
+                        {renderStatsCard(t('profile'), dashboardData?.completed_profiles_count || 0, require('../../../../assets/pending_profile_icon.png'), false)}
                     </View>
                 </View>
 
                 {/* Subscription (Driver Types) Section */}
                 <View style={styles.sectionContainer}>
-                    {renderSectionHeader('Subscription', 'ribbon-outline')}
+                    {renderSectionHeader(t('subscription'), 'ribbon-outline')}
                     <View style={styles.cardsRow}>
-                        {renderStatsCard('Job Ready Driver', dashboardData?.counts?.job_ready || 0, require('../../../../assets/job_ready_driver_card_icon.png'))}
-                        {renderStatsCard('Verified Driver', dashboardData?.counts?.verified || 0, require('../../../../assets/verified_driver_card_icon.png'))}
-                        {renderStatsCard('Trusted Driver', dashboardData?.counts?.trusted || 0, require('../../../../assets/trusted_driver_card_icon.png'))}
+                        {renderStatsCard(t('jobReadyDriver'), dashboardData?.counts?.job_ready || 0, require('../../../../assets/job_ready_driver_card_icon.png'))}
+                        {renderStatsCard(t('verifiedDriver'), dashboardData?.counts?.verified || 0, require('../../../../assets/verified_driver_card_icon.png'))}
+                        {renderStatsCard(t('trustedDriver'), dashboardData?.counts?.trusted || 0, require('../../../../assets/trusted_driver_card_icon.png'))}
                     </View>
                 </View>
             </ScrollView>

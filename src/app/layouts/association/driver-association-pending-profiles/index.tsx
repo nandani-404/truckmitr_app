@@ -10,6 +10,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { useSelector } from 'react-redux';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS, BASE_URL } from '@truckmitr/src/utils/config';
+import { STACKS } from '@truckmitr/stacks/stacks';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

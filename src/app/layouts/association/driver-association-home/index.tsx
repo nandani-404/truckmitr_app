@@ -50,40 +50,7 @@ const COLORS = {
 type ScreenType = 'list' | 'profile' | 'addDriver' | 'pending';
 
 // Mock Driver Data
-const MOCK_DRIVERS = [
-    {
-        id: 1, name: 'Rajesh Kumar', tmId: 'TM2401UPDR00123', phone: '+91 98765 43210',
-        licenseType: 'HMV', experience: '8+ yrs', status: 'active', rating: 4.8,
-        verified: true, badges: ['Long Route', 'Verified'], lastActive: '5 mins ago',
-        location: 'NH-44, Haryana', availability: 'Available', totalTrips: 245,
-        onTimeDelivery: 96, image: 'https://randomuser.me/api/portraits/men/32.jpg',
-        assignedTruck: 'UP 14 AT 5678', truckType: 'Tata Prima 4928.S',
-    },
-    {
-        id: 2, name: 'Suresh Singh', tmId: 'TM2401MPDR00456', phone: '+91 87654 32109',
-        licenseType: 'HMV', experience: '12+ yrs', status: 'onTrip', rating: 4.9,
-        verified: true, badges: ['Long Route', 'Verified', 'Top Rated'], lastActive: 'On Trip',
-        location: 'Mumbai-Delhi Highway', availability: 'On Trip', totalTrips: 512,
-        onTimeDelivery: 98, image: 'https://randomuser.me/api/portraits/men/45.jpg',
-        assignedTruck: 'MH 12 BZ 9012', truckType: 'Ashok Leyland 4923',
-    },
-    {
-        id: 3, name: 'Amit Sharma', tmId: 'TM2401RJDR00789', phone: '+91 76543 21098',
-        licenseType: 'LMV', experience: '3+ yrs', status: 'inactive', rating: 4.2,
-        verified: false, badges: ['Local'], lastActive: '2 days ago',
-        location: 'Jaipur', availability: 'On Leave', totalTrips: 89,
-        onTimeDelivery: 88, image: 'https://randomuser.me/api/portraits/men/67.jpg',
-        assignedTruck: null, truckType: null,
-    },
-    {
-        id: 4, name: 'Vikram Yadav', tmId: 'TM2401GJDR00234', phone: '+91 65432 10987',
-        licenseType: 'Trailer', experience: '15+ yrs', status: 'active', rating: 4.7,
-        verified: true, badges: ['Long Route', 'Verified', 'Expert'], lastActive: '12 mins ago',
-        location: 'Ahmedabad', availability: 'Available', totalTrips: 678,
-        onTimeDelivery: 95, image: 'https://randomuser.me/api/portraits/men/22.jpg',
-        assignedTruck: 'GJ 01 XX 4567', truckType: 'Volvo FH16',
-    },
-];
+
 
 const PENDING_DRIVERS = [
     { id: 101, name: 'Prakash Mehra', phone: '+91 99887 76655', status: 'pending', documents: ['DL', 'Aadhaar'], uploadedAt: '2 hours ago' },
@@ -246,17 +213,7 @@ export default function DriverAssociation() {
         }
     }, [isAssociationPro, subscriptionDetails?.showSubscriptionModel]);
 
-    const filteredDrivers = MOCK_DRIVERS.filter(d =>
-        d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        d.tmId.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
-    const stats = {
-        total: MOCK_DRIVERS.length,
-        active: MOCK_DRIVERS.filter(d => d.status === 'active').length,
-        onTrip: MOCK_DRIVERS.filter(d => d.status === 'onTrip').length,
-        pending: PENDING_DRIVERS.length,
-    };
 
     const handleCall = (phone: string) => Linking.openURL(`tel:${phone}`);
     const handleMessage = (phone: string) => Linking.openURL(`sms:${phone}`);
@@ -309,7 +266,7 @@ export default function DriverAssociation() {
                     <View style={{ paddingTop: insets.top, paddingHorizontal: responsiveWidth(3) }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <View>
-                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`Hello, ${dashboardData?.association_name || user?.name || 'Transporter'} 👋`}</Text>
+                                <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontWeight: 'bold', lineHeight: responsiveFontSize(3) }}>{`${t('hello')}, ${dashboardData?.association_name || user?.name || 'Transporter'} 👋`}</Text>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.6), fontWeight: 'bold', lineHeight: responsiveFontSize(2.2) }}>{dashboardData?.unique_id || user?.unique_id || 'TM2501UPTP00001'}</Text>
                                 {/* Association Badge - Plain Text */}
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(1.4), fontWeight: '600', lineHeight: responsiveFontSize(1.8) }}>{userBadgeText}</Text>
