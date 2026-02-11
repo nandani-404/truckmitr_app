@@ -11,7 +11,7 @@ const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      thunk: false,                 // Disable thunk middleware since we’re using sagas
+      thunk: true,                 // Disable thunk middleware since we’re using sagas
       serializableCheck: true,      // Ensure actions and state are serializable
       immutableCheck: false,         // Ensure state is immutable
     }).concat(sagaMiddleware),

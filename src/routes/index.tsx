@@ -2,7 +2,9 @@ import { StatusBar, useColorScheme, View, Image, AppState, Linking, TouchableOpa
 import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { darkTheme, lightTheme } from '@truckmitr/res/colors';
-import { Auth, Main, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain, } from '@truckmitr/stacks/index';
+import { Auth, Main, TruckerMain, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain, } from '@truckmitr/stacks/index';
+import AnimatedLayoutSwitcher from '../components/AnimatedLayoutSwitcher';
+import { hydrateAppMode } from '../redux/slices/appModeSlice';
 import SystemNavigationBar from 'react-native-system-navigation-bar';
 import BootSplash from 'react-native-bootsplash';
 import { navigationRef } from '@truckmitr/utils/global/global.ref';
@@ -46,6 +48,13 @@ export default function Routes() {
   const { isAuthenticated, subscriptionModal, user, profileRequiredFieldsStatus } = useSelector((state: any) => state?.user);
   const { selectedModule } = useSelector((state: any) => state?.app);
   const [isAppReady, setIsAppReady] = useState(false);
+
+  // App Mode (Trucker Mode switching) - via Redux
+  const { mode: appMode, isHydrated: isAppModeHydrated } = useSelector((state: any) => state.appMode);
+
+  useEffect(() => {
+    dispatch(hydrateAppMode() as any);
+  }, []);
 
   console.log('🛡️ AUTH GATE STATUS:', {
     isAuthenticated,
@@ -811,7 +820,10 @@ export default function Routes() {
       ) : selectedModule === 'puncture_shop' || user?.data?.role?.toLowerCase() === 'puncture' || user?.role?.toLowerCase() === 'puncture' ? (
         <PunctureMain />
       ) : (
-        <Main />
+        <AnimatedLayoutSwitcher
+          transporterLayout={<Main />}
+          truckerLayout={<TruckerMain />}
+        />
       )}
       {subscriptionModal && <Subscription />}
       {/* <InAppUpdatePopup /> */}

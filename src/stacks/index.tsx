@@ -1,5 +1,6 @@
 import Auth from "@truckmitr/stacks/auth"
 import Main from "@truckmitr/stacks/main"
+import TruckerMain from "@truckmitr/stacks/truckermain"
 import ForemanMain from "@truckmitr/stacks/foremanMain"
 import AssociateMain from "@truckmitr/stacks/associateMain"
 import DhabhaMain from "@truckmitr/stacks/dhabhaMain"
@@ -9,4 +10,4 @@ import AssociateProfileCompletionStack from "@truckmitr/stacks/associateProfileC
 import DhabhaProfileCompletionStack from "@truckmitr/stacks/dhabhaProfileCompletion"
 import PunctureMain from "@truckmitr/stacks/punctureMain"
 
-export { Auth, Main, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain }
+export { Auth, Main, TruckerMain, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain }

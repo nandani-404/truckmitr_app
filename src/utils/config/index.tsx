@@ -1,9 +1,9 @@
 
 // export const BASE_URL = `https://development.truckmitr.com/`
-export const BASE_URL = `https://truckmitr.com/`
+// export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.29.156:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
-// export const BASE_URL = 'https://devtruckmitr.in/'
+export const BASE_URL = 'https://devtruckmitr.in/'
 export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
 // export const DRIVER_KI_AWAZ_STREAM = 'https://driverkiawaz.truckmitr.com/' //+ filepath(1770288688561.mp4)
 export const AWAZ_URL = 'https://truckmitr.com/'
@@ -156,6 +156,7 @@ export const END_POINTS = {
     RC_VERIFY: `api/kyc/rc`,
     RC_HISTORY: `api/kyc/rcs`,
 
+
     // Face Match Verification
     FACE_MATCH_VERIFY: `api/kyc/face-match/verify`,
 
@@ -284,4 +285,14 @@ export const END_POINTS = {
     GET_PUNCTURE_PHOTOS: `api/puncture/photos`,
     // Consent update endpoint
     UPDATE_CONSENT: `api/saveConsent`,
+
+    //------------------------------------------TMLOADMANDAL------------------------------------------
+    TRUCKER_VERIFY_RC: `api/trucker/verify-rc`,
+    TRUCKER_ADD_VEHICLE: `api/trucker/add-vehicle`,
+    TRUCKER_VEHICLE_BODY_LIST: `api/trucker/vehicle-body-list`,
+    TRUCKER_VEHICLE_TYPE_LIST: `api/trucker/vehicle-type-list`,
+    TRUCKER_GET_VEHICLES: `api/trucker/get-vehicles`,
+    TRUCKER_AVAILABLE_LOADS: `api/trucker/available-loads`,
+    TRUCKER_APPLY_LOAD: `api/trucker/apply-load`,
+    TRUCKER_APPLIED_LOADS: `api/trucker/applied-loads`,
 }

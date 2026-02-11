@@ -3806,5 +3806,7 @@
     "davAddressVerifiedDesc": "Your digital address has been successfully verified.",
     "davDownloadPdf": "Download Verification PDF",
     "davVerificationTime": "Verification usually takes up to 24 hours. You will be updated once it is completed.",
-    "davVerifiedAddress": "Verified Address"
+    "davVerifiedAddress": "Verified Address",
+    "truckerMode": "Trucker Mode",
+    "switchToTruckOwnerInterface": "Switch to truck owner interface"
 }

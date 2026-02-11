@@ -3733,5 +3733,7 @@
     "davAddressVerifiedDesc": "आपका डिजिटल पता सफलतापूर्वक सत्यापित हो गया है।",
     "davDownloadPdf": "सत्यापन PDF डाउनलोड करें",
     "davVerificationTime": "सत्यापन में आमतौर पर 24 घंटे तक का समय लगता है। पूरा होने पर आपको सूचित किया जाएगा।",
-    "davVerifiedAddress": "सत्यापित पता"
+    "davVerifiedAddress": "सत्यापित पता",
+    "truckerMode": "ट्रकर मोड",
+    "switchToTruckOwnerInterface": "ट्रक मालिक इंटरफ़ेस पर स्विच करें"
 }

@@ -38,6 +38,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import WelcomeModal from '@truckmitr/src/app/components/welcome-modal';
 import { getUserBadgeText } from '@truckmitr/src/utils/global';
 import PollSurveyModal from '@truckmitr/src/utils/poll-survey';
+import { toggleAppMode } from '@truckmitr/src/redux/slices/appModeSlice';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -49,6 +50,164 @@ interface SubscriptionItem {
 const capitalizeFirst = (str: string): string => {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+/**
+ * 🚛 Trucker Mode Toggle Card
+ * Premium animated toggle that switches the entire app layout.
+ */
+const TruckerModeToggle = () => {
+    const { t } = useTranslation();
+    const colors = useColor();
+    const { responsiveFontSize, responsiveWidth } = useResponsiveScale();
+    const dispatch = useDispatch();
+    const { mode, isTransitioning } = useSelector((state: any) => state.appMode);
+    const isTruckerMode = mode === 'trucker';
+
+    // Animated switch thumb
+    const switchAnim = useRef(new Animated.Value(isTruckerMode ? 1 : 0)).current;
+    const glowAnim = useRef(new Animated.Value(isTruckerMode ? 1 : 0)).current;
+
+    React.useEffect(() => {
+        Animated.parallel([
+            Animated.spring(switchAnim, {
+                toValue: isTruckerMode ? 1 : 0,
+                useNativeDriver: false,
+                friction: 7,
+                tension: 40,
+            }),
+            Animated.timing(glowAnim, {
+                toValue: isTruckerMode ? 1 : 0,
+                duration: 300,
+                useNativeDriver: false,
+            }),
+        ]).start();
+    }, [isTruckerMode]);
+
+    const thumbTranslateX = switchAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [2, 22],
+    });
+
+    const trackColor = switchAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['#D1D5DB', '#1E40AF'],
+    });
+
+    const glowOpacity = glowAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 0.3],
+    });
+
+    const handleToggle = () => {
+        if (isTransitioning) return;
+        dispatch(toggleAppMode());
+    };
+
+    return (
+        <View style={{
+            marginHorizontal: responsiveWidth(4),
+            marginTop: 15,
+            marginBottom: 5,
+        }}>
+            <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleToggle}
+                disabled={isTransitioning}
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: isTruckerMode ? '#EFF6FF' : colors.white,
+                    borderRadius: 16,
+                    paddingVertical: 14,
+                    paddingHorizontal: 16,
+                    borderWidth: 1.5,
+                    borderColor: isTruckerMode ? '#3B82F6' : '#E5E7EB',
+                    shadowColor: isTruckerMode ? '#3B82F6' : '#000',
+                    shadowOffset: { width: 0, height: isTruckerMode ? 4 : 2 },
+                    shadowOpacity: isTruckerMode ? 0.2 : 0.06,
+                    shadowRadius: isTruckerMode ? 12 : 4,
+                    elevation: isTruckerMode ? 8 : 2,
+                }}
+            >
+                {/* Left: Icon + Text */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <View style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        backgroundColor: isTruckerMode ? '#1E40AF' : '#F3F4F6',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 12,
+                    }}>
+                        <Text style={{ fontSize: 22 }}>🚛</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={{
+                            fontSize: responsiveFontSize(1.7),
+                            fontWeight: '700',
+                            color: isTruckerMode ? '#1E40AF' : '#1F2937',
+                            fontFamily: 'Inter-Bold',
+                        }}>
+                            {t('truckerMode', 'Trucker Mode')}
+                        </Text>
+                        <Text style={{
+                            fontSize: responsiveFontSize(1.2),
+                            color: isTruckerMode ? '#3B82F6' : '#6B7280',
+                            marginTop: 2,
+                        }}>
+                            {t('switchToTruckOwnerInterface', 'Switch to truck owner interface')}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Right: Animated Switch */}
+                <View style={{ marginLeft: 12 }}>
+                    <Animated.View style={{
+                        width: 48,
+                        height: 28,
+                        borderRadius: 14,
+                        backgroundColor: trackColor,
+                        justifyContent: 'center',
+                        paddingHorizontal: 0,
+                    }}>
+                        <Animated.View style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: 12,
+                            backgroundColor: '#FFFFFF',
+                            transform: [{ translateX: thumbTranslateX }],
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 3,
+                            elevation: 3,
+                        }} />
+                    </Animated.View>
+                </View>
+            </TouchableOpacity>
+
+            {/* Active glow effect */}
+            {isTruckerMode && (
+                <Animated.View
+                    pointerEvents="none"
+                    style={{
+                        position: 'absolute',
+                        top: -4,
+                        left: -4,
+                        right: -4,
+                        bottom: -4,
+                        borderRadius: 20,
+                        borderWidth: 2,
+                        borderColor: '#3B82F6',
+                        opacity: glowOpacity,
+                    }}
+                />
+            )}
+        </View>
+    );
 };
 
 const Home = React.forwardRef((props, ref) => {
@@ -1520,6 +1679,11 @@ const Home = React.forwardRef((props, ref) => {
                     <Space height={responsiveFontSize(4)} />
                 </View>}
                 {isTransporter && <View>
+                    {/* ═══════════════════════════════════════════════ */}
+                    {/* 🚛 TRUCKER MODE TOGGLE CARD                    */}
+                    {/* ═══════════════════════════════════════════════ */}
+                    <TruckerModeToggle />
+
                     {/* Jobs Management Section */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>
                         <Ionicons name="briefcase-outline" size={20} color={colors.royalBlue} />
