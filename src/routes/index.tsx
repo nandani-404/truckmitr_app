@@ -2,7 +2,7 @@ import { StatusBar, useColorScheme, View, Image, AppState, Linking, TouchableOpa
 import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { darkTheme, lightTheme } from '@truckmitr/res/colors';
-import { Auth, Main, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain, } from '@truckmitr/stacks/index';
+import { Auth, Main, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain, ShipperMain, ShipperProfileCompletionStack } from '@truckmitr/stacks/index';
 import SystemNavigationBar from 'react-native-system-navigation-bar';
 import BootSplash from 'react-native-bootsplash';
 import { navigationRef } from '@truckmitr/utils/global/global.ref';
@@ -333,6 +333,8 @@ export default function Routes() {
                 moduleFromRole = 'association';
               } else if (userRole === 'puncture') {
                 moduleFromRole = 'puncture_shop';
+              } else if (userRole === 'shipper') {
+                moduleFromRole = 'shipper';
               }
               // Update both AsyncStorage and Redux
               await AsyncStorage.setItem('SELECTED_MODULE', moduleFromRole);
@@ -481,6 +483,21 @@ export default function Routes() {
     }
   }, [isAuthenticated, isNavigationReady]);
 
+  const parseDeepLink = (url: string) => {
+    let raw = url;
+    if (raw.startsWith('truckmitr://')) {
+      raw = raw.replace('truckmitr://', '');
+    } else if (raw.startsWith('https://truckmitr.com')) {
+      raw = raw.replace('https://truckmitr.com', '');
+      raw = raw.replace(/^\/+/, '');
+    }
+
+    const [path, query = ''] = raw.split('?');
+    const reelIdMatch = query.split('&').find(p => p.startsWith('reelId='));
+    const reelId = reelIdMatch ? decodeURIComponent(reelIdMatch.split('=')[1]) : undefined;
+    return { path, reelId };
+  };
+
   useEffect(() => {
     // Handle initial URL (when app is opened from closed state)
     const getInitialURL = async () => {
@@ -515,20 +532,7 @@ export default function Routes() {
       handleDeepLink(url);
     });
 
-    const parseDeepLink = (url: string) => {
-      let raw = url;
-      if (raw.startsWith('truckmitr://')) {
-        raw = raw.replace('truckmitr://', '');
-      } else if (raw.startsWith('https://truckmitr.com')) {
-        raw = raw.replace('https://truckmitr.com', '');
-        raw = raw.replace(/^\/+/, '');
-      }
 
-      const [path, query = ''] = raw.split('?');
-      const params = new URLSearchParams(query);
-      const reelId = params.get('reelId') || undefined;
-      return { path, reelId };
-    };
 
     // Function to handle deep link navigation
     const handleDeepLink = (url: string) => {
@@ -824,6 +828,8 @@ export default function Routes() {
           <AssociateProfileCompletionStack />
         ) : selectedModule === 'puncture_shop' || user?.data?.role?.toLowerCase() === 'puncture' || user?.role?.toLowerCase() === 'puncture' ? (
           <PunctureProfileCompletionStack />
+        ) : selectedModule === 'shipper' || user?.data?.role?.toLowerCase() === 'shipper' || user?.role?.toLowerCase() === 'shipper' ? (
+          <ShipperProfileCompletionStack />
         ) : (
           <ProfileCompletionStack />
         )
@@ -835,6 +841,8 @@ export default function Routes() {
         <AssociateMain />
       ) : selectedModule === 'puncture_shop' || user?.data?.role?.toLowerCase() === 'puncture' || user?.role?.toLowerCase() === 'puncture' ? (
         <PunctureMain />
+      ) : selectedModule === 'shipper' || user?.data?.role?.toLowerCase() === 'shipper' || user?.role?.toLowerCase() === 'shipper' ? (
+        <ShipperMain />
       ) : (
         <Main />
       )}

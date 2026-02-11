@@ -8,6 +8,8 @@
     "module_selection_driver_association": "Driver Association",
     "module_selection_dhaba_sathi": "Dhaba Sathi",
     "module_selection_puncture_point": "Puncture Point",
+    "module_selection_shipper": "Shipper",
+    "module_selection_trucker": "Trucker",
     "module_selection_title": "Select your <1>role</1>",
     "module_selection_subtitle": "This helps us personalize features and services for you",
     "module_selection_continue": "Continue",

@@ -195,6 +195,13 @@ export type NavigatorParams = {
     punctureDriverSearch: undefined;
     punctureProfileEdit: undefined;
     punctureDriverKiAwaz: undefined;
+
+    // Shipper Module
+    shipperBottomTab: any;
+    shipperHome: undefined;
+    shipperProfile: undefined;
+    shipperProfileCompletion: undefined;
+    shipperProfileEdit: undefined;
 };
 
 export const STACKS = {
@@ -434,4 +441,11 @@ export const STACKS = {
     PUNCTURE_PROFILE_EDIT: 'punctureProfileEdit',
     PUNCTURE_DRIVER_KI_AWAZ: 'punctureDriverKiAwaz',
     PUNCTURE_PROFILE_OVERVIEW: 'punctureProfileOverview',
+
+    // SHIPPER MODULE
+    SHIPPER_BOTTOM_TAB: 'shipperBottomTab',
+    SHIPPER_HOME: 'shipperHome',
+    SHIPPER_PROFILE: 'shipperProfile',
+    SHIPPER_PROFILE_COMPLETION: 'shipperProfileCompletion',
+    SHIPPER_PROFILE_EDIT: 'shipperProfileEdit',
 } as const;

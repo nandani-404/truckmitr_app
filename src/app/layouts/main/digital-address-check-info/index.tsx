@@ -14,6 +14,8 @@ import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import { ScreenHeader } from '@truckmitr/src/app/components';
 import { STACKS } from '@truckmitr/src/stacks/stacks';
+import RNFetchBlob from 'react-native-blob-util';
+import { getUserData } from '@truckmitr/src/utils/config/token';
 
 // State ID to Name Mapping
 const STATE_ID_MAP: Record<string, string> = {
@@ -118,6 +120,7 @@ const DigitalAddressCheckInfo = () => {
     const [davHistory, setDavHistory] = useState<DavHistoryItem[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [davProfile, setDavProfile] = useState<DavProfileData | null>(null);
+    const [downloadingPdf, setDownloadingPdf] = useState(false);
     const hasAutoOpenedDavFormRef = useRef(false);
 
     // Check if subscription is active (₹199 or ₹499 plan)
@@ -313,15 +316,45 @@ const DigitalAddressCheckInfo = () => {
             : `${BASE_URL}storage/app/public/${davProfile.pdf.replace(/^\/+/, '')}`;
 
         try {
-            const canOpen = await Linking.canOpenURL(pdfUrl);
-            if (!canOpen) {
-                showToast(t('unableToOpenPdf') || 'Unable to open PDF');
-                return;
+            setDownloadingPdf(true);
+            const { config, fs, android, ios } = RNFetchBlob;
+            const timestamp = new Date().getTime();
+            const fileName = `DAV_Verification_${davProfile.unique_id || timestamp}.pdf`;
+            const downloadDir = Platform.OS === 'ios' ? fs.dirs.DocumentDir : fs.dirs.DownloadDir;
+            const filePath = `${downloadDir}/${fileName}`;
+
+            const configOptions = Platform.select({
+                ios: { fileCache: true, path: filePath },
+                android: {
+                    addAndroidDownloads: {
+                        useDownloadManager: true,
+                        notification: true,
+                        path: filePath,
+                        description: t('davDownloadPdf') || 'Download Verification PDF',
+                        title: fileName,
+                        mime: 'application/pdf',
+                        mediaScannable: true,
+                    },
+                },
+            });
+
+            const token = await getUserData();
+            const headers: Record<string, string> = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            const response = await config(configOptions as any).fetch('GET', pdfUrl, headers);
+
+            if (Platform.OS === 'android') {
+                android.actionViewIntent(response.path(), 'application/pdf');
+            } else {
+                ios.openDocument(response.path());
             }
-            await Linking.openURL(pdfUrl);
-        } catch (error) {
-            console.log('Error opening DAV PDF:', error);
-            showToast(t('unableToOpenPdf') || 'Unable to open PDF');
+            showToast(t('invoiceDownloadedSuccessfully') || t('davDownloadPdf') || 'PDF downloaded and opened');
+        } catch (error: any) {
+            console.log('DAV PDF download error:', error);
+            showToast(error?.message || t('unableToOpenPdf') || 'Unable to download PDF');
+        } finally {
+            setDownloadingPdf(false);
         }
     };
 
@@ -514,9 +547,9 @@ const DigitalAddressCheckInfo = () => {
                             {/* Download PDF Button */}
                             <TouchableOpacity
                                 onPress={_handleDownloadDavPdf}
-                                disabled={!davProfile?.pdf}
+                                disabled={!davProfile?.pdf || downloadingPdf}
                                 style={{
-                                    backgroundColor: davProfile?.pdf ? '#16A34A' : '#A7F3D0',
+                                    backgroundColor: (!davProfile?.pdf || downloadingPdf) ? '#A7F3D0' : '#16A34A',
                                     paddingVertical: responsiveHeight(2),
                                     borderRadius: 14,
                                     alignItems: 'center',
@@ -525,9 +558,13 @@ const DigitalAddressCheckInfo = () => {
                                     ...shadow
                                 }}
                             >
-                                <Ionicons name="download-outline" size={20} color="#FFFFFF" style={{ marginRight: 10 }} />
+                                {downloadingPdf ? (
+                                    <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 10 }} />
+                                ) : (
+                                    <Ionicons name="download-outline" size={20} color="#FFFFFF" style={{ marginRight: 10 }} />
+                                )}
                                 <Text style={{ color: '#FFFFFF', fontSize: responsiveFontSize(2), fontWeight: '700' }}>
-                                    {t('davDownloadPdf')}
+                                    {downloadingPdf ? (t('downloading') || 'Downloading...') : t('davDownloadPdf')}
                                 </Text>
                             </TouchableOpacity>
                         </View>

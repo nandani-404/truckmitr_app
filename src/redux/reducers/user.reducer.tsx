@@ -72,6 +72,8 @@ const userReducer = (state = initialState, action: any) => {
                 isForeman: payload?.user?.role === 'foreman',
                 isAssociation: payload?.user?.role === 'association',
                 isDhaba: payload?.user?.role === 'dhaba',
+                isPuncture: payload?.user?.role === 'puncture',
+                isShipper: payload?.user?.role === 'shipper',
                 profileCompletion: payload?.profile_completion,
                 // Use role-specific required fields status from API
                 // foreman: foreman_required_fields_status (true = complete, false/null = incomplete)
@@ -90,7 +92,9 @@ const userReducer = (state = initialState, action: any) => {
                                     ? (payload?.puncture_required_fields_status ?? state.profileRequiredFieldsStatus ?? true)
                                     : payload?.user?.role === 'transporter'
                                         ? (payload?.transporter_required_fields_status ?? true)
-                                        : (payload?.profile_required_fields_status ?? true),
+                                        : payload?.user?.role === 'shipper'
+                                            ? (payload?.shipper_required_fields_status ?? state.profileRequiredFieldsStatus ?? true)
+                                            : (payload?.profile_required_fields_status ?? true),
                 missingFields:
                     payload?.user?.role === 'foreman'
                         ? (payload?.foreman_missing_fields || [])
@@ -102,7 +106,9 @@ const userReducer = (state = initialState, action: any) => {
                                     ? (payload?.puncture_missing_fields || [])
                                     : payload?.user?.role === 'transporter'
                                         ? (payload?.transporter_missing_fields || [])
-                                        : (payload?.missing_required_fields || []),
+                                        : payload?.user?.role === 'shipper'
+                                            ? (payload?.shipper_missing_fields || [])
+                                            : (payload?.missing_required_fields || []),
                 dashboard: payload?.dashboard_status,
                 rank: payload?.rank,
                 star_rating: payload?.star_rating,

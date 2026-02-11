@@ -8,5 +8,7 @@ import ForemanProfileCompletionStack from "@truckmitr/stacks/foremanProfileCompl
 import AssociateProfileCompletionStack from "@truckmitr/stacks/associateProfileCompletion"
 import DhabhaProfileCompletionStack from "@truckmitr/stacks/dhabhaProfileCompletion"
 import PunctureMain from "@truckmitr/stacks/punctureMain"
+import ShipperMain from "@truckmitr/stacks/shipperMain"
+import ShipperProfileCompletionStack from "@truckmitr/stacks/shipperProfileCompletion"
 
-export { Auth, Main, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain }
+export { Auth, Main, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain, ShipperMain, ShipperProfileCompletionStack }
