@@ -188,12 +188,12 @@ const LoadDetailScreen: React.FC<Props> = ({ onBack, loadData }) => {
                                 <Text style={s.idLabel}>Load ID</Text>
                                 <Text style={s.idValue}>{load.load_id || 'N/A'}</Text>
                             </View>
-                            <View style={s.statusBadge}>
+                            {/* <View style={s.statusBadge}>
                                 <View style={s.statusDot} />
                                 <Text style={s.statusText}>
                                     {load.status === '1' ? 'Active' : 'Closed'}
                                 </Text>
-                            </View>
+                            </View> */}
                         </View>
                         {load.unique_id ? (
                             <Text style={s.postedByIdText}>Posted by: {load.unique_id}</Text>
@@ -373,7 +373,7 @@ const s = StyleSheet.create({
     card: {
         backgroundColor: C.surface, borderRadius: 12,
         borderWidth: 1, borderColor: C.border,
-        padding: 16, marginBottom: 12, overflow: 'hidden',
+        padding: 16, marginBottom: 32, overflow: 'hidden',
     },
 
     // ID & Status

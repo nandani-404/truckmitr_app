@@ -128,27 +128,25 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
     // ── Fetch Data ──
     const fetchDashboardData = async () => {
         try {
-            const [availableRes, appliedRes, vehiclesRes]: any = await Promise.allSettled([
-                axiosInstance.get(END_POINTS.TRUCKER_AVAILABLE_LOADS),
+            const [statsRes, appliedRes]: any = await Promise.allSettled([
+                axiosInstance.get(END_POINTS.TRUCKER_DASHBOARD_STATS),
                 axiosInstance.get(END_POINTS.TRUCKER_APPLIED_LOADS),
-                axiosInstance.get(END_POINTS.TRUCKER_GET_VEHICLES),
             ]);
 
-            let availCount = 0;
-            let activeCount = 0;
-            let vehCount = 0;
+            let payloadStats: any = {};
+            let payloadPayments: any = {};
             let currentActiveTrip = null;
 
-            if (availableRes.status === 'fulfilled' && availableRes.value?.data?.status === 'success') {
-                const list = availableRes.value.data.data?.data || [];
-                availCount = list.length;
+            if (statsRes.status === 'fulfilled' && statsRes.value?.data?.status === 'success') {
+                const data = statsRes.value.data.data || {};
+                payloadStats = data.stats || {};
+                payloadPayments = data.payment_details || {};
             }
 
             if (appliedRes.status === 'fulfilled' && appliedRes.value?.data?.status === 'success') {
                 const list = appliedRes.value.data.data?.data || appliedRes.value.data.data || [];
                 // Count active trips (status '1')
                 const active = list.filter((l: any) => l.status === '1');
-                activeCount = active.length;
                 if (active.length > 0) {
                     const trip = active[0];
                     currentActiveTrip = {
@@ -164,21 +162,15 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
                 }
             }
 
-            if (vehiclesRes.status === 'fulfilled' && vehiclesRes.value?.data?.status === 'success') {
-                const list = vehiclesRes.value.data.data || [];
-                vehCount = list.length;
-            }
-
             setDashboardData(prev => ({
                 ...prev,
-                availableLoads: availCount,
-                activeTrips: activeCount,
-                vehicleCount: vehCount,
-                // Earnings hardcoded to 0 for now as no API
-                pendingEarnings: 0,
-                thisMonthEarnings: 0,
-                totalEarnings: 0,
-                rating: user?.driver_rating || 0,
+                availableLoads: payloadStats.available_loads || 0,
+                activeTrips: payloadStats.my_loads || 0,
+                vehicleCount: payloadStats.my_vehicles || 0,
+                pendingEarnings: payloadPayments.pending_payment || 0,
+                thisMonthEarnings: payloadPayments.this_month_earning || 0,
+                totalEarnings: payloadPayments.total_earning || 0,
+                rating: payloadStats.rating || user?.driver_rating || 0,
             }));
             setActiveTrip(currentActiveTrip);
 
@@ -207,20 +199,23 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
         fetchDashboardData();
     };
 
-    const formatCurrency = (val: number) => `₹${val.toLocaleString('en-IN')}`;
+    const formatCurrency = (val: any) => {
+        const num = Number(val) || 0;
+        return `₹${num.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+    };
 
     // ── Earnings Data ──
     const earningsData = [
         { label: 'Pending', value: formatCurrency(dashboardData.pendingEarnings), icon: <ClockIcon color="#D97706" />, iconBg: '#FEF3C7', valueColor: '#D97706' },
         { label: 'This Month', value: formatCurrency(dashboardData.thisMonthEarnings), icon: <CalendarIcon color="#059669" />, iconBg: '#ECFDF5', valueColor: '#059669' },
         { label: 'Total', value: formatCurrency(dashboardData.totalEarnings), icon: <TrendUpIcon color={COLORS.action} />, iconBg: COLORS.actionLight, valueColor: COLORS.action },
-        { label: 'Rating', value: dashboardData.rating || '0.0', icon: <StarIcon color="#B45309" />, iconBg: '#FFF7ED', valueColor: '#B45309' },
+        { label: 'Rating', value: Number(dashboardData.rating || 0).toFixed(1), icon: <StarIcon color="#B45309" />, iconBg: '#FFF7ED', valueColor: '#B45309' },
     ];
 
     // ── Quick Actions Data ──
     const quickActions = [
         { label: 'Find Loads', sub: `${dashboardData.availableLoads} available`, icon: <SearchIcon color={COLORS.action} />, iconBg: COLORS.actionLight, onPress: props.onNavigateToFindLoads },
-        { label: 'My Loads', sub: `${dashboardData.activeTrips} active`, icon: <MapPinIcon color="#059669" />, iconBg: '#ECFDF5', onPress: props.onNavigateToMyTrips },
+        { label: 'My Bids', sub: `${dashboardData.activeTrips} active`, icon: <MapPinIcon color="#059669" />, iconBg: '#ECFDF5', onPress: props.onNavigateToMyTrips },
         { label: 'Payments', sub: `${formatCurrency(dashboardData.pendingEarnings)} pending`, icon: <WalletIcon color="#D97706" />, iconBg: '#FEF3C7', onPress: props.onNavigateToPayments },
         { label: 'My Vehicles', sub: `${dashboardData.vehicleCount} vehicles`, icon: <TruckIconMini color="#2C5282" />, iconBg: '#EBF0F7', onPress: props.onNavigateToMyVehicles },
     ];
@@ -307,7 +302,7 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
                         <View key={index} style={[styles.earningsItem, index < earningsData.length - 1 && styles.earningsItemBorder]}>
                             <View style={[styles.earningsIconBox, { backgroundColor: item.iconBg }]}>{item.icon}</View>
                             <Text style={styles.earningsLabel}>{item.label}</Text>
-                            <Text style={[styles.earningsValue, { color: item.valueColor }]}>{item.value}</Text>
+                            <Text style={[styles.earningsValue, { color: item.valueColor }]} numberOfLines={1} adjustsFontSizeToFit>{item.value}</Text>
                         </View>
                     ))}
                 </View>
@@ -386,7 +381,7 @@ const styles = StyleSheet.create({
     earningsItemBorder: { borderRightWidth: 1, borderRightColor: COLORS.borderLight },
     earningsIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
     earningsLabel: { fontSize: 10, color: COLORS.textTertiary, fontWeight: '400', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.3 },
-    earningsValue: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+    earningsValue: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
     actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
     actionTile: { width: (width - 52) / 2, backgroundColor: COLORS.surface, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 20, paddingHorizontal: 16 },
     actionIconBox: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },

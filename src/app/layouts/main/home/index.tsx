@@ -1,4 +1,4 @@
-import { ActivityIndicator, Animated, FlatList, ScrollView, Text, TouchableOpacity, View, Modal, Linking, PanResponder, Pressable, TouchableWithoutFeedback, LayoutAnimation, Platform, UIManager, RefreshControl } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, ScrollView, Text, TouchableOpacity, View, Modal, Linking, PanResponder, Pressable, TouchableWithoutFeedback, LayoutAnimation, Platform, UIManager, RefreshControl, Alert } from 'react-native'
 
 if (Platform.OS === 'android') {
     if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -62,7 +62,13 @@ const TruckerModeToggle = () => {
     const { responsiveFontSize, responsiveWidth } = useResponsiveScale();
     const dispatch = useDispatch();
     const { mode, isTransitioning } = useSelector((state: any) => state.appMode);
+    const { user, profileCompletion } = useSelector((state: any) => state.user);
+
     const isTruckerMode = mode === 'trucker';
+
+    const navigation = useNavigation<NavigatorProp>();
+    const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+    const [showUnderReviewModal, setShowUnderReviewModal] = useState(false);
 
     // Animated switch thumb
     const switchAnim = useRef(new Animated.Value(isTruckerMode ? 1 : 0)).current;
@@ -101,6 +107,27 @@ const TruckerModeToggle = () => {
 
     const handleToggle = () => {
         if (isTransitioning) return;
+
+        // Check if transporter is trying to switch to Trucker mode
+        if (!isTruckerMode && user?.role === 'transporter') {
+            const completion = profileCompletion || 0;
+
+            // 1. Check Profile Completion
+            if (completion < 100) {
+                setShowIncompleteModal(true);
+                return;
+            }
+
+            // 2. Check Verification Status (only checks if profile is 100% complete)
+            // API returns string "true" or "false"
+            const isVerified = user?.verified_trucker_shipper === "true" || user?.verified_trucker_shipper === true;
+
+            if (!isVerified) {
+                setShowUnderReviewModal(true);
+                return;
+            }
+        }
+
         dispatch(toggleAppMode());
     };
 
@@ -206,6 +233,224 @@ const TruckerModeToggle = () => {
                     }}
                 />
             )}
+
+            {/* Incomplete Profile Modal */}
+            <Modal
+                transparent={true}
+                visible={showIncompleteModal}
+                animationType="fade"
+                onRequestClose={() => setShowIncompleteModal(false)}
+            >
+                <View style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: responsiveWidth(5),
+                }}>
+                    <View style={{
+                        backgroundColor: 'white',
+                        width: '100%',
+                        maxWidth: 340,
+                        borderRadius: 24,
+                        padding: 24,
+                        alignItems: 'center',
+                        shadowColor: "#000",
+                        shadowOffset: {
+                            width: 0,
+                            height: 4,
+                        },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 10,
+                        elevation: 10,
+                    }}>
+                        <View style={{
+                            width: 70,
+                            height: 70,
+                            borderRadius: 35,
+                            backgroundColor: '#EFF6FF', // Light blue bg
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: 16,
+                        }}>
+                            <MaterialIcons name="person-off" size={32} color="#1E40AF" />
+                        </View>
+
+                        <Text style={{
+                            fontSize: responsiveFontSize(2.2),
+                            fontWeight: 'bold',
+                            color: '#1F2937',
+                            marginBottom: 8,
+                            textAlign: 'center',
+                        }}>
+                            {t('incompleteProfile', 'Incomplete Profile')}
+                        </Text>
+
+                        <Text style={{
+                            fontSize: responsiveFontSize(1.6),
+                            color: '#6B7280',
+                            textAlign: 'center',
+                            marginBottom: 24,
+                            lineHeight: 22,
+                        }}>
+                            {t('pleaseCompleteYourProfile', 'Please complete your profile to 100% to access Trucker Mode functionalities.')}
+                        </Text>
+
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowIncompleteModal(false);
+                                navigation.navigate(STACKS.PROFILE_OVERVIEW);
+                            }}
+                            style={{
+                                backgroundColor: '#1E40AF',
+                                width: '100%',
+                                paddingVertical: 14,
+                                borderRadius: 12,
+                                alignItems: 'center',
+                                marginBottom: 12,
+                                shadowColor: '#1E40AF',
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.2,
+                                shadowRadius: 8,
+                                elevation: 4,
+                            }}
+                        >
+                            <Text style={{
+                                color: 'white',
+                                fontSize: responsiveFontSize(1.8),
+                                fontWeight: '600',
+                            }}>
+                                {t('completeProfile', 'Complete Profile')}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => setShowIncompleteModal(false)}
+                            style={{
+                                paddingVertical: 10,
+                                paddingHorizontal: 20,
+                            }}
+                        >
+                            <Text style={{
+                                color: '#6B7280',
+                                fontSize: responsiveFontSize(1.7),
+                                fontWeight: '500',
+                            }}>
+                                {t('cancel', 'Cancel')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Under Review Modal */}
+            <Modal
+                transparent={true}
+                visible={showUnderReviewModal}
+                animationType="fade"
+                onRequestClose={() => setShowUnderReviewModal(false)}
+            >
+                <View style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: responsiveWidth(5),
+                }}>
+                    <View style={{
+                        backgroundColor: 'white',
+                        width: '100%',
+                        maxWidth: 340,
+                        borderRadius: 24,
+                        padding: 24,
+                        alignItems: 'center',
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 10,
+                        elevation: 10,
+                    }}>
+                        <View style={{
+                            marginBottom: 20,
+                        }}>
+                            <MaterialCommunityIcons name="check-decagram" size={64} color="#3B82F6" />
+                        </View>
+
+                        <Text style={{
+                            fontSize: responsiveFontSize(2.2),
+                            fontWeight: 'bold',
+                            color: '#1F2937',
+                            marginBottom: 12,
+                            textAlign: 'center',
+                        }}>
+                            {t('thankYouRegistering', 'Thank You for Registering!')}
+                        </Text>
+
+                        <Text style={{
+                            fontSize: responsiveFontSize(1.6),
+                            color: '#6B7280',
+                            textAlign: 'center',
+                            marginBottom: 24,
+                            lineHeight: 22,
+                            paddingHorizontal: 10,
+                        }}>
+                            {t('accountActivationMsg', 'One of our team members will contact you for account activation.')}
+                        </Text>
+                        <Text style={{
+                            fontSize: responsiveFontSize(1.5),
+                            color: '#4B5563',
+                            textAlign: 'center',
+                            marginBottom: 16,
+                        }}>
+                            {t('reachUsAt', 'You can also reach us at our Toll Free')}
+                            {'\n'}
+                            <Text style={{ fontWeight: 'bold', fontSize: responsiveFontSize(1.7), color: '#1F2937' }}>
+                                1800 102 4558
+                            </Text>
+                        </Text>
+
+                        <TouchableOpacity
+                            onPress={() => Linking.openURL('tel:18001024558')}
+                            style={{
+                                backgroundColor: '#EFF6FF',
+                                borderWidth: 1,
+                                borderColor: '#3B82F6',
+                                flexDirection: 'row',
+                                width: '100%',
+                                paddingVertical: 12,
+                                borderRadius: 12,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: 16,
+                            }}
+                        >
+                            <MaterialIcons name="call" size={20} color="#3B82F6" style={{ marginRight: 8 }} />
+                            <Text style={{
+                                color: '#3B82F6',
+                                fontSize: responsiveFontSize(1.8),
+                                fontWeight: '600',
+                            }}>
+                                1800 102 4558
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => setShowUnderReviewModal(false)}
+                            style={{
+                                paddingVertical: 8,
+                            }}
+                        >
+                            <Text style={{
+                                color: '#9CA3AF',
+                                fontSize: responsiveFontSize(1.6),
+                                fontWeight: '500',
+                            }}>
+                                {t('close', 'Close')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };

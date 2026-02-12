@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    StatusBar, Animated, ActivityIndicator, RefreshControl,
+    StatusBar, Animated, ActivityIndicator, RefreshControl, Modal, TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import axiosInstance from 'src/utils/config/axiosInstance';
 import { END_POINTS } from 'src/utils/config';
 
@@ -88,6 +88,7 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
     const [loads, setLoads] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [selectedLoad, setSelectedLoad] = useState<any>(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
     const fetchAppliedLoads = async (isRefresh = false) => {
@@ -124,11 +125,19 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
     // ── Load Card ──
     const LoadCard = ({ load, index }: { load: any; index: number }) => {
         const cardAnim = useRef(new Animated.Value(0)).current;
+        const navigation = useNavigation<any>();
+
         useEffect(() => {
             Animated.timing(cardAnim, { toValue: 1, duration: 400, delay: index * 80, useNativeDriver: true }).start();
         }, []);
 
-        const isActive = load.status === '1';
+        const getStatusInfo = (status: string | null) => {
+            if (status === 'accepted') return { label: 'Accepted', color: C.success, bg: C.successLight };
+            if (status === 'rejected') return { label: 'Rejected', color: C.danger, bg: C.dangerLight };
+            return { label: 'Pending', color: C.warning, bg: C.warningLight };
+        };
+
+        const { label: statusLabel, color: statusColor, bg: statusBg } = getStatusInfo(load.shipper_status);
 
         return (
             <Animated.View style={{
@@ -138,17 +147,16 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                 <TouchableOpacity
                     style={s.loadCard}
                     activeOpacity={0.7}
-                    onPress={() => onLoadPress?.(load.load_id, load)}
+                    onPress={() => setSelectedLoad(load)}
                 >
                     {/* Header Row */}
                     <View style={s.cardHeader}>
                         <View style={s.loadIdRow}>
                             <Text style={s.loadId}>{load.load_id || 'N/A'}</Text>
-                            <View style={[s.statusBadge, { backgroundColor: isActive ? C.successLight : C.dangerLight }]}>
-                                <View style={[s.statusDot, { backgroundColor: isActive ? C.success : C.danger }]} />
-                                <Text style={[s.statusText, { color: isActive ? C.success : C.danger }]}>
-                                    {isActive ? 'Active' : 'Closed'}
-                                </Text>
+
+                            <View style={[s.statusBadge, { backgroundColor: statusBg }]}>
+                                <View style={[s.statusDot, { backgroundColor: statusColor }]} />
+                                <Text style={[s.statusText, { color: statusColor }]}>{statusLabel}</Text>
                             </View>
                         </View>
                         <ChevronRight />
@@ -183,7 +191,6 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                             <Text style={s.bidLabel}>Your Bid</Text>
                             <Text style={s.bidValue}>{formatPrice(load.trucker_price)}</Text>
                         </View>
-
                     </View>
 
                     {/* Footer */}
@@ -195,6 +202,19 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                         </View>
                         <Text style={s.appliedAt}>Applied {getTimeAgo(load.applied_at)}</Text>
                     </View>
+
+                    {/* Track Button (Only for Accepted) */}
+                    {load.shipper_status === 'accepted' && (
+                        <TouchableOpacity
+                            style={s.trackButton}
+                            onPress={() => navigation.navigate('truckerActiveTrip', { loadId: load.id })}
+                        >
+                            <Text style={s.trackButtonText}>Track Load</Text>
+                            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.white} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <Path d="M9 18l6-6-6-6" />
+                            </Svg>
+                        </TouchableOpacity>
+                    )}
                 </TouchableOpacity>
             </Animated.View>
         );
@@ -207,7 +227,7 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
             {/* Header */}
             <View style={s.header}>
                 <TouchableOpacity style={s.backBtn} onPress={onBack}><BackIcon /></TouchableOpacity>
-                <Text style={s.headerTitle}>My Loads</Text>
+                <Text style={s.headerTitle}>My Bids</Text>
                 <View style={s.headerSpacer} />
             </View>
 
@@ -251,6 +271,113 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                     <View style={{ height: 40 }} />
                 </ScrollView>
             )}
+
+            {/* Load Details Bottom Sheet */}
+            <Modal
+                visible={!!selectedLoad}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setSelectedLoad(null)}
+            >
+                <View style={s.modalOverlay}>
+                    <TouchableOpacity
+                        style={StyleSheet.absoluteFill}
+                        activeOpacity={1}
+                        onPress={() => setSelectedLoad(null)}
+                    />
+                    <View style={s.bottomSheet}>
+                        <View style={s.sheetHandle} />
+
+                        {selectedLoad && (
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                                <View style={s.sheetHeader}>
+                                    <View>
+                                        <Text style={s.sheetTitle}>Load Details</Text>
+                                        <Text style={s.sheetSubtitle}>{selectedLoad.load_id}</Text>
+                                    </View>
+                                    <TouchableOpacity onPress={() => setSelectedLoad(null)} style={s.closeBtn}>
+                                        <Text style={s.closeBtnText}>✕</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {/* Shipper Info (No strings attached) */}
+                                <View style={s.sheetSection}>
+                                    <Text style={s.sheetLabel}>Shipper</Text>
+                                    <Text style={s.sheetValueBold}>{selectedLoad.user?.name || 'Unknown Shipper'}</Text>
+                                    {/* <Text style={s.sheetValue}>TM ID: {selectedLoad.user?.unique_id || 'N/A'}</Text> */}
+                                </View>
+
+                                {/* Route */}
+                                <View style={s.sheetSection}>
+                                    <Text style={s.sheetLabel}>Route</Text>
+                                    <View style={s.sheetRouteItem}>
+                                        <View style={[s.sheetDot, { backgroundColor: C.success }]} />
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={s.sheetRouteLabel}>Pickup</Text>
+                                            <Text style={s.sheetRouteValue}>{selectedLoad.origin_location}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={s.sheetRouteLine} />
+                                    <View style={s.sheetRouteItem}>
+                                        <View style={[s.sheetDot, { backgroundColor: C.danger }]} />
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={s.sheetRouteLabel}>Drop</Text>
+                                            <Text style={s.sheetRouteValue}>{selectedLoad.destination_location}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                {/* Financials */}
+                                <View style={s.sheetRow}>
+                                    <View style={s.sheetCol}>
+                                        <Text style={s.sheetLabel}>Your Bid</Text>
+                                        <Text style={[s.sheetValueHuge, { color: C.accent }]}>{formatPrice(selectedLoad.trucker_price)}</Text>
+                                    </View>
+                                </View>
+
+                                {/* Cargo & Vehicle */}
+                                <View style={s.sheetSection}>
+                                    <Text style={s.sheetLabel}>Cargo & Vehicle</Text>
+                                    <View style={s.sheetGrid}>
+                                        <View style={s.sheetGridItem}>
+                                            <Text style={s.sheetGridLabel}>Material</Text>
+                                            <Text style={s.sheetGridValue}>{selectedLoad.meterial || 'N/A'}</Text>
+                                        </View>
+                                        <View style={s.sheetGridItem}>
+                                            <Text style={s.sheetGridLabel}>Quantity</Text>
+                                            <Text style={s.sheetGridValue}>{selectedLoad.meterial_quantity ? `${selectedLoad.meterial_quantity} Ton` : 'N/A'}</Text>
+                                        </View>
+                                        <View style={s.sheetGridItem}>
+                                            <Text style={s.sheetGridLabel}>Vehicle</Text>
+                                            <Text style={s.sheetGridValue}>{safeString(selectedLoad.vehicle_body) || safeString(selectedLoad.vechicle_body)}</Text>
+                                        </View>
+                                        <View style={s.sheetGridItem}>
+                                            <Text style={s.sheetGridLabel}>Length</Text>
+                                            <Text style={s.sheetGridValue}>{safeString(selectedLoad.vehicle_length)}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                {/* Schedule */}
+                                <View style={s.sheetSection}>
+                                    <Text style={s.sheetLabel}>Schedule</Text>
+                                    <View style={s.sheetGrid}>
+                                        <View style={s.sheetGridItem}>
+                                            <Text style={s.sheetGridLabel}>Pickup Date</Text>
+                                            <Text style={s.sheetGridValue}>{selectedLoad.picup_date || 'Not specified'}</Text>
+                                        </View>
+                                        <View style={s.sheetGridItem}>
+                                            <Text style={s.sheetGridLabel}>Applied On</Text>
+                                            <Text style={s.sheetGridValue}>{selectedLoad.applied_at || 'N/A'}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                            </ScrollView>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -341,6 +468,52 @@ const s = StyleSheet.create({
     metaText: { fontSize: 11, color: C.textMuted },
     metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: C.border, marginHorizontal: 6 },
     appliedAt: { fontSize: 11, color: C.textMuted },
+
+    // Bottom Sheet
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    bottomSheet: {
+        backgroundColor: C.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        paddingHorizontal: 20, paddingTop: 12, maxHeight: '85%',
+    },
+    sheetHandle: { width: 40, height: 5, borderRadius: 2.5, backgroundColor: '#E0E0E0', alignSelf: 'center', marginBottom: 20 },
+    sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
+    sheetTitle: { fontSize: 20, fontWeight: '700', color: C.text },
+    sheetSubtitle: { fontSize: 13, color: C.textSec, marginTop: 4 },
+    closeBtn: { padding: 8, backgroundColor: C.surfaceAlt, borderRadius: 20 },
+    closeBtnText: { fontSize: 14, fontWeight: '600', color: C.text },
+    sheetSection: { marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: C.borderLight },
+    sheetLabel: { fontSize: 12, fontWeight: '600', color: C.textMuted, textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 },
+    sheetValueBold: { fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 4 },
+    sheetValue: { fontSize: 14, color: C.textSec },
+    sheetRouteItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    sheetDot: { width: 10, height: 10, borderRadius: 5, marginTop: 5 },
+    sheetRouteLabel: { fontSize: 11, color: C.textMuted, marginBottom: 2 },
+    sheetRouteValue: { fontSize: 14, color: C.text, fontWeight: '500', lineHeight: 20 },
+    sheetRouteLine: { marginLeft: 4, width: 2, height: 20, backgroundColor: C.borderLight, marginVertical: 4 },
+    sheetRow: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+    sheetCol: { flex: 1, padding: 12, backgroundColor: C.surfaceAlt, borderRadius: 12 },
+    sheetValueHuge: { fontSize: 18, fontWeight: '800', color: C.text },
+    sheetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    sheetGridItem: { width: '45%', marginBottom: 8 },
+    sheetGridLabel: { fontSize: 11, color: C.textMuted, marginBottom: 2 },
+    sheetGridValue: { fontSize: 14, fontWeight: '600', color: C.text },
+
+    // Track Button
+    trackButton: {
+        marginTop: 14,
+        backgroundColor: C.accent,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 8,
+    },
+    trackButtonText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: C.white,
+    },
 });
 
 export default MyLoadsScreen;

@@ -286,7 +286,7 @@ export const END_POINTS = {
     // Consent update endpoint
     UPDATE_CONSENT: `api/saveConsent`,
 
-    //------------------------------------------TMLOADMANDAL------------------------------------------
+    //------------------------------------------TMLOADMANDAL_trucker------------------------------------------
     TRUCKER_VERIFY_RC: `api/trucker/verify-rc`,
     TRUCKER_ADD_VEHICLE: `api/trucker/add-vehicle`,
     TRUCKER_VEHICLE_BODY_LIST: `api/trucker/vehicle-body-list`,
@@ -295,4 +295,8 @@ export const END_POINTS = {
     TRUCKER_AVAILABLE_LOADS: `api/trucker/available-loads`,
     TRUCKER_APPLY_LOAD: `api/trucker/apply-load`,
     TRUCKER_APPLIED_LOADS: `api/trucker/applied-loads`,
+    TRUCKER_DASHBOARD_STATS: `api/trucker/dashboard-stats`,
+    TRUCKER_PAYMENT_HISTORY: (page: number = 1) => `api/trucker/payment-history?page=${page}`,
+    TRUCKER_UPDATE_LOCATION: `api/trucker/update-location`,
+    TRUCKER_TRACKING: (id: any) => `api/trucker/tracking/${id}`,
 }

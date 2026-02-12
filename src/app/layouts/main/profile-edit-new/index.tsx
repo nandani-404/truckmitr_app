@@ -71,6 +71,7 @@ const TRANSPORTER_STEPS = [
     { id: 'avg_km_run', title: 'avgKmStep', subtitle: 'avgKmStepDesc' },
     { id: 'vehicle', title: 'vehicleTypeStep', subtitle: 'vehicleTypeStepDescTransporter' },
     { id: 'pan_gst', title: 'panGstStep', subtitle: 'panGstStepDesc' },
+    { id: 'poc_details', title: 'secondContactDetails', subtitle: 'secondContactDetailsDesc' },
 ];
 /**
  * ProfileEditNew Component
@@ -197,6 +198,16 @@ export default function ProfileEditNew() {
         { id: 'tractor', label: t('tractorTrailer') || 'Tractor-Trailer (Commercial)', emoji: '🚛' },
         { id: 'forklift', label: t('forkliftMHE') || 'Forklift / MHE', emoji: '🏗️' },
         { id: 'other', label: t('other') || 'Other', emoji: '📋' },
+    ];
+
+    const companyTypeOptions = [
+        { label: 'Sole Proprietorship', value: '1' },
+        { label: 'One Person Company', value: '2' },
+        { label: 'Partnership Firm', value: '3' },
+        { label: 'Limited Liability Partnership (LLP)', value: '4' },
+        { label: 'Section 8 Company', value: '5' },
+        { label: 'Public Company', value: '6' },
+        { label: 'Private Company', value: '7' },
     ];
 
     useEffect(() => {
@@ -751,7 +762,8 @@ export default function ProfileEditNew() {
 
             // Transporter steps
             case 'transport_details':
-                if (!userEdit?.transport_name?.trim()) {
+                // Transport name removed from edit screen as per request
+                if (!userEdit?.transport_name?.trim() && !userEdit?.Transport_Name?.trim()) {
                     showToast(t('transportNameRequired') || 'Transport name is required');
                     return false;
                 }
@@ -803,6 +815,10 @@ export default function ProfileEditNew() {
                     return false;
                 }
                 // GST is optional
+                break;
+
+            case 'poc_details':
+                // Optional
                 break;
         }
 
@@ -931,7 +947,7 @@ export default function ProfileEditNew() {
                 });
             }
 
-            formData.append('Aadhar_Number', userEdit?.Aadhar_Number || '');
+            // formData.append('Aadhar_Number', userEdit?.Aadhar_Number || '');
             formData.append('license_number', userEdit?.License_Number || '');
             formData.append('expiry_date_of_license', userEdit?.Expiry_date_of_License ? moment(userEdit.Expiry_date_of_License).format('DD-MM-YYYY') : '');
             formData.append('job_placement', userEdit?.job_placement || '');
@@ -953,7 +969,10 @@ export default function ProfileEditNew() {
             formData.append('average_km', userEdit?.avg_km_run || '');
             formData.append('pan_number', userEdit?.pan || userEdit?.PAN_Number || '');
             formData.append('gst_number', userEdit?.gst || userEdit?.GST_Number || '');
-            formData.append('transport_name', userEdit?.transport_name || '');
+            formData.append('transport_name', userEdit?.transport_name || userEdit?.Transport_Name || '');
+            formData.append('company_registration_type', userEdit?.company_registration_type || '');
+            formData.append('name_poc', userEdit?.name_poc || '');
+            formData.append('phone_poc', userEdit?.phone_poc || '');
             formData.append('year_of_establishment', userEdit?.year_of_exp || userEdit?.year_of_establishment || userEdit?.establishment_year || '');
             formData.append('Referral_Code', userEdit?.Referral_Code || '');
 
@@ -1698,8 +1717,24 @@ export default function ProfileEditNew() {
             case 'transport_details':
                 return (
                     <View style={styles.stepContent}>
+                        {/* Transport Name removed as per request */}
                         <Text style={styles.inputLabel}>{t('transportName') || 'Transport Name'} <Text style={styles.requiredAsterisk}>*</Text></Text>
-                        <TextInput style={styles.textInput} placeholder={t('enterTransportName')} placeholderTextColor="#999" value={userEdit?.transport_name || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, transport_name: text }))} />
+                        <TextInput style={styles.textInput} placeholder={t('enterTransportName')} placeholderTextColor="#999" value={userEdit?.transport_name || userEdit?.Transport_Name || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, transport_name: text }))} />
+
+                        <Space height={16} />
+                        <Text style={styles.inputLabel}>{t('companyRegistrationType') || 'Company Registration Type'}</Text>
+                        <Dropdown
+                            style={styles.dropdown}
+                            placeholderStyle={{ color: '#999', fontSize: 15 }}
+                            selectedTextStyle={{ color: '#333', fontSize: 15 }}
+                            data={companyTypeOptions}
+                            labelField="label"
+                            valueField="value"
+                            placeholder={t('selectCompanyType') || 'Select Company Type'}
+                            value={userEdit?.company_registration_type}
+                            onChange={item => dispatch(userEditAction({ ...userEdit, company_registration_type: item.value }))}
+                        />
+
                         {/* <Space height={16} />
                         <Text style={styles.inputLabel}>{t('referralCode') || 'Referral Code'}</Text>
                         <TextInput style={styles.textInput} placeholder={t('enterReferralCode')} placeholderTextColor="#999" value={userEdit?.Referral_Code || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, Referral_Code: text }))} /> */}
@@ -1730,6 +1765,17 @@ export default function ProfileEditNew() {
                             fieldName="gstCertificatePath"
                             existingImageKey="GST_Certificate"
                         />
+                    </View>
+                );
+
+            case 'poc_details':
+                return (
+                    <View style={styles.stepContent}>
+                        <Text style={styles.inputLabel}>{t('secondContactName') || 'Second Contact Name'}</Text>
+                        <TextInput style={styles.textInput} placeholder={t('enterName') || 'Enter Name'} placeholderTextColor="#999" value={userEdit?.name_poc || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, name_poc: text }))} />
+                        <Space height={16} />
+                        <Text style={styles.inputLabel}>{t('secondContactMobile') || 'Second Contact Mobile'}</Text>
+                        <TextInput style={styles.textInput} placeholder={t('enterMobile') || 'Enter Mobile'} placeholderTextColor="#999" keyboardType="phone-pad" maxLength={10} value={userEdit?.phone_poc || ''} onChangeText={(text) => dispatch(userEditAction({ ...userEdit, phone_poc: text.replace(/[^0-9]/g, '') }))} />
                     </View>
                 );
 

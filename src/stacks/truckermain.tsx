@@ -27,6 +27,10 @@ import VehicleManagementScreen from '../app/layouts/Trucker/VehicleManagement/in
 import VehicleDetailsScreen from '../app/layouts/Trucker/VehicleManagement/VehicleDetails';
 import TruckerProfileScreen from '../app/layouts/Trucker/Profile/index';
 
+// Import shared screens (reused from transporter)
+import ProfileOverview from '../app/layouts/main/profile-overview';
+import ProfileEditNew from '../app/layouts/main/profile-edit-new';
+
 // Import Trucker Auth screens (Profile Completion Flow)
 import TruckerSignupScreen from '../app/layouts/Trucker/Trucker_auth/TruckerSignup/index';
 import VehicleInfoScreen from '../app/layouts/Trucker/Trucker_auth/VehicleInfo/index';
@@ -50,6 +54,10 @@ export const TRUCKER_STACKS = {
     VEHICLE_MANAGEMENT: 'truckerVehicleManagement',
     VEHICLE_DETAILS: 'truckerVehicleDetails',
     PROFILE: 'truckerProfileDetail',
+    PROFILE_OVERVIEW: 'profileOverview',
+    PROFILE_EDIT_NEW: 'profileEditNew',
+    PROFILE_EDIT: 'profileEdit',
+    PROFILE_EDIT_TRANSPORTER: 'profileEditTransporter',
     // Profile Completion Flow
     PROFILE_SIGNUP: 'truckerProfileSignup',
     PROFILE_VEHICLE_INFO: 'truckerProfileVehicleInfo',
@@ -83,8 +91,10 @@ const LoadDetailWrapper = () => {
 
 const ActiveTripWrapper = () => {
     const navigation = useNavigation();
+    const route = useRoute<any>();
     return (
         <ActiveTripScreen
+            loadId={route.params?.loadId || route.params?.tripId}
             onBack={() => navigation.goBack()}
             onComplete={() => navigation.goBack()}
         />
@@ -199,26 +209,7 @@ const InvoiceDetailWrapper = () => {
 const ProfileWrapper = () => {
     const navigation = useNavigation<any>();
     return (
-        <TruckerProfileScreen
-            onBack={() => navigation.goBack()}
-            onNavigate={(screen: string) => {
-                // Map profile sub-navigations to trucker stacks
-                const screenMap: Record<string, string> = {
-                    'vehicleManagement': TRUCKER_STACKS.VEHICLE_MANAGEMENT,
-                    'documentRenewal': TRUCKER_STACKS.DOCUMENT_RENEWAL,
-                    'personalRoutes': TRUCKER_STACKS.PERSONAL_ROUTES,
-                    'earnings': TRUCKER_STACKS.EARNINGS,
-                    'notifications': TRUCKER_STACKS.NOTIFICATIONS,
-                    'paidHistory': TRUCKER_STACKS.PAID_HISTORY,
-                    'pendingPayments': TRUCKER_STACKS.PENDING_PAYMENTS,
-                    'profileCompletion': TRUCKER_STACKS.PROFILE_SIGNUP,
-                };
-                const targetScreen = screenMap[screen];
-                if (targetScreen) {
-                    navigation.navigate(targetScreen);
-                }
-            }}
-        />
+        <TruckerProfileScreen />
     );
 };
 
@@ -337,6 +328,27 @@ export default function TruckerMain() {
             <Stack.Screen
                 name={TRUCKER_STACKS.PROFILE}
                 component={ProfileWrapper}
+            />
+            <Stack.Screen
+                name={TRUCKER_STACKS.PROFILE_OVERVIEW}
+                component={ProfileOverview}
+                options={{ animation: 'fade' }}
+            />
+            <Stack.Screen
+                name={TRUCKER_STACKS.PROFILE_EDIT_NEW}
+                component={ProfileEditNew}
+                options={{ animation: 'fade' }}
+            />
+            {/* Map legacy edit routes to new edit screen for compatibility with ProfileOverview */}
+            <Stack.Screen
+                name={TRUCKER_STACKS.PROFILE_EDIT}
+                component={ProfileEditNew}
+                options={{ animation: 'fade' }}
+            />
+            <Stack.Screen
+                name={TRUCKER_STACKS.PROFILE_EDIT_TRANSPORTER}
+                component={ProfileEditNew}
+                options={{ animation: 'fade' }}
             />
 
             {/* Profile Completion Flow */}
