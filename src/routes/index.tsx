@@ -816,6 +816,7 @@ export default function Routes() {
       {/* <DhabhaProfileCompletionStack /> */}
       {/* <PunctureProfileCompletionStack /> */}
       {/* <PunctureMain /> */}
+      {/* <ShipperProfileCompletionStack /> */}
       {!isAuthenticated ? (
         <Auth />
       ) : profileRequiredFieldsStatus === false ? (
@@ -847,7 +848,7 @@ export default function Routes() {
         <Main />
       )}
       {subscriptionModal && <Subscription />}
-      {/* <InAppUpdatePopup /> */}
+      <InAppUpdatePopup />
     </NavigationContainer>
   );
 }

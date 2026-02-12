@@ -3,6 +3,7 @@ import userReducer from '@truckmitr/redux/reducers/user.reducer';
 import jobReducer from '@truckmitr/redux/reducers/job.reducer';
 import driverReducer from '@truckmitr/redux/reducers/driver.reducer';
 import pilotsReducer from '@truckmitr/redux/slices/pilotsSlice';
+import shipperReducer from '@truckmitr/redux/slices/shipperSlice';
 
 // Global reducers (shared across all modules)
 import appReducer from '@truckmitr/redux/reducers/global/app.reducer';
@@ -18,7 +19,8 @@ const appCombinedReducer = combineReducers({
     user: userReducer,
     job: jobReducer,
     driver: driverReducer,
-    pilots: pilotsReducer
+    pilots: pilotsReducer,
+    shipper: shipperReducer
 })
 
 const rootReducer = (state: any, action: any) => {

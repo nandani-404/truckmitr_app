@@ -287,4 +287,18 @@ export const END_POINTS = {
     GET_PUNCTURE_PHOTOS: `api/puncture/photos`,
     // Consent update endpoint
     UPDATE_CONSENT: `api/saveConsent`,
+
+    // ++++++++++++++++++++++++
+    // shipper related api
+    // ++++++++++++++++++++++++
+    SHIPPER_PROFILE_GET: `api/shipper/profile`,
+    SHIPPER_PROFILE_UPDATE: `api/shipper/profile/update`,
+    POST_LOAD_VEHICLE_BODIES: `api/shipper/get-vehicle-types-by-quantity`,
+    POST_LOAD_VEHICLE_LENGTHS: `api/shipper/get-vehicle-lengths`,
+    // POST_LOAD_CHECK_ROUTE: `api/shipper/check-route`,
+    POST_LOAD_SUBMIT: `api/shipper/post-load`,
+    SHIPPER_POST_LOAD_GET: `api/shipper/post-load`,
+    SHIPPER_MY_LOADS: `api/shipper/view-load`,
+    SHIPPER_VERIFY_GST: `api/shipper/verify-gst`,
+    SHIPPER_VERIFY_PAN: `api/shipper/verify-pan`,
 }

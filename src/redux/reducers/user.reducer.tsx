@@ -22,7 +22,8 @@ const initialState = {
     referral: null,
     whatsapp_link: null,
     popupData: null,
-    consent_check: true // Default to true to prevent blocking before data load
+    consent_check: true, // Default to true to prevent blocking before data load
+    shipperKycStatus: null
 }
 
 const userReducer = (state = initialState, action: any) => {
@@ -114,7 +115,8 @@ const userReducer = (state = initialState, action: any) => {
                 star_rating: payload?.star_rating,
                 referral: { referral_remains: payload?.referral_remains, referral_sent: payload?.referral_sent, referral_success: payload?.referral_success, referral_bonus: payload?.referral_bonus, total_referrals: payload?.total_referrals },
                 whatsapp_link: payload?.whatsapp_link,
-                consent_check: payload?.consent_check ?? true // Use payload value or default to true
+                consent_check: payload?.consent_check ?? true, // Use payload value or default to true
+                shipperKycStatus: payload?.shipper_kyc_status
             }
         case TYPES['USER_PROFILE_EDIT']:
             return {

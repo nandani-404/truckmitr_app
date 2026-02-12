@@ -199,6 +199,10 @@ export type NavigatorParams = {
     // Shipper Module
     shipperBottomTab: any;
     shipperHome: undefined;
+    shipperMyLoads: undefined;
+    shipperPostLoad: undefined;
+    shipperChat: undefined;
+    shipperTrack: undefined;
     shipperProfile: undefined;
     shipperProfileCompletion: undefined;
     shipperProfileEdit: undefined;
@@ -445,6 +449,10 @@ export const STACKS = {
     // SHIPPER MODULE
     SHIPPER_BOTTOM_TAB: 'shipperBottomTab',
     SHIPPER_HOME: 'shipperHome',
+    SHIPPER_MY_LOADS: 'shipperMyLoads',
+    SHIPPER_POST_LOAD: 'shipperPostLoad',
+    SHIPPER_CHAT: 'shipperChat',
+    SHIPPER_TRACK: 'shipperTrack',
     SHIPPER_PROFILE: 'shipperProfile',
     SHIPPER_PROFILE_COMPLETION: 'shipperProfileCompletion',
     SHIPPER_PROFILE_EDIT: 'shipperProfileEdit',

@@ -30,13 +30,14 @@ import { useNavigation } from '@react-navigation/native';
 import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
-import { userAction, userEditAction, userAuthenticatedAction } from '@truckmitr/src/redux/actions/user.action';
-import { useTranslation } from 'react-i18next';
+import { userAction, userAuthenticatedAction } from '@truckmitr/src/redux/actions/user.action';
 import { Space } from '@truckmitr/src/app/components';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
+import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/src/utils/config';
 import ImagePicker from 'react-native-image-crop-picker';
 import FastImage from 'react-native-fast-image';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -48,8 +49,8 @@ const { width } = Dimensions.get('window');
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 const SHIPPER_STEPS = [
-    { id: 'verification', title: 'KYC & Business Verification', subtitle: 'Mandatory PAN + Optional GST' },
-    { id: 'business_details', title: 'Business Details', subtitle: 'Business scale and activity' },
+    { id: 'verification', title: 'Business Verification', subtitle: 'Verify your business details' },
+    { id: 'business_details', title: 'Business Operations', subtitle: 'Tell us about your logistics needs' },
 ];
 
 const STATES = [
@@ -65,17 +66,26 @@ const STATES = [
 ];
 
 const YEARS_IN_BUSINESS = [
-    { label: '0–1 Years', value: '0-1' },
-    { label: '1–3 Years', value: '1-3' },
-    { label: '3–5 Years', value: '3-5' },
-    { label: '5+ Years', value: '5+' },
+    { label: '0-1 Years', value: '0-1' },
+    { label: '1-3 Years', value: '1-3' },
+    { label: '3-5 Years', value: '3-5' },
+    { label: '5-10 Years', value: '5-10' },
+    { label: '10-20 Years', value: '10-20' },
+    { label: '20+ Years', value: '20+' },
 ];
 
 const LOAD_VOLUME = [
-    { label: '1–5 Loads', value: '1-5' },
-    { label: '6–15 Loads', value: '6-15' },
-    { label: '16–30 Loads', value: '16-30' },
-    { label: '30+ Loads', value: '30+' },
+    { label: '1-100 T', value: '1-100 T' },
+    { label: '101-200 T', value: '101-200 T' },
+    { label: '201-300 T', value: '201-300 T' },
+    { label: '301-400 T', value: '301-400 T' },
+    { label: '401-500 T', value: '401-500 T' },
+    { label: '501-600 T', value: '501-600 T' },
+    { label: '601-700 T', value: '601-700 T' },
+    { label: '701-800 T', value: '701-800 T' },
+    { label: '801-900 T', value: '801-900 T' },
+    { label: '901-1000 T', value: '901-1000 T' },
+    { label: '1000+ T', value: '1000+ T' },
 ];
 
 const COMPANY_TYPES = [
@@ -84,6 +94,8 @@ const COMPANY_TYPES = [
     { label: 'Private Limited', value: 'Private Limited' },
     { label: 'LLP', value: 'LLP' },
     { label: 'Public Limited', value: 'Public Limited' },
+    { label: 'One Person Company', value: 'One Person Company' },
+    { label: 'Section 8 Company', value: 'Section 8 Company' },
     { label: 'Other', value: 'Other' },
 ];
 
@@ -129,13 +141,12 @@ const PillOptions = ({ options, value, onSelect }: { options: any[], value: stri
 );
 
 export default function ProfileCompletionShipper() {
-    const { t } = useTranslation();
     const dispatch = useDispatch();
     const colors = useColor();
     const { responsiveHeight } = useResponsiveScale();
     const safeAreaInsets = useSafeAreaInsets();
     const navigation = useNavigation<NavigatorProp>();
-    const { user, userEdit } = useSelector((state: any) => state?.user);
+    const { user } = useSelector((state: any) => state?.user);
 
     const [currentStep, setCurrentStep] = useState(0);
     const [finishing, setFinishing] = useState(false);
@@ -143,11 +154,48 @@ export default function ProfileCompletionShipper() {
     // Photo Modal
     const [photoModal, setPhotoModal] = useState<{ visible: boolean, field: string | null }>({ visible: false, field: null });
 
+    // Local Form Data State
+    const [formData, setFormData] = useState<any>({
+        email: '',
+        mobile: '',
+        pincode: '',
+        city: '',
+        state: '',
+        primaryContactName: '',
+        primaryMobile: '',
+        primaryEmail: '',
+        yearsInBusiness: '',
+        monthlyLoadVolume: '',
+        companyRegType: '',
+        companyName: '',
+        panNumber: '',
+        aadharNumber: '',
+        gstNumber: '',
+        legalName: '',
+        address: '',
+        dob: '',
+        profilePhoto: '',
+    });
+
     // Local UI State
     const [showSecondaryContact, setShowSecondaryContact] = useState(false);
     const [showPOC, setShowPOC] = useState(false);
     const [gstApplicable, setGstApplicable] = useState(false);
     const [dobOpen, setDobOpen] = useState(false);
+
+    // PAN Verification State
+    const [panVerifying, setPanVerifying] = useState(false);
+    const [panVerified, setPanVerified] = useState(false);
+    const [panVerifyError, setPanVerifyError] = useState<string | null>(null);
+    const [panOrgName, setPanOrgName] = useState('');
+    const [panIncorporationDate, setPanIncorporationDate] = useState('');
+
+    // GST Verification State
+    const [gstVerifying, setGstVerifying] = useState(false);
+    const [gstVerified, setGstVerified] = useState(false);
+    const [gstVerifyError, setGstVerifyError] = useState<string | null>(null);
+    const [gstCompanyName, setGstCompanyName] = useState('');
+    const [gstRegisteredAddress, setGstRegisteredAddress] = useState('');
 
     // State Picker State
     const [stateModalVisible, setStateModalVisible] = useState(false);
@@ -191,10 +239,10 @@ export default function ProfileCompletionShipper() {
         if (user) {
             const updates: any = {};
             if (user.mobile) updates.mobile = user.mobile;
-            if (user.email && !userEdit?.email) updates.email = user.email;
+            if (user.email && !formData.email) updates.email = user.email;
 
             if (Object.keys(updates).length > 0) {
-                updateUser(updates);
+                updateFormData(updates);
             }
         }
     }, [user]);
@@ -204,13 +252,12 @@ export default function ProfileCompletionShipper() {
         transform: [{ translateX: contentTranslateX.value }]
     }));
 
-    // Helper to update Redux safely
-    const updateUser = (key: string | object, value?: any) => {
-        const currentData = userEdit || {};
+    // Helper to update local form data
+    const updateFormData = (key: string | object, value?: any) => {
         if (typeof key === 'string') {
-            dispatch(userEditAction({ ...currentData, [key]: value }));
+            setFormData((prev: any) => ({ ...prev, [key]: value }));
         } else {
-            dispatch(userEditAction({ ...currentData, ...key }));
+            setFormData((prev: any) => ({ ...prev, ...key }));
         }
     };
 
@@ -229,7 +276,7 @@ export default function ProfileCompletionShipper() {
                 : await ImagePicker.openPicker(options);
 
             if (image.path) {
-                updateUser(photoModal.field, image.path);
+                updateFormData(photoModal.field, image.path);
                 setPhotoModal({ visible: false, field: null });
             }
         } catch (error: any) {
@@ -242,32 +289,115 @@ export default function ProfileCompletionShipper() {
         }
     };
 
+    // PAN Verification Handler
+    const verifyPan = async () => {
+        const pan = formData.panNumber?.trim();
+
+        if (!pan || pan.length !== 10) {
+            showToast('Please enter your 10-digit PAN number');
+            return;
+        }
+        const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+        if (!panPattern.test(pan)) {
+            showToast('Invalid PAN format (e.g., ABCDE1234F)');
+            return;
+        }
+
+        try {
+            setPanVerifying(true);
+            setPanVerifyError(null);
+
+            const response = await axiosInstance.post(END_POINTS.SHIPPER_VERIFY_PAN, {
+                pan_number: pan,
+            });
+
+            const data = response?.data;
+
+            if (data?.status === 'success' && data?.result === 'MATCHED') {
+                const orgName = data?.org_name || data?.full_result?.organisation_name || '';
+                const incDate = data?.full_result?.organisation_incorporate_date || '';
+                setPanOrgName(orgName.trim());
+                setPanIncorporationDate(incDate);
+                setPanVerified(true);
+                if (orgName) {
+                    updateFormData('companyName', orgName.trim());
+                }
+                showToast('PAN verified successfully ✅');
+            } else {
+                const msg = data?.message || 'PAN verification failed';
+                setPanVerifyError(msg);
+                showToast(msg);
+            }
+        } catch (err: any) {
+            const msg = err?.response?.data?.message || 'Verification failed. Please check your PAN.';
+            setPanVerifyError(msg);
+            showToast(msg);
+        } finally {
+            setPanVerifying(false);
+        }
+    };
+
+    // GST Verification Handler — auto-triggered at 15 characters
+    const verifyGst = async (gstin: string) => {
+        if (gstin.length !== 15) return;
+        setGstVerifying(true);
+        setGstVerified(false);
+        setGstVerifyError(null);
+        setGstCompanyName('');
+        setGstRegisteredAddress('');
+        try {
+            const response = await axiosInstance.post(END_POINTS.SHIPPER_VERIFY_GST, { gstin });
+            const data = response?.data;
+            if (data?.status === 'success') {
+                const name = data?.c_name || data?.full_result?.legal_name || '';
+                const address = data?.full_result?.primary_business_address?.registered_address || '';
+                setGstCompanyName(name);
+                setGstRegisteredAddress(address);
+                updateFormData({ companyName: name, address: address });
+                setGstVerified(true);
+                showToast('GST Verified Successfully');
+            } else {
+                setGstVerifyError(data?.message || 'GST verification failed');
+            }
+        } catch (error: any) {
+            console.error('GST verify error:', error);
+            setGstVerifyError(error?.response?.data?.message || 'Unable to verify GST. Please try again.');
+        } finally {
+            setGstVerifying(false);
+        }
+    };
+
     const handleNext = () => {
         const step = STEPS[currentStep];
 
         // Debugging
         console.log('Current Step:', step.id);
-        console.log('UserEdit Data:', JSON.stringify(userEdit));
+        console.log('FormData:', JSON.stringify(formData));
 
 
         if (step.id === 'business_details') {
-            if (!userEdit?.yearsInBusiness || !userEdit?.monthlyLoadVolume) {
-                showToast('Please select business details');
+            if (!formData.yearsInBusiness || !formData.monthlyLoadVolume) {
+                showToast('Please select years in business and load volume');
                 return;
             }
         }
         if (step.id === 'verification') {
-            if (!userEdit?.companyRegType) {
-                showToast('Please select Company Registration Type');
+            if (!formData.companyRegType) {
+                showToast('Please select company registration type');
                 return;
             }
-            if (!userEdit?.panNumber) {
-                showToast('Please complete mandatory PAN details');
+            if (!formData.panNumber) {
+                showToast('Please enter and verify your PAN');
                 return;
             }
 
-            if (gstApplicable && (!userEdit?.gstNumber)) {
-                showToast('Please complete GST details');
+            if (!panVerified) {
+                showToast('Please verify your PAN number first');
+                return;
+            }
+
+            if (gstApplicable && (!formData.gstNumber)) {
+                showToast('Please enter your GST number');
                 return;
             }
         }
@@ -282,14 +412,50 @@ export default function ProfileCompletionShipper() {
         }
     };
 
-    const submitProfile = () => {
+    const submitProfile = async () => {
         setFinishing(true);
-        // Simulator API Call
-        setTimeout(() => {
+        try {
+            const apiPayload = new FormData();
+            apiPayload.append('company_name', formData.companyName || '');
+            apiPayload.append('company_registration_type', formData.companyRegType || '');
+            apiPayload.append('years_in_business', formData.yearsInBusiness || '');
+            apiPayload.append('shipper_expected_load', formData.monthlyLoadVolume || '');
+            apiPayload.append('pincode', formData.pincode || '');
+            apiPayload.append('dob', formData.dob || '');
+            apiPayload.append('no_second_poc', !showPOC ? '1' : '0');
+            apiPayload.append('name_poc', showPOC ? (formData.primaryContactName || '') : '');
+            apiPayload.append('phone_poc', showPOC ? (formData.primaryMobile || '') : '');
+            apiPayload.append('gst_not_applicable', gstApplicable ? '1' : '0');
+            apiPayload.append('gst_number', gstApplicable ? (formData.gstNumber || '') : '');
+            apiPayload.append('legal_name', formData.legalName || '');
+            apiPayload.append('address', formData.address || '');
+            apiPayload.append('pan_number', formData.panNumber || '');
+            apiPayload.append('aadhar_number', formData.aadharNumber || '');
+
+            console.log('Shipper Profile Payload:', apiPayload);
+
+            const response: any = await axiosInstance.post(END_POINTS.SHIPPER_PROFILE_UPDATE, apiPayload);
+
+            if (response?.data?.success) {
+                // Refresh profile data
+                const profileResponse: any = await axiosInstance.get(END_POINTS.GET_PROFILE);
+                if (profileResponse?.data) {
+                    dispatch(userAction(profileResponse.data));
+                    dispatch(userAuthenticatedAction(true));
+                }
+
+                showToast('Profile submitted successfully');
+                navigation.navigate(STACKS.SHIPPER_HOME as any);
+            } else {
+                showToast(response?.data?.message || 'Error submitting profile');
+            }
+        } catch (err: any) {
+            console.error('Shipper Profile Error:', err?.response?.data || err.message);
+            const errorMessage = err?.response?.data?.message || 'Error submitting profile';
+            showToast(errorMessage);
+        } finally {
             setFinishing(false);
-            showToast('Profile Submitted for Verification!');
-            // navigation.navigate(STACKS.SHIPPER_HOME as any);
-        }, 1500);
+        }
     };
 
     // --- Renderers ---
@@ -299,12 +465,12 @@ export default function ProfileCompletionShipper() {
             <Text style={styles.classicLabel}>Email ID <Text style={styles.optionalText}>(Optional)</Text></Text>
             <TextInput
                 style={styles.classicInput}
-                placeholder="yourname@company.com"
+                placeholder="Ex: company@example.com"
                 placeholderTextColor="#999"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                value={userEdit?.email}
-                onChangeText={(text) => updateUser('email', text)}
+                value={formData.email}
+                onChangeText={(text) => updateFormData('email', text)}
             />
 
             <Space height={16} />
@@ -320,8 +486,8 @@ export default function ProfileCompletionShipper() {
                     placeholderTextColor="#999"
                     keyboardType="phone-pad"
                     maxLength={10}
-                    value={userEdit?.mobile}
-                    onChangeText={!user?.mobile ? (text) => updateUser('mobile', text.replace(/[^0-9]/g, '')) : undefined}
+                    value={formData.mobile}
+                    onChangeText={!user?.mobile ? (text) => updateFormData('mobile', text.replace(/[^0-9]/g, '')) : undefined}
                     editable={!user?.mobile}
                 />
             </View>
@@ -330,11 +496,11 @@ export default function ProfileCompletionShipper() {
             <MandatoryLabel text="Pincode" />
             <TextInput
                 style={styles.classicInput}
-                placeholder="Enter 6 digit Pincode"
+                placeholder="Enter 6-digit pincode"
                 placeholderTextColor="#999"
                 keyboardType="number-pad"
                 maxLength={6}
-                value={userEdit?.pincode}
+                value={formData.pincode}
                 onChangeText={(text) => {
                     const pincode = text.replace(/[^0-9]/g, '');
                     const updates: any = { pincode };
@@ -353,7 +519,7 @@ export default function ProfileCompletionShipper() {
                         updates.state = state;
                         showToast(`Location fetched: ${city}, ${state}`);
                     }
-                    updateUser(updates);
+                    updateFormData(updates);
                 }}
             />
 
@@ -365,8 +531,8 @@ export default function ProfileCompletionShipper() {
                         style={styles.classicInput}
                         placeholder="Enter City"
                         placeholderTextColor="#999"
-                        value={userEdit?.city}
-                        onChangeText={(text) => updateUser('city', text)}
+                        value={formData.city}
+                        onChangeText={(text) => updateFormData('city', text)}
                     />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -389,9 +555,9 @@ export default function ProfileCompletionShipper() {
                         }}>
                         <Text style={{
                             fontSize: 16,
-                            color: userEdit?.state ? '#333' : '#999',
+                            color: formData.state ? '#333' : '#999',
                         }}>
-                            {userEdit?.state || "Select State"}
+                            {formData.state || "Select State"}
                         </Text>
                         <Ionicons name="chevron-down" size={20} color="#666" />
                     </TouchableOpacity>
@@ -407,43 +573,43 @@ export default function ProfileCompletionShipper() {
                     trackColor={{ false: "#767577", true: "#246BFD" }}
                     thumbColor={showPOC ? "#fff" : "#f4f3f4"}
                 />
-                <Text style={{ marginLeft: 10, fontSize: 16, fontWeight: '600', color: '#333' }}>Add Point of Contact (Optional)</Text>
+                <Text style={{ marginLeft: 10, fontSize: 16, fontWeight: '600', color: '#333' }}>Add Secondary Contact Person?</Text>
             </View>
 
             {showPOC && (
                 <Animated.View entering={FadeIn} style={styles.cardContainer}>
-                    <Text style={styles.sectionHeader}>Primary Contact Details</Text>
+                    <Text style={styles.sectionHeader}>Primary Contact Person</Text>
                     <Space height={12} />
 
                     <Text style={styles.classicLabel}>Contact Person Name</Text>
                     <TextInput
                         style={styles.classicInput}
-                        placeholder="Enter Name"
+                        placeholder="Enter contact name"
                         placeholderTextColor="#999"
-                        value={userEdit?.primaryContactName}
-                        onChangeText={text => updateUser('primaryContactName', text)}
+                        value={formData.primaryContactName}
+                        onChangeText={text => updateFormData('primaryContactName', text)}
                     />
                     <Space height={12} />
                     <Text style={styles.classicLabel}>Mobile Number</Text>
                     <TextInput
                         style={styles.classicInput}
-                        placeholder="Mobile Number"
+                        placeholder="Enter mobile number"
                         placeholderTextColor="#999"
                         keyboardType="phone-pad"
                         maxLength={10}
-                        value={userEdit?.primaryMobile}
-                        onChangeText={text => updateUser('primaryMobile', text.replace(/[^0-9]/g, ''))}
+                        value={formData.primaryMobile}
+                        onChangeText={text => updateFormData('primaryMobile', text.replace(/[^0-9]/g, ''))}
                     />
                     <Space height={12} />
                     <Text style={styles.classicLabel}>Email ID</Text>
                     <TextInput
                         style={styles.classicInput}
-                        placeholder="Email ID"
+                        placeholder="Enter email address"
                         placeholderTextColor="#999"
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        value={userEdit?.primaryEmail}
-                        onChangeText={text => updateUser('primaryEmail', text)}
+                        value={formData.primaryEmail}
+                        onChangeText={text => updateFormData('primaryEmail', text)}
                     />
                 </Animated.View>
             )}
@@ -454,19 +620,19 @@ export default function ProfileCompletionShipper() {
 
     const renderBusinessDetails = () => (
         <View style={styles.stepContainer}>
-            <MandatoryLabel text="Years in Business" />
+            <MandatoryLabel text="How many years have you been in business?" />
             <PillOptions
                 options={YEARS_IN_BUSINESS}
-                value={userEdit?.yearsInBusiness}
-                onSelect={val => updateUser('yearsInBusiness', val)}
+                value={formData.yearsInBusiness}
+                onSelect={val => updateFormData('yearsInBusiness', val)}
             />
 
             <Space height={24} />
-            <MandatoryLabel text="Average Monthly Load Volume" />
+            <MandatoryLabel text="Average monthly load volume" />
             <PillOptions
                 options={LOAD_VOLUME}
-                value={userEdit?.monthlyLoadVolume}
-                onSelect={val => updateUser('monthlyLoadVolume', val)}
+                value={formData.monthlyLoadVolume}
+                onSelect={val => updateFormData('monthlyLoadVolume', val)}
             />
         </View>
     );
@@ -474,31 +640,15 @@ export default function ProfileCompletionShipper() {
     const renderVerification = () => (
         <View style={styles.stepContainer}>
 
-            <MandatoryLabel text="Company Registration Type" />
+            <MandatoryLabel text="Are you registered as?" />
             <PillOptions
                 options={COMPANY_TYPES}
-                value={userEdit?.companyRegType}
-                onSelect={val => updateUser('companyRegType', val)}
+                value={formData.companyRegType}
+                onSelect={val => updateFormData('companyRegType', val)}
             />
-
-            <Space height={24} />
-            <Text style={styles.sectionHeader}>PAN Details (Mandatory)</Text>
-            <View style={styles.cardContainer}>
-                <MandatoryLabel text="PAN Number" />
-                <TextInput
-                    style={styles.classicInput}
-                    placeholder="ABCDE1234F"
-                    placeholderTextColor="#999"
-                    autoCapitalize="characters"
-                    maxLength={10}
-                    value={userEdit?.panNumber}
-                    onChangeText={text => updateUser('panNumber', text)}
-                />
-            </View>
-
-            <Space height={24} />
+            <Space height={34} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={styles.sectionHeader}>{gstApplicable ? 'GST Details' : 'GST Details (Optional)'}</Text>
+                <Text style={styles.sectionHeader}>{gstApplicable ? "GST Details" : "Do you have GST Number?"}</Text>
                 <Switch
                     value={gstApplicable}
                     onValueChange={setGstApplicable}
@@ -506,27 +656,214 @@ export default function ProfileCompletionShipper() {
                     thumbColor={gstApplicable ? "#fff" : "#f4f3f4"}
                 />
             </View>
-
             {gstApplicable && (
-                <Animated.View entering={FadeIn} style={styles.cardContainer}>
+                <Animated.View entering={FadeIn} style={[
+                    styles.cardContainer,
+                    gstVerified && {
+                        borderColor: '#22C55E',
+                        borderWidth: 1.5,
+                        backgroundColor: '#F0FDF4',
+                    }
+                ]}>
+                    {/* GST Verified Badge */}
+                    {gstVerified && (
+                        <Animated.View entering={FadeIn} style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: '#DCFCE7',
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            borderRadius: 10,
+                            marginBottom: 16,
+                            gap: 8,
+                        }}>
+                            <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                            <Text style={{ color: '#16A34A', fontWeight: '700', fontSize: 14 }}>GST Verified</Text>
+                        </Animated.View>
+                    )}
+
                     <MandatoryLabel text="GST Number" />
-                    <TextInput
-                        style={styles.classicInput}
-                        placeholder="GST Number"
-                        placeholderTextColor="#999"
-                        autoCapitalize="characters"
-                        value={userEdit?.gstNumber}
-                        onChangeText={text => updateUser('gstNumber', text)}
-                    />
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <TextInput
+                            style={[
+                                styles.classicInput,
+                                { flex: 1 },
+                                gstVerified && { backgroundColor: '#F0FDF4', color: '#333' }
+                            ]}
+                            placeholder="Enter 15-digit GST number"
+                            placeholderTextColor="#999"
+                            maxLength={15}
+                            autoCapitalize="characters"
+                            editable={!gstVerified}
+                            value={formData.gstNumber}
+                            onChangeText={text => {
+                                const cleaned = text.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                                updateFormData('gstNumber', cleaned);
+                                if (gstVerified) {
+                                    setGstVerified(false);
+                                    setGstVerifyError(null);
+                                    setGstCompanyName('');
+                                    setGstRegisteredAddress('');
+                                }
+                                if (cleaned.length === 15) {
+                                    verifyGst(cleaned);
+                                }
+                            }}
+                        />
+                        {gstVerifying && (
+                            <ActivityIndicator size="small" color="#246BFD" style={{ marginLeft: 10 }} />
+                        )}
+                    </View>
+
+                    {/* GST Error Message */}
+                    {gstVerifyError && (
+                        <Animated.View entering={FadeIn} style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            marginTop: 10,
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            backgroundColor: '#FEF2F2',
+                            borderRadius: 10,
+                            gap: 8,
+                        }}>
+                            <Ionicons name="alert-circle" size={18} color="#DC2626" />
+                            <Text style={{ color: '#DC2626', fontSize: 13, flex: 1 }}>{gstVerifyError}</Text>
+                        </Animated.View>
+                    )}
+
                     <Space height={12} />
                     <Text style={[styles.classicLabel, { color: '#666' }]}>Company Name (Auto-fetched)</Text>
-                    <TextInput style={[styles.classicInput, { backgroundColor: '#f5f5f5' }]} editable={false} value={userEdit?.gstNumber ? "TruckMitr Logistics Ltd" : ""} />
+                    <View style={[styles.classicInput, { backgroundColor: '#f5f5f5', justifyContent: 'center' }]}>
+                        <Text style={{ fontSize: 15, color: gstCompanyName ? '#333' : '#bbb' }}>
+                            {gstCompanyName || 'Will auto-fill after GST verification'}
+                        </Text>
+                    </View>
 
                     <Space height={12} />
                     <Text style={[styles.classicLabel, { color: '#666' }]}>Registered Address (Auto-fetched)</Text>
-                    <TextInput style={[styles.classicInput, { backgroundColor: '#f5f5f5' }]} editable={false} value={userEdit?.gstNumber ? "123, Tech Park, Mumbai" : ""} />
+                    <View style={[styles.classicInput, { backgroundColor: '#f5f5f5', height: 'auto', minHeight: 60, justifyContent: 'flex-start', paddingTop: 12, paddingBottom: 12 }]}>
+                        <Text style={{ fontSize: 15, color: gstRegisteredAddress ? '#333' : '#bbb', lineHeight: 20, flexShrink: 1 }}>
+                            {gstRegisteredAddress || 'Will auto-fill after GST verification'}
+                        </Text>
+                    </View>
+
+
                 </Animated.View>
             )}
+            {/* <Space height={24} /> */}
+            <Text style={styles.sectionHeader}>PAN Details</Text>
+            <View style={[
+                styles.cardContainer,
+                panVerified && {
+                    borderColor: '#22C55E',
+                    borderWidth: 1.5,
+                    backgroundColor: '#F0FDF4',
+                }
+            ]}>
+                {/* Verified Badge */}
+                {panVerified && (
+                    <Animated.View entering={FadeIn} style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#DCFCE7',
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: 10,
+                        marginBottom: 16,
+                        gap: 8,
+                    }}>
+                        <Ionicons name="checkmark-circle" size={20} color="#16A34A" />
+                        <Text style={{ color: '#16A34A', fontWeight: '700', fontSize: 14 }}>PAN Verified</Text>
+                    </Animated.View>
+                )}
+
+                <MandatoryLabel text="PAN Number" />
+                <TextInput
+                    style={[
+                        styles.classicInput,
+                        panVerified && { backgroundColor: '#F0FDF4', color: '#333' }
+                    ]}
+                    placeholder="ABCDE1234F"
+                    placeholderTextColor="#999"
+                    autoCapitalize="characters"
+                    maxLength={10}
+                    editable={!panVerified}
+                    value={formData.panNumber}
+                    onChangeText={text => {
+                        updateFormData('panNumber', text.replace(/[^a-zA-Z0-9]/g, '').toUpperCase());
+                        if (panVerified) {
+                            setPanVerified(false);
+                            setPanVerifyError(null);
+                        }
+                    }}
+                />
+
+                {/* Error Message */}
+                {panVerifyError && (
+                    <Animated.View entering={FadeIn} style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginTop: 10,
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        backgroundColor: '#FEF2F2',
+                        borderRadius: 10,
+                        gap: 8,
+                    }}>
+                        <Ionicons name="alert-circle" size={18} color="#DC2626" />
+                        <Text style={{ color: '#DC2626', fontSize: 13, flex: 1 }}>{panVerifyError}</Text>
+                    </Animated.View>
+                )}
+
+                {/* PAN Verified Details */}
+                {panVerified && (
+                    <Animated.View entering={FadeIn} style={{ marginTop: 14, gap: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Ionicons name="business-outline" size={16} color="#16A34A" />
+                            <Text style={{ fontSize: 14, color: '#666' }}>Organization:</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B', flex: 1 }}>
+                                {panOrgName || '—'}
+                            </Text>
+                        </View>
+                    </Animated.View>
+                )}
+
+                {/* Verify / Re-verify Button */}
+                <Space height={16} />
+                {!panVerified && (
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={verifyPan}
+                        disabled={panVerifying}
+                        style={{
+                            backgroundColor: panVerifying ? '#93B5FD' : '#246BFD',
+                            height: 50,
+                            borderRadius: 14,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                            elevation: 3,
+                            shadowColor: '#246BFD',
+                            shadowOpacity: 0.25,
+                            shadowRadius: 8,
+                            shadowOffset: { width: 0, height: 3 },
+                        }}
+                    >
+                        {panVerifying ? (
+                            <ActivityIndicator color="white" size="small" />
+                        ) : (
+                            <Ionicons name="shield-checkmark-outline" size={20} color="white" />
+                        )}
+                        <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>
+                            {panVerifying ? "Verifying..." : "Verify PAN"}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+
         </View>
     );
 
@@ -547,8 +884,8 @@ export default function ProfileCompletionShipper() {
                         borderColor: '#246BFD',
                         overflow: 'hidden'
                     }}>
-                        {userEdit?.profilePhoto ? (
-                            <FastImage source={{ uri: userEdit.profilePhoto }} style={{ width: '100%', height: '100%' }} />
+                        {formData.profilePhoto ? (
+                            <FastImage source={{ uri: formData.profilePhoto }} style={{ width: '100%', height: '100%' }} />
                         ) : (
                             <Ionicons name="camera" size={50} color="#246BFD" />
                         )}
@@ -570,7 +907,7 @@ export default function ProfileCompletionShipper() {
                     </View>
                 </TouchableOpacity>
                 <Text style={{ marginTop: 20, fontSize: 18, fontWeight: '700', color: '#1E293B' }}>Upload Profile Image</Text>
-                <Text style={{ marginTop: 8, fontSize: 14, color: '#64748B', textAlign: 'center' }}>Company logo or representative photo</Text>
+                <Text style={{ marginTop: 8, fontSize: 14, color: '#64748B', textAlign: 'center' }}>Please upload a clear face photo</Text>
             </View>
         </View>
     );
@@ -601,8 +938,8 @@ export default function ProfileCompletionShipper() {
             </View>
 
             <View style={styles.titleContainer}>
-                <Text style={styles.title}>{t(STEPS[currentStep]?.title)}</Text>
-                <Text style={styles.subtitle}>{t(STEPS[currentStep]?.subtitle)}</Text>
+                <Text style={styles.title}>{STEPS[currentStep]?.title}</Text>
+                <Text style={styles.subtitle}>{STEPS[currentStep]?.subtitle}</Text>
             </View>
 
             <KeyboardAvoidingView
@@ -740,7 +1077,7 @@ export default function ProfileCompletionShipper() {
                                     color: '#333',
                                     padding: 0,
                                 }}
-                                placeholder={'Search state...'}
+                                placeholder="Search state..."
                                 placeholderTextColor='rgba(0,0,0,0.4)'
                                 value={stateSearchQuery}
                                 onChangeText={setStateSearchQuery}
@@ -781,12 +1118,12 @@ export default function ProfileCompletionShipper() {
                             </View>
                         )}
                         renderItem={({ item }) => {
-                            const isSelected = item.value === userEdit?.state;
+                            const isSelected = item.value === formData.state;
                             return (
                                 <TouchableOpacity
                                     activeOpacity={0.7}
                                     onPress={() => {
-                                        updateUser('state', item.value);
+                                        updateFormData('state', item.value);
                                         setStateModalVisible(false);
                                         setStateSearchQuery('');
                                     }}
