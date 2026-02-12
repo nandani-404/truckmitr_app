@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Polyline, Line } from 'react-native-svg';
 import axiosInstance from 'src/utils/config/axiosInstance';
 import { END_POINTS } from 'src/utils/config';
-import { useNavigation } from '@react-navigation/native';
+
 
 const { width } = Dimensions.get('window');
 
@@ -63,8 +63,13 @@ interface LoadHistoryItem {
     payment_date: string | null;
 }
 
-const EarningsScreen: React.FC = () => {
-    const navigation = useNavigation();
+interface EarningsScreenProps {
+    onBack?: () => void;
+    onTransactionPress: (id: string) => void;
+}
+
+const EarningsScreen: React.FC<EarningsScreenProps> = ({ onBack, onTransactionPress }) => {
+
     const [stats, setStats] = useState<PaymentStats | null>(null);
     const [history, setHistory] = useState<LoadHistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -132,9 +137,13 @@ const EarningsScreen: React.FC = () => {
     const renderHeader = () => (
         <View style={s.headerContainer}>
             <View style={s.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-                    <BackIcon />
-                </TouchableOpacity>
+                {onBack ? (
+                    <TouchableOpacity onPress={onBack} style={s.backBtn}>
+                        <BackIcon />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 40 }} />
+                )}
                 <Text style={s.headerTitle}>Earnings & History</Text>
                 <View style={{ width: 40 }} />
             </View>
@@ -261,7 +270,7 @@ const EarningsScreen: React.FC = () => {
 
                 {/* Action Buttons */}
                 <View style={s.actionRow}>
-                    <TouchableOpacity style={s.btnOutline}>
+                    <TouchableOpacity style={s.btnOutline} onPress={() => onTransactionPress(item.load_id)}>
                         <Text style={s.btnOutlineText}>View Details ›</Text>
                     </TouchableOpacity>
 

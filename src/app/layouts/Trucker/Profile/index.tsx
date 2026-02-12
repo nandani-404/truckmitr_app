@@ -370,7 +370,12 @@ const CardContainer: React.FC<CardContainerProps> = ({ children }) => {
     );
 };
 
-export default function TruckerProfileScreen() {
+interface TruckerProfileScreenProps {
+    onBack?: () => void;
+    onNavigate?: (screen: string) => void;
+}
+
+export default function TruckerProfileScreen({ onBack, onNavigate }: TruckerProfileScreenProps = {}) {
     const { t, i18n } = useTranslation();
     const dispatch = useDispatch()
     useStatusBarStyle('dark-content')

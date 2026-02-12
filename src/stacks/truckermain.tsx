@@ -32,10 +32,7 @@ import ProfileOverview from '../app/layouts/main/profile-overview';
 import ProfileEditNew from '../app/layouts/main/profile-edit-new';
 
 // Import Trucker Auth screens (Profile Completion Flow)
-import TruckerSignupScreen from '../app/layouts/Trucker/Trucker_auth/TruckerSignup/index';
-import VehicleInfoScreen from '../app/layouts/Trucker/Trucker_auth/VehicleInfo/index';
-import TruckerDocumentUploadScreen from '../app/layouts/Trucker/Trucker_auth/DocumentUpload/index';
-import VerificationStatusScreen from '../app/layouts/Trucker/Trucker_auth/VerificationStatus/index';
+
 
 // Trucker-specific screen names (independent namespace)
 export const TRUCKER_STACKS = {
@@ -214,49 +211,49 @@ const ProfileWrapper = () => {
 };
 
 // --- Profile Completion Flow Wrappers ---
-const ProfileSignupWrapper = () => {
-    const navigation = useNavigation<any>();
-    return (
-        <TruckerSignupScreen
-            onBack={() => navigation.goBack()}
-            onNext={() => navigation.navigate(TRUCKER_STACKS.PROFILE_VEHICLE_INFO)}
-        />
-    );
-};
+// const ProfileSignupWrapper = () => {
+//     const navigation = useNavigation<any>();
+//     return (
+//         <TruckerSignupScreen
+//             onBack={() => navigation.goBack()}
+//             onNext={() => navigation.navigate(TRUCKER_STACKS.PROFILE_VEHICLE_INFO)}
+//         />
+//     );
+// };
 
-const ProfileVehicleInfoWrapper = () => {
-    const navigation = useNavigation<any>();
-    return (
-        <VehicleInfoScreen
-            onBack={() => navigation.goBack()}
-            onComplete={() => navigation.navigate(TRUCKER_STACKS.PROFILE_DOCUMENT_UPLOAD)}
-        />
-    );
-};
+// const ProfileVehicleInfoWrapper = () => {
+//     const navigation = useNavigation<any>();
+//     return (
+//         <VehicleInfoScreen
+//             onBack={() => navigation.goBack()}
+//             onComplete={() => navigation.navigate(TRUCKER_STACKS.PROFILE_DOCUMENT_UPLOAD)}
+//         />
+//     );
+// };
 
-const ProfileDocumentUploadWrapper = () => {
-    const navigation = useNavigation<any>();
-    return (
-        <TruckerDocumentUploadScreen
-            onBack={() => navigation.goBack()}
-            onComplete={() => navigation.navigate(TRUCKER_STACKS.PROFILE_VERIFICATION_STATUS)}
-        />
-    );
-};
+// const ProfileDocumentUploadWrapper = () => {
+//     const navigation = useNavigation<any>();
+//     return (
+//         <TruckerDocumentUploadScreen
+//             onBack={() => navigation.goBack()}
+//             onComplete={() => navigation.navigate(TRUCKER_STACKS.PROFILE_VERIFICATION_STATUS)}
+//         />
+//     );
+// };
 
-const ProfileVerificationStatusWrapper = () => {
-    const navigation = useNavigation<any>();
-    return (
-        <VerificationStatusScreen
-            status="pending"
-            onContinue={() => {
-                // Navigate back to the profile (pop the entire completion flow)
-                navigation.navigate(TRUCKER_STACKS.PROFILE);
-            }}
-            onRetry={() => navigation.goBack()}
-        />
-    );
-};
+// const ProfileVerificationStatusWrapper = () => {
+//     const navigation = useNavigation<any>();
+//     return (
+//         <VerificationStatusScreen
+//             status="pending"
+//             onContinue={() => {
+//                 // Navigate back to the profile (pop the entire completion flow)
+//                 navigation.navigate(TRUCKER_STACKS.PROFILE);
+//             }}
+//             onRetry={() => navigation.goBack()}
+//         />
+//     );
+// };
 
 export default function TruckerMain() {
     return (
@@ -352,7 +349,7 @@ export default function TruckerMain() {
             />
 
             {/* Profile Completion Flow */}
-            <Stack.Screen
+            {/* <Stack.Screen
                 name={TRUCKER_STACKS.PROFILE_SIGNUP}
                 component={ProfileSignupWrapper}
             />
@@ -367,7 +364,7 @@ export default function TruckerMain() {
             <Stack.Screen
                 name={TRUCKER_STACKS.PROFILE_VERIFICATION_STATUS}
                 component={ProfileVerificationStatusWrapper}
-            />
+            /> */}
         </Stack.Navigator>
     );
 }

@@ -115,6 +115,8 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                 // Map API response to local state
                 setTrip({
                     id: data.load_id,
+                    trucker_id: data.trucker_id,
+                    shipper_id: data.shipper_id,
                     origin: data.origin,
                     destination: data.destination,
                     vehicle: data.vehicle_number || 'Not Assigned',
@@ -126,7 +128,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                     driver: {
                         name: data.driver_name || 'Not Assigned',
                         phone: data.driver_phone || '',
-                        dl: ''
+                        dl: data.dl_number || ''
                     },
                     material: data.material_name,
                     weight: data.material_weight
@@ -193,22 +195,50 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
         }
     };
 
-    const handleAssignVehicle = () => {
+    const handleAssignVehicle = async () => {
         if (!selectedVehicle || !driverName || !driverPhone) {
             Alert.alert('Incomplete Details', 'Please fill all mandatory fields to assign vehicle.');
             return;
         }
 
-        // Update Trip Data locally
-        setTrip((prev: any) => ({
-            ...prev,
-            vehicle: selectedVehicle,
-            driver: { name: driverName, phone: driverPhone, dl: driverDL }
-        }));
+        if (!trip.trucker_id || !trip.shipper_id) {
+            Alert.alert('Error', 'Trip details incomplete. Please retry.');
+            return;
+        }
 
-        setCurrentStatus(1);
-        setShowAssignVehicleModal(false);
-        // TODO: Call API to assign vehicle
+        try {
+            const payload = {
+                load_id: loadId,
+                trucker_id: trip.trucker_id,
+                shipper_id: trip.shipper_id,
+                vehicle_number: selectedVehicle,
+                driver_name: driverName,
+                dl_number: driverDL,
+                driver_phone: driverPhone
+            };
+
+            console.log('Assigning Vehicle Payload:', payload);
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_UPDATE_VEHICLE_NUMBER, payload);
+
+            if (response.data?.status === 'success') {
+                // Update Trip Data locally
+                setTrip((prev: any) => ({
+                    ...prev,
+                    vehicle: selectedVehicle,
+                    driver: { name: driverName, phone: driverPhone, dl: driverDL }
+                }));
+
+                setCurrentStatus(1);
+                setShowAssignVehicleModal(false);
+                Alert.alert('Success', 'Vehicle Assigned Successfully');
+                fetchTripDetails();
+            } else {
+                Alert.alert('Error', response.data?.message || 'Failed to assign vehicle');
+            }
+        } catch (error) {
+            console.error('Error assigning vehicle:', error);
+            Alert.alert('Error', 'Failed to assign vehicle. Please try again.');
+        }
     };
 
     const handleUpdateLocation = () => {
