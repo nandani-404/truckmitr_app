@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS, BASE_URL } from '@truckmitr/utils/config';
@@ -14,11 +14,14 @@ import {
     Image,
     Animated,
     Alert,
+    ActivityIndicator,
+    RefreshControl,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, G } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { STACKS } from '@truckmitr/stacks/stacks';
+import moment from 'moment';
 // import BottomBarComponent from '../../../../../stacks/tabs/shipper-bottom-bar';
 
 // --- Icons ---
@@ -94,11 +97,38 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.95)).current;
 
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [dashboardData, setDashboardData] = useState<any>(null);
+    const [glanceData, setGlanceData] = useState<any>(null);
+    const [latestLoad, setLatestLoad] = useState<any>(null);
+
     // Calculate progress for ring
     const progress = parseInt(profileCompletion || '0', 10);
     const radius = 33;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+    const fetchHomeData = async (isRefreshing = false) => {
+        if (isRefreshing) setRefreshing(true);
+        else setIsLoading(true);
+
+        try {
+            const response = await axiosInstance.get(END_POINTS.SHIPPER_HOME);
+            console.log("response", response);
+
+            if (response?.data?.success) {
+                setDashboardData(response.data.data.your_dashboard);
+                setGlanceData(response.data.data.today_at_glance);
+                setLatestLoad(response.data.data.latest_load);
+            }
+        } catch (error) {
+            console.error('Error fetching shipper home data:', error);
+        } finally {
+            setIsLoading(false);
+            setRefreshing(false);
+        }
+    };
 
     useEffect(() => {
         // Fetch Material Data
@@ -107,7 +137,6 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                 const response = await axiosInstance.get(END_POINTS.SHIPPER_POST_LOAD_GET);
                 if (response?.data?.success) {
                     const materials = response.data.data.meterial || [];
-                    console.log('Fetched materials:', materials.length);
                     dispatch(setMaterials(materials));
                 }
             } catch (error) {
@@ -116,6 +145,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
         };
 
         getPostLoadData();
+        fetchHomeData();
 
         Animated.parallel([
             Animated.timing(fadeAnim, {
@@ -131,6 +161,32 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
             }),
         ]).start();
     }, []);
+
+    const onRefresh = useCallback(() => {
+        fetchHomeData(true);
+    }, []);
+
+    const formatPrice = (price: any) => {
+        if (!price) return 'Negotiable';
+        const num = parseFloat(price);
+        if (num >= 100000) {
+            return `₹${(num / 100000).toFixed(1)}L`;
+        } else if (num >= 1000) {
+            return `₹${(num / 1000).toFixed(1)}k`;
+        }
+        return `₹${num}`;
+    };
+
+    const extractCity = (location: string) => {
+        if (!location) return '';
+        const parts = location.split(',');
+        return parts[0].trim();
+    };
+
+    const formatDate = (date: string) => {
+        if (!date) return '';
+        return moment(date).format('DD MMM, YYYY');
+    };
 
     const isUnderApproval = shipperKycStatus === '0' || shipperKycStatus === 0 || shipperKycStatus === false;
 
@@ -230,11 +286,18 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                 style={styles.scroll}
                 contentContainerStyle={[
                     styles.scrollContent,
-                    isUnderApproval && { justifyContent: 'center', flexGrow: 1, paddingBottom: 100 }
+                    (isUnderApproval || isLoading) && { justifyContent: 'center', flexGrow: 1, paddingBottom: 100 }
                 ]}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#3b82f6']} />
+                }
             >
-                {isUnderApproval ? (
+                {isLoading && !refreshing ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
+                        <ActivityIndicator size="large" color="#3b82f6" />
+                    </View>
+                ) : isUnderApproval ? (
                     renderApprovalUI()
                 ) : (
                     <>
@@ -299,14 +362,14 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                             contentContainerStyle={styles.statsScrollContent}
                             style={styles.statsScroll}
                         >
-                            <TouchableOpacity style={styles.statCard} onPress={() => onNavigateToLoadDetails?.()}>
+                            <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate(STACKS.SHIPPER_MY_LOADS)}>
                                 <View style={styles.statCardHeader}>
                                     <Text style={styles.statLabel}>Active Loads</Text>
                                     <View style={[styles.statIconBadge, { backgroundColor: '#eff6ff' }]}>
                                         <Text style={styles.statIconText}>📦</Text>
                                     </View>
                                 </View>
-                                <Text style={[styles.statNum, { color: '#3b82f6' }]}>12</Text>
+                                <Text style={[styles.statNum, { color: '#3b82f6' }]}>{dashboardData?.['open-load'] || 0}</Text>
                                 <View style={styles.statChartContainer}>
                                     <Svg width="100%" height="100%" viewBox="0 0 100 40" preserveAspectRatio="none">
                                         <Defs>
@@ -332,7 +395,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                         <Text style={styles.statIconText}>🤝</Text>
                                     </View>
                                 </View>
-                                <Text style={[styles.statNum, { color: '#0284c7' }]}>05</Text>
+                                <Text style={[styles.statNum, { color: '#0284c7' }]}>{dashboardData?.accepted || 0}</Text>
                                 <View style={styles.statBarChartContainer}>
                                     {[18, 26, 20, 32, 24, 38, 34].map((h, i) => (
                                         <View key={i} style={[styles.statBar, { height: h, backgroundColor: '#6366f1' }]} />
@@ -347,7 +410,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                         <Text style={styles.statIconText}>🚚</Text>
                                     </View>
                                 </View>
-                                <Text style={[styles.statNum, { color: '#10b981' }]}>08</Text>
+                                <Text style={[styles.statNum, { color: '#10b981' }]}>{dashboardData?.['in-transit'] || 0}</Text>
                                 <View style={styles.statProgressContainer}>
                                     <Svg width="56" height="56" viewBox="0 0 40 40">
                                         <Circle cx="20" cy="20" r="16" stroke="#f1f5f9" strokeWidth="5" fill="none" />
@@ -363,7 +426,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                         <Text style={styles.statIconText}>📄</Text>
                                     </View>
                                 </View>
-                                <Text style={[styles.statNum, { color: '#f97316' }]}>03</Text>
+                                <Text style={[styles.statNum, { color: '#f97316' }]}>{dashboardData?.['pod-pending'] || 0}</Text>
                                 <View style={styles.statChartContainer}>
                                     <Svg width="100%" height="100%" viewBox="0 0 100 40" preserveAspectRatio="none">
                                         <Path d="M0,15 C10,35 25,35 35,20 C45,5 60,35 75,30 C85,25 90,10 100,18" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
@@ -378,7 +441,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                         <Text style={styles.statIconText}>💰</Text>
                                     </View>
                                 </View>
-                                <Text style={[styles.statNum, { color: '#ef4444' }]}>02</Text>
+                                <Text style={[styles.statNum, { color: '#ef4444' }]}>{dashboardData?.['payment-pending'] || 0}</Text>
                                 <View style={styles.statBarChartContainer}>
                                     {[10, 15, 20, 12, 18, 14, 22].map((h, i) => (
                                         <View key={i} style={[styles.statBar, { height: h, backgroundColor: '#f97316' }]} />
@@ -393,7 +456,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                         <Text style={styles.statIconText}>🎉</Text>
                                     </View>
                                 </View>
-                                <Text style={[styles.statNum, { color: '#14b8a6' }]}>24</Text>
+                                <Text style={[styles.statNum, { color: '#14b8a6' }]}>{dashboardData?.completed || 0}</Text>
                                 <View style={styles.statProgressContainer}>
                                     <Svg width="40" height="40" viewBox="0 0 40 40">
                                         <Circle cx="20" cy="20" r="16" stroke="#e5e7eb" strokeWidth="4" fill="none" />
@@ -429,7 +492,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                     <View style={[styles.glanceIconCircle, { backgroundColor: '#dbeafe' }]}>
                                         <Text style={styles.glanceEmoji}>🚚</Text>
                                     </View>
-                                    <Text style={[styles.glanceValue, { color: '#1e40af' }]}>4</Text>
+                                    <Text style={[styles.glanceValue, { color: '#1e40af' }]}>{glanceData?.picked || 0}</Text>
                                     <Text style={styles.glanceLabel}>Picked</Text>
                                 </View>
 
@@ -438,7 +501,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                     <View style={[styles.glanceIconCircle, { backgroundColor: '#dcfce7' }]}>
                                         <Text style={styles.glanceEmoji}>✅</Text>
                                     </View>
-                                    <Text style={[styles.glanceValue, { color: '#166534' }]}>2</Text>
+                                    <Text style={[styles.glanceValue, { color: '#166534' }]}>{glanceData?.delivered || 0}</Text>
                                     <Text style={styles.glanceLabel}>Delivered</Text>
                                 </View>
 
@@ -447,68 +510,76 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                     <View style={[styles.glanceIconCircle, { backgroundColor: '#f3e8ff' }]}>
                                         <Text style={styles.glanceEmoji}>💰</Text>
                                     </View>
-                                    <Text style={[styles.glanceValue, { color: '#6b21a8' }]}>₹32k</Text>
+                                    <Text style={[styles.glanceValue, { color: '#6b21a8' }]}>{glanceData?.paid || 0}</Text>
                                     <Text style={styles.glanceLabel}>Paid</Text>
                                 </View>
                             </View>
                         </View>
 
                         {/* My Posted Loads */}
-                        <View style={styles.loadsHeader}>
-                            <Text style={styles.sectionTitle}>My Posted Loads</Text>
-                            <TouchableOpacity onPress={() => (navigation).navigate('shipperMyLoads')}>
-                                <Text style={styles.seeAll}>See all →</Text>
-                            </TouchableOpacity>
-                        </View>
+                        {latestLoad && (
+                            <>
+                                <View style={styles.loadsHeader}>
+                                    <Text style={styles.sectionTitle}>My Posted Loads</Text>
+                                    <TouchableOpacity onPress={() => (navigation).navigate(STACKS.SHIPPER_MY_LOADS)}>
+                                        <Text style={styles.seeAll}>See all →</Text>
+                                    </TouchableOpacity>
+                                </View>
 
-                        {/* Load Card 1 - Posted */}
-                        <TouchableOpacity style={styles.loadCard} onPress={() => onNavigateToLoadDetails?.()}>
-                            <View style={styles.loadHeader}>
-                                <Text style={styles.loadId}>LID-883492</Text>
-                                <View style={[styles.badge, { backgroundColor: '#dbeafe' }]}>
-                                    <View style={[styles.badgeDot, { backgroundColor: '#3b82f6' }]} />
-                                    <Text style={[styles.badgeText, { color: '#2563eb' }]}>🟢 Posted</Text>
-                                </View>
-                            </View>
-                            <View style={styles.route}>
-                                <View style={styles.routePoint}>
-                                    <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
-                                    <Text style={styles.routeCity}>Mumbai</Text>
-                                </View>
-                                <View style={styles.routeMid}>
-                                    <View style={styles.routeLine} />
-                                    <TruckIcon />
-                                </View>
-                                <View style={styles.routePoint}>
-                                    <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
-                                    <Text style={styles.routeCity}>New Delhi</Text>
-                                </View>
-                            </View>
-                            <View style={styles.loadMeta}>
-                                <View style={styles.metaItem}>
-                                    <Text style={styles.metaLabel}>Material</Text>
-                                    <Text style={styles.metaValue}>Electronics</Text>
-                                </View>
-                                <View style={styles.metaDivider} />
-                                <View style={styles.metaItem}>
-                                    <Text style={styles.metaLabel}>Truck</Text>
-                                    <Text style={styles.metaValue}>20ft Trailer</Text>
-                                </View>
-                                <View style={styles.metaDivider} />
-                                <View style={styles.metaItem}>
-                                    <Text style={styles.metaLabel}>Budget</Text>
-                                    <Text style={styles.metaPrice}>₹15,000</Text>
-                                </View>
-                            </View>
-                            <View style={styles.loadFooter}>
-                                <View style={styles.offersBadge}>
-                                    <Text style={styles.offersText}>🔥 3 offers</Text>
-                                </View>
-                                <View style={styles.viewBtn}>
-                                    <Text style={styles.viewBtnText}>View Offers</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
+                                {/* Modern Load Card */}
+                                <TouchableOpacity
+                                    style={styles.loadCard}
+                                    onPress={() => (navigation).navigate(STACKS.SHIPPER_MY_LOADS)}
+                                    activeOpacity={0.9}
+                                >
+                                    <View style={styles.loadHeader}>
+                                        <Text style={styles.loadId}>{latestLoad.load_id || `#${latestLoad.id}`}</Text>
+                                        <View style={[styles.badge, { backgroundColor: '#dbeafe' }]}>
+                                            <View style={[styles.badgeDot, { backgroundColor: '#3b82f6' }]} />
+                                            <Text style={[styles.badgeText, { color: '#2563eb' }]}>🟢 Posted</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.route}>
+                                        <View style={styles.routePoint}>
+                                            <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
+                                            <Text style={styles.routeCity}>{extractCity(latestLoad.origin_location)}</Text>
+                                        </View>
+                                        <View style={styles.routeMid}>
+                                            <View style={styles.routeLine} />
+                                            <TruckIcon />
+                                        </View>
+                                        <View style={styles.routePoint}>
+                                            <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
+                                            <Text style={styles.routeCity}>{extractCity(latestLoad.destination_location)}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.loadMeta}>
+                                        <View style={styles.metaItem}>
+                                            <Text style={styles.metaLabel}>Material</Text>
+                                            <Text style={styles.metaValue} numberOfLines={1}>{latestLoad.material?.name || latestLoad.meterial}</Text>
+                                        </View>
+                                        <View style={styles.metaDivider} />
+                                        <View style={styles.metaItem}>
+                                            <Text style={styles.metaLabel}>Truck</Text>
+                                            <Text style={styles.metaValue}>{latestLoad.vehicle_length?.length_label || 'N/A'}</Text>
+                                        </View>
+                                        <View style={styles.metaDivider} />
+                                        <View style={styles.metaItem}>
+                                            <Text style={styles.metaLabel}>Budget</Text>
+                                            <Text style={styles.metaPrice}>{formatPrice(latestLoad.price)}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.loadFooter}>
+                                        <View style={styles.offersBadge}>
+                                            <Text style={styles.offersText}>🔥 {latestLoad.applications_count || 0} offers</Text>
+                                        </View>
+                                        <View style={styles.viewBtn}>
+                                            <Text style={styles.viewBtnText}>View Offers</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            </>
+                        )}
 
                         <View style={{ height: 40 }} />
                     </>

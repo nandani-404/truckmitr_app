@@ -396,8 +396,14 @@
     "shareMembershipCard": "Share Membership Card",
     "or": "or",
     "driverProfileEdit": "Driver Profile Edit",
-    "transportName": "Transport Name",
+    "transportName": "Company Name and Type",
     "enterTransportName": "Enter Transport Name",
+    "companyRegistrationType": "Company Registration Type",
+    "selectCompanyType": "Select Company Type",
+    "secondContactDetails": "Second Contact Details",
+    "secondContactDetailsDesc": "Enter details of another contact person",
+    "secondContactName": "Second Contact Name",
+    "secondContactMobile": "Second Contact Mobile",
     "yearOfEstablishment": "Year of Establishment",
     "registeredId": "Registered ID",
     "enterRegisteredId": "Enter Registered Id",
@@ -3969,5 +3975,11 @@
     "truck": "Truck",
     "budget": "Budget",
     "offers": "offers",
-    "view_offers": "View Offers"
+    "view_offers": "View Offers",
+    "truckerMode": "Trucker Mode",
+    "switchToTruckOwnerInterface": "Switch to truck owner interface",
+    "close": "Close",
+    "thankYouRegistering": "Thank You for Registering!",
+    "accountActivationMsg": "One of our team members will contact you for account activation.",
+    "reachUsAt": "You can also reach us at our Toll Free"
 }

@@ -384,6 +384,12 @@
     "driverProfileEdit": "ड्राइवर प्रोफ़ाइल संपादित करें",
     "transportName": "ट्रांसपोर्ट नाम",
     "enterTransportName": "परिवहन का नाम दर्ज करें",
+    "companyRegistrationType": "कंपनी पंजीकरण प्रकार",
+    "selectCompanyType": "कंपनी का प्रकार चुनें",
+    "secondContactDetails": "दूसरा संपर्क विवरण",
+    "secondContactDetailsDesc": "दूसरे संपर्क व्यक्ति का विवरण दर्ज करें",
+    "secondContactName": "दूसरे संपर्क का नाम",
+    "secondContactMobile": "दूसरे संपर्क का मोबाइल",
     "yearOfEstablishment": "स्थापना का वर्ष",
     "registeredId": "पंजीकृत आईडी",
     "enterRegisteredId": "पंजीकृत आईडी दर्ज करें",
@@ -3883,5 +3889,7 @@
     "truck": "ट्रक",
     "budget": "बजट",
     "offers": "ऑफर",
-    "view_offers": "ऑफर देखें"
+    "view_offers": "ऑफर देखें",
+    "truckerMode": "ट्रकर मोड",
+    "switchToTruckOwnerInterface": "ट्रक मालिक इंटरफ़ेस पर स्विच करें"
 }

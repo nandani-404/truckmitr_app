@@ -97,6 +97,17 @@ const VEHICLE_TYPE_MAP: Record<string, string> = {
   '26': 'Car Carrier',
 }
 
+// Company Type ID to Name Mapping
+const COMPANY_TYPE_MAP: Record<string, string> = {
+  '1': 'Sole Proprietorship',
+  '2': 'One Person Company',
+  '3': 'Partnership Firm',
+  '4': 'Limited Liability Partnership (LLP)',
+  '5': 'Section 8 Company',
+  '6': 'Public Company',
+  '7': 'Private Company',
+}
+
 // License Endorsement ID to Name Mapping
 const LICENSE_ENDORSEMENT_MAP: Record<string, string> = {
   'hill': 'Hill Driving',
@@ -234,6 +245,13 @@ const getVehicleTypeNames = (vehicleTypeValue: any): string => {
     .filter(name => name && name !== '') // Remove any resulting empty names
 
   return vehicleNames.length > 0 ? vehicleNames.join(', ') : 'Not Provided'
+}
+
+// Helper function to get company type name from ID
+const getCompanyTypeName = (typeId: string | number | undefined): string => {
+  if (!typeId) return 'Not Provided'
+  const typeStr = String(typeId).trim()
+  return COMPANY_TYPE_MAP[typeStr] || typeStr
 }
 
 // Helper function to get preferred location name from ID using API data
@@ -795,7 +813,6 @@ export default function ProfileOverview() {
         {/* Transporter-only sections */}
         {isTransporter && (
           <>
-            {/* Transport Name Section */}
             <FieldGroupCard
               title={t('transportName') || 'Transport Name'}
               icon="business"
@@ -803,11 +820,29 @@ export default function ProfileOverview() {
               fields={[
                 {
                   label: t('transportName') || 'Transport Name',
-                  value: user?.Transport_Name,
+                  value: user?.Transport_Name || user?.transport_name,
+                },
+                {
+                  label: t('companyRegistrationType') || 'Company Registration Type',
+                  value: getCompanyTypeName(user?.company_registration_type),
                 },
               ]}
               onEdit={navigateToEdit}
             />
+
+            {/* Company Registration Type Section */}
+            {/* <FieldGroupCard
+              title={t('companyRegistrationType') || 'Company Registration Type'}
+              icon="briefcase"
+              stepId="transport_details"
+              fields={[
+                {
+                  label: t('companyRegistrationType') || 'Company Registration Type',
+                  value: getCompanyTypeName(user?.company_registration_type),
+                },
+              ]}
+              onEdit={navigateToEdit}
+            /> */}
           </>
         )}
 
@@ -1118,6 +1153,24 @@ export default function ProfileOverview() {
                   value: '',
                   isImage: true,
                   imageUri: getImageUri(user?.GST_Certificate),
+                },
+              ]}
+              onEdit={navigateToEdit}
+            />
+
+            {/* Second Contact Details */}
+            <FieldGroupCard
+              title={t('secondContactDetails') || 'Second Contact Details'}
+              icon="call"
+              stepId="poc_details"
+              fields={[
+                {
+                  label: t('secondContactName') || 'Second Contact Name',
+                  value: user?.name_poc,
+                },
+                {
+                  label: t('secondContactMobile') || 'Second Contact Mobile',
+                  value: user?.phone_poc,
                 },
               ]}
               onEdit={navigateToEdit}

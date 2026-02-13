@@ -156,6 +156,7 @@ export const END_POINTS = {
     RC_VERIFY: `api/kyc/rc`,
     RC_HISTORY: `api/kyc/rcs`,
 
+
     // Face Match Verification
     FACE_MATCH_VERIFY: `api/kyc/face-match/verify`,
 
@@ -293,6 +294,7 @@ export const END_POINTS = {
     // ++++++++++++++++++++++++
     SHIPPER_PROFILE_GET: `api/shipper/profile`,
     SHIPPER_PROFILE_UPDATE: `api/shipper/profile/update`,
+    SHIPPER_HOME: `api/shipper/home`,
     POST_LOAD_VEHICLE_BODIES: `api/shipper/get-vehicle-types-by-quantity`,
     POST_LOAD_VEHICLE_LENGTHS: `api/shipper/get-vehicle-lengths`,
     // POST_LOAD_CHECK_ROUTE: `api/shipper/check-route`,
@@ -301,4 +303,19 @@ export const END_POINTS = {
     SHIPPER_MY_LOADS: `api/shipper/view-load`,
     SHIPPER_VERIFY_GST: `api/shipper/verify-gst`,
     SHIPPER_VERIFY_PAN: `api/shipper/verify-pan`,
+
+    //------------------------------------------TMLOADMANDAL_trucker------------------------------------------
+    TRUCKER_VERIFY_RC: `api/trucker/verify-rc`,
+    TRUCKER_ADD_VEHICLE: `api/trucker/add-vehicle`,
+    TRUCKER_VEHICLE_BODY_LIST: `api/trucker/vehicle-body-list`,
+    TRUCKER_VEHICLE_TYPE_LIST: `api/trucker/vehicle-type-list`,
+    TRUCKER_GET_VEHICLES: `api/trucker/get-vehicles`,
+    TRUCKER_AVAILABLE_LOADS: `api/trucker/available-loads`,
+    TRUCKER_APPLY_LOAD: `api/trucker/apply-load`,
+    TRUCKER_APPLIED_LOADS: `api/trucker/applied-loads`,
+    TRUCKER_DASHBOARD_STATS: `api/trucker/dashboard-stats`,
+    TRUCKER_PAYMENT_HISTORY: (page: number = 1) => `api/trucker/payment-history?page=${page}`,
+    TRUCKER_UPDATE_LOCATION: `api/trucker/update-location`,
+    TRUCKER_TRACKING: (id: any) => `api/trucker/tracking/${id}`,
+    TRUCKER_UPDATE_VEHICLE_NUMBER: `api/trucker/update-vehicle-number`,
 }
