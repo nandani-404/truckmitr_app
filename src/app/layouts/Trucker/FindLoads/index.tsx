@@ -72,6 +72,103 @@ const CheckIcon = () => (
 );
 
 // ═══════════════════════════════════════════════════
+// Skeleton Components
+// ═══════════════════════════════════════════════════
+const SkeletonBox = ({ width, height, style }: { width?: number | string; height?: number; style?: any }) => {
+    const animatedValue = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(animatedValue, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animatedValue, {
+                    toValue: 0,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, []);
+
+    const opacity = animatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.3, 0.7],
+    });
+
+    return (
+        <Animated.View
+            style={[
+                {
+                    width: width || '100%',
+                    height: height || 16,
+                    backgroundColor: '#E0E0E0',
+                    borderRadius: 4,
+                    opacity,
+                },
+                style,
+            ]}
+        />
+    );
+};
+
+const SkeletonLoadCard = ({ index }: { index: number }) => {
+    const cardAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.timing(cardAnim, { 
+            toValue: 1, 
+            duration: 400, 
+            delay: index * 80, 
+            useNativeDriver: true 
+        }).start();
+    }, []);
+
+    return (
+        <Animated.View style={{
+            opacity: cardAnim,
+            transform: [{ translateY: cardAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+        }}>
+            <View style={[s.card, { marginBottom: 12 }]}>
+                {/* Header */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <SkeletonBox width={100} height={14} />
+                    <SkeletonBox width={80} height={20} style={{ borderRadius: 10 }} />
+                </View>
+
+                {/* Route */}
+                <View style={{ marginBottom: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                        <SkeletonBox width={8} height={8} style={{ borderRadius: 4, marginRight: 8 }} />
+                        <SkeletonBox width="70%" height={14} />
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <SkeletonBox width={8} height={8} style={{ borderRadius: 4, marginRight: 8 }} />
+                        <SkeletonBox width="65%" height={14} />
+                    </View>
+                </View>
+
+                {/* Details */}
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+                    <SkeletonBox width="30%" height={12} />
+                    <SkeletonBox width="25%" height={12} />
+                    <SkeletonBox width="20%" height={12} />
+                </View>
+
+                {/* Price */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <SkeletonBox width={100} height={24} />
+                    <SkeletonBox width={80} height={36} style={{ borderRadius: 8 }} />
+                </View>
+            </View>
+        </Animated.View>
+    );
+};
+
+// ═══════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════
 const safeString = (val: any) => {
@@ -328,9 +425,10 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
             >
                 {loading ? (
-                    <View style={{ paddingTop: 60, alignItems: 'center' }}>
-                        <ActivityIndicator size="large" color={C.accent} />
-                        <Text style={{ marginTop: 12, color: C.textMuted, fontSize: 13 }}>Loading available loads...</Text>
+                    <View style={{ paddingTop: 20 }}>
+                        {[1, 2, 3, 4].map((_, index) => (
+                            <SkeletonLoadCard key={index} index={index} />
+                        ))}
                     </View>
                 ) : loads.length === 0 ? (
                     <View style={{ paddingTop: 60, alignItems: 'center' }}>

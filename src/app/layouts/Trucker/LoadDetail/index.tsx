@@ -13,7 +13,7 @@ import { showToast } from '@truckmitr/src/app/hooks/toast';
 // Design Tokens
 // ─────────────────────────────────────────────
 const C = {
-    bg: '#F8F9FA',
+    bg: '#ffffffff',
     surface: '#FFFFFF',
     surfaceAlt: '#F3F4F6',
     border: '#E5E7EB',

@@ -26,41 +26,19 @@ import PersonalRoutesScreen from '../app/layouts/Trucker/PersonalRoutes/index';
 import VehicleManagementScreen from '../app/layouts/Trucker/VehicleManagement/index';
 import VehicleDetailsScreen from '../app/layouts/Trucker/VehicleManagement/VehicleDetails';
 import TruckerProfileScreen from '../app/layouts/Trucker/Profile/index';
+import AddDriver from '../app/layouts/main/add-driver/index';
+import TruckerBankDetails from '../app/layouts/Trucker/BankDetails/index';
+import DriverList from '../app/layouts/main/driver-list/index';
 
 // Import shared screens (reused from transporter)
 import ProfileOverview from '../app/layouts/main/profile-overview';
 import ProfileEditNew from '../app/layouts/main/profile-edit-new';
+import { TRUCKER_STACKS } from './stacks';
 
 // Import Trucker Auth screens (Profile Completion Flow)
 
 
 // Trucker-specific screen names (independent namespace)
-export const TRUCKER_STACKS = {
-    TRUCKER_TABS: 'truckerTabs',
-    LOAD_DETAIL: 'truckerLoadDetail',
-    ACTIVE_TRIP: 'truckerActiveTrip',
-    ADD_TRUCK: 'truckerAddTruck',
-    DOCUMENT_RENEWAL: 'truckerDocumentRenewal',
-    EARNINGS: 'truckerEarningsDetail',
-    INVOICE_DETAIL: 'truckerInvoiceDetail',
-    MY_LOADS: 'truckerMyLoadsDetail',
-    NOTIFICATIONS: 'truckerNotifications',
-    PAID_HISTORY: 'truckerPaidHistory',
-    PENDING_PAYMENTS: 'truckerPendingPayments',
-    PERSONAL_ROUTES: 'truckerPersonalRoutes',
-    VEHICLE_MANAGEMENT: 'truckerVehicleManagement',
-    VEHICLE_DETAILS: 'truckerVehicleDetails',
-    PROFILE: 'truckerProfileDetail',
-    PROFILE_OVERVIEW: 'profileOverview',
-    PROFILE_EDIT_NEW: 'profileEditNew',
-    PROFILE_EDIT: 'profileEdit',
-    PROFILE_EDIT_TRANSPORTER: 'profileEditTransporter',
-    // Profile Completion Flow
-    PROFILE_SIGNUP: 'truckerProfileSignup',
-    PROFILE_VEHICLE_INFO: 'truckerProfileVehicleInfo',
-    PROFILE_DOCUMENT_UPLOAD: 'truckerProfileDocumentUpload',
-    PROFILE_VERIFICATION_STATUS: 'truckerProfileVerificationStatus',
-} as const;
 
 const Stack = createNativeStackNavigator();
 
@@ -346,6 +324,21 @@ export default function TruckerMain() {
                 name={TRUCKER_STACKS.PROFILE_EDIT_TRANSPORTER}
                 component={ProfileEditNew}
                 options={{ animation: 'fade' }}
+            />
+            <Stack.Screen
+                name={TRUCKER_STACKS.ADD_DRIVER}
+                component={AddDriver}
+                options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+                name={TRUCKER_STACKS.BANK_DETAILS}
+                component={TruckerBankDetails}
+                options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+                name={TRUCKER_STACKS.DRIVER_LIST}
+                component={DriverList}
+                options={{ animation: 'slide_from_right' }}
             />
 
             {/* Profile Completion Flow */}

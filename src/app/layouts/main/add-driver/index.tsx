@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useColor, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { NavigatorParams, STACKS } from '@truckmitr/src/stacks/stacks';
+import { NavigatorParams, STACKS, TRUCKER_STACKS } from '@truckmitr/src/stacks/stacks';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { hitSlop } from '@truckmitr/src/app/functions';
 import { Space } from '@truckmitr/src/app/components';
@@ -16,13 +16,24 @@ import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import { AnimatedFAB } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 export default function AddDriver() {
-    const { t } = useTranslation();
+    const { t: translate, i18n } = useTranslation();
     const dispatch = useDispatch()
+    const appMode = useSelector((state: any) => state.appMode.mode);
+
+    // Force English if appMode is trucker
+    const t = (key: string, options?: any): string => {
+        if (appMode === 'trucker') {
+            const translationOptions = typeof options === 'object' ? { ...options, lng: 'en' } : { lng: 'en' };
+            return translate(key, translationOptions) as any;
+        }
+        return translate(key, options) as any;
+    };
+
     useStatusBarStyle('dark-content')
     const colors = useColor();
     const safeAreaInsets = useSafeAreaInsets();
@@ -151,25 +162,27 @@ export default function AddDriver() {
         try {
             const response = await axiosInstance.post(END_POINTS.TRANSPORTER_DRIVER_CREATE, formData);
             if (response?.data?.success) {
-                navigation.dispatch(
-                    CommonActions.reset({
-                        index: 0,
-                        routes: [
-                            {
-                                name: STACKS.BOTTOM_TAB,
-                                state: {
-                                    index: 0,
-                                    routes: [
-                                        {
-                                            name: STACKS.DRIVER_LIST,
-                                        },
+                if (appMode === 'transporter') {
+                    navigation.dispatch(
+                        CommonActions.reset({
+                            index: 0,
+                            routes: [
+                                {
+                                    name: STACKS.BOTTOM_TAB,
+                                    state: {
+                                        index: 0,
+                                        routes: [
+                                            {
+                                                name: STACKS.DRIVER_LIST,
+                                            },
 
-                                    ],
+                                        ],
+                                    },
                                 },
-                            },
-                        ],
-                    })
-                );
+                            ],
+                        })
+                    );
+                }
 
             } else {
                 showToast(response?.data?.message)
@@ -416,26 +429,56 @@ export default function AddDriver() {
 
                 </View>
 
-                {/* Excel Import FAB */}
-                <AnimatedFAB
-                    icon={({ size, color }) => (
-                        <MaterialCommunityIcons name="microsoft-excel" size={24} color={color} />
-                    )}
-                    extended={isExtended}
-                    label={t('uploadExcel')}
-                    color={colors.white}
-                    onPress={() => navigation.navigate(STACKS.EXCEL_IMPORT)}
-                    visible={isVisible}
-                    animateFrom={'right'}
-                    iconMode={'dynamic'}
-                    style={{
-                        position: 'absolute',
-                        bottom: responsiveHeight(4),
-                        right: responsiveWidth(5),
-                        backgroundColor: '#1D6F42', // Excel green color
-                        borderRadius: 30,
-                    }}
-                />
+                {/* Conditional Button: Excel Import or My Drivers */}
+                {appMode === 'trucker' ? (
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => navigation.navigate(TRUCKER_STACKS.DRIVER_LIST as any)}
+                        style={{
+                            position: 'absolute',
+                            bottom: responsiveHeight(4),
+                            right: responsiveWidth(5),
+                            backgroundColor: colors.royalBlue,
+                            paddingHorizontal: responsiveWidth(5),
+                            height: 56,
+                            borderRadius: 28,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            ...shadow,
+                            elevation: 5,
+                        }}
+                    >
+                        <MaterialCommunityIcons name="account-group" size={24} color={colors.white} />
+                        <Text style={{
+                            color: colors.white,
+                            fontSize: responsiveFontSize(1.8),
+                            fontWeight: '700',
+                            marginLeft: 10
+                        }}>
+                            {t('myDrivers') || 'My Drivers'}
+                        </Text>
+                    </TouchableOpacity>
+                ) : (
+                    <AnimatedFAB
+                        icon={({ size, color }) => (
+                            <MaterialCommunityIcons name="microsoft-excel" size={24} color={color} />
+                        )}
+                        extended={isExtended}
+                        label={t('uploadExcel')}
+                        color={colors.white}
+                        onPress={() => navigation.navigate(STACKS.EXCEL_IMPORT)}
+                        visible={isVisible}
+                        animateFrom={'right'}
+                        iconMode={'dynamic'}
+                        style={{
+                            position: 'absolute',
+                            bottom: responsiveHeight(4),
+                            right: responsiveWidth(5),
+                            backgroundColor: '#1D6F42', // Excel green color
+                            borderRadius: 30,
+                        }}
+                    />
+                )}
             </KeyboardAwareScrollView>
 
             {/* Fullscreen State Picker Modal */}

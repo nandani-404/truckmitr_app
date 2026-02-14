@@ -19,8 +19,7 @@ import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useColor, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { NavigatorParams, STACKS } from '@truckmitr/stacks/stacks';
-import { TRUCKER_STACKS } from '@truckmitr/stacks/truckermain';
+import { NavigatorParams, STACKS, TRUCKER_STACKS } from '@truckmitr/stacks/stacks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Space, AppleConfirmDialog } from '@truckmitr/src/app/components';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from "react-native-svg";
@@ -58,7 +57,7 @@ const BACKGROUND_TRANSPORTER_PRO = require('@truckmitr/src/assets/membership-car
 const BACKGROUND_FOREMAN_PRO = require('@truckmitr/src/assets/membership-card/foremancardnew.jpeg');
 
 // Card tier configurations
-type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO' | 'LEGACY TRANSPORTER' | 'FOREMAN PRO';
+type TierType = 'JOB READY' | 'VERIFIED' | 'TRUSTED' | 'Standard' | 'LEGACY' | 'TRANSPORTER PRO' | 'Trucker' | 'FOREMAN PRO';
 
 interface TierConfig {
     background: any;
@@ -140,7 +139,7 @@ const getTierConfigs = (t: any): Record<TierType, TierConfig> => ({
         ],
         categoryText: 'TRANSPORTER PRO',
     },
-    'LEGACY TRANSPORTER': {
+    'Trucker': {
         background: BACKGROUND_VERIFIED,
         borderColors: ['#8B4513', '#CD853F', '#DEB887', '#CD853F', '#8B4513'],
         chromeGradient: [
@@ -150,7 +149,7 @@ const getTierConfigs = (t: any): Record<TierType, TierConfig> => ({
             { offset: '0.75', color: '#CD853F' },
             { offset: '1', color: '#DEB887' },
         ],
-        categoryText: 'Legacy Transporter',
+        categoryText: 'Trucker',
     },
     'FOREMAN PRO': {
         background: BACKGROUND_FOREMAN_PRO,
@@ -167,7 +166,7 @@ const getTierConfigs = (t: any): Record<TierType, TierConfig> => ({
 });
 
 // Helper function to get tier from payment_type
-// Now also accepts amount to detect legacy drivers (Rs 49 payment) and legacy transporters (Rs 100/99 payment)
+// Now also accepts amount to detect legacy drivers (Rs 49 payment) and truckers (Rs 100/99 payment)
 const getTierFromPaymentType = (paymentType: string, amount?: number, role?: string): TierType => {
     const isTransporter = role?.toLowerCase() === 'transporter';
 
@@ -176,9 +175,9 @@ const getTierFromPaymentType = (paymentType: string, amount?: number, role?: str
         return 'TRANSPORTER PRO';
     }
 
-    // Legacy transporter detection: Rs 99, 100, or 1 payment for TRANSPORTERS
+    // Trucker detection: Rs 99, 100, or 1 payment for TRANSPORTERS
     if (isTransporter && (amount === 99 || amount === 99.00 || amount === 1 || amount === 1.00 || amount === 1 || amount === 1.00)) {
-        return 'LEGACY TRANSPORTER';
+        return 'Trucker';
     }
 
     // Legacy driver detection: Rs 49 or 1 payment for DRIVERS (implicitly, or explicitly check !isTransporter)
@@ -868,7 +867,11 @@ export default function TruckerProfileScreen({ onBack, onNavigate }: TruckerProf
                                     fontSize: responsiveFontSize(1.4),
                                 }
                             ]}>
-                                {getUserBadgeText({ user, subscriptionDetails, isDriver })}
+                                {(() => {
+                                    const badgeText = getUserBadgeText({ user, subscriptionDetails, isDriver });
+                                    // Replace "Legacy Transporter" with "Trucker" for Trucker profile
+                                    return badgeText === 'Legacy Transporter' ? 'Trucker' : badgeText;
+                                })()}
                             </Text>
                         </View>
 
@@ -1046,11 +1049,11 @@ export default function TruckerProfileScreen({ onBack, onNavigate }: TruckerProf
                                 onPress={() => navigation.navigate(TRUCKER_STACKS.VEHICLE_MANAGEMENT as never)}
                             />
                             <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
-                            <MenuItem
+                            {/* <MenuItem
                                 icon={<MaterialCommunityIcons name="map-marker-path" size={20} color={colors.royalBlue} />}
                                 title={'Personal Routes'}
                                 onPress={() => navigation.navigate(TRUCKER_STACKS.PERSONAL_ROUTES as never)}
-                            />
+                            /> */}
                             <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
                             <MenuItem
                                 icon={<MaterialCommunityIcons name="cash-multiple" size={20} color="#059669" />}

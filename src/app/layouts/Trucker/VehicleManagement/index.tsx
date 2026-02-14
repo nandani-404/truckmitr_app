@@ -8,7 +8,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import axiosInstance from 'src/utils/config/axiosInstance';
 import { END_POINTS } from 'src/utils/config';
 import { useNavigation } from '@react-navigation/native';
-import { TRUCKER_STACKS } from 'src/stacks/truckermain';
+import { TRUCKER_STACKS } from 'src/stacks/stacks';
 
 // ── Icons ──
 const BackIcon = () => (<Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f2937" strokeWidth="2"><Path d="M19 12H5" /><Path d="M12 19l-7-7 7-7" /></Svg>);
@@ -102,11 +102,11 @@ const VehicleManagementScreen: React.FC<Props> = ({ onBack }) => {
                                     <Text style={s.tagLabel}>Fuel</Text>
                                     <Text style={s.tagValue}>{v.fuel_type || 'N/A'}</Text>
                                 </View>
-                                <View style={[s.statusTag, v.rc_status === 'ACTIVE' ? s.statusActive : s.statusInactive]}>
+                                {/* <View style={[s.statusTag, v.rc_status === 'ACTIVE' ? s.statusActive : s.statusInactive]}>
                                     <Text style={[s.statusText, v.rc_status === 'ACTIVE' ? { color: '#059669' } : { color: '#D97706' }]}>
                                         {v.rc_status || 'Pending'}
                                     </Text>
-                                </View>
+                                </View> */}
                             </View>
                         </TouchableOpacity>
                     ))

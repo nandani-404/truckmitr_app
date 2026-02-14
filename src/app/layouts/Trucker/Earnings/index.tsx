@@ -37,6 +37,93 @@ const DownloadIcon = () => (<Svg width="14" height="14" viewBox="0 0 24 24" fill
 const ArrowUpRight = () => (<Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><Line x1="7" y1="17" x2="17" y2="7" /><Polyline points="7 7 17 7 17 17" /></Svg>);
 
 // ─────────────────────────────────────────────
+// Skeleton Components
+// ─────────────────────────────────────────────
+const SkeletonBox = ({ width, height, style }: { width?: number | string; height?: number; style?: any }) => {
+    const animatedValue = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(animatedValue, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animatedValue, {
+                    toValue: 0,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, []);
+
+    const opacity = animatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.3, 0.7],
+    });
+
+    return (
+        <Animated.View
+            style={[
+                {
+                    width: width || '100%',
+                    height: height || 16,
+                    backgroundColor: '#E0E0E0',
+                    borderRadius: 4,
+                    opacity,
+                },
+                style,
+            ]}
+        />
+    );
+};
+
+const SkeletonEarningsCard = () => (
+    <View style={s.card}>
+        {/* Header */}
+        <View style={s.cardHeader}>
+            <View style={{ flex: 1 }}>
+                <View style={s.headerTopRow}>
+                    <SkeletonBox width={80} height={13} />
+                    <SkeletonBox width={100} height={13} style={{ marginLeft: 10 }} />
+                </View>
+                <SkeletonBox width={100} height={12} style={{ marginTop: 4 }} />
+            </View>
+            <SkeletonBox width={90} height={28} style={{ borderRadius: 20 }} />
+        </View>
+
+        <View style={s.headerDivider} />
+
+        {/* Breakdown */}
+        <View style={s.breakdownContainer}>
+            <SkeletonBox width={120} height={11} style={{ marginBottom: 12 }} />
+            
+            {[1, 2, 3].map((i) => (
+                <View key={i} style={s.breakdownRow}>
+                    <SkeletonBox width={100} height={12} />
+                    <SkeletonBox width={80} height={13} />
+                </View>
+            ))}
+
+            {/* Progress */}
+            <View style={s.progressContainer}>
+                <SkeletonBox width="100%" height={6} style={{ borderRadius: 3 }} />
+                <SkeletonBox width={60} height={11} style={{ marginLeft: 8 }} />
+            </View>
+        </View>
+
+        {/* Actions */}
+        <View style={s.actionRow}>
+            <SkeletonBox width="30%" height={32} style={{ borderRadius: 6 }} />
+            <SkeletonBox width="30%" height={32} style={{ borderRadius: 6 }} />
+            <SkeletonBox width="30%" height={32} style={{ borderRadius: 6 }} />
+        </View>
+    </View>
+);
+
+// ─────────────────────────────────────────────
 // Interfaces
 // ─────────────────────────────────────────────
 interface PaymentStats {
@@ -66,9 +153,10 @@ interface LoadHistoryItem {
 interface EarningsScreenProps {
     onBack?: () => void;
     onTransactionPress: (id: string) => void;
+    onInvoicePress?: (loadId: string) => void;
 }
 
-const EarningsScreen: React.FC<EarningsScreenProps> = ({ onBack, onTransactionPress }) => {
+const EarningsScreen: React.FC<EarningsScreenProps> = ({ onBack, onTransactionPress, onInvoicePress }) => {
 
     const [stats, setStats] = useState<PaymentStats | null>(null);
     const [history, setHistory] = useState<LoadHistoryItem[]>([]);
@@ -274,7 +362,10 @@ const EarningsScreen: React.FC<EarningsScreenProps> = ({ onBack, onTransactionPr
                         <Text style={s.btnOutlineText}>View Details ›</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={s.btnOutlineGray}>
+                    <TouchableOpacity 
+                        style={s.btnOutlineGray}
+                        onPress={() => onInvoicePress && onInvoicePress(item.load_id)}
+                    >
                         <DownloadIcon />
                         <Text style={s.btnOutlineGrayText}>Invoice</Text>
                     </TouchableOpacity>
@@ -289,9 +380,53 @@ const EarningsScreen: React.FC<EarningsScreenProps> = ({ onBack, onTransactionPr
 
     if (loading && page === 1) {
         return (
-            <View style={s.loadingContainer}>
-                <ActivityIndicator size="large" color={C.primary} />
-            </View>
+            <SafeAreaView style={s.container} edges={['top']}>
+                <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
+                
+                {/* Header */}
+                <View style={s.headerContainer}>
+                    <View style={s.header}>
+                        {onBack ? (
+                            <TouchableOpacity onPress={onBack} style={s.backBtn}>
+                                <BackIcon />
+                            </TouchableOpacity>
+                        ) : (
+                            <View style={{ width: 40 }} />
+                        )}
+                        <Text style={s.headerTitle}>Earnings & History</Text>
+                        <View style={{ width: 40 }} />
+                    </View>
+
+                    {/* Stats Skeleton */}
+                    <View style={s.statsContainer}>
+                        <View style={s.mainStatCard}>
+                            <SkeletonBox width={100} height={14} style={{ marginBottom: 8 }} />
+                            <SkeletonBox width={150} height={32} style={{ marginBottom: 8 }} />
+                            <SkeletonBox width={120} height={24} style={{ borderRadius: 12 }} />
+                        </View>
+
+                        <View style={s.secondaryStatsRow}>
+                            <View style={s.statCard}>
+                                <SkeletonBox width={70} height={12} style={{ marginBottom: 6 }} />
+                                <SkeletonBox width={100} height={18} />
+                            </View>
+                            <View style={s.statCard}>
+                                <SkeletonBox width={70} height={12} style={{ marginBottom: 6 }} />
+                                <SkeletonBox width={100} height={18} />
+                            </View>
+                        </View>
+                    </View>
+
+                    <SkeletonBox width={140} height={16} style={{ marginTop: 16, marginBottom: 8 }} />
+                </View>
+
+                {/* Transaction Cards Skeleton */}
+                <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+                    {[1, 2, 3].map((i) => (
+                        <SkeletonEarningsCard key={i} />
+                    ))}
+                </View>
+            </SafeAreaView>
         );
     }
 

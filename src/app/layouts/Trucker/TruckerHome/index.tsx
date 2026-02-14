@@ -47,6 +47,8 @@ const CalendarIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (
 const TrendUpIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M23 6l-9.5 9.5-5-5L1 18" /><Path d="M17 6h6v6" /></Svg>);
 const StarIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></Svg>);
 const SwitchModeIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" /></Svg>);
+const UserPlusIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><Circle cx="8.5" cy="7" r="4" /><Path d="M20 8v6M23 11h-6" /></Svg>);
+const BankIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M3 21h18" /><Path d="M3 10h18" /><Path d="M5 6l7-3 7 3" /><Path d="M4 10v11" /><Path d="M20 10v11" /><Path d="M8 14v3" /><Path d="M12 14v3" /><Path d="M16 14v3" /></Svg>);
 
 // ─────────────────────────────────────────────
 // Types
@@ -59,6 +61,8 @@ interface Props {
     onNavigateToTripDetails?: (id: string) => void;
     onNavigateToNotifications?: () => void;
     onNavigateToProfile?: () => void;
+    onNavigateToAddDriver?: () => void;
+    onNavigateToAddBankDetails?: () => void;
 }
 
 // ─────────────────────────────────────────────
@@ -98,6 +102,180 @@ const SwitchToTransporterCard = () => {
 };
 
 // ─────────────────────────────────────────────
+// Accepted Bid Card Component
+// ─────────────────────────────────────────────
+const AcceptedBidCard = ({ bid, index, isMultiple, onPress, fadeAnim }: any) => {
+    const arrow1Anim = useRef(new Animated.Value(0)).current;
+    const arrow2Anim = useRef(new Animated.Value(0)).current;
+    const arrow3Anim = useRef(new Animated.Value(0)).current;
+    // Show arrows for In Transit and Reached Destination (until Delivered)
+    const isInTransit = bid.current_status_label === 'In Transit' || bid.current_status_label === 'Reached Destination';
+
+    useEffect(() => {
+        if (isInTransit) {
+            // Stagger the arrows for a flowing effect
+            const createArrowAnimation = (animValue: Animated.Value, delay: number) => {
+                return Animated.loop(
+                    Animated.sequence([
+                        Animated.delay(delay),
+                        Animated.timing(animValue, {
+                            toValue: 1,
+                            duration: 1500,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(animValue, {
+                            toValue: 0,
+                            duration: 0,
+                            useNativeDriver: true,
+                        }),
+                    ])
+                );
+            };
+
+            Animated.parallel([
+                createArrowAnimation(arrow1Anim, 0),
+                createArrowAnimation(arrow2Anim, 500),
+                createArrowAnimation(arrow3Anim, 1000),
+            ]).start();
+        }
+    }, [isInTransit]);
+
+    const getArrowStyle = (animValue: Animated.Value) => ({
+        transform: [
+            {
+                translateX: animValue.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 70],
+                }),
+            },
+        ],
+        opacity: animValue.interpolate({
+            inputRange: [0, 0.1, 0.9, 1],
+            outputRange: [0, 1, 1, 0],
+        }),
+    });
+
+    const formatCurrency = (val: any) => {
+        const num = Number(val) || 0;
+        return `₹${num.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+    };
+
+    const getButtonText = () => {
+        if (bid.current_status_label === 'Load Accepted') return 'Add Vehicle & Driver';
+        if (bid.current_status_label === 'Vehicle Assigned') return 'Mark Reached Pickup';
+        if (bid.current_status_label === 'Reached Pickup') return 'Mark Loaded';
+        if (bid.current_status_label === 'Loaded') return 'Upload Builty & Start Transit';
+        if (bid.current_status_label === 'In Transit') return 'Mark Reached Destination';
+        if (bid.current_status_label === 'Reached Destination') return 'Upload POD & Complete';
+        if (bid.current_status_label === 'Delivered') return 'Completed';
+        return bid.current_status_label || 'Update Status';
+    };
+
+    return (
+        <Animated.View
+            style={[
+                isMultiple ? styles.acceptedBidCardHorizontal : styles.card,
+                styles.acceptedBidCard,
+                { opacity: fadeAnim },
+            ]}
+        >
+            <View style={styles.bidCardHeader}>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.bidLoadId}>{bid.load_id || 'N/A'}</Text>
+                    <Text style={styles.bidStatusLabel}>Current Bid Status</Text>
+                </View>
+                <View style={styles.acceptedBadge}>
+                    <View style={styles.acceptedDot} />
+                    <Text style={styles.acceptedText}>Accepted</Text>
+                </View>
+            </View>
+
+            {/* Current Status */}
+            {bid.current_status_label && (
+                <View style={styles.currentBidStatus}>
+                    <Text style={styles.currentBidStatusLabel}>Status:</Text>
+                    <Text style={styles.currentBidStatusValue}>{bid.current_status_label}</Text>
+                </View>
+            )}
+
+            {/* Route */}
+            <View style={styles.bidRoute}>
+                <View style={styles.bidRoutePoint}>
+                    <View style={[styles.bidRouteDot, { backgroundColor: COLORS.success }]} />
+                    <Text style={styles.bidRouteText} numberOfLines={1}>
+                        {bid.origin_location?.split(',')[0] || 'N/A'}
+                    </Text>
+                </View>
+                {isInTransit ? (
+                    <View style={{ position: 'relative', flex: 1, height: 16, justifyContent: 'center', overflow: 'hidden', marginHorizontal: 6 }}>
+                        <Animated.Text style={[{ position: 'absolute', left: -10, color: COLORS.success, fontSize: 14, fontWeight: 'bold' }, getArrowStyle(arrow1Anim)]}>
+                            →
+                        </Animated.Text>
+                        <Animated.Text style={[{ position: 'absolute', left: -10, color: COLORS.success, fontSize: 14, fontWeight: 'bold' }, getArrowStyle(arrow2Anim)]}>
+                            →
+                        </Animated.Text>
+                        <Animated.Text style={[{ position: 'absolute', left: -10, color: COLORS.success, fontSize: 14, fontWeight: 'bold' }, getArrowStyle(arrow3Anim)]}>
+                            →
+                        </Animated.Text>
+                    </View>
+                ) : (
+                    <Text style={styles.bidRouteArrow}>→</Text>
+                )}
+                <View style={styles.bidRoutePoint}>
+                    <View style={[styles.bidRouteDot, { backgroundColor: COLORS.danger }]} />
+                    <Text style={styles.bidRouteText} numberOfLines={1}>
+                        {bid.destination_location?.split(',')[0] || 'N/A'}
+                    </Text>
+                </View>
+            </View>
+
+            {/* Price */}
+            <View style={styles.bidPriceRow}>
+                <View style={styles.bidPriceItem}>
+                    <Text style={styles.bidPriceLabel}>Offered Price</Text>
+                    <Text style={styles.bidPriceValue}>
+                        {formatCurrency(bid.trucker_updated_price || bid.trucker_price)}
+                    </Text>
+                </View>
+                {bid.trucker_updated_price && (
+                    <View style={styles.bidPriceItem}>
+                        <Text style={styles.bidPriceLabel}>Your Bid</Text>
+                        <Text
+                            style={[
+                                styles.bidPriceValue,
+                                { fontSize: 11, textDecorationLine: 'line-through', color: COLORS.textTertiary },
+                            ]}
+                        >
+                            {formatCurrency(bid.trucker_price)}
+                        </Text>
+                    </View>
+                )}
+            </View>
+
+            {/* Action Button */}
+            <TouchableOpacity style={styles.bidActionBtn} onPress={onPress} activeOpacity={0.7}>
+                {isInTransit ? (
+                    <>
+                        <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.white} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <Path d="M1 3h15v13H1z" />
+                            <Path d="M16 8h4l3 3v5h-7V8z" />
+                            <Circle cx="5.5" cy="18.5" r="2.5" />
+                            <Circle cx="18.5" cy="18.5" r="2.5" />
+                        </Svg>
+                        <Text style={styles.bidActionText}>{getButtonText()}</Text>
+                    </>
+                ) : (
+                    <>
+                        <Text style={styles.bidActionText}>{getButtonText()}</Text>
+                        <ArrowRightIcon color={COLORS.white} />
+                    </>
+                )}
+            </TouchableOpacity>
+        </Animated.View>
+    );
+};
+
+// ─────────────────────────────────────────────
 // Main Screen Component
 // ─────────────────────────────────────────────
 const TruckerHomeScreen: React.FC<Props> = (props) => {
@@ -118,6 +296,21 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
         rating: 0,
     });
     const [activeTrip, setActiveTrip] = useState<any>(null);
+    const [acceptedBids, setAcceptedBids] = useState<any[]>([]);
+
+    // Status priority mapping (lower number = higher priority)
+    const getStatusPriority = (statusLabel: string | null): number => {
+        const statusMap: { [key: string]: number } = {
+            'Load Accepted': 0,
+            'Vehicle Assigned': 1,
+            'Reached Pickup': 2,
+            'Loaded': 3,
+            'In Transit': 4,
+            'Reached Destination': 5,
+            'Delivered': 6,
+        };
+        return statusMap[statusLabel || ''] ?? 999; // Unknown statuses go to end
+    };
 
     const safeString = (val: any) => {
         if (val === null || val === undefined) return 'N/A';
@@ -160,6 +353,15 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
                         eta: 'In Progress',
                     };
                 }
+
+                // Get accepted bids and sort by status priority
+                const accepted = list.filter((l: any) => l.shipper_status === 'accepted');
+                const sortedAccepted = accepted.sort((a: any, b: any) => {
+                    const priorityA = getStatusPriority(a.current_status_label);
+                    const priorityB = getStatusPriority(b.current_status_label);
+                    return priorityA - priorityB; // Lower priority number comes first
+                });
+                setAcceptedBids(sortedAccepted);
             }
 
             setDashboardData(prev => ({
@@ -218,6 +420,8 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
         { label: 'My Bids', sub: `${dashboardData.activeTrips} active`, icon: <MapPinIcon color="#059669" />, iconBg: '#ECFDF5', onPress: props.onNavigateToMyTrips },
         { label: 'Payments', sub: `${formatCurrency(dashboardData.pendingEarnings)} pending`, icon: <WalletIcon color="#D97706" />, iconBg: '#FEF3C7', onPress: props.onNavigateToPayments },
         { label: 'My Vehicles', sub: `${dashboardData.vehicleCount} vehicles`, icon: <TruckIconMini color="#2C5282" />, iconBg: '#EBF0F7', onPress: props.onNavigateToMyVehicles },
+        { label: 'Add Driver', sub: 'Add new driver', icon: <UserPlusIcon color="#8B5CF6" />, iconBg: '#F5F3FF', onPress: props.onNavigateToAddDriver },
+        { label: 'Add Bank details', sub: 'Payout settings', icon: <BankIcon color="#EC4899" />, iconBg: '#FDF2F8', onPress: props.onNavigateToAddBankDetails },
     ];
 
     return (
@@ -291,6 +495,54 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
                         </TouchableOpacity>
                     </Animated.View>
                 )}
+
+                {/* ── Accepted Bids Section ── */}
+                {acceptedBids.length > 0 && (
+    <>
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Accepted Bids</Text>
+            <TouchableOpacity onPress={props.onNavigateToMyTrips}>
+                <Text style={styles.viewAllLink}>View All</Text>
+            </TouchableOpacity>
+        </View>
+        {acceptedBids.length === 1 ? (
+            // Single card - display vertically
+            <AcceptedBidCard
+                key={acceptedBids[0].id}
+                bid={acceptedBids[0]}
+                index={0}
+                isMultiple={false}
+                onPress={() => props.onNavigateToTripDetails?.(acceptedBids[0].id)}
+                fadeAnim={fadeAnim}
+            />
+        ) : (
+            // Multiple cards - display horizontally
+            <View style={styles.acceptedBidsHorizontalContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    pagingEnabled
+                    decelerationRate="fast"
+                    snapToAlignment="start"
+                    snapToInterval={width - 32} // Subtract total horizontal padding
+                    contentContainerStyle={styles.acceptedBidsHorizontalScroll}
+                >
+                    {acceptedBids.slice(0, 3).map((bid, index) => (
+                        <View key={bid.id} style={{ width: width - 32 }}> {/* Container with exact width */}
+                            <AcceptedBidCard
+                                bid={bid}
+                                index={index}
+                                isMultiple={true}
+                                onPress={() => props.onNavigateToTripDetails?.(bid.id)}
+                                fadeAnim={fadeAnim}
+                            />
+                        </View>
+                    ))}
+                </ScrollView>
+            </View>
+        )}
+    </>
+)}
 
                 {/* ── Earnings Grid ── */}
                 <View style={styles.sectionHeader}>
@@ -394,6 +646,154 @@ const styles = StyleSheet.create({
     modeSub: { fontSize: 11, color: COLORS.textTertiary, marginTop: 1 },
     toggleTrack: { width: 44, height: 24, borderRadius: 12, padding: 2, justifyContent: 'center' },
     toggleThumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.white, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.5, elevation: 2 },
+
+    // Accepted Bids
+  acceptedBidsHorizontalContainer: {
+    marginHorizontal: 0, // This creates the 16px padding on each side
+},
+acceptedBidsHorizontalScroll: {
+    paddingRight: 0, // Remove any padding from the scroll content
+
+    },
+    acceptedBidCard: {
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.success,
+        backgroundColor: '#F0FDF4',
+        marginBottom: 16,
+    },
+    acceptedBidCardHorizontal: {
+        backgroundColor: COLORS.surface,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        padding: 12,
+        width: width - 40,
+        marginRight: 12,
+    },
+    bidCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    bidLoadId: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: COLORS.textPrimary,
+        marginBottom: 1,
+    },
+    bidStatusLabel: {
+        fontSize: 10,
+        color: COLORS.textTertiary,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    acceptedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.successLight,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 10,
+        gap: 4,
+    },
+    acceptedDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: COLORS.success,
+    },
+    acceptedText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: COLORS.success,
+    },
+    currentBidStatus: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+        paddingBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderLight,
+    },
+    currentBidStatusLabel: {
+        fontSize: 11,
+        color: COLORS.textSecondary,
+        fontWeight: '500',
+        marginRight: 4,
+    },
+    currentBidStatusValue: {
+        fontSize: 11,
+        color: COLORS.action,
+        fontWeight: '700',
+    },
+    bidRoute: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderLight,
+    },
+    bidRoutePoint: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    bidRouteDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 3.5,
+    },
+    bidRouteText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.textPrimary,
+        flex: 1,
+    },
+    bidRouteArrow: {
+        fontSize: 13,
+        color: COLORS.textTertiary,
+        marginHorizontal: 6,
+    },
+    bidPriceRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 10,
+    },
+    bidPriceItem: {
+        flex: 1,
+        backgroundColor: COLORS.white,
+        padding: 8,
+        borderRadius: 8,
+    },
+    bidPriceLabel: {
+        fontSize: 9,
+        color: COLORS.textTertiary,
+        textTransform: 'uppercase',
+        letterSpacing: 0.3,
+        marginBottom: 3,
+    },
+    bidPriceValue: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: COLORS.success,
+    },
+    bidActionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+        backgroundColor: COLORS.action,
+        gap: 6,
+    },
+    bidActionText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.white,
+    },
 });
 
 export default TruckerHomeScreen;
