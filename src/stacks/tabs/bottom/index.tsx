@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
 import Verification from '@truckmitr/src/app/layouts/main/verification/verification-screen';
 import ProfileOverview from '@truckmitr/src/app/layouts/main/profile-overview';
+import RestrictedDriverBottom from '../restricted-driver-bottom';
 
 
 const Tab = createBottomTabNavigator();
@@ -446,7 +447,26 @@ function TabBarDriver({ state, descriptors, navigation, homeRef }: { state: any,
 
 export default function Bottom() {
     const homeRef = useRef<any>(null);
-    const { isTransporter } = useSelector((state: any) => { return state?.user })
+    const { isTransporter, user } = useSelector((state: any) => state?.user)
+    
+    // Check if driver is a restricted driver (added by transporter)
+    // The user object from Redux is stored as state.user.user (from the reducer)
+    // So we need to check user.sub_id directly (not user.data.sub_id)
+    const userRole = user?.role;
+    const subId = user?.sub_id;
+    const isRestrictedDriver = userRole === 'driver' && subId !== null && subId !== undefined;
+    
+    // Debug logging
+    useEffect(() => {
+        console.log('🔍 Bottom Tab - User Data:', {
+            userRole,
+            subId,
+            isRestrictedDriver,
+            userKeys: user ? Object.keys(user) : 'no user',
+            fullUser: user
+        });
+    }, [user]);
+    
     useEffect(() => {
         SystemNavigationBar.setNavigationColor('translucent');
     }, []);
@@ -461,7 +481,9 @@ export default function Bottom() {
                 {/* <Tab.Screen name={STACKS.DRIVER_LIST} component={DriverList} /> */}
                 {/* <Tab.Screen name={STACKS.TRANSPORTER_VERIFICATION} component={TransporterVerificationScreen} /> */}
                 <Tab.Screen name={STACKS.PROFILE} component={Profile} />
-            </Tab.Navigator> :
+            </Tab.Navigator> : isRestrictedDriver ? (
+                <RestrictedDriverBottom />
+            ) : (
                 <Tab.Navigator tabBar={props => <TabBarDriver {...props} homeRef={homeRef} />} screenOptions={{ headerShown: false, animation: 'fade' }} >
                     <Tab.Screen name={STACKS.HOME}>
                         {() => <Home ref={homeRef} />}
@@ -471,7 +493,8 @@ export default function Bottom() {
                     <Tab.Screen name={STACKS.DL_VERIFICATION} component={DLVerification} />
                     {/* <Tab.Screen name={STACKS.VERIFICATION} component={Verification} /> */}
                     <Tab.Screen name={STACKS.PROFILE} component={Profile} />
-                </Tab.Navigator>}
+                </Tab.Navigator>
+            )}
         </>
     );
 }

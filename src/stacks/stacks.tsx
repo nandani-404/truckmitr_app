@@ -454,9 +454,12 @@ export const STACKS = {
     SHIPPER_CHAT: 'shipperChat',
     SHIPPER_TRACK: 'shipperTrack',
     SHIPPER_PROFILE: 'shipperProfile',
-        SHIPPER_PROFILE_COMPLETION: 'shipperProfileCompletion',
-        SHIPPER_PROFILE_EDIT: 'shipperProfileEdit',
-    } as const;
+    SHIPPER_PROFILE_COMPLETION: 'shipperProfileCompletion',
+    SHIPPER_PROFILE_EDIT: 'shipperProfileEdit',
+
+    // TRANSPORTER ADDED DRIVER MODULE
+    TRANSPORTER_DRIVER_TRACKING: 'transporterDriverTracking',
+} as const;
     
     // Trucker-specific screen names (independent namespace)
     export const TRUCKER_STACKS = {

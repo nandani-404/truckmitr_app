@@ -128,9 +128,9 @@ const SkeletonBox = ({ width, height, style }: { width?: number | string; height
     );
 };
 
-interface Props { onBack?: () => void; onComplete?: () => void; loadId?: string; }
+interface Props { onBack?: () => void; onComplete?: () => void; loadId?: string; navigation?: any; }
 
-const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
+const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigation }) => {
     const [currentStatus, setCurrentStatus] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -901,22 +901,19 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
     };
 
     const openMaps = () => {
-        // Open Google Maps with directions from origin to destination
-        const origin = encodeURIComponent(trip.origin);
-        const destination = encodeURIComponent(trip.destination);
-        
-        // Google Maps URL with directions
-        const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
-        
-        console.log('🗺️ [NAVIGATION] Opening Google Maps with directions');
+        // Navigate to in-app map navigation screen
+        console.log('🗺️ [NAVIGATION] Opening in-app navigation');
         console.log('🗺️ [NAVIGATION] Origin:', trip.origin);
         console.log('🗺️ [NAVIGATION] Destination:', trip.destination);
-        console.log('🗺️ [NAVIGATION] URL:', url);
         
-        Linking.openURL(url).catch(err => {
-            console.error('❌ [NAVIGATION] Error opening maps:', err);
-            showToast('Could not open Google Maps');
-        });
+        if (navigation) {
+            navigation.navigate('truckerMapNavigation', {
+                origin: trip.origin,
+                destination: trip.destination,
+            });
+        } else {
+            showToast('Navigation not available');
+        }
     };
 
     // Render Timeline Item
