@@ -303,6 +303,8 @@ export const END_POINTS = {
     SHIPPER_MY_LOADS: `api/shipper/view-load`,
     SHIPPER_VERIFY_GST: `api/shipper/verify-gst`,
     SHIPPER_VERIFY_PAN: `api/shipper/verify-pan`,
+    GET_LOAD_BY_STATUS: `api/shipper/get-load-by-status`,
+    GET_ACCEPTED_LOADS: 'api/shipper/get-accepted-loads',
 
     //------------------------------------------TMLOADMANDAL_trucker------------------------------------------
     TRUCKER_VERIFY_RC: `api/trucker/verify-rc`,

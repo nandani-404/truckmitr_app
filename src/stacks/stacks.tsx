@@ -206,6 +206,10 @@ export type NavigatorParams = {
     shipperProfile: undefined;
     shipperProfileCompletion: undefined;
     shipperProfileEdit: undefined;
+    shipperActiveLoads: undefined;
+    shipperAcceptedLoads: undefined;
+    shipperInTransitLoads: undefined;
+    shipperPodPending: undefined;
 };
 
 export const STACKS = {
@@ -456,4 +460,8 @@ export const STACKS = {
     SHIPPER_PROFILE: 'shipperProfile',
     SHIPPER_PROFILE_COMPLETION: 'shipperProfileCompletion',
     SHIPPER_PROFILE_EDIT: 'shipperProfileEdit',
+    SHIPPER_ACTIVE_LOADS: 'shipperActiveLoads',
+    SHIPPER_ACCEPTED_LOADS: 'shipperAcceptedLoads',
+    SHIPPER_IN_TRANSIT_LOADS: 'shipperInTransitLoads',
+    SHIPPER_POD_PENDING: 'shipperPodPending',
 } as const;

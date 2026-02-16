@@ -50,8 +50,11 @@ const reverseGeocode = (coordinates: Coordinates): Promise<ServiceResponse> => {
 };
 
 // Place details function
-const placeDetails = (placeId: string): Promise<ServiceResponse> => {
-    const url = `${SECURE_CONFIG.PLACE_DETAIL_URL}${placeId}&key=${SECURE_CONFIG.GOOGLE_API_KEY}`;
+const placeDetails = (placeId: string, sessionToken?: string): Promise<ServiceResponse> => {
+    let url = `${SECURE_CONFIG.PLACE_DETAIL_URL}${placeId}&key=${SECURE_CONFIG.GOOGLE_API_KEY}`;
+    if (sessionToken) {
+        url += `&sessiontoken=${sessionToken}`;
+    }
     return fetchData(url);
 };
 
@@ -62,9 +65,21 @@ const distanceMatrix = (origin: Coordinates, destination: Coordinates): Promise<
 };
 
 // Autocomplete for India only
-const autocompletePlaces = async (input: string): Promise<ServiceResponse> => {
-    const url = `${SECURE_CONFIG.AUTOCOMPLETE_URL}?input=${encodeURIComponent(input)}&components=country:in&key=${SECURE_CONFIG.GOOGLE_API_KEY}`;
+const autocompletePlaces = async (input: string, sessionToken?: string): Promise<ServiceResponse> => {
+    let url = `${SECURE_CONFIG.AUTOCOMPLETE_URL}?input=${encodeURIComponent(input)}&components=country:in&key=${SECURE_CONFIG.GOOGLE_API_KEY}`;
+    if (sessionToken) {
+        url += `&sessiontoken=${sessionToken}`;
+    }
     return fetchData(url);
+};
+
+// Simple visual UUID generator for session tokens
+export const generateSessionToken = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = (Math.random() * 16) | 0,
+            v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
 };
 
 

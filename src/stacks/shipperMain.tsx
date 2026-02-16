@@ -17,6 +17,12 @@ import ShipperPostLoad from '../app/layouts/shipper/post-load';
 import ShipperTrack from '../app/layouts/shipper/track';
 import ShipperProfile from '../app/layouts/shipper/profile';
 import ShipperProfileEdit from '../app/layouts/shipper/shipper-profile-edit';
+import ShipperActiveLoads from '../app/layouts/shipper/shipper-active-loads';
+import ShipperAcceptedLoads from '../app/layouts/shipper/shipper-accepted-loads';
+import ShipperInTransitLoads from '../app/layouts/shipper/inTransitLoads';
+import ShipperPODPending from '../app/layouts/shipper/pod-pending';
+import LocationMap from '../app/layouts/main/location/map';
+import LocationSearch from '../app/layouts/main/location/search';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -127,6 +133,12 @@ export default function ShipperMain() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name={STACKS.SHIPPER_BOTTOM_TAB} component={ShipperBottomTabs} />
             <Stack.Screen name={STACKS.SHIPPER_PROFILE_EDIT} component={ShipperProfileEdit} />
+            <Stack.Screen name={STACKS.SHIPPER_ACTIVE_LOADS} component={ShipperActiveLoads} />
+            <Stack.Screen name={STACKS.SHIPPER_ACCEPTED_LOADS} component={ShipperAcceptedLoads} />
+            <Stack.Screen name={STACKS.SHIPPER_IN_TRANSIT_LOADS} component={ShipperInTransitLoads} />
+            <Stack.Screen name={STACKS.SHIPPER_POD_PENDING} component={ShipperPODPending} />
+            <Stack.Screen name={STACKS.MAP_VIEW} component={LocationMap} />
+            <Stack.Screen name={STACKS.LOCATION_SEARCH} component={LocationSearch} />
         </Stack.Navigator>
     );
 }

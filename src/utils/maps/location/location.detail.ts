@@ -18,6 +18,7 @@ export interface LocationDetail {
   displayName: string;
   coords: LatLng;
   city?: string;
+  state?: string;
   country?: {
     name: string;
     code: string;
@@ -107,6 +108,7 @@ export const fetchCompleteLocationDetails = async (coords?: LatLng): Promise<Loc
       displayName: formattedAddress,
       coords: resolvedCoords,
       city: getAddressComponent(components, 'locality'),
+      state: getAddressComponent(components, 'administrative_area_level_1'),
       country: (() => {
         const name = getAddressComponent(components, 'country');
         const code = components.find((c: any) => c.types.includes('country'))?.short_name;

@@ -4,12 +4,18 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
+    FlatList,
     ScrollView,
     StatusBar,
     Modal,
     Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import Svg, { Path, Circle } from 'react-native-svg';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/utils/config';
+import { ActivityIndicator, RefreshControl } from 'react-native';
+import moment from 'moment';
 
 // ==========================================
 // INTERFACES & DATA
@@ -35,214 +41,12 @@ interface LoadData {
     distance: string;
     notes: string;
     offersCount: number;
-    interestedTruckers: TruckerData[];
     salesManagerContact?: string;
+    rawPrice: any;
+    rawItem: any;
 }
 
-interface TruckerData {
-    id: string;
-    name: string;
-    phone: string;
-    rating: number;
-    tripsCompleted: number;
-    truckNumber: string;
-    truckType: string;
-    offeredPrice: string;
-    experience: string;
-    avatar: string;
-}
-
-const myLoadsData: LoadData[] = [
-    {
-        id: 'LID-883492',
-        pickupCity: 'Mumbai',
-        pickupAddress: 'Andheri East, Mumbai, Maharashtra 400069',
-        dropCity: 'New Delhi',
-        dropAddress: 'Connaught Place, New Delhi, Delhi 110001',
-        materialType: 'Electronics & Gadgets',
-        quantity: '10 Tonnes',
-        vehicleBodyType: 'Closed Body / Container',
-        vehicleType: '10 Wheeler Truck',
-        price: '₹15,000',
-        status: 'Posted',
-        statusColor: '#3b82f6',
-        statusBg: '#dbeafe',
-        postedDate: 'Feb 10, 2026',
-        pickupDate: 'Feb 14, 2026',
-        pickupTime: '09:00 AM',
-        distance: '1,420 km',
-        notes: 'Handle with care. Fragile electronic items.',
-        offersCount: 3,
-        interestedTruckers: [
-            {
-                id: 'T001',
-                name: 'Rajesh Kumar',
-                phone: '+91 98765 43210',
-                rating: 4.8,
-                tripsCompleted: 245,
-                truckNumber: 'MH 04 AB 1234',
-                truckType: '10 Wheeler Truck',
-                offeredPrice: '₹14,500',
-                experience: '8 years',
-                avatar: '👤',
-            },
-            {
-                id: 'T002',
-                name: 'Suresh Yadav',
-                phone: '+91 87654 32109',
-                rating: 4.5,
-                tripsCompleted: 180,
-                truckNumber: 'RJ 14 CD 5678',
-                truckType: '12 Wheeler Truck',
-                offeredPrice: '₹13,800',
-                experience: '6 years',
-                avatar: '👤',
-            },
-            {
-                id: 'T003',
-                name: 'Amit Singh',
-                phone: '+91 76543 21098',
-                rating: 4.9,
-                tripsCompleted: 312,
-                truckNumber: 'DL 01 EF 9012',
-                truckType: '10 Wheeler Truck',
-                offeredPrice: '₹15,200',
-                experience: '10 years',
-                avatar: '👤',
-            },
-        ],
-    },
-    {
-        id: 'LID-774201',
-        pickupCity: 'Pune',
-        pickupAddress: 'Hinjewadi, Pune, Maharashtra 411057',
-        dropCity: 'Bangalore',
-        dropAddress: 'Whitefield, Bangalore, Karnataka 560066',
-        materialType: 'Machinery & Equipment',
-        quantity: '18 Tonnes',
-        vehicleBodyType: 'Flatbed Truck',
-        vehicleType: '12 Wheeler Truck',
-        price: '₹28,500',
-        status: 'Posted',
-        statusColor: '#3b82f6',
-        statusBg: '#dbeafe',
-        postedDate: 'Feb 09, 2026',
-        pickupDate: 'Feb 13, 2026',
-        pickupTime: '07:00 AM',
-        distance: '840 km',
-        notes: 'Heavy machinery. Requires proper lashing.',
-        offersCount: 5,
-        interestedTruckers: [
-            {
-                id: 'T004',
-                name: 'Vikram Patel',
-                phone: '+91 65432 10987',
-                rating: 4.7,
-                tripsCompleted: 198,
-                truckNumber: 'KA 01 GH 3456',
-                truckType: '12 Wheeler Truck',
-                offeredPrice: '₹27,000',
-                experience: '7 years',
-                avatar: '👤',
-            },
-            {
-                id: 'T005',
-                name: 'Deepak Sharma',
-                phone: '+91 54321 09876',
-                rating: 4.6,
-                tripsCompleted: 156,
-                truckNumber: 'MH 12 IJ 7890',
-                truckType: '12 Wheeler Truck',
-                offeredPrice: '₹26,500',
-                experience: '5 years',
-                avatar: '👤',
-            },
-            {
-                id: 'T006',
-                name: 'Ganesh Reddy',
-                phone: '+91 43210 98765',
-                rating: 4.4,
-                tripsCompleted: 122,
-                truckNumber: 'AP 09 KL 2345',
-                truckType: 'Flatbed Truck',
-                offeredPrice: '₹28,000',
-                experience: '4 years',
-                avatar: '👤',
-            },
-            {
-                id: 'T007',
-                name: 'Ravi Deshmukh',
-                phone: '+91 32109 87654',
-                rating: 4.9,
-                tripsCompleted: 287,
-                truckNumber: 'MH 20 MN 6789',
-                truckType: '12 Wheeler Truck',
-                offeredPrice: '₹27,800',
-                experience: '9 years',
-                avatar: '👤',
-            },
-            {
-                id: 'T008',
-                name: 'Prakash Jadhav',
-                phone: '+91 21098 76543',
-                rating: 4.3,
-                tripsCompleted: 95,
-                truckNumber: 'GJ 05 OP 0123',
-                truckType: 'Flatbed Truck',
-                offeredPrice: '₹29,000',
-                experience: '3 years',
-                avatar: '👤',
-            },
-        ],
-    },
-    {
-        id: 'LID-665310',
-        pickupCity: 'Ahmedabad',
-        pickupAddress: 'SG Highway, Ahmedabad, Gujarat 380054',
-        dropCity: 'Chennai',
-        dropAddress: 'Ambattur, Chennai, Tamil Nadu 600053',
-        materialType: 'Cement',
-        quantity: '25 Tonnes',
-        vehicleBodyType: 'Bulker',
-        vehicleType: '32ft Multi-Axle Trailer',
-        price: '₹42,000',
-        status: 'Posted',
-        statusColor: '#3b82f6',
-        statusBg: '#dbeafe',
-        postedDate: 'Feb 11, 2026',
-        pickupDate: 'Feb 15, 2026',
-        pickupTime: '06:00 AM',
-        distance: '1,850 km',
-        notes: 'Bulk cement delivery. Ensure proper tarpaulin cover.',
-        offersCount: 2,
-        interestedTruckers: [
-            {
-                id: 'T009',
-                name: 'Manoj Tiwari',
-                phone: '+91 10987 65432',
-                rating: 4.6,
-                tripsCompleted: 210,
-                truckNumber: 'GJ 01 QR 4567',
-                truckType: 'Bulker',
-                offeredPrice: '₹40,000',
-                experience: '6 years',
-                avatar: '👤',
-            },
-            {
-                id: 'T010',
-                name: 'Santosh Naik',
-                phone: '+91 09876 54321',
-                rating: 4.8,
-                tripsCompleted: 278,
-                truckNumber: 'TN 09 ST 8901',
-                truckType: 'Bulker',
-                offeredPrice: '₹41,500',
-                experience: '8 years',
-                avatar: '👤',
-            },
-        ],
-    },
-];
+const openLoadsData: LoadData[] = []; // Initialized as empty
 
 // --- SVG Icons for My Loads ---
 const MLBackIcon = () => (
@@ -261,16 +65,118 @@ const MLTruckIcon = () => (
     </Svg>
 );
 
-const ShipperMyLoads: React.FC = () => {
+const getStatusConfig = (status: string) => {
+    const s = (status || '').toLowerCase();
+    switch (s) {
+        case 'pending':
+            return { label: 'Pending', color: '#f59e0b', bg: '#fef3c7' };
+        case 'accepted':
+            return { label: 'Accepted', color: '#22c55e', bg: '#dcfce7' };
+        case 'in_transit':
+        case 'intransit':
+            return { label: 'In Transit', color: '#3b82f6', bg: '#dbeafe' };
+        case 'delivered':
+            return { label: 'Delivered', color: '#10b981', bg: '#d1fae5' };
+        case 'cancelled':
+            return { label: 'Cancelled', color: '#ef4444', bg: '#fee2e2' };
+        case 'completed':
+            return { label: 'Completed', color: '#14b8a6', bg: '#ccfbf1' };
+        default:
+            return { label: status || 'Posted', color: '#3b82f6', bg: '#dbeafe' };
+    }
+};
+
+const formatPrice = (price: string | number): string => {
+    const num = typeof price === 'string' ? parseFloat(price) : price;
+    if (isNaN(num) || num === 0) return 'Negotiable';
+    return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+};
+
+const formatDate = (dateStr: string): string => {
+    if (!dateStr) return '—';
+    return moment(dateStr).format('DD MMM, YYYY');
+};
+
+const formatTime = (time: string): string => {
+    if (!time) return '—';
+    const [h, m] = time.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+};
+
+const ShipperActiveLoads: React.FC = () => {
+    const navigation = useNavigation();
     const [selectedLoad, setSelectedLoad] = useState<LoadData | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [showInterestModal, setShowInterestModal] = useState(false);
-    
     const [showMenuModal, setShowMenuModal] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [selectedCancelReason, setSelectedCancelReason] = useState<string | null>(null);
+
+    const [loadsData, setLoadsData] = useState<LoadData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const extractCity = (location: string) => {
+        if (!location) return 'N/A';
+        return location.split(',')[0].trim();
+    };
+
+    const formatCurrency = (price: any) => {
+        if (!price || parseFloat(price) === 0) return 'Negotiable';
+        return `₹${parseFloat(price).toLocaleString('en-IN')}`;
+    };
+
+    const mapApiData = (apiData: any[]): LoadData[] => {
+        return apiData.map(item => ({
+            id: item.load_id || `#${item.id}`,
+            pickupCity: item.loading_city_state ? extractCity(item.loading_city_state) : extractCity(item.origin_location),
+            pickupAddress: item.origin_location,
+            dropCity: item.unloading_city_state ? extractCity(item.unloading_city_state) : extractCity(item.destination_location),
+            dropAddress: item.destination_location,
+            materialType: item.material?.name || item.meterial || 'N/A',
+            quantity: `${item.load_qty || item.meterial_quantity || '0'} Tonnes`,
+            vehicleBodyType: item.vehicle_body?.name || 'N/A',
+            vehicleType: item.vehicle_length?.length_label || 'N/A',
+            price: item.price,
+            rawPrice: item.price,
+            status: item.status || 'Accepted',
+            statusColor: '', // Handled by getStatusConfig
+            statusBg: '', // Handled by getStatusConfig
+            postedDate: item.created_at,
+            pickupDate: item.picup_date,
+            pickupTime: item.load_time || 'N/A',
+            distance: 'N/A',
+            notes: item.notes || '',
+            offersCount: parseInt(item.applications_count || '0', 10),
+            rawItem: item, // Keep raw for detail mapping
+        }));
+    };
+
+    const fetchLoads = async (isRefreshing = false) => {
+        if (isRefreshing) setRefreshing(true);
+        else setIsLoading(true);
+
+        try {
+            const response = await axiosInstance.post(END_POINTS.GET_LOAD_BY_STATUS, {
+                status: 'open-load'
+            });
+            console.log('Accepted loads response:', response.data);
+            if (response.data.success) {
+                setLoadsData(mapApiData(response.data.data));
+            }
+        } catch (error) {
+            console.error('Error fetching accepted loads:', error);
+        } finally {
+            setIsLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    React.useEffect(() => {
+        fetchLoads();
+    }, []);
 
     const cancelReasons = [
         'Shipper Cancelled / Plan Changed',
@@ -286,7 +192,6 @@ const ShipperMyLoads: React.FC = () => {
 
     const callSalesManager = () => {
         Alert.alert('Call Sales Manager', `Calling Sales Manager...`);
-        // linking enabled not used here for simplicity as per request
     };
 
     const handleCancelLoad = () => {
@@ -301,80 +206,95 @@ const ShipperMyLoads: React.FC = () => {
         setSelectedCancelReason(null);
     };
 
-    const renderLoadCard = (load: LoadData) => (
-        <View key={load.id} style={mlStyles.loadCard}>
-            {/* Card Header */}
-            <View style={mlStyles.cardHeader}>
-                <Text style={mlStyles.loadIdText}>{load.id}</Text>
-                <View style={[mlStyles.statusBadge, { backgroundColor: load.statusBg }]}>
-                    <Text style={[mlStyles.statusText, { color: load.statusColor }]}>{load.status}</Text>
-                </View>
-            </View>
+    const renderLoadCard = (load: any) => {
+        const statusCfg = getStatusConfig(load.status);
+        const pickupStr = load.rawItem?.loading_city_state || load.pickupAddress;
+        const dropStr = load.rawItem?.unloading_city_state || load.dropAddress;
 
-            {/* Route */}
-            <View style={mlStyles.routeContainer}>
-                <View style={mlStyles.routePoint}>
-                    <View style={[mlStyles.routeDotGreen]} />
-                    <Text style={mlStyles.routeCity}>{load.pickupCity}</Text>
-                </View>
-                <View style={mlStyles.routeMiddle}>
-                    <View style={mlStyles.routeLine} />
-                    <MLTruckIcon />
-                </View>
-                <View style={mlStyles.routePoint}>
-                    <View style={[mlStyles.routeDotRed]} />
-                    <Text style={mlStyles.routeCity}>{load.dropCity}</Text>
-                </View>
-            </View>
+        const [pickupCity, pickupState] = pickupStr.includes(',') ? pickupStr.split(',').map((s: string) => s.trim()) : [extractCity(pickupStr), ''];
+        const [dropCity, dropState] = dropStr.includes(',') ? dropStr.split(',').map((s: string) => s.trim()) : [extractCity(dropStr), ''];
 
-            {/* Info Box - Grey Background */}
-            <View style={mlStyles.infoBox}>
-                <View style={mlStyles.infoBoxItem}>
-                    <Text style={mlStyles.infoBoxLabel}>Material</Text>
-                    <Text style={mlStyles.infoBoxValue}>{load.materialType}</Text>
+        return (
+            <View key={load.id} style={mlStyles.loadCard}>
+                {/* Card Header */}
+                <View style={mlStyles.cardHeader}>
+                    <Text style={mlStyles.loadIdText}>{load.id}</Text>
+                    <View style={[mlStyles.statusBadge, { backgroundColor: statusCfg.bg }]}>
+                        <Text style={[mlStyles.statusText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
+                    </View>
                 </View>
-                <View style={mlStyles.infoBoxDivider} />
-                <View style={mlStyles.infoBoxItem}>
-                    <Text style={mlStyles.infoBoxLabel}>Truck</Text>
-                    <Text style={mlStyles.infoBoxValue}>{load.vehicleType}</Text>
-                </View>
-                <View style={mlStyles.infoBoxDivider} />
-                <View style={mlStyles.infoBoxItem}>
-                    <Text style={mlStyles.infoBoxLabel}>Shipment Price</Text>
-                    <Text style={mlStyles.infoBoxValuePrice}>{load.price}</Text>
-                </View>
-            </View>
 
-            {/* Interested Truckers */}
-            <View style={mlStyles.interestedRow}>
-                <View style={mlStyles.interestedPill}>
-                    <Text style={mlStyles.interestedText}>🔥 {load.interestedTruckers.length} interested truckers</Text>
+                {/* Route */}
+                <View style={mlStyles.routeContainer}>
+                    <View style={mlStyles.routePoint}>
+                        <View style={mlStyles.routeDotGreen} />
+                        <Text style={mlStyles.routeCity} numberOfLines={1}>{pickupCity}</Text>
+                        {pickupState ? <Text style={mlStyles.routeState} numberOfLines={1}>{pickupState}</Text> : null}
+                    </View>
+                    <View style={mlStyles.routeMiddle}>
+                        <View style={mlStyles.routeLine} />
+                        <MLTruckIcon />
+                    </View>
+                    <View style={mlStyles.routePoint}>
+                        <View style={mlStyles.routeDotRed} />
+                        <Text style={mlStyles.routeCity} numberOfLines={1}>{dropCity}</Text>
+                        {dropState ? <Text style={mlStyles.routeState} numberOfLines={1}>{dropState}</Text> : null}
+                    </View>
+                </View>
+
+                {/* Info Box - Grey Background */}
+                <View style={mlStyles.infoBox}>
+                    <View style={mlStyles.infoBoxItem}>
+                        <Text style={mlStyles.infoBoxLabel}>Material</Text>
+                        <Text style={mlStyles.infoBoxValue} numberOfLines={1}>{load.materialType}</Text>
+                    </View>
+                    <View style={mlStyles.infoBoxDivider} />
+                    <View style={mlStyles.infoBoxItem}>
+                        <Text style={mlStyles.infoBoxLabel}>Truck</Text>
+                        <Text style={mlStyles.infoBoxValue} numberOfLines={1}>{load.vehicleType}</Text>
+                    </View>
+                    <View style={mlStyles.infoBoxDivider} />
+                    <View style={mlStyles.infoBoxItem}>
+                        <Text style={mlStyles.infoBoxLabel}>Shipment Price</Text>
+                        <Text style={mlStyles.infoBoxValuePrice}>{formatPrice(load.rawPrice)}</Text>
+                    </View>
+                </View>
+
+                {/* Interested Truckers */}
+                {load.offersCount > 0 && (
+                    <View style={mlStyles.interestedRow}>
+                        <View style={mlStyles.interestedPill}>
+                            <Text style={mlStyles.interestedText}>🔥 {load.offersCount} interested truckers</Text>
+                        </View>
+                    </View>
+                )}
+
+                {/* Action Buttons */}
+                <View style={mlStyles.actionButtons}>
+                    <TouchableOpacity
+                        style={mlStyles.viewDetailButton}
+                        onPress={() => openDetail(load)}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={mlStyles.viewDetailButtonText}>View Detail</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={mlStyles.callSalesButton}
+                        onPress={callSalesManager}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={mlStyles.callSalesButtonText}>Call Sales Manager</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
-
-            {/* Action Buttons */}
-            <View style={mlStyles.actionButtons}>
-                <TouchableOpacity
-                    style={mlStyles.viewDetailButton}
-                    onPress={() => openDetail(load)}
-                    activeOpacity={0.8}
-                >
-                    <Text style={mlStyles.viewDetailButtonText}>View Detail</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={mlStyles.callSalesButton}
-                    onPress={callSalesManager}
-                    activeOpacity={0.8}
-                >
-                    <Text style={mlStyles.callSalesButtonText}>Call Sales Manager</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
+        );
+    };
 
     // ---- DETAIL MODAL ----
     const renderDetailModal = () => {
         if (!selectedLoad) return null;
+        const statusCfg = getStatusConfig(selectedLoad.status);
+
         return (
             <Modal
                 visible={showDetailModal}
@@ -404,11 +324,11 @@ const ShipperMyLoads: React.FC = () => {
                         <View style={mlStyles.detailTopCard}>
                             <View style={mlStyles.detailTopRow}>
                                 <Text style={mlStyles.detailLoadId}>{selectedLoad.id}</Text>
-                                <View style={[mlStyles.statusBadge, { backgroundColor: selectedLoad.statusBg }]}>
-                                    <Text style={[mlStyles.statusText, { color: selectedLoad.statusColor }]}>{selectedLoad.status}</Text>
+                                <View style={[mlStyles.statusBadge, { backgroundColor: statusCfg.bg }]}>
+                                    <Text style={[mlStyles.statusText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
                                 </View>
                             </View>
-                            <Text style={mlStyles.detailPostedOn}>Posted on {selectedLoad.postedDate}</Text>
+                            <Text style={mlStyles.detailPostedOn}>Posted on {formatDate(selectedLoad.postedDate)}</Text>
                         </View>
 
                         {/* Route Card */}
@@ -419,7 +339,10 @@ const ShipperMyLoads: React.FC = () => {
                                     <View style={[mlStyles.detailRouteDot, { backgroundColor: '#22c55e' }]} />
                                     <View style={mlStyles.detailRouteInfo}>
                                         <Text style={mlStyles.detailRouteLabel}>Pickup Location</Text>
-                                        <Text style={mlStyles.detailRouteAddress}>{selectedLoad.pickupAddress}</Text>
+                                        <Text style={mlStyles.detailRouteAddress}>{selectedLoad.pickupAddress || '—'}</Text>
+                                        {selectedLoad.rawItem?.exact_origin_location && selectedLoad.rawItem?.exact_origin_location !== 'No' && (
+                                            <Text style={mlStyles.detailExactAddress}>📌 {selectedLoad.rawItem.exact_origin_location}</Text>
+                                        )}
                                     </View>
                                 </View>
                                 <View style={mlStyles.detailRouteConnector} />
@@ -427,7 +350,10 @@ const ShipperMyLoads: React.FC = () => {
                                     <View style={[mlStyles.detailRouteDot, { backgroundColor: '#ef4444' }]} />
                                     <View style={mlStyles.detailRouteInfo}>
                                         <Text style={mlStyles.detailRouteLabel}>Drop Location</Text>
-                                        <Text style={mlStyles.detailRouteAddress}>{selectedLoad.dropAddress}</Text>
+                                        <Text style={mlStyles.detailRouteAddress}>{selectedLoad.dropAddress || '—'}</Text>
+                                        {selectedLoad.rawItem?.exact_destination_location && selectedLoad.rawItem?.exact_destination_location !== 'No' && (
+                                            <Text style={mlStyles.detailExactAddress}>📌 {selectedLoad.rawItem.exact_destination_location}</Text>
+                                        )}
                                     </View>
                                 </View>
                             </View>
@@ -438,20 +364,20 @@ const ShipperMyLoads: React.FC = () => {
                             <Text style={mlStyles.detailCardTitle}>📦 Load Information</Text>
                             <View style={mlStyles.detailInfoGrid}>
                                 <View style={mlStyles.detailInfoItem}>
-                                    <Text style={mlStyles.detailInfoLabel}>Material Type</Text>
-                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.materialType}</Text>
+                                    <Text style={mlStyles.detailInfoLabel}>Material</Text>
+                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.materialType || '—'}</Text>
                                 </View>
                                 <View style={mlStyles.detailInfoItem}>
                                     <Text style={mlStyles.detailInfoLabel}>Quantity</Text>
-                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.quantity}</Text>
+                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.quantity || '—'}</Text>
                                 </View>
                                 <View style={mlStyles.detailInfoItem}>
                                     <Text style={mlStyles.detailInfoLabel}>Vehicle Body Type</Text>
-                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.vehicleBodyType}</Text>
+                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.vehicleBodyType || '—'}</Text>
                                 </View>
                                 <View style={mlStyles.detailInfoItem}>
-                                    <Text style={mlStyles.detailInfoLabel}>Vehicle Type</Text>
-                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.vehicleType}</Text>
+                                    <Text style={mlStyles.detailInfoLabel}>Vehicle Length</Text>
+                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.vehicleType || '—'}</Text>
                                 </View>
                             </View>
                         </View>
@@ -462,11 +388,11 @@ const ShipperMyLoads: React.FC = () => {
                             <View style={mlStyles.detailScheduleRow}>
                                 <View style={mlStyles.detailScheduleItem}>
                                     <Text style={mlStyles.detailInfoLabel}>Pickup Date</Text>
-                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.pickupDate}</Text>
+                                    <Text style={mlStyles.detailInfoValue}>{formatDate(selectedLoad.pickupDate)}</Text>
                                 </View>
                                 <View style={mlStyles.detailScheduleItem}>
                                     <Text style={mlStyles.detailInfoLabel}>Pickup Time</Text>
-                                    <Text style={mlStyles.detailInfoValue}>{selectedLoad.pickupTime}</Text>
+                                    <Text style={mlStyles.detailInfoValue}>{formatTime(selectedLoad.pickupTime)}</Text>
                                 </View>
                             </View>
                         </View>
@@ -476,10 +402,10 @@ const ShipperMyLoads: React.FC = () => {
                             <View style={mlStyles.detailPriceRow}>
                                 <View>
                                     <Text style={mlStyles.detailPriceLabel}>Shipment Price</Text>
-                                    <Text style={mlStyles.detailPriceAmount}>{selectedLoad.price}</Text>
+                                    <Text style={mlStyles.detailPriceAmount}>{formatPrice(selectedLoad.rawPrice)}</Text>
                                 </View>
                                 <View style={mlStyles.detailOffersChip}>
-                                    <Text style={mlStyles.detailOffersText}>🔥 {selectedLoad.interestedTruckers.length} Interested Truckers</Text>
+                                    <Text style={mlStyles.detailOffersText}>🔥 {selectedLoad.offersCount} Truckers Quoted</Text>
                                 </View>
                             </View>
                         </View>
@@ -543,7 +469,7 @@ const ShipperMyLoads: React.FC = () => {
                     <View style={mlStyles.cancelOverlay}>
                         <View style={mlStyles.cancelContainer}>
                             <Text style={mlStyles.cancelTitle}>Shipment Cancel Reason</Text>
-                            
+
                             {cancelReasons.map((reason, index) => (
                                 <TouchableOpacity
                                     key={index}
@@ -584,34 +510,56 @@ const ShipperMyLoads: React.FC = () => {
         );
     };
 
-    const renderInterestModal = () => {
-        return null;
-    };
-
-
     return (
         <View style={mlStyles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
             {/* Screen Header */}
             <View style={mlStyles.screenHeader}>
-                <Text style={mlStyles.screenTitle}>My Loads</Text>
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={mlStyles.backButton}
+                >
+                    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <Path
+                            d="M15 18L9 12L15 6"
+                            stroke="#1e293b"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </Svg>
+                </TouchableOpacity>
+                <Text style={mlStyles.screenTitle}>Active Loads</Text>
                 <View style={mlStyles.loadCountChip}>
-                    <Text style={mlStyles.loadCountText}>{myLoadsData.length} Loads</Text>
+                    <Text style={mlStyles.loadCountText} numberOfLines={1}>{loadsData.length} Loads</Text>
                 </View>
             </View>
 
-            <ScrollView
-                style={mlStyles.scrollView}
-                contentContainerStyle={mlStyles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                {myLoadsData.map(renderLoadCard)}
-                <View style={{ height: 80 }} />
-            </ScrollView>
+            {isLoading && !refreshing ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color="#3b82f6" />
+                </View>
+            ) : (
+                <FlatList
+                    data={loadsData}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => renderLoadCard(item)}
+                    contentContainerStyle={mlStyles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={() => fetchLoads(true)} colors={['#3b82f6']} />
+                    }
+                    ListEmptyComponent={
+                        <View style={{ flex: 1, alignItems: 'center', marginTop: 100 }}>
+                            <Text style={{ color: '#6b7280', fontSize: 16 }}>No active loads found</Text>
+                        </View>
+                    }
+                    ListFooterComponent={<View style={{ height: 80 }} />}
+                />
+            )}
 
             {renderDetailModal()}
-            {renderInterestModal()}
         </View>
     );
 
@@ -631,22 +579,39 @@ const mlStyles = StyleSheet.create({
         paddingBottom: 16,
         backgroundColor: '#ffffff',
     },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
     screenTitle: {
         fontSize: 24,
         fontWeight: '800',
         color: '#0f172a',
         letterSpacing: -0.5,
+        flex: 1,
+        marginLeft: 12,
     },
     loadCountChip: {
         backgroundColor: '#eff6ff',
         paddingHorizontal: 14,
-        paddingVertical: 6,
+        paddingVertical: 10,
         borderRadius: 20,
+        flexShrink: 0,
     },
     loadCountText: {
         fontSize: 13,
         fontWeight: '700',
         color: '#3b82f6',
+        lineHeight: 15,
     },
     scrollView: {
         flex: 1,
@@ -697,8 +662,10 @@ const mlStyles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
         paddingVertical: 6,
+        justifyContent: 'space-between',
     },
     routePoint: {
+        flex: 1,
         alignItems: 'center',
     },
     routeDotGreen: {
@@ -721,15 +688,22 @@ const mlStyles = StyleSheet.create({
     },
     routeCity: {
         fontSize: 13,
-        fontWeight: '600',
-        color: '#374151',
+        fontWeight: '700',
+        color: '#0f172a',
+        textAlign: 'center',
+    },
+    routeState: {
+        fontSize: 11,
+        color: '#64748b',
+        fontWeight: '500',
+        textAlign: 'center',
     },
     routeMiddle: {
-        flex: 1,
+        width: 60,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginHorizontal: 8,
+        marginHorizontal: 4,
     },
     routeLine: {
         position: 'absolute',
@@ -824,17 +798,107 @@ const mlStyles = StyleSheet.create({
         color: '#ffffff',
     },
 
-    // Action Button (legacy)
-    viewDetailBtn: {
-        backgroundColor: '#3b82f6',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 8,
+    // Legacy styles (keeping for compatibility)
+    infoGrid: {
+        backgroundColor: '#f8fafc',
+        borderRadius: 14,
+        padding: 14,
+        marginBottom: 12,
+    },
+    infoRow: {
+        flexDirection: 'row',
+    },
+    infoItem: {
+        flex: 1,
         alignItems: 'center',
     },
-    viewDetailText: {
+    infoDivider: {
+        width: 1,
+        backgroundColor: '#e2e8f0',
+        marginHorizontal: 8,
+    },
+    infoRowSeparator: {
+        height: 1,
+        backgroundColor: '#e2e8f0',
+        marginVertical: 10,
+    },
+    infoLabel: {
+        fontSize: 10,
+        color: '#94a3b8',
+        fontWeight: '500',
+        marginBottom: 3,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    infoValue: {
         fontSize: 13,
         fontWeight: '600',
+        color: '#334155',
+    },
+
+    // Price Bar
+    priceBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 14,
+    },
+    priceLabel: {
+        fontSize: 11,
+        color: '#94a3b8',
+        marginBottom: 2,
+    },
+    priceValue: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#059669',
+    },
+    offersBadge: {
+        backgroundColor: '#fff7ed',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 10,
+    },
+    offersText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#ea580c',
+    },
+
+    // Action Buttons
+    actionRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    viewDetailBtn: {
+        flex: 1,
+        backgroundColor: '#f1f5f9',
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+    },
+    viewDetailText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#475569',
+    },
+    viewInterestBtn: {
+        flex: 1,
+        backgroundColor: '#3b82f6',
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        shadowColor: '#3b82f6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    viewInterestText: {
+        fontSize: 14,
+        fontWeight: '700',
         color: '#ffffff',
     },
 
@@ -886,8 +950,6 @@ const mlStyles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingTop: 16,
     },
-
-    // Detail Modal
     detailTopCard: {
         backgroundColor: '#f8fafc',
         borderRadius: 16,
@@ -942,6 +1004,13 @@ const mlStyles = StyleSheet.create({
         marginTop: 4,
         marginRight: 12,
     },
+    detailRouteConnector: {
+        width: 2,
+        height: 24,
+        backgroundColor: '#e2e8f0',
+        marginLeft: 5,
+        marginVertical: 4,
+    },
     detailRouteInfo: {
         flex: 1,
     },
@@ -958,25 +1027,17 @@ const mlStyles = StyleSheet.create({
         color: '#334155',
         marginTop: 2,
     },
-    detailRouteConnector: {
-        width: 2,
-        height: 24,
-        backgroundColor: '#e2e8f0',
-        marginLeft: 5,
-        marginVertical: 4,
-    },
     detailDistanceBadge: {
-        backgroundColor: '#f0fdf4',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 10,
+        backgroundColor: '#e0f2fe',
         alignSelf: 'flex-start',
-        marginTop: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 10,
     },
     detailDistanceText: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '600',
-        color: '#16a34a',
+        color: '#0284c7',
     },
     detailInfoGrid: {
         gap: 12,
@@ -1189,191 +1250,12 @@ const mlStyles = StyleSheet.create({
         fontWeight: '700',
         color: '#ffffff',
     },
-
-    // Interest Modal Header
-    interestHeaderCenter: {
-        alignItems: 'center',
-        flex: 1,
-    },
-    interestSubtitle: {
+    detailExactAddress: {
         fontSize: 12,
-        color: '#94a3b8',
-        marginTop: 2,
-    },
-    interestCountBar: {
-        backgroundColor: '#eff6ff',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-    },
-    interestCountText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#3b82f6',
-    },
-
-    // Trucker Card
-    truckerCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 18,
-        padding: 16,
-        marginBottom: 14,
-        borderWidth: 1,
-        borderColor: '#f1f5f9',
-        shadowColor: '#64748b',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
-        elevation: 3,
-    },
-    truckerHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    truckerAvatarContainer: {
-        position: 'relative',
-        marginRight: 12,
-    },
-    truckerAvatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: '#3b82f6',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    truckerAvatarText: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#ffffff',
-    },
-    truckerVerifiedBadge: {
-        position: 'absolute',
-        bottom: -2,
-        right: -2,
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        backgroundColor: '#22c55e',
-        borderWidth: 2,
-        borderColor: '#ffffff',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    truckerInfo: {
-        flex: 1,
-    },
-    truckerName: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#0f172a',
-    },
-    truckerRatingRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        color: '#64748b',
         marginTop: 4,
-    },
-    truckerRating: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#f59e0b',
-        marginLeft: 4,
-    },
-    truckerDividerDot: {
-        width: 3,
-        height: 3,
-        borderRadius: 1.5,
-        backgroundColor: '#cbd5e1',
-        marginHorizontal: 6,
-    },
-    truckerTrips: {
-        fontSize: 12,
-        color: '#64748b',
-    },
-    truckerExp: {
-        fontSize: 12,
-        color: '#64748b',
-    },
-
-    // Trucker Details
-    truckerDetails: {
-        flexDirection: 'row',
-        backgroundColor: '#f8fafc',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 14,
-    },
-    truckerDetailItem: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    truckerDetailLabel: {
-        fontSize: 10,
-        color: '#94a3b8',
-        fontWeight: '500',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        marginBottom: 4,
-    },
-    truckerDetailValue: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#334155',
-    },
-    truckerDetailDivider: {
-        width: 1,
-        backgroundColor: '#e2e8f0',
-    },
-
-    // Trucker Footer
-    truckerFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    truckerPriceLabel: {
-        fontSize: 11,
-        color: '#94a3b8',
-    },
-    truckerPriceValue: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: '#059669',
-    },
-    truckerActions: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    callBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: '#22c55e',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#22c55e',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    acceptBtn: {
-        backgroundColor: '#3b82f6',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#3b82f6',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    acceptBtnText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#ffffff',
+        fontStyle: 'italic',
     },
 });
 
-export default ShipperMyLoads;
+export default ShipperActiveLoads;

@@ -22,6 +22,7 @@ import Svg, { Path, Circle, Defs, LinearGradient, Stop, G } from 'react-native-s
 import { useNavigation } from '@react-navigation/native';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import moment from 'moment';
+import { connectPusher, addPusherStateListener } from '@truckmitr/src/services/pusher';
 // import BottomBarComponent from '../../../../../stacks/tabs/shipper-bottom-bar';
 
 // --- Icons ---
@@ -147,6 +148,17 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
         getPostLoadData();
         fetchHomeData();
 
+        // 🔥 Test Pusher connection (remove after testing)
+        connectPusher().then(() => {
+            console.log('[TEST] Pusher connect called');
+        }).catch((err: any) => {
+            console.error('[TEST] Pusher connect error:', err);
+        });
+
+        const removeListener = addPusherStateListener((state, error) => {
+            console.log(`[TEST] Pusher state: ${state}`, error || '');
+        });
+
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -160,6 +172,8 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                 useNativeDriver: true,
             }),
         ]).start();
+
+        return () => removeListener();
     }, []);
 
     const onRefresh = useCallback(() => {
@@ -265,6 +279,9 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                         <Text style={styles.userName} numberOfLines={1} ellipsizeMode="tail">
                             {user?.name || 'Shipper'}
                         </Text>
+                        <Text style={styles.tmidText}>
+                            {user?.unique_id || '—'}
+                        </Text>
                     </View>
                 </View>
                 <TouchableOpacity
@@ -362,9 +379,9 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                             contentContainerStyle={styles.statsScrollContent}
                             style={styles.statsScroll}
                         >
-                            <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate(STACKS.SHIPPER_MY_LOADS)}>
+                            <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate(STACKS.SHIPPER_ACTIVE_LOADS)}>
                                 <View style={styles.statCardHeader}>
-                                    <Text style={styles.statLabel}>Active Loads</Text>
+                                    <Text style={styles.statLabel}>{'Active\nLoads'}</Text>
                                     <View style={[styles.statIconBadge, { backgroundColor: '#eff6ff' }]}>
                                         <Text style={styles.statIconText}>📦</Text>
                                     </View>
@@ -386,11 +403,11 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
 
                             <TouchableOpacity
                                 style={styles.statCard}
-                                onPress={() => (navigation).navigate('shipperAcceptedLoads')}
+                                onPress={() => navigation.navigate(STACKS.SHIPPER_ACCEPTED_LOADS)}
                                 activeOpacity={0.8}
                             >
                                 <View style={styles.statCardHeader}>
-                                    <Text style={styles.statLabel}>Accepted</Text>
+                                    <Text style={styles.statLabel}>{`Accepted\nLoads`}</Text>
                                     <View style={[styles.statIconBadge, { backgroundColor: '#e0f2fe' }]}>
                                         <Text style={styles.statIconText}>🤝</Text>
                                     </View>
@@ -403,9 +420,9 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                 </View>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.statCard} onPress={() => (navigation).navigate('shipperInTransit')}>
+                            <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate(STACKS.SHIPPER_IN_TRANSIT_LOADS)}>
                                 <View style={styles.statCardHeader}>
-                                    <Text style={styles.statLabel}>In Transit</Text>
+                                    <Text style={styles.statLabel}>In Transit Loads</Text>
                                     <View style={[styles.statIconBadge, { backgroundColor: '#ecfdf5' }]}>
                                         <Text style={styles.statIconText}>🚚</Text>
                                     </View>
@@ -419,7 +436,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                 </View>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.statCard} onPress={() => (navigation).navigate('shipperPodPending')}>
+                            <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate(STACKS.SHIPPER_POD_PENDING)}>
                                 <View style={styles.statCardHeader}>
                                     <Text style={styles.statLabel}>POD Pending</Text>
                                     <View style={[styles.statIconBadge, { backgroundColor: '#fff7ed' }]}>
@@ -436,7 +453,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
 
                             <TouchableOpacity style={styles.statCard} onPress={() => (navigation).navigate('shipperPaymentPending')}>
                                 <View style={styles.statCardHeader}>
-                                    <Text style={styles.statLabel}>Payment</Text>
+                                    <Text style={styles.statLabel}>{`Payment\nPending`}</Text>
                                     <View style={[styles.statIconBadge, { backgroundColor: '#fef2f2' }]}>
                                         <Text style={styles.statIconText}>💰</Text>
                                     </View>
@@ -451,7 +468,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
 
                             <TouchableOpacity style={styles.statCard} onPress={() => (navigation).navigate('shipperCompletedLoads')}>
                                 <View style={styles.statCardHeader}>
-                                    <Text style={styles.statLabel}>Completed</Text>
+                                    <Text style={styles.statLabel}>Completed Loads</Text>
                                     <View style={[styles.statIconBadge, { backgroundColor: '#f0fdfa' }]}>
                                         <Text style={styles.statIconText}>🎉</Text>
                                     </View>
@@ -467,19 +484,21 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                         </ScrollView>
 
                         {/* Insight Strip */}
-                        <TouchableOpacity style={styles.insight} onPress={() => (navigation).navigate('shipperInTransit')} activeOpacity={0.7}>
-                            <View style={styles.insightBar} />
-                            <View style={styles.insightIconBox}>
-                                <TruckIcon />
-                            </View>
-                            <View style={styles.insightText}>
-                                <Text style={styles.insightTitle}>2 loads currently in transit</Text>
-                                <Text style={styles.insightSub}>Expected delivery today: 1</Text>
-                            </View>
+                        {dashboardData?.['in-transit'] > 0 && (
+                            <TouchableOpacity style={styles.insight} onPress={() => navigation.navigate(STACKS.SHIPPER_IN_TRANSIT_LOADS)} activeOpacity={0.7}>
+                                <View style={styles.insightBar} />
+                                <View style={styles.insightIconBox}>
+                                    <TruckIcon />
+                                </View>
+                                <View style={styles.insightText}>
+                                    <Text style={styles.insightTitle}>{dashboardData?.['in-transit'] || 0} {dashboardData?.['in-transit'] === 1 ? 'load currently in transit' : 'loads currently in transit'}</Text>
+                                    {/* <Text style={styles.insightSub}>Expected delivery today: 1</Text> */}
+                                </View>
 
-                            {/* Optional Arrow to indicate clickability */}
-                            <ArrowIcon />
-                        </TouchableOpacity>
+                                {/* Optional Arrow to indicate clickability */}
+                                <ArrowIcon />
+                            </TouchableOpacity>
+                        )}
 
                         {/* Today at a Glance Section */}
                         <View style={styles.glanceSection}>
@@ -542,7 +561,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                     <View style={styles.route}>
                                         <View style={styles.routePoint}>
                                             <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
-                                            <Text style={styles.routeCity}>{extractCity(latestLoad.origin_location)}</Text>
+                                            <Text numberOfLines={1} style={styles.routeCity}>{extractCity(latestLoad.origin_location)}</Text>
                                         </View>
                                         <View style={styles.routeMid}>
                                             <View style={styles.routeLine} />
@@ -550,7 +569,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                         </View>
                                         <View style={styles.routePoint}>
                                             <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
-                                            <Text style={styles.routeCity}>{extractCity(latestLoad.destination_location)}</Text>
+                                            <Text numberOfLines={1} style={styles.routeCity}>{extractCity(latestLoad.destination_location)}</Text>
                                         </View>
                                     </View>
                                     <View style={styles.loadMeta}>
@@ -631,8 +650,9 @@ const styles = StyleSheet.create({
         fontSize: 8,
         fontWeight: 'bold'
     },
-    greeting: { fontSize: 15, color: '#6b7280', marginBottom: -4, marginTop: 6 },
-    userName: { fontSize: 20, fontWeight: '700', color: '#1f2937', lineHeight: 28, paddingBottom: 2 },
+    greeting: { fontSize: 13, color: '#6b7280', marginBottom: -4, marginTop: 6 },
+    userName: { fontSize: 18, fontWeight: '700', color: '#1f2937', lineHeight: 26 },
+    tmidText: { fontSize: 11, color: '#6b7280', fontWeight: '500', marginTop: 1 },
     notifBtn: {
         width: 46, height: 46, borderRadius: 23,
         backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
@@ -730,13 +750,13 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     heroTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '800',
         color: '#ffffff',
         letterSpacing: -0.5,
     },
     heroSubtitle: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
         color: '#93c5fd',
         marginTop: 1,
@@ -763,7 +783,7 @@ const styles = StyleSheet.create({
     },
     heroBtnText: {
         color: '#ffffff',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '800',
         letterSpacing: 0.5,
     },
@@ -780,7 +800,7 @@ const styles = StyleSheet.create({
         height: 190,
         marginRight: -25, // Push it out
     },
-    sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1f2937', marginBottom: 8 },
+    sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1f2937', marginBottom: 8 },
     statsScroll: {
         marginLeft: -12, // Pull left to counteract screen padding
         marginRight: -12, // Pull right
@@ -822,7 +842,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
     statNum: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '800',
         color: '#0f172a', // Slate 900
         marginTop: 4,
@@ -832,7 +852,6 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: '600',
         color: '#64748b', // Slate 500
-        maxWidth: '80%',
         lineHeight: 14,
     },
     statChartContainer: {
@@ -901,12 +920,12 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.08, shadowRadius: 12, elevation: 4,
     },
     loadHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-    loadId: { fontSize: 17, fontWeight: '700', color: '#1f2937' },
+    loadId: { fontSize: 15, fontWeight: '700', color: '#1f2937' },
     badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, gap: 5 },
     badgeDot: { width: 6, height: 6, borderRadius: 3 },
     badgeText: { fontSize: 12, fontWeight: '600' },
-    route: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingVertical: 8 },
-    routePoint: { alignItems: 'center' },
+    route: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingVertical: 8, justifyContent: 'space-between' },
+    routePoint: { alignItems: 'center', flex: 1.2 },
     // KYC Approval Status Styles
     approvalCard: {
         backgroundColor: '#fff',
@@ -1017,13 +1036,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 0,
     },
     glanceTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '700',
         color: '#111827',
         marginBottom: 4,
     },
     glanceSubtitle: {
-        fontSize: 13,
+        fontSize: 12,
         color: '#6b7280',
         marginBottom: 16,
     },
@@ -1056,7 +1075,7 @@ const styles = StyleSheet.create({
     },
     glanceEmoji: { fontSize: 16 },
     glanceValue: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '800',
         marginBottom: 2,
     },

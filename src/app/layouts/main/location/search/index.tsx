@@ -1,6 +1,6 @@
 import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NavigatorParams, STACKS } from '@truckmitr/src/stacks/stacks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,13 +11,15 @@ import Feather from 'react-native-vector-icons/Feather'
 import { hitSlop, isAndroid } from '@truckmitr/src/app/functions';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Octicons from 'react-native-vector-icons/Octicons';
-import { autocompletePlaces, placeDetails } from '@truckmitr/src/utils/maps/google.apis';
+import { autocompletePlaces, generateSessionToken, placeDetails } from '@truckmitr/src/utils/maps/google.apis';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 export default function LocationSearch() {
     const navigation = useNavigation<NavigatorProp>();
+    const route = useRoute<any>();
+    const params = route.params;
     const safeAreaInsets = useSafeAreaInsets();
     const colors = useColor();
     const { shadow } = useShadow()
@@ -26,12 +28,17 @@ export default function LocationSearch() {
     const [query, setQuery] = useState('');
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [sessionToken, setSessionToken] = useState<string>('');
+
+    useEffect(() => {
+        setSessionToken(generateSessionToken());
+    }, []);
 
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
             if (query.length > 1) {
                 setLoading(true);
-                autocompletePlaces(query)
+                autocompletePlaces(query, sessionToken)
                     .then((res: any) => {
                         if (res?.status === 'OK' && res?.result) {
                             setSuggestions(res?.result?.predictions);
@@ -51,10 +58,15 @@ export default function LocationSearch() {
             }
         }, 400);
         return () => clearTimeout(delayDebounce);
-    }, [query]);
+    }, [query, sessionToken]);
 
     const _onPressMapView = async (item: any) => {
-        navigation.navigate(STACKS.MAP_VIEW, { locationData: item })
+        navigation.navigate(STACKS.MAP_VIEW, {
+            locationData: item,
+            returnScreen: params?.returnScreen,
+            pointType: params?.pointType,
+            sessionToken: sessionToken
+        })
     }
     return (
         <View style={{ flex: 1, backgroundColor: colors.white, alignItems: 'center' }}>
