@@ -23,6 +23,7 @@ import { useNavigation } from '@react-navigation/native';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import moment from 'moment';
 import { connectPusher, addPusherStateListener } from '@truckmitr/src/services/pusher';
+import { useTruckLocation } from '@truckmitr/src/app/hooks/useTruckLocation';
 // import BottomBarComponent from '../../../../../stacks/tabs/shipper-bottom-bar';
 
 // --- Icons ---
@@ -103,6 +104,21 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
     const [dashboardData, setDashboardData] = useState<any>(null);
     const [glanceData, setGlanceData] = useState<any>(null);
     const [latestLoad, setLatestLoad] = useState<any>(null);
+
+    // 🔍 DEBUG: Listen to driver-location.1 channel
+    const { location: driverLocation, connectionStatus, error: pusherError, isTracking } = useTruckLocation('driver-location.1');
+
+    useEffect(() => {
+        console.log('🔌 [Pusher Debug] Connection Status:', connectionStatus);
+        if (pusherError) console.log('❌ [Pusher Debug] Error:', pusherError);
+    }, [connectionStatus, pusherError]);
+
+    useEffect(() => {
+        if (driverLocation) {
+            console.log('📍 [Pusher Debug] Location Event Received!', JSON.stringify(driverLocation));
+        }
+        console.log('🛰️ [Pusher Debug] isTracking:', isTracking);
+    }, [driverLocation, isTracking]);
 
     // Calculate progress for ring
     const progress = parseInt(profileCompletion || '0', 10);
