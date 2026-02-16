@@ -12,14 +12,17 @@ import {
     ActivityIndicator,
     RefreshControl,
     Linking,
+    Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import Svg, { Path, Circle } from 'react-native-svg';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS, BASE_URL } from '@truckmitr/utils/config';
 import ShimmerText from '@truckmitr/utils/shimmerText';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import moment from 'moment';
+import RazorpayCheckout from 'react-native-razorpay';
 
 // ==========================================
 // TRUCK ICON COMPONENT
@@ -41,6 +44,7 @@ const TruckIcon = () => (
 interface AcceptedLoadData {
     id: string;
     load_id: string;
+    numericId: number; // DB id for payment API
     pickupCity: string;
     pickupState: string;
     pickupAddress: string;
@@ -52,7 +56,12 @@ interface AcceptedLoadData {
     vehicleType: string;
     initialPrice: string;
     settledPrice: string;
-    price: string; // Keep for compatibility if needed, but will prioritize the above
+    settledPriceRaw: number; // Raw number for 90% calculation
+    rawInitialPrice: number;
+    rawSettledPrice: number;
+    payableAmount: number;
+    paymentStage: string;
+    price: string;
     acceptedDate: string;
     expectedPickupDate: string;
     truckerName: string;
@@ -70,6 +79,7 @@ interface AcceptedLoadData {
 
 const ShipperAcceptedLoads: React.FC = () => {
     const navigation = useNavigation<any>();
+    const { user } = useSelector((state: any) => state?.user) || {};
     const [selectedLoad, setSelectedLoad] = useState<AcceptedLoadData | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [loadsData, setLoadsData] = useState<AcceptedLoadData[]>([]);
@@ -113,6 +123,7 @@ const ShipperAcceptedLoads: React.FC = () => {
             return {
                 id: postLoad.load_id || `#${item.id}`,
                 load_id: postLoad.unique_id || '—',
+                numericId: postLoad.id || item.id,
                 pickupCity: pickup.city,
                 pickupState: pickup.state,
                 pickupAddress: postLoad.origin_location || '—',
@@ -124,6 +135,11 @@ const ShipperAcceptedLoads: React.FC = () => {
                 vehicleType: postLoad.vehicle_length?.length_label || '—',
                 initialPrice: postLoad.price ? `₹${parseFloat(postLoad.price).toLocaleString('en-IN')}` : '—',
                 settledPrice: postLoad.setteled_price ? `₹${parseFloat(postLoad.setteled_price).toLocaleString('en-IN')}` : '—',
+                settledPriceRaw: postLoad.setteled_price ? parseFloat(postLoad.setteled_price) : 0,
+                rawInitialPrice: postLoad.price ? parseFloat(postLoad.price) : 0,
+                rawSettledPrice: postLoad.setteled_price ? parseFloat(postLoad.setteled_price) : 0,
+                payableAmount: item.payable_amount || 0,
+                paymentStage: item.payment_stage || 'balance_90_percent',
                 price: postLoad.setteled_price ? `₹${parseFloat(postLoad.setteled_price).toLocaleString('en-IN')}` : (postLoad.price ? `₹${parseFloat(postLoad.price).toLocaleString('en-IN')}` : 'Negotiable'),
                 acceptedDate: postLoad.updated_at ? moment(postLoad.updated_at).fromNow() : 'Recently',
                 expectedPickupDate: postLoad.picup_date ? `${moment(postLoad.picup_date).format('DD MMM, YYYY')} ${postLoad.load_time ? moment(postLoad.load_time, 'HH:mm').format('hh:mm A') : ''}` : 'N/A',
@@ -167,6 +183,72 @@ const ShipperAcceptedLoads: React.FC = () => {
     const handleCall = (phone: string) => {
         if (phone) {
             Linking.openURL(`tel:${phone}`);
+        }
+    };
+
+    // Payment
+    const [paymentLoadingId, setPaymentLoadingId] = useState<string | null>(null);
+
+    const initiatePayment = async (load: AcceptedLoadData) => {
+        setPaymentLoadingId(load.id);
+        try {
+            const response = await axiosInstance.post(END_POINTS.SHIPPER_CREATE_ORDER_PAYMENT, {
+                id: load.numericId,
+            });
+
+            if (!response.data.success) {
+                Alert.alert('Payment Info', response.data.message || 'Unable to create payment order.');
+                return;
+            }
+
+            const { order_id, razorpay_key, amount, payment_stage } = response.data;
+
+            const stageLabel = payment_stage === 'balance_90_percent'
+                ? 'Advance Payment (90%)'
+                : 'Balance Payment (10%)';
+
+            const options = {
+                description: stageLabel,
+                image: 'https://truckmitr.com/logo.png',
+                currency: 'INR',
+                key: razorpay_key,
+                amount: amount * 100, // Convert to paise
+                order_id: order_id,
+                name: 'TruckMitr',
+                prefill: {
+                    contact: user?.mobile || '',
+                    name: user?.name || '',
+                },
+                readonly: {
+                    contact: true,
+                    email: true,
+                },
+                theme: { color: '#246BFD' },
+            };
+
+            RazorpayCheckout.open(options)
+                .then((data: any) => {
+                    console.log('Payment Success:', data);
+                    Alert.alert(
+                        '✅ Payment Successful!',
+                        `₹${amount.toLocaleString('en-IN')} paid successfully.\n\n${payment_stage === 'balance_90_percent'
+                            ? 'Remaining 10% can be paid after delivery.'
+                            : 'All payments completed!'
+                        }`,
+                        [{ text: 'OK', onPress: () => fetchLoads() }]
+                    );
+                })
+                .catch((error: any) => {
+                    console.log('Payment Failed:', error);
+                    if (error?.code !== 2) { // code 2 = user cancelled
+                        Alert.alert('Payment Failed', 'Payment was not completed. Please try again.');
+                    }
+                });
+        } catch (error) {
+            console.error('Error initiating payment:', error);
+            Alert.alert('Error', 'Failed to initiate payment. Please try again.');
+        } finally {
+            setPaymentLoadingId(null);
         }
     };
 
@@ -218,36 +300,74 @@ const ShipperAcceptedLoads: React.FC = () => {
                 </View>
             </View>
 
-            {/* Price Transition Section */}
-            <View style={styles.priceStoryCard}>
-                <View style={styles.priceColumn}>
-                    <Text style={styles.priceLabelSmall}>You Posted</Text>
-                    <Text style={styles.priceValueStrikethrough}>{load.initialPrice}</Text>
-                </View>
+            {/* Price section - conditional update */}
+            {load.rawInitialPrice !== load.rawSettledPrice ? (
+                <View style={styles.priceStoryCard}>
+                    <View style={styles.priceColumn}>
+                        <Text style={styles.priceLabelSmall}>You Posted</Text>
+                        <Text style={styles.priceValueStrikethrough}>{load.initialPrice}</Text>
+                    </View>
 
-                <View style={styles.priceArrowSection}>
-                    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <Path d="M5 12h14M12 5l7 7-7 7" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </Svg>
-                </View>
+                    <View style={styles.priceArrowSection}>
+                        <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <Path d="M5 12h14M12 5l7 7-7 7" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </Svg>
+                    </View>
 
-                <View style={styles.priceColumn}>
-                    <Text style={styles.priceLabelSmall}>Final Price</Text>
-                    <Text style={styles.priceValueFinal}>{load.settledPrice}</Text>
-                    <TouchableOpacity
-                        style={styles.payNowInlineButton}
-                        onPress={() => console.log('Pay Now pressed for load:', load.id)}
-                        activeOpacity={0.8}
-                    >
-                        <ShimmerText
-                            text=" Click to Pay Now"
-                            textStyle={styles.payNowInlineText}
-                            colors={['transparent', '#FFFFFF', 'transparent']}
-                            duration={1000}
-                        />
-                    </TouchableOpacity>
+                    <View style={styles.priceColumn}>
+                        <Text style={styles.priceLabelSmall}>Final Price</Text>
+                        <Text style={styles.priceValueFinal}>{load.settledPrice}</Text>
+                    </View>
                 </View>
-            </View>
+            ) : (
+                <View style={styles.priceStoryCard}>
+                    <View style={[styles.priceColumn, { alignItems: 'flex-start' }]}>
+                        <Text style={styles.priceLabelSmall}>Final Price</Text>
+                        <Text style={styles.priceValueFinal}>{load.settledPrice}</Text>
+                    </View>
+                </View>
+            )}
+
+            {/* 90% / 10% Payment Breakdown - updated to use payableAmount */}
+            {load.rawSettledPrice > 0 && (
+                <View style={styles.paymentBreakdownCard}>
+                    <View style={styles.paymentBreakdownRow}>
+                        <View style={styles.paymentBreakdownLeft}>
+                            <Text style={styles.paymentBreakdownLabel}>Pay Now (90%)</Text>
+                            <Text style={styles.paymentBreakdownAmount}>
+                                ₹{load.payableAmount.toLocaleString('en-IN')}
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.payNowButton, paymentLoadingId === load.id && { opacity: 0.7 }]}
+                            onPress={() => initiatePayment(load)}
+                            disabled={paymentLoadingId === load.id}
+                            activeOpacity={0.8}
+                        >
+                            {paymentLoadingId === load.id ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <ShimmerText
+                                    text="  Pay Now →"
+                                    textStyle={styles.payNowButtonText}
+                                    colors={['transparent', '#FFFFFF', 'transparent']}
+                                    duration={1200}
+                                />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.paymentBreakdownDivider} />
+                    <View style={styles.paymentBreakdownRow}>
+                        <View style={styles.paymentBreakdownLeft}>
+                            <Text style={[styles.paymentBreakdownLabel, { color: '#94a3b8' }]}>Balance (10%)</Text>
+                            <Text style={[styles.paymentBreakdownAmount, { color: '#94a3b8', fontSize: 14 }]}>
+                                ₹{(load.rawSettledPrice - load.payableAmount).toLocaleString('en-IN')}
+                            </Text>
+                        </View>
+                        <Text style={styles.payLaterTag}>After Delivery</Text>
+                    </View>
+                </View>
+            )}
 
             <View style={styles.managerNoteBox}>
                 <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ marginRight: 6 }}>
@@ -278,7 +398,7 @@ const ShipperAcceptedLoads: React.FC = () => {
                 >
                     <Text style={styles.viewDetailText}>View Details</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     style={styles.callSalesButton}
                     onPress={() => handleCall(load.truckerPhone)}
                     activeOpacity={0.8}
@@ -287,7 +407,7 @@ const ShipperAcceptedLoads: React.FC = () => {
                         <Path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </Svg>
                     <Text style={styles.callSalesButtonText}>Call Trucker</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
         </View>
     );
@@ -328,6 +448,108 @@ const ShipperAcceptedLoads: React.FC = () => {
                                 </View>
                             </View>
                             <Text style={styles.detailPostedOn}>Accepted {selectedLoad.acceptedDate}</Text>
+                        </View>
+
+                        {/* Trucker Info Card - Moved to top */}
+                        <View style={styles.detailCard}>
+                            <Text style={styles.detailCardTitle}>🚛 Trucker Information</Text>
+                            <View style={styles.detailTruckerSection}>
+                                <Image source={{ uri: selectedLoad.truckerImage }} style={styles.detailTruckerImage} />
+                                <View style={styles.detailTruckerInfo}>
+                                    <Text style={styles.detailTruckerName}>{selectedLoad.truckerName}</Text>
+                                    <Text style={styles.detailVehicleNumber}>{selectedLoad.vehicleNumber}</Text>
+                                    <View style={styles.detailRatingRow}>
+                                        <Text style={styles.detailRatingText}>★ {selectedLoad.truckerRating}</Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* <View style={styles.detailActions}>
+                                <TouchableOpacity style={[styles.detailCallButton, { flex: 1 }]} onPress={() => handleCall(selectedLoad.truckerPhone)}>
+                                    <Text style={styles.detailCallText}>📞 Call Trucker</Text>
+                                </TouchableOpacity>
+                            </View> */}
+                        </View>
+
+                        {/* Price Card - moved to top and updated */}
+                        <View style={styles.detailCard}>
+                            <Text style={styles.detailCardTitle}>💰 Price Negotiation</Text>
+
+                            {selectedLoad.rawInitialPrice !== selectedLoad.rawSettledPrice ? (
+                                <View style={styles.priceStoryCard}>
+                                    <View style={styles.priceColumn}>
+                                        <Text style={styles.priceLabelSmall}>You Posted</Text>
+                                        <Text style={styles.priceValueStrikethrough}>{selectedLoad.initialPrice}</Text>
+                                    </View>
+
+                                    <View style={styles.priceArrowSection}>
+                                        <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                            <Path d="M5 12h14M12 5l7 7-7 7" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </Svg>
+                                    </View>
+
+                                    <View style={styles.priceColumn}>
+                                        <Text style={styles.priceLabelSmall}>Final Price</Text>
+                                        <Text style={styles.priceValueFinal}>{selectedLoad.settledPrice}</Text>
+                                    </View>
+                                </View>
+                            ) : (
+                                <View style={styles.priceStoryCard}>
+                                    <View style={[styles.priceColumn, { alignItems: 'flex-start' }]}>
+                                        <Text style={styles.priceLabelSmall}>Final Price</Text>
+                                        <Text style={styles.priceValueFinal}>{selectedLoad.settledPrice}</Text>
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* 90% / 10% Breakdown in Modal - updated to use payableAmount */}
+                            {selectedLoad.rawSettledPrice > 0 && (
+                                <View style={[styles.paymentBreakdownCard, { marginTop: 8 }]}>
+                                    <View style={styles.paymentBreakdownRow}>
+                                        <View style={styles.paymentBreakdownLeft}>
+                                            <Text style={styles.paymentBreakdownLabel}>Pay Now (90%)</Text>
+                                            <Text style={styles.paymentBreakdownAmount}>
+                                                ₹{selectedLoad.payableAmount.toLocaleString('en-IN')}
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={[styles.payNowButton, paymentLoadingId === selectedLoad.id && { opacity: 0.7 }]}
+                                            onPress={() => initiatePayment(selectedLoad)}
+                                            disabled={paymentLoadingId === selectedLoad.id}
+                                            activeOpacity={0.8}
+                                        >
+                                            {paymentLoadingId === selectedLoad.id ? (
+                                                <ActivityIndicator size="small" color="#fff" />
+                                            ) : (
+                                                <ShimmerText
+                                                    text="  Pay Now →"
+                                                    textStyle={styles.payNowButtonText}
+                                                    colors={['transparent', '#FFFFFF', 'transparent']}
+                                                    duration={1200}
+                                                />
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                    <View style={styles.paymentBreakdownDivider} />
+                                    <View style={styles.paymentBreakdownRow}>
+                                        <View style={styles.paymentBreakdownLeft}>
+                                            <Text style={[styles.paymentBreakdownLabel, { color: '#94a3b8' }]}>Balance (10%)</Text>
+                                            <Text style={[styles.paymentBreakdownAmount, { color: '#94a3b8', fontSize: 14 }]}>
+                                                ₹{(selectedLoad.rawSettledPrice - selectedLoad.payableAmount).toLocaleString('en-IN')}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.payLaterTag}>After Delivery</Text>
+                                    </View>
+                                </View>
+                            )}
+
+                            <View style={[styles.managerNoteBox, { marginBottom: 0 }]}>
+                                <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ marginRight: 6 }}>
+                                    <Path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="#059669" strokeWidth="2" />
+                                    <Path d="M12 16v-4M12 8h.01" stroke="#059669" strokeWidth="2" strokeLinecap="round" />
+                                </Svg>
+                                <Text style={styles.managerNoteText}>This final price was settled by our Sales Manager after negotiation.</Text>
+                            </View>
                         </View>
 
                         {/* Route Card */}
@@ -385,68 +607,6 @@ const ShipperAcceptedLoads: React.FC = () => {
                                     <Text style={styles.detailInfoLabel}>Pickup Date</Text>
                                     <Text style={styles.detailInfoValue}>{selectedLoad.expectedPickupDate}</Text>
                                 </View>
-                            </View>
-                        </View>
-
-                        {/* Trucker Info Card */}
-                        <View style={styles.detailCard}>
-                            <Text style={styles.detailCardTitle}>🚛 Trucker Information</Text>
-                            <View style={styles.detailTruckerSection}>
-                                <Image source={{ uri: selectedLoad.truckerImage }} style={styles.detailTruckerImage} />
-                                <View style={styles.detailTruckerInfo}>
-                                    <Text style={styles.detailTruckerName}>{selectedLoad.truckerName}</Text>
-                                    <Text style={styles.detailVehicleNumber}>{selectedLoad.vehicleNumber}</Text>
-                                    <View style={styles.detailRatingRow}>
-                                        <Text style={styles.detailRatingText}>★ {selectedLoad.truckerRating}</Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            <View style={styles.detailActions}>
-                                <TouchableOpacity style={[styles.detailCallButton, { flex: 1 }]} onPress={() => handleCall(selectedLoad.truckerPhone)}>
-                                    <Text style={styles.detailCallText}>📞 Call Trucker</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {/* Price Card - Updated to match card transition */}
-                        <View style={styles.detailCard}>
-                            <Text style={styles.detailCardTitle}>💰 Price Negotiation</Text>
-                            <View style={styles.priceStoryCard}>
-                                <View style={styles.priceColumn}>
-                                    <Text style={styles.priceLabelSmall}>You Posted</Text>
-                                    <Text style={styles.priceValueStrikethrough}>{selectedLoad.initialPrice}</Text>
-                                </View>
-
-                                <View style={styles.priceArrowSection}>
-                                    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <Path d="M5 12h14M12 5l7 7-7 7" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </Svg>
-                                </View>
-
-                                <View style={styles.priceColumn}>
-                                    <Text style={styles.priceLabelSmall}>Final Price</Text>
-                                    <Text style={styles.priceValueFinal}>{selectedLoad.settledPrice}</Text>
-                                    <TouchableOpacity
-                                        style={styles.payNowInlineButton}
-                                        onPress={() => console.log('Pay Now pressed for load:', selectedLoad.id)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <ShimmerText
-                                            text=" Click to Pay Now"
-                                            textStyle={styles.payNowInlineText}
-                                            colors={['transparent', '#FFFFFF', 'transparent']}
-                                            duration={1000}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                            <View style={[styles.managerNoteBox, { marginBottom: 0 }]}>
-                                <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ marginRight: 6 }}>
-                                    <Path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="#059669" strokeWidth="2" />
-                                    <Path d="M12 16v-4M12 8h.01" stroke="#059669" strokeWidth="2" strokeLinecap="round" />
-                                </Svg>
-                                <Text style={styles.managerNoteText}>This final price was settled by our Sales Manager after negotiation.</Text>
                             </View>
                         </View>
                     </ScrollView>
@@ -1017,6 +1177,65 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
         color: '#ffffff',
+    },
+    // Payment Breakdown Styles
+    paymentBreakdownCard: {
+        backgroundColor: '#f0fdf4',
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#bbf7d0',
+    },
+    paymentBreakdownRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    paymentBreakdownLeft: {
+        flex: 1,
+    },
+    paymentBreakdownLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#059669',
+        marginBottom: 2,
+    },
+    paymentBreakdownAmount: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#047857',
+    },
+    paymentBreakdownDivider: {
+        height: 1,
+        backgroundColor: '#bbf7d0',
+        marginVertical: 8,
+    },
+    payNowButton: {
+        backgroundColor: '#059669',
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 8,
+        shadowColor: '#059669',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 4,
+    },
+    payNowButtonText: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: '#ffffff',
+        letterSpacing: 0.5,
+    },
+    payLaterTag: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#94a3b8',
+        backgroundColor: '#f1f5f9',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 4,
     },
 });
 

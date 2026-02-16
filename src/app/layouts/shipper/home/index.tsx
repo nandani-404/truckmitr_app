@@ -213,6 +213,12 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
         return parts[0].trim();
     };
 
+    const extractState = (location: string) => {
+        if (!location) return '';
+        const parts = location.split(',');
+        return parts.length > 1 ? parts[1].trim() : '';
+    };
+
     const formatDate = (date: string) => {
         if (!date) return '';
         return moment(date).format('DD MMM, YYYY');
@@ -482,6 +488,25 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                 </View>
                             </TouchableOpacity>
 
+                            <TouchableOpacity
+                                style={styles.statCard}
+                                onPress={() => (navigation).navigate(STACKS.SHIPPER_IN_PROGRESS_LOADS)}
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.statCardHeader}>
+                                    <Text style={styles.statLabel}>{`In Progress\nLoads`}</Text>
+                                    <View style={[styles.statIconBadge, { backgroundColor: '#fdf2f8' }]}>
+                                        <Text style={styles.statIconText}>⚡</Text>
+                                    </View>
+                                </View>
+                                <Text style={[styles.statNum, { color: '#db2777' }]}>{dashboardData?.accepted || 0}</Text>
+                                <View style={styles.statBarChartContainer}>
+                                    {[25, 18, 30, 22, 35, 28, 40].map((h, i) => (
+                                        <View key={i} style={[styles.statBar, { height: h, backgroundColor: '#db2777' }]} />
+                                    ))}
+                                </View>
+                            </TouchableOpacity>
+
                             <TouchableOpacity style={styles.statCard} onPress={() => (navigation).navigate('shipperCompletedLoads')}>
                                 <View style={styles.statCardHeader}>
                                     <Text style={styles.statLabel}>Completed Loads</Text>
@@ -575,17 +600,38 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                         </View>
                                     </View>
                                     <View style={styles.route}>
+                                        {/* Origin */}
                                         <View style={styles.routePoint}>
-                                            <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
-                                            <Text numberOfLines={1} style={styles.routeCity}>{extractCity(latestLoad.origin_location)}</Text>
+                                            <View style={[styles.routeDot, { backgroundColor: '#22c55e', marginRight: 10 }]} />
+                                            <View style={styles.routeTextCol}>
+                                                <Text numberOfLines={1} style={styles.routeCity}>
+                                                    {extractCity(latestLoad.loading_city_state || latestLoad.origin_location)}
+                                                </Text>
+                                                <Text numberOfLines={1} style={styles.routeState}>
+                                                    {extractState(latestLoad.loading_city_state || latestLoad.origin_location)}
+                                                </Text>
+                                            </View>
                                         </View>
+
+                                        {/* Truck Link */}
                                         <View style={styles.routeMid}>
                                             <View style={styles.routeLine} />
-                                            <TruckIcon />
+                                            <View style={styles.truckIconWrapper}>
+                                                <TruckIcon />
+                                            </View>
                                         </View>
+
+                                        {/* Destination */}
                                         <View style={styles.routePoint}>
-                                            <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
-                                            <Text numberOfLines={1} style={styles.routeCity}>{extractCity(latestLoad.destination_location)}</Text>
+                                            <View style={[styles.routeTextCol, { alignItems: 'flex-end' }]}>
+                                                <Text numberOfLines={1} style={[styles.routeCity, { textAlign: 'right' }]}>
+                                                    {extractCity(latestLoad.unloading_city_state || latestLoad.destination_location)}
+                                                </Text>
+                                                <Text numberOfLines={1} style={[styles.routeState, { textAlign: 'right' }]}>
+                                                    {extractState(latestLoad.unloading_city_state || latestLoad.destination_location)}
+                                                </Text>
+                                            </View>
+                                            <View style={[styles.routeDot, { backgroundColor: '#ef4444', marginLeft: 10 }]} />
                                         </View>
                                     </View>
                                     <View style={styles.loadMeta}>
@@ -940,8 +986,6 @@ const styles = StyleSheet.create({
     badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, gap: 5 },
     badgeDot: { width: 6, height: 6, borderRadius: 3 },
     badgeText: { fontSize: 12, fontWeight: '600' },
-    route: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingVertical: 8, justifyContent: 'space-between' },
-    routePoint: { alignItems: 'center', flex: 1.2 },
     // KYC Approval Status Styles
     approvalCard: {
         backgroundColor: '#fff',
@@ -1013,10 +1057,22 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         textAlign: 'center',
     },
-    routeDot: { width: 14, height: 14, borderRadius: 7, marginBottom: 6, borderWidth: 2, borderColor: '#fff' },
-    routeCity: { fontSize: 13, fontWeight: '600', color: '#374151' },
-    routeMid: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 8 },
-    routeLine: { position: 'absolute', left: 0, right: 0, height: 2, backgroundColor: '#e5e7eb' },
+    route: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingVertical: 4,
+        justifyContent: 'space-between',
+        width: '100%'
+    },
+    routePoint: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+    routeDot: { width: 8, height: 8, borderRadius: 4, elevation: 1 },
+    routeTextCol: { flex: 1, minWidth: 60 },
+    routeCity: { fontSize: 13, fontWeight: '700', color: '#1f2937' },
+    routeState: { fontSize: 10, color: '#6b7280', marginTop: 1, fontWeight: '500' },
+    routeMid: { width: 50, alignItems: 'center', justifyContent: 'center', marginHorizontal: 4 },
+    routeLine: { position: 'absolute', height: 1.5, width: '100%', backgroundColor: '#f1f5f9' },
+    truckIconWrapper: { backgroundColor: '#fff', padding: 4, zIndex: 1 },
     loadMeta: { flexDirection: 'row', backgroundColor: '#f9fafb', borderRadius: 14, padding: 14, marginBottom: 14 },
     metaItem: { flex: 1, alignItems: 'center' },
     metaLabel: { fontSize: 10, color: '#9ca3af', marginBottom: 3 },
@@ -1122,6 +1178,126 @@ const styles = StyleSheet.create({
     metricHighlight: {
         fontWeight: '700',
         color: '#0f172a',
+    },
+
+    // In Progress Section Styles
+    inProgressHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+        marginTop: 4,
+    },
+    inProgressScroll: {
+        marginLeft: -12,
+        marginRight: -12,
+        marginBottom: 24,
+    },
+    inProgressScrollContent: {
+        paddingHorizontal: 12,
+        gap: 12,
+    },
+    inProgressCard: {
+        width: 280,
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
+        shadowColor: '#64748b',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+    },
+    ipCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    ipLoadId: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#1e293b',
+    },
+    ipBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    ipBadgeText: {
+        fontSize: 10,
+        fontWeight: '700',
+    },
+    ipRouteRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    ipCity: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#334155',
+    },
+    ipArrowBox: {
+        marginHorizontal: 10,
+    },
+    ipDivider: {
+        height: 1,
+        backgroundColor: '#f1f5f9',
+        marginBottom: 12,
+    },
+    ipDetailsSection: {
+        gap: 6,
+    },
+    ipDetailRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    ipLabel: {
+        fontSize: 12,
+        color: '#64748b',
+        fontWeight: '500',
+    },
+    ipValue: {
+        fontSize: 12,
+        color: '#1e293b',
+        fontWeight: '600',
+        maxWidth: '70%',
+    },
+    ipHighlightText: {
+        color: '#3b82f6',
+    },
+    ipPendingBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff7ed',
+        padding: 10,
+        borderRadius: 12,
+        marginTop: 4,
+    },
+    ipPendingText: {
+        fontSize: 11,
+        color: '#9a3412',
+        fontWeight: '500',
+        flex: 1,
+    },
+    ipTrackBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#eff6ff',
+        paddingVertical: 8,
+        borderRadius: 10,
+        marginTop: 6,
+        gap: 4,
+    },
+    ipTrackText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#3b82f6',
     },
 });
 

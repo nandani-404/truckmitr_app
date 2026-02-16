@@ -1,4 +1,4 @@
-import { Image, Text, TouchableOpacity, View } from 'react-native'
+import { DeviceEventEmitter, Image, Text, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -198,19 +198,17 @@ export default function LocationMap() {
                             params.onSelect(formatedAddress);
                             navigation.goBack();
                         } else {
-                            navigation.navigate(STACKS.SHIPPER_BOTTOM_TAB, {
-                                screen: STACKS.SHIPPER_POST_LOAD,
-                                params: {
-                                    selectedLocation: {
-                                        pointType: params?.pointType,
-                                        description: formatedAddress?.displayName,
-                                        lat: String(formatedAddress?.coords?.latitude),
-                                        lon: String(formatedAddress?.coords?.longitude),
-                                        city: formatedAddress?.city,
-                                        state: formatedAddress?.state,
-                                    }
-                                }
+                            // Emit event with location data, then go back
+                            // This avoids remounting the PostLoad screen (which loses useState data)
+                            DeviceEventEmitter.emit('LOCATION_SELECTED', {
+                                pointType: params?.pointType,
+                                description: formatedAddress?.displayName,
+                                lat: String(formatedAddress?.coords?.latitude),
+                                lon: String(formatedAddress?.coords?.longitude),
+                                city: formatedAddress?.city,
+                                state: formatedAddress?.state,
                             });
+                            (navigation as any).popToTop();
                         }
                     }}
                     style={{ height: responsiveHeight(5.6), width: responsiveWidth(92), backgroundColor: colors.royalBlue, alignItems: 'center', justifyContent: 'center', borderRadius: 10 }}

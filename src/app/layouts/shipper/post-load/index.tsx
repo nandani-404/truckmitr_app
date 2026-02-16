@@ -16,6 +16,7 @@ import {
     Platform,
     Alert,
     Keyboard,
+    DeviceEventEmitter,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import Animated, {
@@ -206,8 +207,7 @@ const ShipperPostLoad = () => {
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
     useEffect(() => {
-        if (route.params?.selectedLocation) {
-            const loc = route.params.selectedLocation;
+        const subscription = DeviceEventEmitter.addListener('LOCATION_SELECTED', (loc) => {
             console.log(`[PostLoad] Selected ${loc.pointType}:`, {
                 city: loc.city,
                 state: loc.state,
@@ -225,11 +225,10 @@ const ShipperPostLoad = () => {
                 setOriginLon(loc.lon);
                 setLoadingCityState(loc.city && loc.state ? `${loc.city}, ${loc.state}` : loc.city || loc.state || '');
             }
+        });
 
-            // Clear the params to avoid re-triggering if navigated back again
-            navigation.setParams({ selectedLocation: undefined });
-        }
-    }, [route.params?.selectedLocation]);
+        return () => subscription.remove();
+    }, []);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
@@ -810,6 +809,7 @@ const ShipperPostLoad = () => {
                                 mode="date"
                                 display="default"
                                 minimumDate={new Date()}
+                                maximumDate={new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)}
                                 onChange={(e, date) => {
                                     setShowDatePicker(false);
                                     if (date) setPickupDate(date);

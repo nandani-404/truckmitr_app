@@ -1,9 +1,9 @@
 
-// export const BASE_URL = `https://development.truckmitr.com/`
+export const BASE_URL = `https://development.truckmitr.com/`
 // export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.29.156:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
-export const BASE_URL = 'https://devtruckmitr.in/'
+// export const BASE_URL = 'https://devtruckmitr.in/'
 export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
 // export const DRIVER_KI_AWAZ_STREAM = 'https://driverkiawaz.truckmitr.com/' //+ filepath(1770288688561.mp4)
 export const AWAZ_URL = 'https://truckmitr.com/'
@@ -305,6 +305,7 @@ export const END_POINTS = {
     SHIPPER_VERIFY_PAN: `api/shipper/verify-pan`,
     GET_LOAD_BY_STATUS: `api/shipper/get-load-by-status`,
     GET_ACCEPTED_LOADS: 'api/shipper/get-accepted-loads',
+    SHIPPER_CREATE_ORDER_PAYMENT: 'api/shipper/create-shipper-order-payment',
 
     //------------------------------------------TMLOADMANDAL_trucker------------------------------------------
     TRUCKER_VERIFY_RC: `api/trucker/verify-rc`,
