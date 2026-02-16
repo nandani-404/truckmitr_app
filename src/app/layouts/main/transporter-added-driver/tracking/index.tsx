@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    StatusBar, Dimensions, Animated, Modal, Linking, ActivityIndicator, RefreshControl
+    StatusBar, Dimensions, Animated, Modal, Linking, ActivityIndicator, RefreshControl, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import axiosInstance from 'src/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from 'src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
+import { currentCoordinates } from 'src/utils/maps/location/coordinates';
 // import pusherService, { LocationUpdate } from 'src/services/pusherService';
 
 const { width } = Dimensions.get('window');
@@ -128,10 +129,14 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
     const [refreshing, setRefreshing] = useState(false);
     const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [hasData, setHasData] = useState(false);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [pendingStatusUpdate, setPendingStatusUpdate] = useState<number | null>(null);
 
     // Trip Data
     const [trip, setTrip] = useState<any>({
-        id: loadId || 'N/A',
+        id: null, // Numeric ID from API
+        load_id: loadId || 'N/A', // String load ID for display
         trip_id: null,
         origin: 'Loading...',
         destination: 'Loading...',
@@ -148,35 +153,28 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
     });
 
     useEffect(() => {
-        if (driverId && loadId) {
-            fetchActiveTripAndLocation();
-        } else {
-            setLoading(false);
-        }
+        // Call API on mount - no parameters needed as it uses auth token
+        fetchActiveTripAndLocation();
 
         // return () => {
         //     // Cleanup: Unsubscribe from Pusher when component unmounts
         //     pusherService.unsubscribe();
         // };
-    }, [driverId, loadId]);
+    }, []);
 
     const fetchActiveTripAndLocation = async () => {
         try {
             setLoading(true);
             console.log('═══════════════════════════════════════════════════════════');
             console.log('🔄 [TRACKING] Starting fetchActiveTripAndLocation');
-            console.log('📋 [TRACKING] Input Parameters:', {
-                driverId,
-                loadId,
-                timestamp: new Date().toISOString()
-            });
+            console.log('📋 [TRACKING] Timestamp:', new Date().toISOString());
             console.log('═══════════════════════════════════════════════════════════');
 
-            // Fetch trip details using the same API as ActiveTrip
-            console.log('📡 [TRACKING] Calling Trucker Tracking API...');
-            console.log('🔗 [TRACKING] Endpoint: GET', END_POINTS.TRUCKER_TRACKING(loadId));
+            // Fetch trip details using the driver tracking API
+            console.log('📡 [TRACKING] Calling Trucker Driver Tracking API...');
+            console.log('🔗 [TRACKING] Endpoint: GET', END_POINTS.TRUCKER_DRIVER_TRACKING);
 
-            const tripResponse = await axiosInstance.get(END_POINTS.TRUCKER_TRACKING(loadId));
+            const tripResponse = await axiosInstance.get(END_POINTS.TRUCKER_DRIVER_TRACKING);
 
             console.log('═══════════════════════════════════════════════════════════');
             console.log('📥 [TRACKING] Trucker Tracking API Response:');
@@ -201,7 +199,8 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
 
                 setHasData(true);
                 setTrip({
-                    id: data.load_id || loadId,
+                    id: data.id || null, // Numeric ID
+                    load_id: data.load_id || 'N/A', // String load ID for display
                     trip_id: data.trip_id,
                     origin: data.origin || 'Unknown',
                     destination: data.destination || 'Unknown',
@@ -232,8 +231,18 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                     console.log('📊 [TRACKING] Status Code Set:', statusCode);
                 }
 
-                // Note: Location data is included in the tracking response
-                // No need for separate location API call
+                // Check if current location data is available in the response
+                if (data.current_latitude && data.current_longitude) {
+                    const parsedLocation = {
+                        latitude: parseFloat(data.current_latitude),
+                        longitude: parseFloat(data.current_longitude),
+                    };
+                    setCurrentLocation(parsedLocation);
+                    console.log('✅ [TRACKING] Current location set from API:', parsedLocation);
+                } else {
+                    console.log('ℹ️ [TRACKING] No current location data in API response');
+                }
+
                 console.log('✅ [TRACKING] Trip data loaded successfully');
             } else {
                 console.warn('⚠️ [TRACKING] No active trip found or invalid response');
@@ -423,6 +432,106 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
         }
     };
 
+    // Get next action button text based on current status
+    const getNextActionText = () => {
+        if (currentStatus >= 6) return 'Completed';
+        const nextStatus = statuses[currentStatus + 1];
+        return `Mark as ${nextStatus?.label || 'Next Status'}`;
+    };
+
+    // Get current coordinates helper
+    const getCurrentCoordinates = async (): Promise<{ latitude: number; longitude: number }> => {
+        try {
+            const locationResponse = await currentCoordinates();
+            if (locationResponse.coords.latitude && locationResponse.coords.longitude) {
+                return {
+                    latitude: locationResponse.coords.latitude,
+                    longitude: locationResponse.coords.longitude,
+                };
+            }
+            throw new Error('Location not available');
+        } catch (error) {
+            console.warn('⚠️ [LOCATION] Could not get location:', error);
+            throw error;
+        }
+    };
+
+    // Update status with API
+    const updateStatusWithAPI = async (newStatusCode: number) => {
+        try {
+            setUpdatingStatus(true);
+
+            console.log(`🔄 [STATUS UPDATE] Updating status to code ${newStatusCode} (${statuses[newStatusCode].label})`);
+
+            // Get current location
+            let latitude = 0;
+            let longitude = 0;
+            
+            try {
+                const location = await getCurrentCoordinates();
+                latitude = location.latitude;
+                longitude = location.longitude;
+                console.log('📍 [STATUS UPDATE] Got coordinates:', { latitude, longitude });
+            } catch (locationError) {
+                console.warn('⚠️ [STATUS UPDATE] Could not get location, using default (0,0):', locationError);
+            }
+
+            // Format timestamp for MySQL (YYYY-MM-DD HH:MM:SS)
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0, 19).replace('T', ' ');
+
+            const payload = {
+                load_id: trip.id,
+                status_code: newStatusCode,
+                timestamp,
+                latitude,
+                longitude,
+            };
+
+            console.log('📤 [STATUS UPDATE] Sending status update:', JSON.stringify(payload, null, 2));
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_UPDATE_STATUS, payload);
+
+            console.log('📥 [STATUS UPDATE] Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.status === 'success') {
+                console.log('✅ [STATUS UPDATE] Status updated successfully');
+                setCurrentStatus(newStatusCode);
+                showToast(`Status updated to "${statuses[newStatusCode].label}"`);
+                
+                // Refresh tracking data
+                await fetchActiveTripAndLocation();
+            } else {
+                console.log('⚠️ [STATUS UPDATE] Failed:', response.data?.message);
+                showToast(response.data?.message || 'Failed to update status');
+            }
+        } catch (error) {
+            console.error('❌ [STATUS UPDATE] Error:', error);
+            showToast('Failed to update status. Please try again.');
+        } finally {
+            setUpdatingStatus(false);
+        }
+    };
+
+    // Handle status update button click
+    const updateStatus = () => {
+        // For now, just show confirmation modal for all status updates
+        // You can add special handling for specific statuses like in ActiveTrip
+        if (currentStatus < 6) {
+            setPendingStatusUpdate(currentStatus + 1);
+            setShowConfirmModal(true);
+        }
+    };
+
+    // Confirm status update
+    const confirmStatusUpdate = async () => {
+        if (pendingStatusUpdate !== null) {
+            setShowConfirmModal(false);
+            await updateStatusWithAPI(pendingStatusUpdate);
+            setPendingStatusUpdate(null);
+        }
+    };
+
     // Render Timeline Item
     const renderTimelineItem = (item: any, index: number) => {
         const isActive = index <= currentStatus;
@@ -602,7 +711,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                 <View style={styles.card}>
                     <View style={styles.orderIdRow}>
                         <Text style={styles.orderIdLabel}>Load ID</Text>
-                        <Text style={styles.orderIdValue}>{trip.id}</Text>
+                        <Text style={styles.orderIdValue}>{trip.load_id}</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.summaryRow}>
@@ -619,7 +728,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                 </View>
 
                 {/* Live Location Indicator */}
-                {currentLocation ? (
+                {currentLocation && (
                     <View style={styles.card}>
                         <View style={styles.liveLocationHeader}>
                             <View style={styles.liveIndicator}>
@@ -630,14 +739,6 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                         <Text style={styles.locationText}>
                             Lat: {currentLocation.latitude.toFixed(6)}, Lng: {currentLocation.longitude.toFixed(6)}
                         </Text>
-                    </View>
-                ) : (
-                    <View style={styles.card}>
-                        <View style={styles.noTrackingContainer}>
-                            <LocationPinIcon color={C.textSec} />
-                            <Text style={styles.noTrackingText}>No Live Tracking Available</Text>
-                            <Text style={styles.noTrackingSubtext}>Location data will appear here once tracking starts</Text>
-                        </View>
                     </View>
                 )}
 
@@ -771,6 +872,61 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
 
                 <View style={{ height: 100 }} />
             </ScrollView>
+
+            {/* Bottom Action Button */}
+            {currentStatus < 6 && (
+                <View style={styles.footer}>
+                    <TouchableOpacity 
+                        style={[styles.actionButton, updatingStatus && styles.actionButtonDisabled]} 
+                        onPress={updateStatus}
+                        disabled={updatingStatus}
+                    >
+                        {updatingStatus ? (
+                            <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                            <Text style={styles.actionButtonText}>
+                                {getNextActionText()}
+                            </Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* Confirmation Modal for Status Updates */}
+            <Modal visible={showConfirmModal} animationType="fade" transparent>
+                <View style={styles.confirmModalOverlay}>
+                    <View style={styles.confirmModalContent}>
+                        <View style={styles.confirmIconContainer}>
+                            <Svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <Circle cx="12" cy="12" r="10" />
+                                <Path d="M12 16v-4" />
+                                <Path d="M12 8h.01" />
+                            </Svg>
+                        </View>
+                        <Text style={styles.confirmTitle}>Update Status?</Text>
+                        <Text style={styles.confirmMessage}>
+                            Are you sure you want to update the status to "{pendingStatusUpdate !== null ? statuses[pendingStatusUpdate].label : ''}"?
+                        </Text>
+                        <View style={styles.confirmActions}>
+                            <TouchableOpacity 
+                                style={styles.confirmCancelBtn} 
+                                onPress={() => {
+                                    setShowConfirmModal(false);
+                                    setPendingStatusUpdate(null);
+                                }}
+                            >
+                                <Text style={styles.confirmCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={styles.confirmOkBtn} 
+                                onPress={confirmStatusUpdate}
+                            >
+                                <Text style={styles.confirmOkText}>Confirm</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -1020,6 +1176,102 @@ const styles = StyleSheet.create({
     documentSubtitle: {
         fontSize: 12,
         color: C.textSec,
+    },
+
+    // Footer Action Button
+    footer: {
+        backgroundColor: C.surface,
+        borderTopWidth: 1,
+        borderTopColor: C.border,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    },
+    actionButton: {
+        backgroundColor: C.primary,
+        borderRadius: 8,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 8,
+        shadowColor: C.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    actionButtonDisabled: {
+        backgroundColor: C.textSec,
+        opacity: 0.6,
+    },
+    actionButtonText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: C.surface,
+    },
+
+    // Confirmation Modal
+    confirmModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+    },
+    confirmModalContent: {
+        backgroundColor: C.surface,
+        borderRadius: 12,
+        padding: 24,
+        width: '100%',
+        maxWidth: 400,
+        alignItems: 'center',
+    },
+    confirmIconContainer: {
+        marginBottom: 16,
+    },
+    confirmTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: C.text,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    confirmMessage: {
+        fontSize: 14,
+        color: C.textSec,
+        textAlign: 'center',
+        lineHeight: 20,
+        marginBottom: 24,
+    },
+    confirmActions: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
+    confirmCancelBtn: {
+        flex: 1,
+        backgroundColor: C.border,
+        borderRadius: 8,
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    confirmCancelText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: C.text,
+    },
+    confirmOkBtn: {
+        flex: 1,
+        backgroundColor: C.primary,
+        borderRadius: 8,
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    confirmOkText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: C.surface,
     },
 });
 

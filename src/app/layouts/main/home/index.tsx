@@ -485,41 +485,37 @@ const Home = React.forwardRef((props, ref) => {
     const isTruckerMode = mode === 'trucker';
     const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-    // Initialize with 1 (Curtain Down) to support "Curtain Up" animation on mount
-    const truckerCurtainProgress = useSharedValue(1);
+    // Initialize based on current mode: 1 if trucker mode (curtain down), 0 if transporter mode (curtain up)
+    const truckerCurtainProgress = useSharedValue(isTruckerMode ? 1 : 0);
 
     const [startAnimation, setStartAnimation] = useState(false);
-    const [isOverlayVisible, setIsOverlayVisible] = useState(true); // Control mounting of heavy Trucker Screen
+    const [isOverlayVisible, setIsOverlayVisible] = useState(isTruckerMode); // Only show overlay if in trucker mode initially
 
-    // Initial Curtain Up Animation (Reveal Transporter)
-    useEffect(() => {
-        // Animate from 1 to 0 on mount to reveal the screen
-        truckerCurtainProgress.value = withTiming(0, {
-            duration: 2000,
-            easing: Easing.bezier(0.33, 1, 0.68, 1),
-        }, (finished) => {
-            if (finished) {
-                runOnJS(setIsOverlayVisible)(false);
-            }
-        });
-    }, []);
+    // No mount animation - we start in the correct state based on mode
+    // Animation only happens when toggle is pressed
 
     const handleAnimationFinish = () => {
         dispatch(toggleAppMode());
     };
 
-    // Imperative animation trigger
+    // Imperative animation trigger - handles both directions
     useEffect(() => {
         if (startAnimation) {
             setIsOverlayVisible(true);
             // Small delay to allow mount before animation
             setTimeout(() => {
-                truckerCurtainProgress.value = withTiming(1, {
+                // Animate to opposite state: if currently transporter (0), go to trucker (1), and vice versa
+                const targetValue = isTruckerMode ? 0 : 1;
+                truckerCurtainProgress.value = withTiming(targetValue, {
                     duration: 2000, // Slower animation
                     easing: Easing.bezier(0.33, 1, 0.68, 1),
                 }, (finished) => {
                     if (finished) {
                         runOnJS(handleAnimationFinish)();
+                        // Hide overlay after animating to transporter mode
+                        if (targetValue === 0) {
+                            runOnJS(setIsOverlayVisible)(false);
+                        }
                     }
                 });
             }, 50);

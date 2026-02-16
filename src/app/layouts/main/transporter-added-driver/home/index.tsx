@@ -471,7 +471,7 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                 ) : recentTracking ? (
                     <TouchableOpacity
                         activeOpacity={0.7}
-                        onPress={() => navigation.navigate(STACKS.TRANSPORTER_ADDED_DRIVER_TRACKING, { jobId: recentTracking.id })}
+                        onPress={() => navigation.navigate(STACKS.TRANSPORTER_DRIVER_TRACKING, { jobId: recentTracking.id })}
                         style={{
                             marginHorizontal: responsiveWidth(4),
                             marginTop: 15,

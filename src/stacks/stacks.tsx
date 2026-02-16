@@ -206,6 +206,9 @@ export type NavigatorParams = {
     shipperProfile: undefined;
     shipperProfileCompletion: undefined;
     shipperProfileEdit: undefined;
+
+    // Transporter Added Driver Module
+    transporterDriverTracking: { jobId?: any; driverId?: string; loadId?: string } | undefined;
 };
 
 export const STACKS = {
