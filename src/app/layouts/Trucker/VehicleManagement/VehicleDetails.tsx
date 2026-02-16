@@ -93,7 +93,7 @@ const VehicleDetailsScreen: React.FC<Props> = ({ route, navigation, onBack }) =>
         );
     }
 
-    const isActive = vehicle.rc_status === 'ACTIVE';
+    // const isActive = vehicle.rc_status === 'ACTIVE';
 
     return (
         <SafeAreaView style={s.container} edges={['top']}>
@@ -126,11 +126,11 @@ const VehicleDetailsScreen: React.FC<Props> = ({ route, navigation, onBack }) =>
                                 {vehicle.manufacturer} {vehicle.model}
                             </Text>
                         </View>
-                        <View style={[s.statusBadge, { backgroundColor: isActive ? C.successLight : C.warningLight }]}>
+                        {/* <View style={[s.statusBadge, { backgroundColor: isActive ? C.successLight : C.warningLight }]}>
                             <Text style={[s.statusText, { color: isActive ? C.success : C.warning }]}>
                                 {isActive ? '✓ Active' : '⚠ Inactive'}
                             </Text>
-                        </View>
+                        </View> */}
                     </View>
                     <View style={s.overviewGrid}>
                         <InfoItem label="BODY TYPE" value={vehicle.body_type} half />

@@ -1,18 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    StatusBar, Dimensions, Animated, Modal, Alert, Linking, TextInput, ActivityIndicator
+    StatusBar, Dimensions, Animated, Modal, Linking, TextInput, ActivityIndicator, RefreshControl, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import axiosInstance from 'src/utils/config/axiosInstance';
-import { END_POINTS } from 'src/utils/config';
+import { END_POINTS, BASE_URL } from 'src/utils/config';
+import Geolocation from '@react-native-community/geolocation';
+import { pick } from '@react-native-documents/picker';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import { showToast } from '@truckmitr/src/app/hooks/toast';
 
 const { width } = Dimensions.get('window');
 
 // ── Classic Color Palette (Flipkart Style) ──
 const C = {
-    bg: '#F1F3F6',          // Light grey background
+    bg: '#ffffffff',          // Light grey background
     surface: '#FFFFFF',     // White surface
     primary: '#2874F0',     // Classic Blue
     success: '#26A541',     // Green
@@ -59,21 +63,98 @@ const CurrentCircle = () => (
     </Svg>
 );
 
+const LocationPinIcon = ({ color = C.primary }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <Circle cx="12" cy="10" r="3" />
+    </Svg>
+);
+
+const NavigationIcon = ({ color = C.primary }) => (
+    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M3 11l19-9-9 19-2-8-8-2z" />
+    </Svg>
+);
+
+const DocumentIcon = () => (
+    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.surface} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <Path d="M14 2v6h6" />
+        <Path d="M16 13H8" />
+        <Path d="M16 17H8" />
+        <Path d="M10 9H8" />
+    </Svg>
+);
+
+// Skeleton Components
+const SkeletonBox = ({ width, height, style }: { width?: number | string; height?: number; style?: any }) => {
+    const animatedValue = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(animatedValue, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animatedValue, {
+                    toValue: 0,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, []);
+
+    const opacity = animatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.3, 0.7],
+    });
+
+    return (
+        <Animated.View
+            style={[
+                {
+                    width: width || '100%',
+                    height: height || 16,
+                    backgroundColor: C.border,
+                    borderRadius: 4,
+                    opacity,
+                },
+                style,
+            ]}
+        />
+    );
+};
+
 interface Props { onBack?: () => void; onComplete?: () => void; loadId?: string; }
 
 const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
     const [currentStatus, setCurrentStatus] = useState<number>(0);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [showPODModal, setShowPODModal] = useState(false);
+    const [showBuiltyModal, setShowBuiltyModal] = useState(false);
+    const [builtyFile, setBuiltyFile] = useState<any>(null);
+    const [uploadingBuilty, setUploadingBuilty] = useState(false);
+    const [podFile, setPodFile] = useState<any>(null);
+    const [uploadingPOD, setUploadingPOD] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [pendingStatusUpdate, setPendingStatusUpdate] = useState<number | null>(null);
 
     // Vehicle Assignment Modal State
     const [showAssignVehicleModal, setShowAssignVehicleModal] = useState(false);
     const [selectedVehicle, setSelectedVehicle] = useState('');
+    const [selectedDriver, setSelectedDriver] = useState<any>(null);
     const [driverName, setDriverName] = useState('');
     const [driverPhone, setDriverPhone] = useState('');
     const [driverDL, setDriverDL] = useState('');
     const [showVehicleList, setShowVehicleList] = useState(false);
+    const [showDriverList, setShowDriverList] = useState(false);
     const [vehicles, setVehicles] = useState<any[]>([]); // API Data
+    const [drivers, setDrivers] = useState<any[]>([]); // API Data
+    const [updatingStatus, setUpdatingStatus] = useState(false);
 
     // Trip Data
     const [trip, setTrip] = useState<any>({
@@ -84,6 +165,8 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
         driver: { name: '', phone: '', dl: '' },
         vehicle: '',
         payment: '',
+        builty_path: null,
+        pod_path: null,
     });
 
     useEffect(() => {
@@ -94,7 +177,15 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
             setLoading(false);
         }
         fetchVehicles();
+        fetchDrivers();
     }, [loadId]);
+
+    // Fetch live updates when assign vehicle modal is hidden
+    useEffect(() => {
+        if (!showAssignVehicleModal && loadId) {
+            fetchTripDetails();
+        }
+    }, [showAssignVehicleModal]);
 
     const fetchTripDetails = async () => {
         try {
@@ -131,7 +222,9 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                         dl: data.dl_number || ''
                     },
                     material: data.material_name,
-                    weight: data.material_weight
+                    weight: data.material_weight,
+                    builty_path: data.builty_path || null,
+                    pod_path: data.pod_path || null,
                 });
 
                 // Set status
@@ -140,15 +233,19 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                     setCurrentStatus(statusCode);
                 }
             } else {
-                Alert.alert('Error', 'Failed to load trip details.');
+                showToast('Failed to load trip details');
             }
         } catch (error) {
             console.error('Error fetching trip details:', error);
-            // Alert.alert('Error', 'Failed to fetch trip details.'); 
-            // Commenting out alert to avoid spam if it fails on mount for dev
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
+    };
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await fetchTripDetails();
     };
 
     const fetchVehicles = async () => {
@@ -163,6 +260,25 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
         }
     };
 
+    const fetchDrivers = async () => {
+        try {
+            console.log('📋 [DRIVERS] Fetching drivers...');
+            const response = await axiosInstance.get(END_POINTS.TRUCKER_GET_DRIVERS);
+            console.log('📋 [DRIVERS] Response:', JSON.stringify(response.data, null, 2));
+            
+            if (response?.data?.status === 'success') {
+                const list = response.data.data?.drivers || [];
+                console.log('📋 [DRIVERS] Drivers list:', list);
+                console.log('📋 [DRIVERS] Number of drivers:', list.length);
+                setDrivers(Array.isArray(list) ? list : []);
+            } else {
+                console.log('⚠️ [DRIVERS] API returned non-success status');
+            }
+        } catch (error) {
+            console.error('❌ [DRIVERS] Error fetching drivers:', error);
+        }
+    };
+
     const statuses = [
         { id: 0, label: 'Load Accepted', date: 'Fri, 10th Feb', sub: 'Your request has been accepted' },
         { id: 1, label: 'Vehicle Assigned', date: 'Fri, 10th Feb - 11:00 AM', sub: 'Truck assigned for this trip' },
@@ -173,9 +289,102 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
         { id: 6, label: 'Delivered', date: '--', sub: 'Goods delivered & POD uploaded' },
     ];
 
+    // Get next action button text
+    const getNextActionText = () => {
+        if (currentStatus === 0) return 'Assign Vehicle & Driver';
+        if (currentStatus === 1) return 'Mark Reached Pickup';
+        if (currentStatus === 2) return 'Mark Loaded';
+        if (currentStatus === 3) return 'Upload Builty & Start Transit';
+        if (currentStatus === 4) return 'Mark Reached Destination';
+        if (currentStatus === 5) return 'Upload POD & Complete';
+        return 'Complete';
+    };
+
+    const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
+        return new Promise((resolve, reject) => {
+            Geolocation.getCurrentPosition(
+                (position) => {
+                    resolve({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                    });
+                },
+                (error) => {
+                    console.error('Error getting location:', error);
+                    reject(error);
+                },
+                { enableHighAccuracy: false, timeout: 5000, maximumAge: 10000 }
+            );
+        });
+    };
+
+    const updateStatusWithAPI = async (newStatusCode: number) => {
+        try {
+            setUpdatingStatus(true);
+
+            console.log(`🔄 [STATUS UPDATE] Updating status to code ${newStatusCode} (${statuses[newStatusCode].label})`);
+
+            // Get current location
+            let latitude = 0;
+            let longitude = 0;
+            
+            try {
+                const location = await getCurrentLocation();
+                latitude = location.latitude;
+                longitude = location.longitude;
+                console.log('📍 [STATUS UPDATE] Got coordinates:', { latitude, longitude });
+            } catch (locationError) {
+                console.warn('⚠️ [STATUS UPDATE] Could not get location, using default (0,0):', locationError);
+            }
+
+            // Format timestamp for MySQL (YYYY-MM-DD HH:MM:SS)
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0, 19).replace('T', ' ');
+
+            const payload = {
+                load_id: loadId,
+                status_code: newStatusCode,
+                timestamp,
+                latitude,
+                longitude,
+            };
+
+            console.log('📤 [STATUS UPDATE] Sending status update:', JSON.stringify(payload, null, 2));
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_UPDATE_STATUS, payload);
+
+            console.log('📥 [STATUS UPDATE] Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.status === 'success') {
+                console.log('✅ [STATUS UPDATE] Status updated successfully');
+                setCurrentStatus(newStatusCode);
+                showToast(`Status updated to "${statuses[newStatusCode].label}"`);
+                
+                // Hit both APIs simultaneously
+                console.log('📍 [STATUS UPDATE] Updating location and fetching tracking data simultaneously');
+                await Promise.all([
+                    updateLocationAPI(),
+                    fetchTripDetails()
+                ]);
+            } else {
+                console.log('⚠️ [STATUS UPDATE] Failed:', response.data?.message);
+                showToast(response.data?.message || 'Failed to update status');
+            }
+        } catch (error) {
+            console.error('❌ [STATUS UPDATE] Error:', error);
+            showToast('Failed to update status. Please try again.');
+        } finally {
+            setUpdatingStatus(false);
+        }
+    };
+
     const updateStatus = () => {
         if (currentStatus === 0) { // Moving to Vehicle Assigned
             setShowAssignVehicleModal(true);
+            return;
+        }
+        if (currentStatus === 3) { // Moving from Loaded to In Transit - need builty
+            setShowBuiltyModal(true);
             return;
         }
         if (currentStatus === 5) { // Moving to Delivered
@@ -183,26 +392,29 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
             return;
         }
 
+        // For other status updates, show confirmation modal
         if (currentStatus < 6) {
-            Alert.alert(
-                'Update Status',
-                `Mark as "${statuses[currentStatus + 1].label}"?`,
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Confirm', onPress: () => setCurrentStatus(currentStatus + 1) }
-                ]
-            );
+            setPendingStatusUpdate(currentStatus + 1);
+            setShowConfirmModal(true);
+        }
+    };
+
+    const confirmStatusUpdate = async () => {
+        if (pendingStatusUpdate !== null) {
+            setShowConfirmModal(false);
+            await updateStatusWithAPI(pendingStatusUpdate);
+            setPendingStatusUpdate(null);
         }
     };
 
     const handleAssignVehicle = async () => {
         if (!selectedVehicle || !driverName || !driverPhone) {
-            Alert.alert('Incomplete Details', 'Please fill all mandatory fields to assign vehicle.');
+            showToast('Please fill all mandatory fields to assign vehicle');
             return;
         }
 
         if (!trip.trucker_id || !trip.shipper_id) {
-            Alert.alert('Error', 'Trip details incomplete. Please retry.');
+            showToast('Trip details incomplete. Please retry');
             return;
         }
 
@@ -217,10 +429,16 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                 driver_phone: driverPhone
             };
 
-            console.log('Assigning Vehicle Payload:', payload);
+            console.log('🚗 [ASSIGN VEHICLE] Assigning vehicle with payload:', JSON.stringify(payload, null, 2));
+
             const response = await axiosInstance.post(END_POINTS.TRUCKER_UPDATE_VEHICLE_NUMBER, payload);
 
+            console.log('✅ [ASSIGN VEHICLE] Vehicle assignment response:', JSON.stringify(response.data, null, 2));
+
             if (response.data?.status === 'success') {
+                // Update status FIRST
+                setCurrentStatus(1);
+                
                 // Update Trip Data locally
                 setTrip((prev: any) => ({
                     ...prev,
@@ -228,27 +446,425 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                     driver: { name: driverName, phone: driverPhone, dl: driverDL }
                 }));
 
-                setCurrentStatus(1);
                 setShowAssignVehicleModal(false);
-                Alert.alert('Success', 'Vehicle Assigned Successfully');
-                fetchTripDetails();
+                
+                // Clear form
+                setSelectedVehicle('');
+                setSelectedDriver(null);
+                setDriverName('');
+                setDriverPhone('');
+                setDriverDL('');
+                
+                showToast('Vehicle Assigned Successfully');
+
+                // Update status with location (this saves both status and location)
+                console.log('📍 [ASSIGN VEHICLE] Updating status to 1 with location');
+                await updateStatusToBackend(1);
+                
+                console.log('🔄 [ASSIGN VEHICLE] Fetching latest tracking data');
+                await fetchTripDetails();
             } else {
-                Alert.alert('Error', response.data?.message || 'Failed to assign vehicle');
+                console.log('⚠️ [ASSIGN VEHICLE] Failed:', response.data?.message);
+                showToast(response.data?.message || 'Failed to assign vehicle');
             }
         } catch (error) {
-            console.error('Error assigning vehicle:', error);
-            Alert.alert('Error', 'Failed to assign vehicle. Please try again.');
+            console.error('❌ [ASSIGN VEHICLE] Error:', error);
+            showToast('Failed to assign vehicle. Please try again.');
         }
     };
 
-    const handleUpdateLocation = () => {
-        Alert.alert('Location Updated', 'Your current location has been shared with the tracking agent.');
+    const handleDriverSelect = (driver: any) => {
+        setSelectedDriver(driver);
+        setDriverName(driver.name || '');
+        setDriverPhone(driver.mobile || '');
+        setDriverDL(driver.License_Number || '');
+        setShowDriverList(false);
     };
 
-    const handlePODUpload = () => {
-        setShowPODModal(false);
-        setCurrentStatus(6);
-        Alert.alert('Trip Completed', 'POD uploaded successfully.', [{ text: 'OK', onPress: onComplete }]);
+    // Update status to backend with location
+    const updateStatusToBackend = async (statusCode: number) => {
+        try {
+            console.log(`🔄 [STATUS UPDATE] Updating status to code ${statusCode}`);
+
+            // Get current location
+            let latitude = 0;
+            let longitude = 0;
+            
+            try {
+                const location = await getCurrentLocation();
+                latitude = location.latitude;
+                longitude = location.longitude;
+                console.log('📍 [STATUS UPDATE] Got coordinates:', { latitude, longitude });
+            } catch (locationError) {
+                console.warn('⚠️ [STATUS UPDATE] Could not get location, using default (0,0):', locationError);
+            }
+
+            // Format timestamp for MySQL (YYYY-MM-DD HH:MM:SS)
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0, 19).replace('T', ' ');
+
+            const payload = {
+                load_id: loadId,
+                status_code: statusCode,
+                timestamp,
+                latitude,
+                longitude,
+            };
+
+            console.log('📤 [STATUS UPDATE] Sending payload:', JSON.stringify(payload, null, 2));
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_UPDATE_STATUS, payload);
+
+            console.log('📥 [STATUS UPDATE] Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.status === 'success') {
+                console.log('✅ [STATUS UPDATE] Status and location updated successfully');
+            } else {
+                console.log('⚠️ [STATUS UPDATE] Failed:', response.data?.message);
+            }
+        } catch (error) {
+            console.error('❌ [STATUS UPDATE] Error:', error);
+        }
+    };
+
+    const updateLocationAPIWithStatus = async (statusCode: number) => {
+        try {
+            console.log(`📍 [LOCATION UPDATE] Starting location update with status code ${statusCode}...`);
+            
+            // Get current location
+            let latitude = 0;
+            let longitude = 0;
+            
+            try {
+                const location = await getCurrentLocation();
+                latitude = location.latitude;
+                longitude = location.longitude;
+                console.log('📍 [LOCATION UPDATE] Got coordinates:', { latitude, longitude });
+            } catch (locationError) {
+                console.warn('⚠️ [LOCATION UPDATE] Could not get location, using default (0,0):', locationError);
+            }
+
+            // Format timestamp for MySQL (YYYY-MM-DD HH:MM:SS)
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0, 19).replace('T', ' ');
+
+            const payload = {
+                load_id: loadId,
+                status_code: statusCode,
+                latitude,
+                longitude,
+                timestamp,
+            };
+
+            console.log('📤 [LOCATION UPDATE] Sending location update:', JSON.stringify(payload, null, 2));
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_UPDATE_LOCATION, payload);
+
+            console.log('📥 [LOCATION UPDATE] Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.status === 'success') {
+                console.log('✅ [LOCATION UPDATE] Location updated successfully');
+            } else {
+                console.log('⚠️ [LOCATION UPDATE] Failed:', response.data?.message);
+            }
+        } catch (error) {
+            console.error('❌ [LOCATION UPDATE] Error:', error);
+        }
+    };
+
+    const updateLocationAPI = async () => {
+        await updateLocationAPIWithStatus(currentStatus);
+    };
+
+    const handleUpdateLocation = async () => {
+        console.log('📍 [MANUAL UPDATE] User manually updating location');
+        await Promise.all([
+            updateLocationAPI(),
+            fetchTripDetails()
+        ]);
+        showToast('Location updated successfully');
+    };
+
+    const handlePODUpload = async () => {
+        if (!podFile) {
+            showToast('Please select a POD document to upload');
+            return;
+        }
+
+        try {
+            setUploadingPOD(true);
+            console.log('📦 [POD UPLOAD] Starting POD upload...');
+
+            const formData = new FormData();
+            formData.append('load_id', loadId);
+            formData.append('shipper_id', trip.shipper_id);
+            formData.append('trucker_id', trip.trucker_id);
+            formData.append('pod', {
+                uri: podFile.fileCopyUri || podFile.uri,
+                type: podFile.type,
+                name: podFile.name,
+            });
+
+            console.log('📤 [POD UPLOAD] Payload:', {
+                load_id: loadId,
+                shipper_id: trip.shipper_id,
+                trucker_id: trip.trucker_id,
+                file: podFile.name,
+            });
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_UPLOAD_POD, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log('📥 [POD UPLOAD] Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.status === 'success') {
+                console.log('✅ [POD UPLOAD] POD uploaded successfully');
+
+                // Get current location
+                let latitude = 0;
+                let longitude = 0;
+                
+                try {
+                    const location = await getCurrentLocation();
+                    latitude = location.latitude;
+                    longitude = location.longitude;
+                    console.log('📍 [POD UPLOAD] Got coordinates:', { latitude, longitude });
+                } catch (locationError) {
+                    console.warn('⚠️ [POD UPLOAD] Could not get location, using default (0,0):', locationError);
+                }
+
+                // Format timestamp for MySQL (YYYY-MM-DD HH:MM:SS)
+                const now = new Date();
+                const timestamp = now.toISOString().slice(0, 19).replace('T', ' ');
+
+                const statusPayload = {
+                    load_id: loadId,
+                    status_code: 6, // Delivered status
+                    timestamp,
+                    latitude,
+                    longitude,
+                };
+
+                console.log('📤 [POD UPLOAD] Updating status to Delivered:', JSON.stringify(statusPayload, null, 2));
+
+                const statusResponse = await axiosInstance.post(END_POINTS.TRUCKER_UPDATE_STATUS, statusPayload);
+
+                console.log('📥 [POD UPLOAD] Status update response:', JSON.stringify(statusResponse.data, null, 2));
+
+                if (statusResponse.data?.status === 'success') {
+                    console.log('✅ [POD UPLOAD] Delivery completed successfully');
+                    setShowPODModal(false);
+                    setPodFile(null);
+                    setCurrentStatus(6);
+                    
+                    // Fetch latest tracking data
+                    await fetchTripDetails();
+                    
+                    showToast('POD uploaded successfully. Trip completed!');
+                    if (onComplete) onComplete();
+                } else {
+                    console.log('⚠️ [POD UPLOAD] Status update failed:', statusResponse.data?.message);
+                    showToast('POD uploaded but status update failed. Please try again');
+                }
+            } else {
+                console.log('⚠️ [POD UPLOAD] Upload failed:', response.data?.message);
+                showToast(response.data?.message || 'Failed to upload POD');
+            }
+        } catch (error) {
+            console.error('❌ [POD UPLOAD] Error:', error);
+            showToast('Failed to upload POD. Please try again');
+        } finally {
+            setUploadingPOD(false);
+        }
+    };
+
+    const handlePODPick = async () => {
+        try {
+            const [file] = await pick({
+                type: ['*/*'],
+                copyTo: 'cachesDirectory',
+            });
+
+            if (file) {
+                setPodFile(file);
+                console.log('📄 [POD] File selected:', file.name);
+            }
+        } catch (error: any) {
+            if (error?.code !== 'DOCUMENT_PICKER_CANCELED') {
+                console.error('❌ [POD] Error picking document:', error);
+                showToast('Failed to pick document');
+            }
+        }
+    };
+
+    const handlePODCamera = async () => {
+        try {
+            const result = await launchCamera({
+                mediaType: 'photo',
+                quality: 0.8,
+                saveToPhotos: true,
+            });
+
+            if (result.assets && result.assets[0]) {
+                const photo = result.assets[0];
+                setPodFile({
+                    uri: photo.uri,
+                    type: photo.type || 'image/jpeg',
+                    name: photo.fileName || `POD_${Date.now()}.jpg`,
+                    size: photo.fileSize || 0,
+                });
+                console.log('📷 [POD] Photo captured:', photo.fileName);
+            }
+        } catch (error) {
+            console.error('❌ [POD] Error capturing photo:', error);
+            showToast('Failed to capture photo');
+        }
+    };
+
+    const handlePODGallery = async () => {
+        try {
+            const result = await launchImageLibrary({
+                mediaType: 'photo',
+                quality: 0.8,
+            });
+
+            if (result.assets && result.assets[0]) {
+                const photo = result.assets[0];
+                setPodFile({
+                    uri: photo.uri,
+                    type: photo.type || 'image/jpeg',
+                    name: photo.fileName || `POD_${Date.now()}.jpg`,
+                    size: photo.fileSize || 0,
+                });
+                console.log('🖼️ [POD] Image selected from gallery:', photo.fileName);
+            }
+        } catch (error) {
+            console.error('❌ [POD] Error selecting from gallery:', error);
+            showToast('Failed to select image');
+        }
+    };
+
+    const handleBuiltyPick = async () => {
+        try {
+            const [file] = await pick({
+                type: ['*/*'],
+                copyTo: 'cachesDirectory',
+            });
+
+            if (file) {
+                setBuiltyFile(file);
+                console.log('📄 [BUILTY] File selected:', file.name);
+            }
+        } catch (error: any) {
+            if (error?.code !== 'DOCUMENT_PICKER_CANCELED') {
+                console.error('❌ [BUILTY] Error picking document:', error);
+                showToast('Failed to pick document');
+            }
+        }
+    };
+
+    const handleBuiltyCamera = async () => {
+        try {
+            const result = await launchCamera({
+                mediaType: 'photo',
+                quality: 0.8,
+                saveToPhotos: true,
+            });
+
+            if (result.assets && result.assets[0]) {
+                const photo = result.assets[0];
+                setBuiltyFile({
+                    uri: photo.uri,
+                    type: photo.type || 'image/jpeg',
+                    name: photo.fileName || `Builty_${Date.now()}.jpg`,
+                    size: photo.fileSize || 0,
+                });
+                console.log('📷 [BUILTY] Photo captured:', photo.fileName);
+            }
+        } catch (error) {
+            console.error('❌ [BUILTY] Error capturing photo:', error);
+            showToast('Failed to capture photo');
+        }
+    };
+
+    const handleBuiltyGallery = async () => {
+        try {
+            const result = await launchImageLibrary({
+                mediaType: 'photo',
+                quality: 0.8,
+            });
+
+            if (result.assets && result.assets[0]) {
+                const photo = result.assets[0];
+                setBuiltyFile({
+                    uri: photo.uri,
+                    type: photo.type || 'image/jpeg',
+                    name: photo.fileName || `Builty_${Date.now()}.jpg`,
+                    size: photo.fileSize || 0,
+                });
+                console.log('🖼️ [BUILTY] Image selected from gallery:', photo.fileName);
+            }
+        } catch (error) {
+            console.error('❌ [BUILTY] Error selecting from gallery:', error);
+            showToast('Failed to select image');
+        }
+    };
+
+    const handleBuiltyUpload = async () => {
+        if (!builtyFile) {
+            showToast('Please select a builty document to upload');
+            return;
+        }
+
+        try {
+            setUploadingBuilty(true);
+            console.log('📤 [BUILTY] Uploading builty document...');
+
+            const formData = new FormData();
+            formData.append('load_id', loadId);
+            formData.append('shipper_id', trip.shipper_id);
+            formData.append('trucker_id', trip.trucker_id);
+            formData.append('builty', {
+                uri: builtyFile.fileCopyUri || builtyFile.uri,
+                type: builtyFile.type,
+                name: builtyFile.name,
+            });
+
+            console.log('📤 [BUILTY] Payload:', {
+                load_id: loadId,
+                shipper_id: trip.shipper_id,
+                trucker_id: trip.trucker_id,
+                file: builtyFile.name,
+            });
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_UPLOAD_BUILTY, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log('📥 [BUILTY] Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.status === 'success') {
+                console.log('✅ [BUILTY] Builty uploaded successfully');
+                setShowBuiltyModal(false);
+                setBuiltyFile(null);
+                
+                // Now update status to In Transit
+                await updateStatusWithAPI(4);
+            } else {
+                console.log('⚠️ [BUILTY] Upload failed:', response.data?.message);
+                showToast(response.data?.message || 'Failed to upload builty');
+            }
+        } catch (error) {
+            console.error('❌ [BUILTY] Error uploading:', error);
+            showToast('Failed to upload builty. Please try again');
+        } finally {
+            setUploadingBuilty(false);
+        }
     };
 
     const callAgent = () => {
@@ -257,7 +873,51 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
     const callDriver = () => {
         if (trip.driver?.phone) Linking.openURL(`tel:${trip.driver.phone}`);
     };
-    const openMaps = () => Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(trip.destination)}`);
+
+    const downloadBuilty = () => {
+        if (trip.builty_path) {
+            const url = `${BASE_URL}public/${trip.builty_path}`;
+            console.log('📥 [BUILTY] Downloading from:', url);
+            Linking.openURL(url).catch(err => {
+                console.error('❌ [BUILTY] Error opening URL:', err);
+                showToast('Failed to open builty document');
+            });
+        } else {
+            showToast('Builty document not available');
+        }
+    };
+
+    const downloadPOD = () => {
+        if (trip.pod_path) {
+            const url = `${BASE_URL}public/${trip.pod_path}`;
+            console.log('📥 [POD] Downloading from:', url);
+            Linking.openURL(url).catch(err => {
+                console.error('❌ [POD] Error opening URL:', err);
+                showToast('Failed to open POD document');
+            });
+        } else {
+            showToast('POD document not available');
+        }
+    };
+
+    const openMaps = () => {
+        // Open Google Maps with directions from origin to destination
+        const origin = encodeURIComponent(trip.origin);
+        const destination = encodeURIComponent(trip.destination);
+        
+        // Google Maps URL with directions
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+        
+        console.log('🗺️ [NAVIGATION] Opening Google Maps with directions');
+        console.log('🗺️ [NAVIGATION] Origin:', trip.origin);
+        console.log('🗺️ [NAVIGATION] Destination:', trip.destination);
+        console.log('🗺️ [NAVIGATION] URL:', url);
+        
+        Linking.openURL(url).catch(err => {
+            console.error('❌ [NAVIGATION] Error opening maps:', err);
+            showToast('Could not open Google Maps');
+        });
+    };
 
     // Render Timeline Item
     const renderTimelineItem = (item: any, index: number) => {
@@ -298,9 +958,73 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
 
     if (loading) {
         return (
-            <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color={C.primary} />
-                <Text style={{ marginTop: 10, color: C.textSec }}>Loading Trip Details...</Text>
+            <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+                <StatusBar barStyle="dark-content" backgroundColor={C.surface} />
+
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                        <BackIcon />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Load Details</Text>
+                    <View style={{ width: 24 }} />
+                </View>
+
+                <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+                    {/* Order ID Skeleton */}
+                    <View style={styles.card}>
+                        <View style={styles.orderIdRow}>
+                            <SkeletonBox width={60} height={14} />
+                            <SkeletonBox width={100} height={14} />
+                        </View>
+                        <View style={styles.divider} />
+                        <View style={styles.summaryRow}>
+                            <View style={styles.summaryItem}>
+                                <SkeletonBox width={50} height={12} style={{ marginBottom: 8 }} />
+                                <SkeletonBox width={80} height={14} />
+                            </View>
+                            <View style={styles.verticalDivider} />
+                            <View style={styles.summaryItem}>
+                                <SkeletonBox width={50} height={12} style={{ marginBottom: 8 }} />
+                                <SkeletonBox width={80} height={14} />
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Vehicle Info Skeleton */}
+                    <View style={styles.card}>
+                        <SkeletonBox width={140} height={14} style={{ marginBottom: 14 }} />
+                        <SkeletonBox width="100%" height={14} style={{ marginBottom: 8 }} />
+                        <SkeletonBox width="80%" height={14} />
+                    </View>
+
+                    {/* Shipping Details Skeleton */}
+                    <View style={styles.card}>
+                        <SkeletonBox width={120} height={14} style={{ marginBottom: 14 }} />
+                        <SkeletonBox width="100%" height={60} style={{ marginBottom: 12 }} />
+                        <SkeletonBox width="100%" height={60} />
+                    </View>
+
+                    {/* Timeline Skeleton */}
+                    <View style={styles.card}>
+                        <SkeletonBox width={100} height={14} style={{ marginBottom: 14 }} />
+                        {[1, 2, 3, 4].map((i) => (
+                            <View key={i} style={{ flexDirection: 'row', marginBottom: 20 }}>
+                                <SkeletonBox width={16} height={16} style={{ marginRight: 12, borderRadius: 8 }} />
+                                <View style={{ flex: 1 }}>
+                                    <SkeletonBox width="60%" height={13} style={{ marginBottom: 6 }} />
+                                    <SkeletonBox width="40%" height={11} />
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* Contact Skeleton */}
+                    <View style={styles.card}>
+                        <SkeletonBox width={80} height={14} style={{ marginBottom: 14 }} />
+                        <SkeletonBox width="100%" height={40} />
+                    </View>
+                </ScrollView>
             </SafeAreaView>
         );
     }
@@ -318,7 +1042,19 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                 <View style={{ width: 24 }} />
             </View>
 
-            <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                style={styles.scroll} 
+                contentContainerStyle={styles.scrollContent} 
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[C.primary]}
+                        tintColor={C.primary}
+                    />
+                }
+            >
 
                 {/* Order ID & Basic Summary */}
                 <View style={styles.card}>
@@ -367,24 +1103,48 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
 
                 {/* Shipping Details */}
                 <View style={styles.card}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: C.text }}>Shipping Details</Text>
-                        <TouchableOpacity onPress={handleUpdateLocation} style={styles.updateLocBtn}>
-                            <Text style={styles.updateLocText}>📍 Update Location</Text>
-                        </TouchableOpacity>
+                    <View style={styles.shippingHeader}>
+                        <Text style={styles.sectionHeader}>Shipping Route</Text>
+                        {/* <TouchableOpacity onPress={handleUpdateLocation} style={styles.updateLocBtn}>
+                            <Svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2.5">
+                                <Circle cx="12" cy="12" r="10" />
+                                <Path d="M12 6v6l4 2" />
+                            </Svg>
+                            <Text style={styles.updateLocText}>Update Location</Text>
+                        </TouchableOpacity> */}
                     </View>
 
-                    <View style={styles.shippingRow}>
-                        <Text style={styles.shippingLabel}>From</Text>
-                        <Text style={styles.shippingValue}>{trip.origin}</Text>
-                    </View>
-                    <View style={[styles.shippingRow, { marginTop: 12 }]}>
-                        <Text style={styles.shippingLabel}>To</Text>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.shippingValue}>{trip.destination}</Text>
-                            <TouchableOpacity style={styles.navigateBtn} onPress={openMaps}>
-                                <Text style={styles.navigateText}>Get Directions</Text>
-                            </TouchableOpacity>
+                    {/* Modern Route Display */}
+                    <View style={styles.routeContainer}>
+                        {/* Origin */}
+                        <View style={styles.routePoint}>
+                            <View style={styles.routeIconContainer}>
+                                <View style={styles.originDot} />
+                            </View>
+                            <View style={styles.routeContent}>
+                                <Text style={styles.routeLabel}>Pickup Location</Text>
+                                <Text style={styles.routeAddress}>{trip.origin}</Text>
+                            </View>
+                        </View>
+
+                        {/* Connecting Line */}
+                        <View style={styles.routeLine}>
+                            <View style={styles.dottedLine} />
+                        </View>
+
+                        {/* Destination */}
+                        <View style={styles.routePoint}>
+                            <View style={styles.routeIconContainer}>
+                                <LocationPinIcon color={C.primary} />
+                            </View>
+                            <View style={styles.routeContent}>
+                                <Text style={styles.routeLabel}>Drop Location</Text>
+                                <Text style={styles.routeAddress}>{trip.destination}</Text>
+                                <TouchableOpacity style={styles.navigateBtnModern} onPress={openMaps}>
+                                    <NavigationIcon color={C.surface} />
+                                    <Text style={styles.navigateTextModern}>Navigate</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -396,6 +1156,47 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                         {statuses.map(renderTimelineItem)}
                     </View>
                 </View>
+
+                {/* Documents Section */}
+                {(trip.builty_path || trip.pod_path) && (
+                    <View style={styles.card}>
+                        <Text style={styles.sectionHeader}>Documents</Text>
+                        
+                        {trip.builty_path && (
+                            <TouchableOpacity style={styles.documentRow} onPress={downloadBuilty}>
+                                <View style={styles.documentIconContainer}>
+                                    <DocumentIcon />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.documentTitle}>Builty Document</Text>
+                                    <Text style={styles.documentSubtitle}>Tap to view or download</Text>
+                                </View>
+                                <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <Path d="M7 10l5 5 5-5" />
+                                    <Path d="M12 15V3" />
+                                </Svg>
+                            </TouchableOpacity>
+                        )}
+
+                        {trip.pod_path && (
+                            <TouchableOpacity style={[styles.documentRow, trip.builty_path && { marginTop: 12 }]} onPress={downloadPOD}>
+                                <View style={styles.documentIconContainer}>
+                                    <DocumentIcon />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.documentTitle}>POD Document</Text>
+                                    <Text style={styles.documentSubtitle}>Tap to view or download</Text>
+                                </View>
+                                <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <Path d="M7 10l5 5 5-5" />
+                                    <Path d="M12 15V3" />
+                                </Svg>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
 
                 {/* Contacts Section */}
                 <View style={styles.card}>
@@ -416,13 +1217,21 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
             {/* Bottom Action Button */}
             {currentStatus < 6 && (
                 <View style={styles.footer}>
-                    <TouchableOpacity style={styles.actionButton} onPress={updateStatus}>
-                        {currentStatus === 5 && <CameraIcon />}
-                        <Text style={styles.actionButtonText}>
-                            {currentStatus === 0 ? 'Mark as Vehicle Assigned' :
-                                currentStatus === 5 ? 'Upload POD & Complete' :
-                                    `Mark as ${statuses[currentStatus + 1]?.label}`}
-                        </Text>
+                    <TouchableOpacity 
+                        style={[styles.actionButton, updatingStatus && styles.actionButtonDisabled]} 
+                        onPress={updateStatus}
+                        disabled={updatingStatus}
+                    >
+                        {updatingStatus ? (
+                            <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                            <>
+                                {currentStatus === 5 && <CameraIcon />}
+                                <Text style={styles.actionButtonText}>
+                                    {getNextActionText()}
+                                </Text>
+                            </>
+                        )}
                     </TouchableOpacity>
                 </View>
             )}
@@ -432,19 +1241,68 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Upload Proof of Delivery</Text>
-                        <Text style={styles.modalSubtitle}>Please upload a clear picture of the signed POD.</Text>
+                        <Text style={styles.modalSubtitle}>Please upload the signed POD document to complete delivery.</Text>
 
-                        <TouchableOpacity style={styles.uploadPlaceholder}>
-                            <CameraIcon />
-                            <Text style={styles.uploadText}>Tap to Capture</Text>
-                        </TouchableOpacity>
+                        {podFile ? (
+                            <View style={styles.uploadPlaceholder}>
+                                <DocumentIcon />
+                                <Text style={styles.uploadText}>{podFile.name}</Text>
+                                <Text style={styles.uploadSubtext}>
+                                    {((podFile.size || 0) / 1024).toFixed(2)} KB
+                                </Text>
+                                <TouchableOpacity 
+                                    style={styles.changeFileBtn}
+                                    onPress={() => setPodFile(null)}
+                                >
+                                    <Text style={styles.changeFileText}>Change File</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={styles.uploadOptionsContainer}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handlePODCamera}>
+                                    <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
+                                        <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                        <Circle cx="12" cy="13" r="4" />
+                                    </Svg>
+                                    <Text style={styles.uploadOptionText}>Camera</Text>
+                                </TouchableOpacity>
 
-                        <View style={styles.modalActions}>
-                            <TouchableOpacity style={styles.modalCancel} onPress={() => setShowPODModal(false)}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handlePODGallery}>
+                                    <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
+                                        <Rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <Circle cx="8.5" cy="8.5" r="1.5" />
+                                        <Path d="M21 15l-5-5L5 21" />
+                                    </Svg>
+                                    <Text style={styles.uploadOptionText}>Gallery</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handlePODPick}>
+                                    <DocumentIcon />
+                                    <Text style={styles.uploadOptionText}>Document</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        <View style={[styles.modalActions, { marginTop: 20 }]}>
+                            <TouchableOpacity 
+                                style={styles.modalCancel} 
+                                onPress={() => {
+                                    setShowPODModal(false);
+                                    setPodFile(null);
+                                }}
+                            >
                                 <Text style={styles.modalCancelText}>Cancel</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.modalSubmit} onPress={handlePODUpload}>
-                                <Text style={styles.modalSubmitText}>Submit</Text>
+                            <TouchableOpacity 
+                                style={[styles.modalSubmit, (uploadingPOD || !podFile) && styles.modalSubmitDisabled]} 
+                                onPress={handlePODUpload}
+                                disabled={uploadingPOD || !podFile}
+                            >
+                                {uploadingPOD ? (
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                ) : (
+                                    <Text style={styles.modalSubmitText}>Upload & Complete</Text>
+                                )}
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -456,7 +1314,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Assign Vehicle & Driver</Text>
-                        <Text style={styles.modalSubtitle}>Select a vehicle and provide driver details.</Text>
+                        <Text style={styles.modalSubtitle}>Select a vehicle and driver for this trip.</Text>
 
                         {/* Vehicle Dropdown */}
                         <Text style={styles.inputLabel}>Select Vehicle</Text>
@@ -469,37 +1327,229 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId }) => {
 
                         {showVehicleList && (
                             <View style={styles.dropdownList}>
-                                {vehicles.map((v: any, index: number) => {
-                                    const vNum = typeof v === 'string' ? v : (v.registration_number || v.vehicle_number || 'Unknown Vehicle');
-                                    return (
-                                        <TouchableOpacity key={index} style={styles.dropdownItem} onPress={() => { setSelectedVehicle(vNum); setShowVehicleList(false); }}>
-                                            <Text style={styles.dropdownItemText}>{vNum}</Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                                {vehicles.length === 0 && (
-                                    <View style={styles.dropdownItem}>
-                                        <Text style={{ color: C.textSec, fontSize: 13 }}>No vehicles found</Text>
-                                    </View>
-                                )}
+                                <ScrollView style={{ maxHeight: 150 }}>
+                                    {vehicles.map((v: any, index: number) => {
+                                        const vNum = typeof v === 'string' ? v : (v.registration_number || v.vehicle_number || 'Unknown Vehicle');
+                                        return (
+                                            <TouchableOpacity 
+                                                key={index} 
+                                                style={styles.dropdownItem} 
+                                                onPress={() => { 
+                                                    setSelectedVehicle(vNum); 
+                                                    setShowVehicleList(false); 
+                                                }}
+                                            >
+                                                <Text style={styles.dropdownItemText}>{vNum}</Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                    {vehicles.length === 0 && (
+                                        <View style={styles.dropdownItem}>
+                                            <Text style={{ color: C.textSec, fontSize: 13 }}>No vehicles found</Text>
+                                        </View>
+                                    )}
+                                </ScrollView>
+                            </View>
+                        )}
+
+                        {/* Driver Dropdown */}
+                        <Text style={styles.inputLabel}>Select Driver</Text>
+                        <TouchableOpacity 
+                            style={styles.dropdown} 
+                            onPress={() => {
+                                console.log('📋 [DRIVERS] Opening driver dropdown. Current drivers:', drivers.length);
+                                setShowDriverList(!showDriverList);
+                            }}
+                        >
+                            <Text style={{ color: selectedDriver ? C.text : C.textSec }}>
+                                {selectedDriver ? `${selectedDriver.name} - ${selectedDriver.mobile}` : 'Select Driver'}
+                            </Text>
+                            <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2"><Path d="M6 9l6 6 6-6" /></Svg>
+                        </TouchableOpacity>
+
+                        {showDriverList && (
+                            <View style={styles.dropdownList}>
+                                <ScrollView style={{ maxHeight: 200 }}>
+                                    {drivers.map((driver: any, index: number) => {
+                                        console.log('📋 [DRIVERS] Rendering driver:', driver.name, driver.mobile);
+                                        return (
+                                            <TouchableOpacity 
+                                                key={index} 
+                                                style={styles.dropdownItem} 
+                                                onPress={() => handleDriverSelect(driver)}
+                                            >
+                                                <View>
+                                                    <Text style={styles.dropdownItemText}>{driver.name}</Text>
+                                                    <Text style={styles.dropdownItemSubtext}>
+                                                        Ph: {driver.mobile}
+                                                        {driver.License_Number && ` • DL: ${driver.License_Number}`}
+                                                    </Text>
+                                                </View>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                    {drivers.length === 0 && (
+                                        <View style={styles.dropdownItem}>
+                                            <Text style={{ color: C.textSec, fontSize: 13 }}>No drivers found</Text>
+                                        </View>
+                                    )}
+                                </ScrollView>
                             </View>
                         )}
 
                         <Text style={styles.inputLabel}>Driver Name</Text>
-                        <TextInput style={styles.input} value={driverName} onChangeText={setDriverName} placeholder="Enter Driver Name" placeholderTextColor={C.textSec} />
+                        <TextInput 
+                            style={styles.input} 
+                            value={driverName} 
+                            onChangeText={setDriverName} 
+                            placeholder="Enter Driver Name" 
+                            placeholderTextColor={C.textSec} 
+                        />
 
                         <Text style={styles.inputLabel}>Driver Phone</Text>
-                        <TextInput style={styles.input} value={driverPhone} onChangeText={setDriverPhone} placeholder="Enter Driver Phone" placeholderTextColor={C.textSec} keyboardType="phone-pad" />
+                        <TextInput 
+                            style={styles.input} 
+                            value={driverPhone} 
+                            onChangeText={setDriverPhone} 
+                            placeholder="Enter Driver Phone" 
+                            placeholderTextColor={C.textSec} 
+                            keyboardType="phone-pad" 
+                        />
 
                         <Text style={styles.inputLabel}>Driver DL (Optional)</Text>
-                        <TextInput style={styles.input} value={driverDL} onChangeText={setDriverDL} placeholder="Enter Driving License No" placeholderTextColor={C.textSec} />
+                        <TextInput 
+                            style={styles.input} 
+                            value={driverDL} 
+                            onChangeText={setDriverDL} 
+                            placeholder="Enter Driving License No" 
+                            placeholderTextColor={C.textSec} 
+                        />
 
                         <View style={[styles.modalActions, { marginTop: 20 }]}>
-                            <TouchableOpacity style={styles.modalCancel} onPress={() => setShowAssignVehicleModal(false)}>
+                            <TouchableOpacity 
+                                style={styles.modalCancel} 
+                                onPress={() => {
+                                    setShowAssignVehicleModal(false);
+                                    setSelectedVehicle('');
+                                    setSelectedDriver(null);
+                                    setDriverName('');
+                                    setDriverPhone('');
+                                    setDriverDL('');
+                                }}
+                            >
                                 <Text style={styles.modalCancelText}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.modalSubmit} onPress={handleAssignVehicle}>
                                 <Text style={styles.modalSubmitText}>Assign</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Builty Upload Modal */}
+            <Modal visible={showBuiltyModal} animationType="slide" transparent>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Upload Builty Document</Text>
+                        <Text style={styles.modalSubtitle}>Please upload the builty document before marking as In Transit.</Text>
+
+                        {builtyFile ? (
+                            <View style={styles.uploadPlaceholder}>
+                                <DocumentIcon />
+                                <Text style={styles.uploadText}>{builtyFile.name}</Text>
+                                <Text style={styles.uploadSubtext}>
+                                    {((builtyFile.size || 0) / 1024).toFixed(2)} KB
+                                </Text>
+                                <TouchableOpacity 
+                                    style={styles.changeFileBtn}
+                                    onPress={() => setBuiltyFile(null)}
+                                >
+                                    <Text style={styles.changeFileText}>Change File</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={styles.uploadOptionsContainer}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyCamera}>
+                                    <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
+                                        <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                        <Circle cx="12" cy="13" r="4" />
+                                    </Svg>
+                                    <Text style={styles.uploadOptionText}>Camera</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyGallery}>
+                                    <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
+                                        <Rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <Circle cx="8.5" cy="8.5" r="1.5" />
+                                        <Path d="M21 15l-5-5L5 21" />
+                                    </Svg>
+                                    <Text style={styles.uploadOptionText}>Gallery</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyPick}>
+                                    <DocumentIcon />
+                                    <Text style={styles.uploadOptionText}>Document</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        <View style={[styles.modalActions, { marginTop: 20 }]}>
+                            <TouchableOpacity 
+                                style={styles.modalCancel} 
+                                onPress={() => {
+                                    setShowBuiltyModal(false);
+                                    setBuiltyFile(null);
+                                }}
+                            >
+                                <Text style={styles.modalCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.modalSubmit, (uploadingBuilty || !builtyFile) && styles.modalSubmitDisabled]} 
+                                onPress={handleBuiltyUpload}
+                                disabled={uploadingBuilty || !builtyFile}
+                            >
+                                {uploadingBuilty ? (
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                ) : (
+                                    <Text style={styles.modalSubmitText}>Upload & Continue</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Confirmation Modal for Status Updates */}
+            <Modal visible={showConfirmModal} animationType="fade" transparent>
+                <View style={styles.confirmModalOverlay}>
+                    <View style={styles.confirmModalContent}>
+                        <View style={styles.confirmIconContainer}>
+                            <Svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <Circle cx="12" cy="12" r="10" />
+                                <Path d="M12 16v-4" />
+                                <Path d="M12 8h.01" />
+                            </Svg>
+                        </View>
+                        <Text style={styles.confirmTitle}>Update Status?</Text>
+                        <Text style={styles.confirmMessage}>
+                            Are you sure you want to update the status to "{pendingStatusUpdate !== null ? statuses[pendingStatusUpdate].label : ''}"?
+                        </Text>
+                        <View style={styles.confirmActions}>
+                            <TouchableOpacity 
+                                style={styles.confirmCancelBtn} 
+                                onPress={() => {
+                                    setShowConfirmModal(false);
+                                    setPendingStatusUpdate(null);
+                                }}
+                            >
+                                <Text style={styles.confirmCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={styles.confirmOkBtn} 
+                                onPress={confirmStatusUpdate}
+                            >
+                                <Text style={styles.confirmOkText}>OK</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -555,6 +1605,83 @@ const styles = StyleSheet.create({
     sectionHeader: { fontSize: 14, fontWeight: '600', color: C.text, marginBottom: 14 },
 
     // Shipping
+    shippingHeader: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: 16 
+    },
+    routeContainer: {
+        paddingVertical: 4,
+    },
+    routePoint: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    routeIconContainer: {
+        width: 32,
+        alignItems: 'center',
+        paddingTop: 2,
+    },
+    originDot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: C.success,
+        borderWidth: 3,
+        borderColor: '#E8F5E9',
+    },
+    routeContent: {
+        flex: 1,
+        marginLeft: 12,
+    },
+    routeLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: C.textSec,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 4,
+    },
+    routeAddress: {
+        fontSize: 14,
+        color: C.text,
+        lineHeight: 20,
+        fontWeight: '500',
+    },
+    routeLine: {
+        flexDirection: 'row',
+        paddingLeft: 16,
+        height: 32,
+    },
+    dottedLine: {
+        width: 2,
+        height: '100%',
+        borderLeftWidth: 2,
+        borderLeftColor: C.border,
+        borderStyle: 'dashed',
+    },
+    navigateBtnModern: {
+        marginTop: 10,
+        alignSelf: 'flex-start',
+        backgroundColor: C.primary,
+        borderRadius: 6,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        shadowColor: C.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    navigateTextModern: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: C.surface,
+    },
     shippingRow: { flexDirection: 'row', alignItems: 'flex-start' },
     shippingLabel: { width: 60, fontSize: 13, color: C.textSec },
     shippingValue: { flex: 1, fontSize: 13, color: C.text },
@@ -568,11 +1695,17 @@ const styles = StyleSheet.create({
 
     updateLocBtn: {
         backgroundColor: '#E3F2FD',
-        borderRadius: 4,
-        paddingHorizontal: 8, paddingVertical: 4,
+        borderRadius: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
     },
     updateLocText: {
-        fontSize: 11, fontWeight: '600', color: C.primary,
+        fontSize: 11,
+        fontWeight: '600',
+        color: C.primary,
     },
 
     // Timeline
@@ -592,6 +1725,36 @@ const styles = StyleSheet.create({
     contactName: { fontSize: 14, color: C.text },
     contactPhone: { fontSize: 12, color: C.textSec, marginTop: 2 },
 
+    // Documents
+    documentRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F0F5FF',
+        borderRadius: 8,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#D0E0FF',
+    },
+    documentIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 8,
+        backgroundColor: C.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    documentTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: C.text,
+        marginBottom: 2,
+    },
+    documentSubtitle: {
+        fontSize: 12,
+        color: C.textSec,
+    },
+
     // Footer
     footer: {
         position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -603,6 +1766,10 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         paddingVertical: 14,
         flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10,
+    },
+    actionButtonDisabled: {
+        backgroundColor: '#A0C4F5',
+        opacity: 0.7,
     },
     actionButtonText: { fontSize: 15, fontWeight: '600', color: '#FFF' },
 
@@ -617,10 +1784,51 @@ const styles = StyleSheet.create({
         justifyContent: 'center', alignItems: 'center', marginBottom: 20,
     },
     uploadText: { fontSize: 14, color: C.primary, marginTop: 10 },
+    uploadSubtext: { fontSize: 12, color: C.textSec, marginTop: 4 },
+    changeFileBtn: {
+        marginTop: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: C.primary,
+        borderRadius: 6,
+    },
+    changeFileText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#FFF',
+    },
+    uploadOptionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 20,
+    },
+    uploadOptionBtn: {
+        flex: 1,
+        backgroundColor: '#F0F5FF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#D0E0FF',
+        paddingVertical: 24,
+        paddingHorizontal: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    uploadOptionText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: C.primary,
+        textAlign: 'center',
+    },
     modalActions: { flexDirection: 'row', gap: 10 },
     modalCancel: { flex: 1, padding: 12, alignItems: 'center', borderRadius: 4, borderWidth: 1, borderColor: C.border },
     modalCancelText: { fontSize: 14, color: C.text },
     modalSubmit: { flex: 1, padding: 12, alignItems: 'center', borderRadius: 4, backgroundColor: C.primary },
+    modalSubmitDisabled: {
+        backgroundColor: '#A0C4F5',
+        opacity: 0.7,
+    },
     modalSubmitText: { fontSize: 14, color: '#FFF', fontWeight: '600' },
 
     // Inputs
@@ -641,7 +1849,79 @@ const styles = StyleSheet.create({
         maxHeight: 150
     },
     dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
-    dropdownItemText: { fontSize: 14, color: C.text }
+    dropdownItemText: { fontSize: 14, color: C.text },
+    dropdownItemSubtext: { fontSize: 12, color: C.textSec, marginTop: 2 },
+
+    // Confirmation Modal
+    confirmModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    confirmModalContent: {
+        backgroundColor: C.surface,
+        borderRadius: 16,
+        padding: 24,
+        marginHorizontal: 32,
+        alignItems: 'center',
+        width: '85%',
+        maxWidth: 400,
+    },
+    confirmIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: '#E3F2FD',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    confirmTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: C.text,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    confirmMessage: {
+        fontSize: 14,
+        color: C.textSec,
+        textAlign: 'center',
+        marginBottom: 24,
+        lineHeight: 20,
+    },
+    confirmActions: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
+    confirmCancelBtn: {
+        flex: 1,
+        padding: 14,
+        alignItems: 'center',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: C.border,
+        backgroundColor: C.surface,
+    },
+    confirmCancelText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: C.text,
+    },
+    confirmOkBtn: {
+        flex: 1,
+        padding: 14,
+        alignItems: 'center',
+        borderRadius: 8,
+        backgroundColor: C.primary,
+    },
+    confirmOkText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#FFF',
+    },
 });
 
 export default ActiveTripScreen;

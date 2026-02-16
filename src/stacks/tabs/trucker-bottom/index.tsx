@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResponsiveScale } from '@truckmitr/hooks/reponsive';
 import { useColor } from '@truckmitr/hooks/colors';
 import { useNavigation } from '@react-navigation/native';
-import { TRUCKER_STACKS } from '../../truckermain';
+import { TRUCKER_STACKS } from '../../stacks';
 import LinearGradient from 'react-native-linear-gradient';
 
 // Import Trucker tab screens
@@ -59,6 +59,8 @@ const HomeTabWrapper = () => {
                 navigation.navigate(TRUCKER_STACKS.NOTIFICATIONS)
             }
             onNavigateToProfile={() => navigation.navigate(TRUCKER_TABS.PROFILE)}
+            onNavigateToAddDriver={() => navigation.navigate(TRUCKER_STACKS.ADD_DRIVER)}
+            onNavigateToAddBankDetails={() => navigation.navigate(TRUCKER_STACKS.BANK_DETAILS)}
         />
     );
 };

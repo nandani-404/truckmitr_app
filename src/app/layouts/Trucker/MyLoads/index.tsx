@@ -57,9 +57,13 @@ const formatPrice = (price: string | number | null | undefined) => {
 };
 
 const getTimeAgo = (dateStr: string) => {
-    if (!dateStr) return '';
+    if (!dateStr) return 'N/A';
     const now = new Date();
-    const created = new Date(dateStr);
+    // Handle SQL format "YYYY-MM-DD HH:MM:SS" by replacing space with T
+    const created = new Date(dateStr.replace(' ', 'T'));
+
+    if (isNaN(created.getTime())) return 'N/A';
+
     const diffMs = now.getTime() - created.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     if (diffMins < 1) return 'Just now';
@@ -73,7 +77,127 @@ const getTimeAgo = (dateStr: string) => {
 const safeString = (val: any): string => {
     if (val === null || val === undefined) return 'N/A';
     if (typeof val === 'object') return val.length_label || val.name || val.label || 'N/A';
-    return String(val) || 'N/A';
+    const str = String(val);
+    return str.trim() || 'N/A';
+};
+
+const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return 'N/A';
+    // Handle SQL format by replacing space with T if needed
+    const normalized = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+    const date = new Date(normalized);
+    if (isNaN(date.getTime())) return dateStr;
+
+    return date.toLocaleDateString('en-IN', {
+        day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true
+    });
+};
+
+// ─────────────────────────────────────────────
+// Skeleton Components
+// ─────────────────────────────────────────────
+const SkeletonBox = ({ width, height, style }: { width?: number | string; height?: number; style?: any }) => {
+    const animatedValue = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(animatedValue, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animatedValue, {
+                    toValue: 0,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, []);
+
+    const opacity = animatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.3, 0.7],
+    });
+
+    return (
+        <Animated.View
+            style={[
+                {
+                    width: width || '100%',
+                    height: height || 16,
+                    backgroundColor: C.border,
+                    borderRadius: 4,
+                    opacity,
+                },
+                style,
+            ]}
+        />
+    );
+};
+
+const SkeletonLoadCard = ({ index }: { index: number }) => {
+    const cardAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.timing(cardAnim, { 
+            toValue: 1, 
+            duration: 400, 
+            delay: index * 80, 
+            useNativeDriver: true 
+        }).start();
+    }, []);
+
+    return (
+        <Animated.View style={{
+            opacity: cardAnim,
+            transform: [{ translateY: cardAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+        }}>
+            <View style={s.loadCard}>
+                {/* Header */}
+                <View style={s.cardHeader}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <SkeletonBox width={100} height={16} />
+                        <SkeletonBox width={70} height={24} style={{ borderRadius: 6 }} />
+                    </View>
+                    <SkeletonBox width={16} height={16} style={{ borderRadius: 8 }} />
+                </View>
+
+                {/* Route */}
+                <View style={s.routeSection}>
+                    <View style={s.routeRow}>
+                        <View style={s.routePointContainer}>
+                            <SkeletonBox width={8} height={8} style={{ borderRadius: 4 }} />
+                            <SkeletonBox width="80%" height={14} />
+                        </View>
+                        <View style={s.routeArrow}>
+                            <SkeletonBox width={30} height={12} />
+                        </View>
+                        <View style={s.routePointContainer}>
+                            <SkeletonBox width={8} height={8} style={{ borderRadius: 4 }} />
+                            <SkeletonBox width="80%" height={14} />
+                        </View>
+                    </View>
+                </View>
+
+                {/* Bid */}
+                <View style={s.bidSection}>
+                    <View style={s.bidRow}>
+                        <SkeletonBox width={60} height={12} />
+                        <SkeletonBox width={80} height={18} />
+                    </View>
+                </View>
+
+                {/* Footer */}
+                <View style={s.cardFooter}>
+                    <SkeletonBox width={150} height={12} />
+                    <SkeletonBox width={60} height={12} />
+                </View>
+            </View>
+        </Animated.View>
+    );
 };
 
 // ─────────────────────────────────────────────
@@ -89,7 +213,16 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedLoad, setSelectedLoad] = useState<any>(null);
+    const [activeFilter, setActiveFilter] = useState('all');
     const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    const filteredLoads = loads.filter(load => {
+        if (activeFilter === 'all') return true;
+        if (activeFilter === 'pending') {
+            return load.shipper_status !== 'accepted' && load.shipper_status !== 'rejected';
+        }
+        return load.shipper_status === activeFilter;
+    });
 
     const fetchAppliedLoads = async (isRefresh = false) => {
         try {
@@ -97,7 +230,14 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
             const response: any = await axiosInstance.get(END_POINTS.TRUCKER_APPLIED_LOADS);
             if (response?.data?.status === 'success') {
                 const loadList = response.data.data?.data || response.data.data || [];
-                setLoads(Array.isArray(loadList) ? loadList : []);
+                const sortedList = (Array.isArray(loadList) ? loadList : []).sort((a: any, b: any) => {
+                    const statusA = a.shipper_status?.toLowerCase();
+                    const statusB = b.shipper_status?.toLowerCase();
+                    if (statusA === 'accepted' && statusB !== 'accepted') return -1;
+                    if (statusA !== 'accepted' && statusB === 'accepted') return 1;
+                    return 0;
+                });
+                setLoads(sortedList);
             }
         } catch (error) {
             console.log('Error fetching applied loads:', error);
@@ -125,11 +265,61 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
     // ── Load Card ──
     const LoadCard = ({ load, index }: { load: any; index: number }) => {
         const cardAnim = useRef(new Animated.Value(0)).current;
+        const arrow1Anim = useRef(new Animated.Value(0)).current;
+        const arrow2Anim = useRef(new Animated.Value(0)).current;
+        const arrow3Anim = useRef(new Animated.Value(0)).current;
         const navigation = useNavigation<any>();
+
+        // Show arrows for In Transit and Reached Destination (until Delivered)
+        const isInTransit = load.current_status_label === 'In Transit' || load.current_status_label === 'Reached Destination';
 
         useEffect(() => {
             Animated.timing(cardAnim, { toValue: 1, duration: 400, delay: index * 80, useNativeDriver: true }).start();
         }, []);
+
+        useEffect(() => {
+            if (isInTransit) {
+                // Stagger the arrows for a flowing effect
+                const createArrowAnimation = (animValue: Animated.Value, delay: number) => {
+                    return Animated.loop(
+                        Animated.sequence([
+                            Animated.delay(delay),
+                            Animated.timing(animValue, {
+                                toValue: 1,
+                                duration: 1500,
+                                useNativeDriver: true,
+                            }),
+                            Animated.timing(animValue, {
+                                toValue: 0,
+                                duration: 0,
+                                useNativeDriver: true,
+                            }),
+                        ])
+                    );
+                };
+
+                Animated.parallel([
+                    createArrowAnimation(arrow1Anim, 0),
+                    createArrowAnimation(arrow2Anim, 500),
+                    createArrowAnimation(arrow3Anim, 1000),
+                ]).start();
+            }
+        }, [isInTransit]);
+
+        const getArrowStyle = (animValue: Animated.Value) => ({
+            transform: [
+                {
+                    translateX: animValue.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 90],
+                    }),
+                },
+            ],
+            opacity: animValue.interpolate({
+                inputRange: [0, 0.1, 0.9, 1],
+                outputRange: [0, 1, 1, 0],
+            }),
+        });
 
         const getStatusInfo = (status: string | null) => {
             if (status === 'accepted') return { label: 'Accepted', color: C.success, bg: C.successLight };
@@ -138,6 +328,19 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
         };
 
         const { label: statusLabel, color: statusColor, bg: statusBg } = getStatusInfo(load.shipper_status);
+
+        // Get button text based on current_status_label
+        const getButtonText = () => {
+            const currentStatus = load.current_status_label;
+            if (currentStatus === 'Load Accepted') return 'Add Vehicle & Driver';
+            if (currentStatus === 'Vehicle Assigned') return 'Mark Reached Pickup';
+            if (currentStatus === 'Reached Pickup') return 'Mark Loaded';
+            if (currentStatus === 'Loaded') return 'Upload Builty & Start Transit';
+            if (currentStatus === 'In Transit') return 'Mark Reached Destination';
+            if (currentStatus === 'Reached Destination') return 'Upload POD & Complete';
+            if (currentStatus === 'Delivered') return 'Completed';
+            return currentStatus || 'Update Status';
+        };
 
         return (
             <Animated.View style={{
@@ -162,6 +365,14 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                         <ChevronRight />
                     </View>
 
+                    {/* Current Status Label */}
+                    {load.current_status_label && (
+                        <View style={s.currentStatusContainer}>
+                            <Text style={s.currentStatusLabel}>Status: </Text>
+                            <Text style={s.currentStatusValue}>{load.current_status_label}</Text>
+                        </View>
+                    )}
+
                     {/* Route */}
                     <View style={s.routeSection}>
                         <View style={s.routeRow}>
@@ -171,11 +382,25 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                                     {load.origin_location?.split(',')[0] || 'N/A'}
                                 </Text>
                             </View>
-                            <View style={s.routeArrow}>
-                                <View style={s.routeLine} />
-                                <Text style={s.arrowText}>→</Text>
-                                <View style={s.routeLine} />
-                            </View>
+                            {isInTransit ? (
+                                <View style={{ position: 'relative', flex: 1, height: 16, justifyContent: 'center', overflow: 'hidden', marginHorizontal: 6 }}>
+                                    <Animated.Text style={[{ position: 'absolute', left: -10, fontSize: 14, color: C.success, fontWeight: 'bold' }, getArrowStyle(arrow1Anim)]}>
+                                        →
+                                    </Animated.Text>
+                                    <Animated.Text style={[{ position: 'absolute', left: -10, fontSize: 14, color: C.success, fontWeight: 'bold' }, getArrowStyle(arrow2Anim)]}>
+                                        →
+                                    </Animated.Text>
+                                    <Animated.Text style={[{ position: 'absolute', left: -10, fontSize: 14, color: C.success, fontWeight: 'bold' }, getArrowStyle(arrow3Anim)]}>
+                                        →
+                                    </Animated.Text>
+                                </View>
+                            ) : (
+                                <View style={s.routeArrow}>
+                                    <View style={s.routeLine} />
+                                    <Text style={s.arrowText}>→</Text>
+                                    <View style={s.routeLine} />
+                                </View>
+                            )}
                             <View style={s.routePointContainer}>
                                 <View style={s.dotRed} />
                                 <Text style={s.routeCity} numberOfLines={1}>
@@ -185,20 +410,33 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                         </View>
                     </View>
 
-                    {/* Your Bid */}
+                    {/* Bids */}
                     <View style={s.bidSection}>
-                        <View style={s.bidRow}>
-                            <Text style={s.bidLabel}>Your Bid</Text>
-                            <Text style={s.bidValue}>{formatPrice(load.trucker_price)}</Text>
-                        </View>
+                        {load.shipper_status === 'accepted' && load.trucker_updated_price ? (
+                            <>
+                                <View style={s.bidRow}>
+                                    <Text style={s.bidLabel}>Offered Price</Text>
+                                    <Text style={[s.bidValue, { color: C.success }]}>{formatPrice(load.trucker_updated_price)}</Text>
+                                </View>
+                                <View style={s.bidRow}>
+                                    <Text style={[s.bidLabel, { fontSize: 11 }]}>Your Bid</Text>
+                                    <Text style={s.bidValueSmall}>{formatPrice(load.trucker_price)}</Text>
+                                </View>
+                            </>
+                        ) : (
+                            <View style={s.bidRow}>
+                                <Text style={s.bidLabel}>Your Bid</Text>
+                                <Text style={s.bidValue}>{formatPrice(load.trucker_price)}</Text>
+                            </View>
+                        )}
                     </View>
 
                     {/* Footer */}
                     <View style={s.cardFooter}>
                         <View style={s.metaRow}>
-                            <Text style={s.metaText}>📦 {safeString(load.vehicle_body)}</Text>
+                            <Text style={s.metaText}>📦 {safeString(load.vehicle_body || load.vechicle_body)}</Text>
                             <View style={s.metaDot} />
-                            <Text style={s.metaText}>{safeString(load.vehicle_length)}</Text>
+                            <Text style={s.metaText}>{safeString(load.vehicle_length || load.vechicle_type || load.vehicle_type)}</Text>
                         </View>
                         <Text style={s.appliedAt}>Applied {getTimeAgo(load.applied_at)}</Text>
                     </View>
@@ -209,10 +447,24 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                             style={s.trackButton}
                             onPress={() => navigation.navigate('truckerActiveTrip', { loadId: load.id })}
                         >
-                            <Text style={s.trackButtonText}>Track Load</Text>
-                            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.white} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <Path d="M9 18l6-6-6-6" />
-                            </Svg>
+                            {isInTransit ? (
+                                <>
+                                    <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.white} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <Path d="M1 3h15v13H1z" />
+                                        <Path d="M16 8h4l3 3v5h-7V8z" />
+                                        <Circle cx="5.5" cy="18.5" r="2.5" />
+                                        <Circle cx="18.5" cy="18.5" r="2.5" />
+                                    </Svg>
+                                    <Text style={s.trackButtonText}>{getButtonText()}</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Text style={s.trackButtonText}>{getButtonText()}</Text>
+                                    <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.white} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <Path d="M9 18l6-6-6-6" />
+                                    </Svg>
+                                </>
+                            )}
                         </TouchableOpacity>
                     )}
                 </TouchableOpacity>
@@ -231,21 +483,45 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                 <View style={s.headerSpacer} />
             </View>
 
+            {/* Filter Bar */}
+            {!loading && loads.length > 0 && (
+                <View style={s.filterContainer}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterContent}>
+                        {['All', 'Pending', 'Accepted', 'Rejected'].map(filter => (
+                            <TouchableOpacity
+                                key={filter}
+                                style={[s.filterPill, activeFilter === filter.toLowerCase() && s.filterPillActive]}
+                                onPress={() => setActiveFilter(filter.toLowerCase())}
+                            >
+                                <Text style={[s.filterText, activeFilter === filter.toLowerCase() && s.filterTextActive]}>
+                                    {filter}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
+
             {/* Count Badge */}
             {!loading && loads.length > 0 && (
                 <View style={s.countBar}>
                     <Text style={s.countText}>
-                        {loads.length} applied load{loads.length !== 1 ? 's' : ''}
+                        {filteredLoads.length} applied load{filteredLoads.length !== 1 ? 's' : ''}
                     </Text>
                 </View>
             )}
 
             {/* Loading */}
             {loading ? (
-                <View style={s.centerState}>
-                    <ActivityIndicator size="large" color={C.accent} />
-                    <Text style={s.loadingText}>Loading your loads...</Text>
-                </View>
+                <ScrollView
+                    style={s.scrollView}
+                    contentContainerStyle={s.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {[1, 2, 3, 4].map((_, index) => (
+                        <SkeletonLoadCard key={index} index={index} />
+                    ))}
+                </ScrollView>
             ) : loads.length === 0 ? (
                 /* Empty State */
                 <View style={s.centerState}>
@@ -263,11 +539,18 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />
                     }
                 >
-                    <Animated.View style={{ opacity: fadeAnim }}>
-                        {loads.map((load: any, index: number) => (
-                            <LoadCard key={load.id || index} load={load} index={index} />
-                        ))}
-                    </Animated.View>
+                    {filteredLoads.length === 0 ? (
+                        <View style={[s.centerState, { marginTop: 60 }]}>
+                            <Text style={s.emptyEmoji}>🔍</Text>
+                            <Text style={s.emptyText}>No {activeFilter} loads found</Text>
+                        </View>
+                    ) : (
+                        <Animated.View style={{ opacity: fadeAnim }}>
+                            {filteredLoads.map((load: any, index: number) => (
+                                <LoadCard key={load.id || index} load={load} index={index} />
+                            ))}
+                        </Animated.View>
+                    )}
                     <View style={{ height: 40 }} />
                 </ScrollView>
             )}
@@ -329,10 +612,25 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
 
                                 {/* Financials */}
                                 <View style={s.sheetRow}>
-                                    <View style={s.sheetCol}>
-                                        <Text style={s.sheetLabel}>Your Bid</Text>
-                                        <Text style={[s.sheetValueHuge, { color: C.accent }]}>{formatPrice(selectedLoad.trucker_price)}</Text>
-                                    </View>
+                                    {selectedLoad.shipper_status === 'accepted' && selectedLoad.trucker_updated_price ? (
+                                        <>
+                                            <View style={s.sheetCol}>
+                                                <Text style={s.sheetLabel}>Offered Price</Text>
+                                                <Text style={[s.sheetValueHuge, { color: C.success }]}>{formatPrice(selectedLoad.trucker_updated_price)}</Text>
+                                            </View>
+                                            <View style={s.sheetCol}>
+                                                <Text style={s.sheetLabel}>Your Bid</Text>
+                                                <Text style={[s.sheetValueHuge, { color: C.textMuted, fontSize: 16, textDecorationLine: 'line-through' }]}>
+                                                    {formatPrice(selectedLoad.trucker_price)}
+                                                </Text>
+                                            </View>
+                                        </>
+                                    ) : (
+                                        <View style={s.sheetCol}>
+                                            <Text style={s.sheetLabel}>Your Bid</Text>
+                                            <Text style={[s.sheetValueHuge, { color: C.accent }]}>{formatPrice(selectedLoad.trucker_price)}</Text>
+                                        </View>
+                                    )}
                                 </View>
 
                                 {/* Cargo & Vehicle */}
@@ -349,11 +647,15 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                                         </View>
                                         <View style={s.sheetGridItem}>
                                             <Text style={s.sheetGridLabel}>Vehicle</Text>
-                                            <Text style={s.sheetGridValue}>{safeString(selectedLoad.vehicle_body) || safeString(selectedLoad.vechicle_body)}</Text>
+                                            <Text style={s.sheetGridValue}>
+                                                {safeString(selectedLoad.vehicle_body || selectedLoad.vechicle_body)}
+                                            </Text>
                                         </View>
                                         <View style={s.sheetGridItem}>
                                             <Text style={s.sheetGridLabel}>Length</Text>
-                                            <Text style={s.sheetGridValue}>{safeString(selectedLoad.vehicle_length)}</Text>
+                                            <Text style={s.sheetGridValue}>
+                                                {safeString(selectedLoad.vehicle_length || selectedLoad.vechicle_type || selectedLoad.vehicle_type)}
+                                            </Text>
                                         </View>
                                     </View>
                                 </View>
@@ -364,11 +666,11 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                                     <View style={s.sheetGrid}>
                                         <View style={s.sheetGridItem}>
                                             <Text style={s.sheetGridLabel}>Pickup Date</Text>
-                                            <Text style={s.sheetGridValue}>{selectedLoad.picup_date || 'Not specified'}</Text>
+                                            <Text style={s.sheetGridValue}>{formatDateTime(selectedLoad.picup_date)}</Text>
                                         </View>
                                         <View style={s.sheetGridItem}>
                                             <Text style={s.sheetGridLabel}>Applied On</Text>
-                                            <Text style={s.sheetGridValue}>{selectedLoad.applied_at || 'N/A'}</Text>
+                                            <Text style={s.sheetGridValue}>{formatDateTime(selectedLoad.applied_at)}</Text>
                                         </View>
                                     </View>
                                 </View>
@@ -460,6 +762,7 @@ const s = StyleSheet.create({
     },
     bidLabel: { fontSize: 12, color: C.textSec },
     bidValue: { fontSize: 16, fontWeight: '800', color: C.accent },
+    bidValueSmall: { fontSize: 13, fontWeight: '600', color: C.textMuted, textDecorationLine: 'line-through' },
     offeredValue: { fontSize: 14, fontWeight: '600', color: C.textSec },
 
     // Footer
@@ -468,6 +771,26 @@ const s = StyleSheet.create({
     metaText: { fontSize: 11, color: C.textMuted },
     metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: C.border, marginHorizontal: 6 },
     appliedAt: { fontSize: 11, color: C.textMuted },
+
+    // Current Status
+    currentStatusContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: C.borderLight,
+    },
+    currentStatusLabel: {
+        fontSize: 12,
+        color: C.textSec,
+        fontWeight: '500',
+    },
+    currentStatusValue: {
+        fontSize: 12,
+        color: C.accent,
+        fontWeight: '700',
+    },
 
     // Bottom Sheet
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
@@ -512,6 +835,38 @@ const s = StyleSheet.create({
     trackButtonText: {
         fontSize: 14,
         fontWeight: '700',
+        color: C.white,
+    },
+
+    // Filters
+    filterContainer: {
+        backgroundColor: C.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: C.borderLight,
+    },
+    filterContent: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        gap: 10,
+    },
+    filterPill: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: C.surfaceAlt,
+        borderWidth: 1,
+        borderColor: C.border,
+    },
+    filterPillActive: {
+        backgroundColor: C.accent,
+        borderColor: C.accent,
+    },
+    filterText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: C.textSec,
+    },
+    filterTextActive: {
         color: C.white,
     },
 });

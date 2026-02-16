@@ -320,4 +320,10 @@ export const END_POINTS = {
     TRUCKER_UPDATE_LOCATION: `api/trucker/update-location`,
     TRUCKER_TRACKING: (id: any) => `api/trucker/tracking/${id}`,
     TRUCKER_UPDATE_VEHICLE_NUMBER: `api/trucker/update-vehicle-number`,
+    TRUCKER_UPDATE_STATUS: `api/trucker/update-status`,
+    TRUCKER_UPLOAD_BUILTY: `api/trucker/upload-builty`,
+    TRUCKER_UPLOAD_POD: `api/trucker/upload-pod`,
+    TRUCKER_GET_DRIVERS: `api/trucker/drivers`,
+    TRUCKER_BANK_DETAILS_UPDATE: `api/store-trucker-bank-details`,
+    TRUCKER_BANK_DETAILS_FETCH: `api/trucker-bank-details`,
 }

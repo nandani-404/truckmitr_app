@@ -465,3 +465,34 @@ export const STACKS = {
     SHIPPER_IN_TRANSIT_LOADS: 'shipperInTransitLoads',
     SHIPPER_POD_PENDING: 'shipperPodPending',
 } as const;
+
+// Trucker-specific screen names (independent namespace)
+export const TRUCKER_STACKS = {
+    TRUCKER_TABS: 'truckerTabs',
+    LOAD_DETAIL: 'truckerLoadDetail',
+    ACTIVE_TRIP: 'truckerActiveTrip',
+    ADD_TRUCK: 'truckerAddTruck',
+    DOCUMENT_RENEWAL: 'truckerDocumentRenewal',
+    EARNINGS: 'truckerEarningsDetail',
+    INVOICE_DETAIL: 'truckerInvoiceDetail',
+    MY_LOADS: 'truckerMyLoadsDetail',
+    NOTIFICATIONS: 'truckerNotifications',
+    PAID_HISTORY: 'truckerPaidHistory',
+    PENDING_PAYMENTS: 'truckerPendingPayments',
+    PERSONAL_ROUTES: 'truckerPersonalRoutes',
+    VEHICLE_MANAGEMENT: 'truckerVehicleManagement',
+    VEHICLE_DETAILS: 'truckerVehicleDetails',
+    PROFILE: 'truckerProfileDetail',
+    PROFILE_OVERVIEW: 'profileOverview',
+    PROFILE_EDIT_NEW: 'profileEditNew',
+    PROFILE_EDIT: 'profileEdit',
+    PROFILE_EDIT_TRANSPORTER: 'profileEditTransporter',
+    ADD_DRIVER: 'truckerAddDriver',
+    BANK_DETAILS: 'truckerBankDetails',
+    DRIVER_LIST: 'truckerDriverList',
+    // Profile Completion Flow
+    PROFILE_SIGNUP: 'truckerProfileSignup',
+    PROFILE_VEHICLE_INFO: 'truckerProfileVehicleInfo',
+    PROFILE_DOCUMENT_UPLOAD: 'truckerProfileDocumentUpload',
+    PROFILE_VERIFICATION_STATUS: 'truckerProfileVerificationStatus',
+} as const;
