@@ -13,18 +13,18 @@ import { useFocusEffect } from '@react-navigation/native';
 // Design Tokens — classic white, single blue accent
 // ═══════════════════════════════════════════════════
 const C = {
-    bg: '#F8F9FA',
-    surface: '#FFFFFF',
+    bg: '#ffffffff',
+    surface: '#ffffffff',
     surfaceAlt: '#F3F4F6',
-    border: '#E5E7EB',
-    borderLight: '#F3F4F6',
+    border: '#dfdfdfff',
+    borderLight: '#ffffffff',
     text: '#1C1C1E',
     textSec: '#6B7280',
     textMuted: '#9CA3AF',
     accent: '#2C5282',
     accentLight: '#EBF0F7',
     success: '#059669',
-    successLight: '#ECFDF5',
+    successLight: '#ffffffff',
     warning: '#D97706',
     warningLight: '#FEF3C7',
     danger: '#DC2626',

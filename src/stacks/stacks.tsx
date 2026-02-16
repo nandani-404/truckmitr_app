@@ -464,6 +464,8 @@ export const STACKS = {
     SHIPPER_ACCEPTED_LOADS: 'shipperAcceptedLoads',
     SHIPPER_IN_TRANSIT_LOADS: 'shipperInTransitLoads',
     SHIPPER_POD_PENDING: 'shipperPodPending',
+    TRANSPORTER_DRIVER_TRACKING: 'transporterDriverTracking',
+
 } as const;
 
 // Trucker-specific screen names (independent namespace)

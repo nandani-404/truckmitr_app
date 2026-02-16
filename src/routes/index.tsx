@@ -853,11 +853,10 @@ export default function Routes() {
         <PunctureMain />
       ) : selectedModule === 'shipper' || user?.data?.role?.toLowerCase() === 'shipper' || user?.role?.toLowerCase() === 'shipper' ? (
         <ShipperMain />
+      ) : appMode === 'trucker' ? (
+        <TruckerMain />
       ) : (
-        <AnimatedLayoutSwitcher
-          transporterLayout={<Main />}
-          truckerLayout={<TruckerMain />}
-        />
+        <Main />
       )}
       {subscriptionModal && <Subscription />}
       <InAppUpdatePopup />

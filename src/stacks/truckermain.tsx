@@ -14,6 +14,7 @@ import TruckerBottomTabs from './tabs/trucker-bottom';
 // Import Trucker screens
 import LoadDetailScreen from '../app/layouts/Trucker/LoadDetail/index';
 import ActiveTripScreen from '../app/layouts/Trucker/ActiveTrip/index';
+import MapNavigationScreen from '../app/layouts/Trucker/MapNavigation/index';
 import AddTruckScreen from '../app/layouts/Trucker/AddTruck/index';
 import DocumentRenewalScreen from '../app/layouts/Trucker/DocumentRenewal/index';
 import EarningsScreen from '../app/layouts/Trucker/Earnings/index';
@@ -72,6 +73,21 @@ const ActiveTripWrapper = () => {
             loadId={route.params?.loadId || route.params?.tripId}
             onBack={() => navigation.goBack()}
             onComplete={() => navigation.goBack()}
+            navigation={navigation}
+        />
+    );
+};
+
+const MapNavigationWrapper = () => {
+    const navigation = useNavigation();
+    const route = useRoute<any>();
+    return (
+        <MapNavigationScreen
+            origin={route.params?.origin}
+            destination={route.params?.destination}
+            originCoords={route.params?.originCoords}
+            destinationCoords={route.params?.destinationCoords}
+            onBack={() => navigation.goBack()}
         />
     );
 };
@@ -255,6 +271,10 @@ export default function TruckerMain() {
             <Stack.Screen
                 name={TRUCKER_STACKS.ACTIVE_TRIP}
                 component={ActiveTripWrapper}
+            />
+            <Stack.Screen
+                name="truckerMapNavigation"
+                component={MapNavigationWrapper}
             />
             <Stack.Screen
                 name={TRUCKER_STACKS.ADD_TRUCK}

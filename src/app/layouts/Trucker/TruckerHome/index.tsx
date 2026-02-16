@@ -78,7 +78,20 @@ const SwitchToTransporterCard = () => {
 
     const handleToggle = () => {
         if (isTransitioning) return;
-        Animated.spring(switchAnim, { toValue: 0, useNativeDriver: false, friction: 7, tension: 40 }).start(() => {
+
+        Animated.parallel([
+            Animated.timing(switchAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: false // background color interpolation needs false
+            })
+        ]).start(() => {
+            // Pass parameter to Home screen to trigger "Curtain Up" animation
+            // We need to navigate BEFORE or WITH the toggle?
+            // Actually, if we toggle mode, the stack changes immediately. 
+            // We need to set a global flag or params that the NEXT stack can read.
+            // Since we are unmounting, we can't easily pass params via navigation to a different root stack.
+            // BUT we can use Redux to set a "transitionDirection".
             dispatch(toggleAppMode());
         });
     };
@@ -498,51 +511,51 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
 
                 {/* ── Accepted Bids Section ── */}
                 {acceptedBids.length > 0 && (
-    <>
-        <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Accepted Bids</Text>
-            <TouchableOpacity onPress={props.onNavigateToMyTrips}>
-                <Text style={styles.viewAllLink}>View All</Text>
-            </TouchableOpacity>
-        </View>
-        {acceptedBids.length === 1 ? (
-            // Single card - display vertically
-            <AcceptedBidCard
-                key={acceptedBids[0].id}
-                bid={acceptedBids[0]}
-                index={0}
-                isMultiple={false}
-                onPress={() => props.onNavigateToTripDetails?.(acceptedBids[0].id)}
-                fadeAnim={fadeAnim}
-            />
-        ) : (
-            // Multiple cards - display horizontally
-            <View style={styles.acceptedBidsHorizontalContainer}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    pagingEnabled
-                    decelerationRate="fast"
-                    snapToAlignment="start"
-                    snapToInterval={width - 32} // Subtract total horizontal padding
-                    contentContainerStyle={styles.acceptedBidsHorizontalScroll}
-                >
-                    {acceptedBids.slice(0, 3).map((bid, index) => (
-                        <View key={bid.id} style={{ width: width - 32 }}> {/* Container with exact width */}
+                    <>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Accepted Bids</Text>
+                            <TouchableOpacity onPress={props.onNavigateToMyTrips}>
+                                <Text style={styles.viewAllLink}>View All</Text>
+                            </TouchableOpacity>
+                        </View>
+                        {acceptedBids.length === 1 ? (
+                            // Single card - display vertically
                             <AcceptedBidCard
-                                bid={bid}
-                                index={index}
-                                isMultiple={true}
-                                onPress={() => props.onNavigateToTripDetails?.(bid.id)}
+                                key={acceptedBids[0].id}
+                                bid={acceptedBids[0]}
+                                index={0}
+                                isMultiple={false}
+                                onPress={() => props.onNavigateToTripDetails?.(acceptedBids[0].id)}
                                 fadeAnim={fadeAnim}
                             />
-                        </View>
-                    ))}
-                </ScrollView>
-            </View>
-        )}
-    </>
-)}
+                        ) : (
+                            // Multiple cards - display horizontally
+                            <View style={styles.acceptedBidsHorizontalContainer}>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    pagingEnabled
+                                    decelerationRate="fast"
+                                    snapToAlignment="start"
+                                    snapToInterval={width - 32} // Subtract total horizontal padding
+                                    contentContainerStyle={styles.acceptedBidsHorizontalScroll}
+                                >
+                                    {acceptedBids.slice(0, 3).map((bid, index) => (
+                                        <View key={bid.id} style={{ width: width - 32 }}> {/* Container with exact width */}
+                                            <AcceptedBidCard
+                                                bid={bid}
+                                                index={index}
+                                                isMultiple={true}
+                                                onPress={() => props.onNavigateToTripDetails?.(bid.id)}
+                                                fadeAnim={fadeAnim}
+                                            />
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        )}
+                    </>
+                )}
 
                 {/* ── Earnings Grid ── */}
                 <View style={styles.sectionHeader}>
@@ -648,11 +661,11 @@ const styles = StyleSheet.create({
     toggleThumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.white, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.5, elevation: 2 },
 
     // Accepted Bids
-  acceptedBidsHorizontalContainer: {
-    marginHorizontal: 0, // This creates the 16px padding on each side
-},
-acceptedBidsHorizontalScroll: {
-    paddingRight: 0, // Remove any padding from the scroll content
+    acceptedBidsHorizontalContainer: {
+        marginHorizontal: 0, // This creates the 16px padding on each side
+    },
+    acceptedBidsHorizontalScroll: {
+        paddingRight: 0, // Remove any padding from the scroll content
 
     },
     acceptedBidCard: {

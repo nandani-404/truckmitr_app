@@ -1371,41 +1371,49 @@ export default function Profile() {
             title={t('editProfile') || 'Edit Profile'}
             onPress={_navigateProfileEdit}
           /> */}
-          {isDriver && (
-            <>
-              <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
-              <MenuItem
-                icon={<MaterialCommunityIcons name="card-account-details-outline" size={20} color="#059669" />}
-                title={t('dlVerification')}
-                onPress={_navigateDLVerification}
-              />
-              <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
+          {isDriver && (() => {
+            // Check if driver is restricted (added by transporter)
+            const isRestrictedDriver = user?.role === 'driver' && user?.sub_id !== null && user?.sub_id !== undefined;
+            
+            // Don't show these buttons for restricted drivers
+            if (isRestrictedDriver) return null;
+            
+            return (
+              <>
+                <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
+                <MenuItem
+                  icon={<MaterialCommunityIcons name="card-account-details-outline" size={20} color="#059669" />}
+                  title={t('dlVerification')}
+                  onPress={_navigateDLVerification}
+                />
+                <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />
 
-              {/* Upgrade Plan Logic */}
-              {(() => {
-                const amount = getPaidAmount();
+                {/* Upgrade Plan Logic */}
+                {(() => {
+                  const amount = getPaidAmount();
 
-                // If amount is >= 499, hide the button completely
-                if (amount >= 499) return null;
+                  // If amount is >= 499, hide the button completely
+                  if (amount >= 499) return null;
 
-                // Determine title based on subscription status
-                const buttonTitle = amount > 0
-                  ? t('upgradePlan')
-                  : t('becomeTruckMitrMember');
+                  // Determine title based on subscription status
+                  const buttonTitle = amount > 0
+                    ? t('upgradePlan')
+                    : t('becomeTruckMitrMember');
 
-                const iconName = amount > 0 ? "trophy-variant-outline" : "crown-outline";
-                const iconColor = amount > 0 ? colors.royalBlue : "#FFD700"; // Gold for become member
+                  const iconName = amount > 0 ? "trophy-variant-outline" : "crown-outline";
+                  const iconColor = amount > 0 ? colors.royalBlue : "#FFD700"; // Gold for become member
 
-                return (
-                  <MenuItem
-                    icon={<MaterialCommunityIcons name={iconName} size={20} color={iconColor} />}
-                    title={buttonTitle}
-                    onPress={_handleUpgradePlan}
-                  />
-                );
-              })()}
-            </>
-          )}
+                  return (
+                    <MenuItem
+                      icon={<MaterialCommunityIcons name={iconName} size={20} color={iconColor} />}
+                      title={buttonTitle}
+                      onPress={_handleUpgradePlan}
+                    />
+                  );
+                })()}
+              </>
+            );
+          })()}
         </CardContainer>
         {/* <TouchableOpacity
 onPress={()=>{
