@@ -1,14 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    StatusBar, Dimensions, Animated, Modal, Linking, ActivityIndicator, RefreshControl, Platform
+    StatusBar, Dimensions, Animated, Modal, Linking, ActivityIndicator, RefreshControl, Platform, Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import axiosInstance from 'src/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from 'src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
-import { currentCoordinates } from 'src/utils/maps/location/coordinates';
+import Geolocation from '@react-native-community/geolocation';
+import { useSelector } from 'react-redux';
+import { pick } from '@react-native-documents/picker';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import { requestCameraPermission, requestPhotoLibraryPermission } from '@truckmitr/src/utils/permissions/imagePermissions';
+import { useTranslation } from 'react-i18next';
 // import pusherService, { LocationUpdate } from 'src/services/pusherService';
 
 const { width } = Dimensions.get('window');
@@ -116,14 +121,15 @@ const SkeletonBox = ({ width, height, style }: { width?: number | string; height
     );
 };
 
-interface Props { 
-    onBack?: () => void; 
-    driverId?: string; 
-    loadId?: string; 
-    navigation?: any; 
+interface Props {
+    onBack?: () => void;
+    driverId?: string;
+    loadId?: string;
+    navigation?: any;
 }
 
-const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, loadId, navigation }) => {
+const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }) => {
+    const { t } = useTranslation();
     const [currentStatus, setCurrentStatus] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -133,17 +139,39 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingStatusUpdate, setPendingStatusUpdate] = useState<number | null>(null);
 
+    // POD and Builty upload states
+    const [showPODModal, setShowPODModal] = useState(false);
+    const [showBuiltyModal, setShowBuiltyModal] = useState(false);
+    const [builtyFile, setBuiltyFile] = useState<any>(null);
+    const [uploadingBuilty, setUploadingBuilty] = useState(false);
+    const [podFile, setPodFile] = useState<any>(null);
+    const [uploadingPOD, setUploadingPOD] = useState(false);
+
+    // Get user from Redux
+    const { user } = useSelector((state: any) => state.user) || {};
+
+    // Refs for location tracking
+    const watchIdRef = useRef<number | null>(null);
+    const lastLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
+    const lastUpdateTimeRef = useRef<number>(Date.now());
+    const fallbackIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
     // Trip Data
     const [trip, setTrip] = useState<any>({
         id: null, // Numeric ID from API
-        load_id: loadId || 'N/A', // String load ID for display
+        load_id: 'N/A', // String load ID for display
         trip_id: null,
+        trip_status: null, // Add trip_status
+        trucker_id: null, // Add trucker_id
+        shipper_id: null, // Add shipper_id
         origin: 'Loading...',
         destination: 'Loading...',
-        source_lat: null,
-        source_lng: null,
+        origin_lat: null,
+        origin_lon: null,
         destination_lat: null,
-        destination_lng: null,
+        destination_lon: null,         // Use "lon" instead of "lng" per user request
+        source_lat: null,              // Keep old keys just in case
+        source_lng: null,
         trackingAgent: { name: 'Support', phone: '' },
         driver: { name: '', phone: '', dl: '' },
         vehicle: '',
@@ -161,6 +189,257 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
         //     pusherService.unsubscribe();
         // };
     }, []);
+
+    // Start location tracking when trip data is loaded
+    useEffect(() => {
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('🔍 [LOCATION TRACKING] useEffect triggered');
+        console.log('🔍 [LOCATION TRACKING] trip.trip_id:', trip.trip_id);
+        console.log('🔍 [LOCATION TRACKING] trip.trip_status:', trip.trip_status);
+        console.log('🔍 [LOCATION TRACKING] user?.id:', user?.id);
+        console.log('═══════════════════════════════════════════════════════════');
+
+        // Only start tracking if trip is active (not completed)
+        if (trip.trip_id && user?.id && trip.trip_status !== 'completed') {
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('🚀 [LOCATION TRACKING] Starting location tracking');
+            console.log('📍 [LOCATION TRACKING] Trip ID:', trip.trip_id);
+            console.log('📍 [LOCATION TRACKING] Trip Status:', trip.trip_status);
+            console.log('👤 [LOCATION TRACKING] Driver ID (user.id):', user.id);
+            console.log('═══════════════════════════════════════════════════════════');
+            startLocationTracking();
+        } else {
+            console.log('⚠️ [LOCATION TRACKING] Cannot start or stopping tracking');
+            if (!trip.trip_id) console.log('⚠️ [LOCATION TRACKING] Missing: trip_id');
+            if (!user?.id) console.log('⚠️ [LOCATION TRACKING] Missing: user.id');
+            if (trip.trip_status === 'completed') {
+                console.log('🏁 [LOCATION TRACKING] Trip is completed - stopping tracking');
+                stopLocationTracking();
+            }
+        }
+
+        return () => {
+            console.log('🛑 [LOCATION TRACKING] Stopping location tracking (cleanup)');
+            stopLocationTracking();
+        };
+    }, [trip.trip_id, trip.trip_status, user?.id]);
+
+    // Calculate distance between two coordinates in meters (Haversine formula)
+    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const R = 6371e3; // Earth's radius in meters
+        const φ1 = (lat1 * Math.PI) / 180;
+        const φ2 = (lat2 * Math.PI) / 180;
+        const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+        const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+        const a =
+            Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // Distance in meters
+    };
+
+    // Update location to server
+    const updateLocationToServer = async (latitude: number, longitude: number) => {
+        try {
+            if (!trip.trip_id || !user?.id) {
+                console.warn('⚠️ [LOCATION UPDATE] Missing trip_id or driver_id');
+                console.warn('⚠️ [LOCATION UPDATE] trip_id:', trip.trip_id);
+                console.warn('⚠️ [LOCATION UPDATE] driver_id:', user?.id);
+                return;
+            }
+
+            const payload = {
+                trip_id: trip.trip_id,
+                driver_id: user.id,
+                latitude,
+                longitude,
+            };
+
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('📤 [LOCATION UPDATE] Sending location update to server');
+            console.log('� [LOCATION UPDATE] Coordinates:', {
+                latitude: latitude.toFixed(6),
+                longitude: longitude.toFixed(6)
+            });
+            console.log('📦 [LOCATION UPDATE] Full Payload:', JSON.stringify(payload, null, 2));
+            console.log('🔗 [LOCATION UPDATE] Endpoint:', END_POINTS.TRIP_UPDATE_LOCATION);
+            console.log('⏰ [LOCATION UPDATE] Timestamp:', new Date().toISOString());
+            console.log('═══════════════════════════════════════════════════════════');
+
+            const response = await axiosInstance.post(END_POINTS.TRIP_UPDATE_LOCATION, payload);
+
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('📥 [LOCATION UPDATE] Server Response:');
+            console.log('📊 [LOCATION UPDATE] Status:', response.data?.status);
+            console.log('📊 [LOCATION UPDATE] Message:', response.data?.message);
+            console.log('📦 [LOCATION UPDATE] Full Response:', JSON.stringify(response.data, null, 2));
+            console.log('═══════════════════════════════════════════════════════════');
+
+            if (response.data?.status === true || response.data?.status === 'success') {
+                console.log('✅ [LOCATION UPDATE] Location updated successfully');
+                console.log('✅ [LOCATION UPDATE] Coordinates sent:', `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+                lastUpdateTimeRef.current = Date.now();
+            } else {
+                console.warn('⚠️ [LOCATION UPDATE] Failed:', response.data?.message);
+            }
+        } catch (error: any) {
+            console.error('═══════════════════════════════════════════════════════════');
+            console.error('❌ [LOCATION UPDATE] Error occurred');
+            console.error('❌ [LOCATION UPDATE] Error message:', error?.message);
+            console.error('❌ [LOCATION UPDATE] Error details:', error?.response?.data);
+            console.error('❌ [LOCATION UPDATE] Attempted coordinates:', `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+            console.error('═══════════════════════════════════════════════════════════');
+        }
+    };
+
+    // Start location tracking
+    const startLocationTracking = () => {
+        console.log('🎯 [LOCATION TRACKING] Initializing...');
+
+        // Stop any existing tracking
+        stopLocationTracking();
+
+        // Watch position changes
+        watchIdRef.current = Geolocation.watchPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                console.log('═══════════════════════════════════════════════════════════');
+                console.log('📍 [LOCATION TRACKING] New position received from GPS');
+                console.log('📍 [LOCATION TRACKING] Latitude:', latitude.toFixed(6));
+                console.log('📍 [LOCATION TRACKING] Longitude:', longitude.toFixed(6));
+                console.log('📍 [LOCATION TRACKING] Accuracy:', position.coords.accuracy?.toFixed(2), 'meters');
+                console.log('📍 [LOCATION TRACKING] Timestamp:', new Date(position.timestamp).toISOString());
+                console.log('═══════════════════════════════════════════════════════════');
+
+                setCurrentLocation({ latitude, longitude });
+
+                // Check if we should update (moved 30m or more)
+                if (lastLocationRef.current) {
+                    const distance = calculateDistance(
+                        lastLocationRef.current.latitude,
+                        lastLocationRef.current.longitude,
+                        latitude,
+                        longitude
+                    );
+
+                    console.log(`📏 [LOCATION TRACKING] Distance from last update: ${distance.toFixed(2)}m`);
+                    console.log(`📏 [LOCATION TRACKING] Last position: ${lastLocationRef.current.latitude.toFixed(6)}, ${lastLocationRef.current.longitude.toFixed(6)}`);
+                    console.log(`📏 [LOCATION TRACKING] Current position: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+
+                    if (distance >= 30) {
+                        console.log('✅ [LOCATION TRACKING] Moved 30m+, updating server');
+                        updateLocationToServer(latitude, longitude);
+                        lastLocationRef.current = { latitude, longitude };
+                    } else {
+                        console.log(`⏸️ [LOCATION TRACKING] Distance < 30m, skipping update (${distance.toFixed(2)}m)`);
+                    }
+                } else {
+                    // First location update
+                    console.log('🎯 [LOCATION TRACKING] First location received, updating server');
+                    updateLocationToServer(latitude, longitude);
+                    lastLocationRef.current = { latitude, longitude };
+                }
+            },
+            (error) => {
+                console.error('═══════════════════════════════════════════════════════════');
+                console.error('❌ [LOCATION TRACKING] GPS Error');
+                console.error('❌ [LOCATION TRACKING] Error code:', error.code);
+                console.error('❌ [LOCATION TRACKING] Error message:', error.message);
+                console.error('═══════════════════════════════════════════════════════════');
+
+                if (error.code === 1) { // PERMISSION_DENIED
+                    showToast(t('location_permission_denied'));
+                } else if (error.code === 2) { // POSITION_UNAVAILABLE
+                    showToast(t('location_disabled'));
+                    Alert.alert(
+                        t('location_disabled'),
+                        t('enable_location'),
+                        [{ text: 'OK' }]
+                    );
+                }
+            },
+            {
+                enableHighAccuracy: true,
+                distanceFilter: 10, // Update every 10 meters of movement
+                interval: 5000, // Check every 5 seconds (Android)
+                fastestInterval: 2000, // Fastest update rate (Android)
+                timeout: 30000, // 30 seconds timeout
+                maximumAge: 5000, // Accept cached location up to 5 seconds old
+            }
+        );
+
+        // Set up 30-second fallback timer (for testing - change to 10 minutes in production)
+        fallbackIntervalRef.current = setInterval(() => {
+            const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
+            const thirtySeconds = 30 * 1000; // 30 seconds for testing
+            // const tenMinutes = 10 * 60 * 1000; // 10 minutes for production
+
+            console.log(`⏰ [LOCATION TRACKING] Fallback check - Time since last update: ${(timeSinceLastUpdate / 1000).toFixed(1)} seconds`);
+
+            if (timeSinceLastUpdate >= thirtySeconds) {
+                console.log('═══════════════════════════════════════════════════════════');
+                console.log('⏰ [LOCATION TRACKING] 30 SECONDS PASSED - FORCING LOCATION UPDATE');
+                console.log('📊 [LOCATION TRACKING] Last update was:', new Date(lastUpdateTimeRef.current).toISOString());
+                console.log('📊 [LOCATION TRACKING] Current time:', new Date().toISOString());
+                console.log('📊 [LOCATION TRACKING] Time elapsed:', (timeSinceLastUpdate / 1000).toFixed(1), 'seconds');
+                console.log('═══════════════════════════════════════════════════════════');
+
+                // Try to get current position with relaxed settings
+                Geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        console.log('✅ [LOCATION TRACKING] Fallback position obtained:', { latitude, longitude });
+                        updateLocationToServer(latitude, longitude);
+                        lastLocationRef.current = { latitude, longitude };
+                        setCurrentLocation({ latitude, longitude });
+                    },
+                    (error) => {
+                        console.error('═══════════════════════════════════════════════════════════');
+                        console.error('❌ [LOCATION TRACKING] Fallback error:', error.message);
+                        console.error('❌ [LOCATION TRACKING] Error code:', error.code);
+                        console.error('═══════════════════════════════════════════════════════════');
+
+                        // If we have a last known location, use that
+                        if (lastLocationRef.current) {
+                            console.log('🔄 [LOCATION TRACKING] Using last known location as fallback');
+                            console.log('📍 [LOCATION TRACKING] Last known position:', lastLocationRef.current);
+                            updateLocationToServer(
+                                lastLocationRef.current.latitude,
+                                lastLocationRef.current.longitude
+                            );
+                        } else {
+                            console.warn('⚠️ [LOCATION TRACKING] No location available - skipping update');
+                        }
+                    },
+                    {
+                        enableHighAccuracy: false, // Use network location for faster response
+                        timeout: 30000, // 30 seconds timeout
+                        maximumAge: 60000 // Accept cached location up to 1 minute old
+                    }
+                );
+            }
+        }, 10000); // Check every 10 seconds for testing (change to 60000 for production)
+
+        console.log('✅ [LOCATION TRACKING] Started successfully');
+        console.log('⏰ [LOCATION TRACKING] Fallback timer: Updates every 30 seconds if no movement');
+    };
+
+    // Stop location tracking
+    const stopLocationTracking = () => {
+        if (watchIdRef.current !== null) {
+            Geolocation.clearWatch(watchIdRef.current);
+            watchIdRef.current = null;
+            console.log('🛑 [LOCATION TRACKING] Watch cleared');
+        }
+
+        if (fallbackIntervalRef.current) {
+            clearInterval(fallbackIntervalRef.current);
+            fallbackIntervalRef.current = null;
+            console.log('🛑 [LOCATION TRACKING] Fallback interval cleared');
+        }
+    };
 
     const fetchActiveTripAndLocation = async () => {
         try {
@@ -186,7 +465,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
 
             if (tripResponse.data?.status === 'success' && tripResponse.data?.data) {
                 const data = tripResponse.data.data;
-                
+
                 console.log('✅ [TRACKING] Active Trip Found!');
                 console.log('📋 [TRACKING] Trip Details:', {
                     load_id: data.load_id,
@@ -202,12 +481,21 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                     id: data.id || null, // Numeric ID
                     load_id: data.load_id || 'N/A', // String load ID for display
                     trip_id: data.trip_id,
+                    trip_status: data.trip_status, // Add trip_status
+                    trucker_id: data.trucker_id, // Add trucker_id
+                    shipper_id: data.shipper_id, // Add shipper_id
                     origin: data.origin || 'Unknown',
                     destination: data.destination || 'Unknown',
+
+                    // Map new keys requested by user
+                    origin_lat: data.origin_lat || data.source_lat,
+                    origin_lon: data.origin_lon || data.source_lng,
+                    destination_lat: data.destination_lat,
+                    destination_lon: data.destination_lon || data.destination_lng,
+
+                    // Keep old keys just in case
                     source_lat: data.source_lat,
                     source_lng: data.source_lng,
-                    destination_lat: data.destination_lat,
-                    destination_lng: data.destination_lng,
                     vehicle: data.vehicle_number || 'Not Assigned',
                     payment: data.payment_amount || 'N/A',
                     trackingAgent: {
@@ -224,6 +512,14 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                     builty_path: data.builty_path || null,
                     pod_path: data.pod_path || null,
                 });
+
+                console.log('═══════════════════════════════════════════════════════════');
+                console.log('🎯 [TRACKING] Trip ID extracted from API');
+                console.log('🆔 [TRACKING] trip_id:', data.trip_id);
+                console.log('🆔 [TRACKING] driver_id:', data.driver_id);
+                console.log('🆔 [TRACKING] trip_status:', data.trip_status);
+                console.log('🆔 [TRACKING] trip_started_at:', data.trip_started_at);
+                console.log('═══════════════════════════════════════════════════════════');
 
                 const statusCode = parseInt(data.current_status_code, 10);
                 if (!isNaN(statusCode)) {
@@ -333,7 +629,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
         console.log('📡 [TRACKING] Channel:', `driver-location.${tripId}`);
         console.log('📡 [TRACKING] Event:', 'location.update');
         console.log('═══════════════════════════════════════════════════════════');
-        
+
         // Connect to Pusher
         // pusherService.connect();
 
@@ -348,7 +644,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
         //     });
         //     console.log('📦 [TRACKING] Full Payload:', JSON.stringify(locationUpdate, null, 2));
         //     console.log('═══════════════════════════════════════════════════════════');
-            
+
         //     // Update current location state
         //     setCurrentLocation({
         //         latitude: locationUpdate.latitude,
@@ -374,21 +670,39 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
     };
 
     const statuses = [
-        { id: 0, label: 'Load Accepted', date: 'Fri, 10th Feb', sub: 'Your request has been accepted' },
-        { id: 1, label: 'Vehicle Assigned', date: 'Fri, 10th Feb - 11:00 AM', sub: 'Truck assigned for this trip' },
-        { id: 2, label: 'Reached Pickup', date: 'Fri, 10th Feb - 2:00 PM', sub: 'Truck arrived at location' },
-        { id: 3, label: 'Loaded', date: 'Fri, 10th Feb - 4:30 PM', sub: 'Goods loaded successfully' },
-        { id: 4, label: 'In Transit', date: 'Expected Tomorrow', sub: 'On the way to destination' },
-        { id: 5, label: 'Reached Destination', date: '--', sub: 'Arrived at drop location' },
-        { id: 6, label: 'Delivered', date: '--', sub: 'Goods delivered & POD uploaded' },
+        { id: 0, label: t('status_load_accepted'), date: 'Fri, 10th Feb', sub: t('desc_load_accepted') },
+        { id: 1, label: t('status_vehicle_assigned'), date: 'Fri, 10th Feb - 11:00 AM', sub: t('desc_vehicle_assigned') },
+        { id: 2, label: t('status_reached_pickup'), date: 'Fri, 10th Feb - 2:00 PM', sub: t('desc_reached_pickup') },
+        { id: 3, label: t('status_loaded'), date: 'Fri, 10th Feb - 4:30 PM', sub: t('desc_loaded') },
+        { id: 4, label: t('status_in_transit'), date: t('expected_tomorrow'), sub: t('desc_in_transit') },
+        { id: 5, label: t('status_reached_destination'), date: '--', sub: t('desc_reached_destination') },
+        { id: 6, label: t('status_delivered'), date: '--', sub: t('desc_delivered') },
     ];
 
     const callAgent = () => {
-        if (trip.trackingAgent?.phone) Linking.openURL(`tel:${trip.trackingAgent.phone}`);
+        if (trip.trackingAgent?.phone) {
+            const url = `tel:${trip.trackingAgent.phone}`;
+            Linking.canOpenURL(url).then((supported) => {
+                if (supported) {
+                    Linking.openURL(url);
+                } else {
+                    Alert.alert(t('error_title'), t('unable_to_open_dialer'));
+                }
+            });
+        }
     };
 
     const callDriver = () => {
-        if (trip.driver?.phone) Linking.openURL(`tel:${trip.driver.phone}`);
+        if (trip.driver?.phone) {
+            const url = `tel:${trip.driver.phone}`;
+            Linking.canOpenURL(url).then((supported) => {
+                if (supported) {
+                    Linking.openURL(url);
+                } else {
+                    Alert.alert(t('error_title'), t('unable_to_open_dialer'));
+                }
+            });
+        }
     };
 
     const downloadBuilty = () => {
@@ -418,42 +732,71 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
     };
 
     const openMaps = () => {
-        console.log('🗺️ [NAVIGATION] Opening in-app navigation');
-        console.log('🗺️ [NAVIGATION] Origin:', trip.origin);
-        console.log('🗺️ [NAVIGATION] Destination:', trip.destination);
-        
-        if (navigation) {
-            navigation.navigate('truckerMapNavigation', {
-                origin: trip.origin,
-                destination: trip.destination,
+        // Use the new keys requested by the user
+        const originLat = trip.origin_lat || trip.source_lat;
+        const originLng = trip.origin_lon || trip.source_lng;
+        const destLat = trip.destination_lat;
+        const destLng = trip.destination_lon || trip.destination_lng;
+
+        console.log('🗺️ [NAVIGATION] Opening Google Maps');
+        console.log(`🗺️ [NAVIGATION] Origin: ${originLat}, ${originLng}`);
+        console.log(`🗺️ [NAVIGATION] Destination: ${destLat}, ${destLng}`);
+
+        if (originLat && originLng && destLat && destLng) {
+            const url = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}`;
+            Linking.canOpenURL(url).then(supported => {
+                if (supported) {
+                    Linking.openURL(url);
+                } else {
+                    Alert.alert(t('error_title'), t('unable_to_open_maps') || 'Unable to open maps');
+                }
+            });
+        } else if (trip.origin && trip.destination) {
+            // Fallback to address search if coordinates are missing
+            const origin = encodeURIComponent(trip.origin);
+            const destination = encodeURIComponent(trip.destination);
+            const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
+
+            Linking.canOpenURL(url).then(supported => {
+                if (supported) {
+                    Linking.openURL(url);
+                } else {
+                    Alert.alert(t('error_title'), t('unable_to_open_maps') || 'Unable to open maps');
+                }
             });
         } else {
-            showToast('Navigation not available');
+            showToast(t('location_disabled') || 'Location data missing');
         }
     };
 
     // Get next action button text based on current status
     const getNextActionText = () => {
-        if (currentStatus >= 6) return 'Completed';
+        if (currentStatus >= 6) return t('completed');
         const nextStatus = statuses[currentStatus + 1];
-        return `Mark as ${nextStatus?.label || 'Next Status'}`;
+        return `${t('mark_as')} ${nextStatus?.label || 'Next Status'}`;
     };
 
     // Get current coordinates helper
     const getCurrentCoordinates = async (): Promise<{ latitude: number; longitude: number }> => {
-        try {
-            const locationResponse = await currentCoordinates();
-            if (locationResponse.coords.latitude && locationResponse.coords.longitude) {
-                return {
-                    latitude: locationResponse.coords.latitude,
-                    longitude: locationResponse.coords.longitude,
-                };
-            }
-            throw new Error('Location not available');
-        } catch (error) {
-            console.warn('⚠️ [LOCATION] Could not get location:', error);
-            throw error;
-        }
+        return new Promise((resolve, reject) => {
+            Geolocation.getCurrentPosition(
+                (position) => {
+                    resolve({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                    });
+                },
+                (error) => {
+                    console.error('Error getting location:', error);
+                    reject(error);
+                },
+                {
+                    enableHighAccuracy: false, // Use network location for faster response
+                    timeout: 30000, // 30 seconds timeout
+                    maximumAge: 60000 // Accept cached location up to 1 minute old
+                }
+            );
+        });
     };
 
     // Update status with API
@@ -466,7 +809,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
             // Get current location
             let latitude = 0;
             let longitude = 0;
-            
+
             try {
                 const location = await getCurrentCoordinates();
                 latitude = location.latitude;
@@ -497,13 +840,13 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
             if (response.data?.status === 'success') {
                 console.log('✅ [STATUS UPDATE] Status updated successfully');
                 setCurrentStatus(newStatusCode);
-                showToast(`Status updated to "${statuses[newStatusCode].label}"`);
-                
+                showToast(`${t('status_updated_success')} "${statuses[newStatusCode].label}"`);
+
                 // Refresh tracking data
                 await fetchActiveTripAndLocation();
             } else {
                 console.log('⚠️ [STATUS UPDATE] Failed:', response.data?.message);
-                showToast(response.data?.message || 'Failed to update status');
+                showToast(response.data?.message || t('status_update_failed'));
             }
         } catch (error) {
             console.error('❌ [STATUS UPDATE] Error:', error);
@@ -515,8 +858,19 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
 
     // Handle status update button click
     const updateStatus = () => {
-        // For now, just show confirmation modal for all status updates
-        // You can add special handling for specific statuses like in ActiveTrip
+        // For status 3 (Loaded) → need builty before moving to In Transit
+        if (currentStatus === 3) {
+            setShowBuiltyModal(true);
+            return;
+        }
+
+        // For status 5 (Reached Destination) → need POD before marking as Delivered
+        if (currentStatus === 5) {
+            setShowPODModal(true);
+            return;
+        }
+
+        // For other status updates, show confirmation modal
         if (currentStatus < 6) {
             setPendingStatusUpdate(currentStatus + 1);
             setShowConfirmModal(true);
@@ -529,6 +883,348 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
             setShowConfirmModal(false);
             await updateStatusWithAPI(pendingStatusUpdate);
             setPendingStatusUpdate(null);
+        }
+    };
+
+    // POD Upload Handlers
+    const handlePODPick = async () => {
+        try {
+            const [file] = await pick({
+                type: ['*/*'],
+                copyTo: 'cachesDirectory',
+            });
+
+            if (file) {
+                setPodFile(file);
+                console.log('📄 [POD] File selected:', file.name);
+            }
+        } catch (error: any) {
+            if (error?.code !== 'DOCUMENT_PICKER_CANCELED') {
+                console.error('❌ [POD] Error picking document:', error);
+                showToast('Failed to pick document');
+            }
+        }
+    };
+
+    const handlePODCamera = async () => {
+        try {
+            const hasPermission = await requestCameraPermission();
+
+            if (!hasPermission) {
+                showToast('Camera permission is required to take photos');
+                return;
+            }
+
+            const result = await launchCamera({
+                mediaType: 'photo',
+                quality: 0.8,
+                saveToPhotos: true,
+            });
+
+            if (result.assets && result.assets[0]) {
+                const photo = result.assets[0];
+                setPodFile({
+                    uri: photo.uri,
+                    type: photo.type || 'image/jpeg',
+                    name: photo.fileName || `POD_${Date.now()}.jpg`,
+                    size: photo.fileSize || 0,
+                });
+                console.log('📷 [POD] Photo captured:', photo.fileName);
+            }
+        } catch (error) {
+            console.error('❌ [POD] Error capturing photo:', error);
+            showToast('Failed to capture photo');
+        }
+    };
+
+    const handlePODGallery = async () => {
+        try {
+            const hasPermission = await requestPhotoLibraryPermission();
+
+            if (!hasPermission) {
+                showToast('Photo library permission is required to select images');
+                return;
+            }
+
+            const result = await launchImageLibrary({
+                mediaType: 'photo',
+                quality: 0.8,
+            });
+
+            if (result.assets && result.assets[0]) {
+                const photo = result.assets[0];
+                setPodFile({
+                    uri: photo.uri,
+                    type: photo.type || 'image/jpeg',
+                    name: photo.fileName || `POD_${Date.now()}.jpg`,
+                    size: photo.fileSize || 0,
+                });
+                console.log('🖼️ [POD] Image selected from gallery:', photo.fileName);
+            }
+        } catch (error) {
+            console.error('❌ [POD] Error selecting from gallery:', error);
+            showToast('Failed to select image');
+        }
+    };
+
+    const handlePODUpload = async () => {
+        if (!podFile) {
+            showToast(t('select_pod_error'));
+            return;
+        }
+
+        try {
+            setUploadingPOD(true);
+            console.log('📦 [POD UPLOAD] Starting POD upload...');
+            console.log('📦 [POD UPLOAD] Trip data:', {
+                id: trip.id,
+                load_id: trip.load_id,
+                trucker_id: trip.trucker_id,
+                shipper_id: trip.shipper_id
+            });
+
+            const formData = new FormData();
+            formData.append('load_id', trip.id); // Use numeric ID, not string load_id
+            formData.append('shipper_id', trip.shipper_id);
+            formData.append('trucker_id', trip.trucker_id);
+            formData.append('pod', {
+                uri: podFile.fileCopyUri || podFile.uri,
+                type: podFile.type,
+                name: podFile.name,
+            });
+
+            console.log('📤 [POD UPLOAD] Uploading POD with numeric IDs...');
+            console.log('📤 [POD UPLOAD] load_id (numeric):', trip.id);
+            console.log('📤 [POD UPLOAD] shipper_id:', trip.shipper_id);
+            console.log('📤 [POD UPLOAD] trucker_id:', trip.trucker_id);
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_UPLOAD_POD, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log('📥 [POD UPLOAD] Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.status === 'success') {
+                console.log('✅ [POD UPLOAD] POD uploaded successfully');
+
+                // Get current location
+                let latitude = 0;
+                let longitude = 0;
+
+                try {
+                    const location = await getCurrentCoordinates();
+                    latitude = location.latitude;
+                    longitude = location.longitude;
+                    console.log('📍 [POD UPLOAD] Got coordinates:', { latitude, longitude });
+                } catch (locationError) {
+                    console.warn('⚠️ [POD UPLOAD] Could not get location, using default (0,0):', locationError);
+                }
+
+                // Format timestamp for MySQL (YYYY-MM-DD HH:MM:SS)
+                const now = new Date();
+                const timestamp = now.toISOString().slice(0, 19).replace('T', ' ');
+
+                const statusPayload = {
+                    load_id: trip.id,
+                    status_code: 6, // Delivered status
+                    timestamp,
+                    latitude,
+                    longitude,
+                };
+
+                console.log('📤 [POD UPLOAD] Updating status to Delivered:', JSON.stringify(statusPayload, null, 2));
+
+                const statusResponse = await axiosInstance.post(END_POINTS.TRUCKER_UPDATE_STATUS, statusPayload);
+
+                console.log('📥 [POD UPLOAD] Status update response:', JSON.stringify(statusResponse.data, null, 2));
+
+                if (statusResponse.data?.status === 'success') {
+                    console.log('✅ [POD UPLOAD] Status updated to Delivered');
+
+                    // Now complete the trip
+                    console.log('🏁 [TRIP COMPLETE] Completing trip...');
+
+                    const completePayload = {
+                        trip_id: trip.trip_id,
+                        driver_id: user.id,
+                    };
+
+                    console.log('📤 [TRIP COMPLETE] Payload:', JSON.stringify(completePayload, null, 2));
+
+                    const completeResponse = await axiosInstance.post(END_POINTS.TRIP_COMPLETE, completePayload);
+
+                    console.log('📥 [TRIP COMPLETE] Response:', JSON.stringify(completeResponse.data, null, 2));
+
+                    if (completeResponse.data?.status === true || completeResponse.data?.status === 'success') {
+                        console.log('✅ [TRIP COMPLETE] Trip completed successfully');
+                        setShowPODModal(false);
+                        setPodFile(null);
+                        setCurrentStatus(6);
+
+                        // Fetch latest tracking data
+                        await fetchActiveTripAndLocation();
+
+                        showToast(t('pod_trip_complete_success'));
+                    } else {
+                        console.log('⚠️ [TRIP COMPLETE] Failed:', completeResponse.data?.message);
+                        showToast(t('trip_complete_failed'));
+                    }
+                } else {
+                    console.log('⚠️ [POD UPLOAD] Status update failed:', statusResponse.data?.message);
+                    showToast(t('pod_upload_status_failed'));
+                }
+            } else {
+                console.log('⚠️ [POD UPLOAD] Upload failed:', response.data?.message);
+                showToast(response.data?.message || t('pod_upload_failed'));
+            }
+        } catch (error: any) {
+            console.error('❌ [POD UPLOAD] Error:', error);
+            console.error('❌ [POD UPLOAD] Error response:', error?.response?.data);
+            showToast('Failed to upload POD. Please try again');
+        } finally {
+            setUploadingPOD(false);
+        }
+    };
+
+    // Builty Upload Handlers
+    const handleBuiltyPick = async () => {
+        try {
+            const [file] = await pick({
+                type: ['*/*'],
+                copyTo: 'cachesDirectory',
+            });
+
+            if (file) {
+                setBuiltyFile(file);
+                console.log('📄 [BUILTY] File selected:', file.name);
+            }
+        } catch (error: any) {
+            if (error?.code !== 'DOCUMENT_PICKER_CANCELED') {
+                console.error('❌ [BUILTY] Error picking document:', error);
+                showToast('Failed to pick document');
+            }
+        }
+    };
+
+    const handleBuiltyCamera = async () => {
+        try {
+            const hasPermission = await requestCameraPermission();
+
+            if (!hasPermission) {
+                showToast('Camera permission is required to take photos');
+                return;
+            }
+
+            const result = await launchCamera({
+                mediaType: 'photo',
+                quality: 0.8,
+                saveToPhotos: true,
+            });
+
+            if (result.assets && result.assets[0]) {
+                const photo = result.assets[0];
+                setBuiltyFile({
+                    uri: photo.uri,
+                    type: photo.type || 'image/jpeg',
+                    name: photo.fileName || `Builty_${Date.now()}.jpg`,
+                    size: photo.fileSize || 0,
+                });
+                console.log('📷 [BUILTY] Photo captured:', photo.fileName);
+            }
+        } catch (error) {
+            console.error('❌ [BUILTY] Error capturing photo:', error);
+            showToast('Failed to capture photo');
+        }
+    };
+
+    const handleBuiltyGallery = async () => {
+        try {
+            const hasPermission = await requestPhotoLibraryPermission();
+
+            if (!hasPermission) {
+                showToast('Photo library permission is required to select images');
+                return;
+            }
+
+            const result = await launchImageLibrary({
+                mediaType: 'photo',
+                quality: 0.8,
+            });
+
+            if (result.assets && result.assets[0]) {
+                const photo = result.assets[0];
+                setBuiltyFile({
+                    uri: photo.uri,
+                    type: photo.type || 'image/jpeg',
+                    name: photo.fileName || `Builty_${Date.now()}.jpg`,
+                    size: photo.fileSize || 0,
+                });
+                console.log('🖼️ [BUILTY] Image selected from gallery:', photo.fileName);
+            }
+        } catch (error) {
+            console.error('❌ [BUILTY] Error selecting from gallery:', error);
+            showToast('Failed to select image');
+        }
+    };
+
+    const handleBuiltyUpload = async () => {
+        if (!builtyFile) {
+            showToast(t('select_builty_error'));
+            return;
+        }
+
+        try {
+            setUploadingBuilty(true);
+            console.log('📤 [BUILTY] Uploading builty document...');
+            console.log('📤 [BUILTY] Trip data:', {
+                id: trip.id,
+                load_id: trip.load_id,
+                trucker_id: trip.trucker_id,
+                shipper_id: trip.shipper_id
+            });
+
+            const formData = new FormData();
+            formData.append('load_id', trip.id); // Use numeric ID, not string load_id
+            formData.append('shipper_id', trip.shipper_id);
+            formData.append('trucker_id', trip.trucker_id);
+            formData.append('builty', {
+                uri: builtyFile.fileCopyUri || builtyFile.uri,
+                type: builtyFile.type,
+                name: builtyFile.name,
+            });
+
+            console.log('📤 [BUILTY] Uploading with numeric IDs...');
+            console.log('📤 [BUILTY] load_id (numeric):', trip.id);
+            console.log('📤 [BUILTY] shipper_id:', trip.shipper_id);
+            console.log('📤 [BUILTY] trucker_id:', trip.trucker_id);
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_UPLOAD_BUILTY, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log('📥 [BUILTY] Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.status === 'success') {
+                console.log('✅ [BUILTY] Builty uploaded successfully');
+                setShowBuiltyModal(false);
+                setBuiltyFile(null);
+
+                // Now update status to In Transit (status 4)
+                await updateStatusWithAPI(4);
+            } else {
+                console.log('⚠️ [BUILTY] Upload failed:', response.data?.message);
+                showToast(response.data?.message || t('builty_upload_failed'));
+            }
+        } catch (error: any) {
+            console.error('❌ [BUILTY] Error uploading:', error);
+            console.error('❌ [BUILTY] Error response:', error?.response?.data);
+            showToast('Failed to upload builty. Please try again');
+        } finally {
+            setUploadingBuilty(false);
         }
     };
 
@@ -561,7 +1257,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                     <Text style={[styles.statusTitle, isActive && { color: C.text }]}>
                         {item.label}
                     </Text>
-                    <Text style={styles.statusDate}>{isActive ? 'Completed' : item.date}</Text>
+                    <Text style={styles.statusDate}>{isActive ? t('completed') : item.date}</Text>
                     {item.sub && <Text style={styles.statusSub}>{item.sub}</Text>}
                 </View>
             </View>
@@ -656,8 +1352,8 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                     <View style={{ width: 24 }} />
                 </View>
 
-                <ScrollView 
-                    style={styles.scroll} 
+                <ScrollView
+                    style={styles.scroll}
                     contentContainerStyle={styles.emptyScreenContent}
                     refreshControl={
                         <RefreshControl
@@ -670,9 +1366,9 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                 >
                     <View style={styles.emptyStateContainer}>
                         <LocationPinIcon color={C.textSec} />
-                        <Text style={styles.emptyStateTitle}>No Live Tracking Available</Text>
+                        <Text style={styles.emptyStateTitle}>{t('no_live_tracking')}</Text>
                         <Text style={styles.emptyStateSubtitle}>
-                            No active trip data found. Pull down to refresh.
+                            {t('no_active_trip')}
                         </Text>
                     </View>
                 </ScrollView>
@@ -689,13 +1385,13 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                 <TouchableOpacity onPress={onBack} style={styles.backButton}>
                     <BackIcon />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Driver Tracking</Text>
+                <Text style={styles.headerTitle}>{t('driver_tracking_title')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
-            <ScrollView 
-                style={styles.scroll} 
-                contentContainerStyle={styles.scrollContent} 
+            <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
@@ -710,18 +1406,18 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                 {/* Order ID & Basic Summary */}
                 <View style={styles.card}>
                     <View style={styles.orderIdRow}>
-                        <Text style={styles.orderIdLabel}>Load ID</Text>
+                        <Text style={styles.orderIdLabel}>{t('load_id')}</Text>
                         <Text style={styles.orderIdValue}>{trip.load_id}</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.summaryRow}>
                         <View style={styles.summaryItem}>
-                            <Text style={styles.summaryLabel}>Vehicle</Text>
+                            <Text style={styles.summaryLabel}>{t('vehicle_info')}</Text>
                             <Text style={styles.summaryValue}>{trip.vehicle}</Text>
                         </View>
                         <View style={styles.verticalDivider} />
                         <View style={styles.summaryItem}>
-                            <Text style={styles.summaryLabel}>Amount</Text>
+                            <Text style={styles.summaryLabel}>{t('amount')}</Text>
                             <Text style={styles.summaryValue}>{trip.payment}</Text>
                         </View>
                     </View>
@@ -733,7 +1429,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                         <View style={styles.liveLocationHeader}>
                             <View style={styles.liveIndicator}>
                                 <View style={styles.liveDot} />
-                                <Text style={styles.liveText}>LIVE TRACKING</Text>
+                                <Text style={styles.liveText}>{t('live_tracking')}</Text>
                             </View>
                         </View>
                         <Text style={styles.locationText}>
@@ -744,17 +1440,17 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
 
                 {/* Vehicle Information */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionHeader}>Vehicle Information</Text>
+                    <Text style={styles.sectionHeader}>{t('vehicle_information')}</Text>
                     {currentStatus > 0 ? (
                         <>
                             <View style={{ marginBottom: 12 }}>
-                                <Text style={{ fontSize: 13, color: C.textSec }}>Vehicle Number</Text>
+                                <Text style={{ fontSize: 13, color: C.textSec }}>{t('vehicle_number_label')}</Text>
                                 <Text style={{ fontSize: 15, fontWeight: '500', color: C.text, marginTop: 2 }}>{trip.vehicle}</Text>
                             </View>
                             <View style={styles.divider} />
                             <TouchableOpacity style={styles.contactRow} onPress={callDriver}>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.contactName}>Driver: {trip.driver?.name || 'Unknown'}</Text>
+                                    <Text style={styles.contactName}>{t('driver_label')} {trip.driver?.name || 'Unknown'}</Text>
                                     <Text style={styles.contactPhone}>{trip.driver?.phone || 'No Phone'}</Text>
                                 </View>
                                 <PhoneIcon />
@@ -762,7 +1458,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                         </>
                     ) : (
                         <View style={{ paddingVertical: 10, alignItems: 'center' }}>
-                            <Text style={{ color: C.textSec, fontSize: 13 }}>Vehicle Not Assigned Yet</Text>
+                            <Text style={{ color: C.textSec, fontSize: 13 }}>{t('vehicle_not_assigned')}</Text>
                         </View>
                     )}
                 </View>
@@ -770,7 +1466,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                 {/* Shipping Details */}
                 <View style={styles.card}>
                     <View style={styles.shippingHeader}>
-                        <Text style={styles.sectionHeader}>Shipping Route</Text>
+                        <Text style={styles.sectionHeader}>{t('shipping_route')}</Text>
                     </View>
 
                     {/* Modern Route Display */}
@@ -781,7 +1477,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                                 <View style={styles.originDot} />
                             </View>
                             <View style={styles.routeContent}>
-                                <Text style={styles.routeLabel}>Pickup Location</Text>
+                                <Text style={styles.routeLabel}>{t('pickup_location')}</Text>
                                 <Text style={styles.routeAddress}>{trip.origin}</Text>
                             </View>
                         </View>
@@ -797,11 +1493,11 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                                 <LocationPinIcon color={C.primary} />
                             </View>
                             <View style={styles.routeContent}>
-                                <Text style={styles.routeLabel}>Drop Location</Text>
+                                <Text style={styles.routeLabel}>{t('drop_location')}</Text>
                                 <Text style={styles.routeAddress}>{trip.destination}</Text>
                                 <TouchableOpacity style={styles.navigateBtnModern} onPress={openMaps}>
                                     <NavigationIcon color={C.surface} />
-                                    <Text style={styles.navigateTextModern}>Navigate</Text>
+                                    <Text style={styles.navigateTextModern}>{t('navigate')}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -810,7 +1506,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
 
                 {/* Tracking Timeline */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionHeader}>Load Status</Text>
+                    <Text style={styles.sectionHeader}>{t('load_status')}</Text>
                     <View style={styles.timelineContainer}>
                         {statuses.map(renderTimelineItem)}
                     </View>
@@ -819,16 +1515,16 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                 {/* Documents Section */}
                 {(trip.builty_path || trip.pod_path) && (
                     <View style={styles.card}>
-                        <Text style={styles.sectionHeader}>Documents</Text>
-                        
+                        <Text style={styles.sectionHeader}>{t('documents')}</Text>
+
                         {trip.builty_path && (
                             <TouchableOpacity style={styles.documentRow} onPress={downloadBuilty}>
                                 <View style={styles.documentIconContainer}>
                                     <DocumentIcon />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.documentTitle}>Builty Document</Text>
-                                    <Text style={styles.documentSubtitle}>Tap to view or download</Text>
+                                    <Text style={styles.documentTitle}>{t('builty_document')}</Text>
+                                    <Text style={styles.documentSubtitle}>{t('tap_to_view')}</Text>
                                 </View>
                                 <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -844,8 +1540,8 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                                     <DocumentIcon />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.documentTitle}>POD Document</Text>
-                                    <Text style={styles.documentSubtitle}>Tap to view or download</Text>
+                                    <Text style={styles.documentTitle}>{t('pod_document')}</Text>
+                                    <Text style={styles.documentSubtitle}>{t('tap_to_view')}</Text>
                                 </View>
                                 <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -859,11 +1555,11 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
 
                 {/* Contacts Section */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionHeader}>Need Help?</Text>
+                    <Text style={styles.sectionHeader}>{t('need_help')}</Text>
 
                     <TouchableOpacity style={styles.contactRow} onPress={callAgent}>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.contactName}>Agent: {trip.trackingAgent?.name}</Text>
+                            <Text style={styles.contactName}>{t('agent_label')} {trip.trackingAgent?.name}</Text>
                             <Text style={styles.contactPhone}>{trip.trackingAgent?.phone}</Text>
                         </View>
                         <PhoneIcon />
@@ -876,8 +1572,8 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
             {/* Bottom Action Button */}
             {currentStatus < 6 && (
                 <View style={styles.footer}>
-                    <TouchableOpacity 
-                        style={[styles.actionButton, updatingStatus && styles.actionButtonDisabled]} 
+                    <TouchableOpacity
+                        style={[styles.actionButton, updatingStatus && styles.actionButtonDisabled]}
                         onPress={updateStatus}
                         disabled={updatingStatus}
                     >
@@ -892,6 +1588,152 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                 </View>
             )}
 
+            {/* POD Upload Modal */}
+            <Modal visible={showPODModal} animationType="slide" transparent>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>{t('upload_pod_title')}</Text>
+                        <Text style={styles.modalSubtitle}>{t('upload_pod_subtitle')}</Text>
+
+                        {podFile ? (
+                            <View style={styles.uploadPlaceholder}>
+                                <DocumentIcon />
+                                <Text style={styles.uploadText}>{podFile.name}</Text>
+                                <Text style={styles.uploadSubtext}>
+                                    {((podFile.size || 0) / 1024).toFixed(2)} KB
+                                </Text>
+                                <TouchableOpacity
+                                    style={styles.changeFileBtn}
+                                    onPress={() => setPodFile(null)}
+                                >
+                                    <Text style={styles.changeFileText}>{t('change_file')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={styles.uploadOptionsContainer}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handlePODCamera}>
+                                    <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
+                                        <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                        <Circle cx="12" cy="13" r="4" />
+                                    </Svg>
+                                    <Text style={styles.uploadOptionText}>{t('camera')}</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handlePODGallery}>
+                                    <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
+                                        <Rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <Circle cx="8.5" cy="8.5" r="1.5" />
+                                        <Path d="M21 15l-5-5L5 21" />
+                                    </Svg>
+                                    <Text style={styles.uploadOptionText}>{t('gallery')}</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handlePODPick}>
+                                    <DocumentIcon />
+                                    <Text style={styles.uploadOptionText}>{t('document')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        <View style={[styles.modalActions, { marginTop: 20 }]}>
+                            <TouchableOpacity
+                                style={styles.modalCancel}
+                                onPress={() => {
+                                    setShowPODModal(false);
+                                    setPodFile(null);
+                                }}
+                            >
+                                <Text style={styles.modalCancelText}>{t('cancel')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalSubmit, (uploadingPOD || !podFile) && styles.modalSubmitDisabled]}
+                                onPress={handlePODUpload}
+                                disabled={uploadingPOD || !podFile}
+                            >
+                                {uploadingPOD ? (
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                ) : (
+                                    <Text style={styles.modalSubmitText}>{t('upload_complete')}</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Builty Upload Modal */}
+            <Modal visible={showBuiltyModal} animationType="slide" transparent>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>{t('upload_builty_title')}</Text>
+                        <Text style={styles.modalSubtitle}>{t('upload_builty_subtitle')}</Text>
+
+                        {builtyFile ? (
+                            <View style={styles.uploadPlaceholder}>
+                                <DocumentIcon />
+                                <Text style={styles.uploadText}>{builtyFile.name}</Text>
+                                <Text style={styles.uploadSubtext}>
+                                    {((builtyFile.size || 0) / 1024).toFixed(2)} KB
+                                </Text>
+                                <TouchableOpacity
+                                    style={styles.changeFileBtn}
+                                    onPress={() => setBuiltyFile(null)}
+                                >
+                                    <Text style={styles.changeFileText}>{t('change_file')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={styles.uploadOptionsContainer}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyCamera}>
+                                    <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
+                                        <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                        <Circle cx="12" cy="13" r="4" />
+                                    </Svg>
+                                    <Text style={styles.uploadOptionText}>{t('camera')}</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyGallery}>
+                                    <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
+                                        <Rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <Circle cx="8.5" cy="8.5" r="1.5" />
+                                        <Path d="M21 15l-5-5L5 21" />
+                                    </Svg>
+                                    <Text style={styles.uploadOptionText}>{t('gallery')}</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyPick}>
+                                    <DocumentIcon />
+                                    <Text style={styles.uploadOptionText}>{t('document')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        <View style={[styles.modalActions, { marginTop: 20 }]}>
+                            <TouchableOpacity
+                                style={styles.modalCancel}
+                                onPress={() => {
+                                    setShowBuiltyModal(false);
+                                    setBuiltyFile(null);
+                                }}
+                            >
+                                <Text style={styles.modalCancelText}>{t('cancel')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalSubmit, (uploadingBuilty || !builtyFile) && styles.modalSubmitDisabled]}
+                                onPress={handleBuiltyUpload}
+                                disabled={uploadingBuilty || !builtyFile}
+                            >
+                                {uploadingBuilty ? (
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                ) : (
+                                    <Text style={styles.modalSubmitText}>{t('upload_continue')}</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             {/* Confirmation Modal for Status Updates */}
             <Modal visible={showConfirmModal} animationType="fade" transparent>
                 <View style={styles.confirmModalOverlay}>
@@ -903,25 +1745,25 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, driverId, lo
                                 <Path d="M12 8h.01" />
                             </Svg>
                         </View>
-                        <Text style={styles.confirmTitle}>Update Status?</Text>
+                        <Text style={styles.confirmTitle}>{t('update_status_title')}</Text>
                         <Text style={styles.confirmMessage}>
-                            Are you sure you want to update the status to "{pendingStatusUpdate !== null ? statuses[pendingStatusUpdate].label : ''}"?
+                            {t('update_status_message')} "{pendingStatusUpdate !== null ? statuses[pendingStatusUpdate].label : ''}"?
                         </Text>
                         <View style={styles.confirmActions}>
-                            <TouchableOpacity 
-                                style={styles.confirmCancelBtn} 
+                            <TouchableOpacity
+                                style={styles.confirmCancelBtn}
                                 onPress={() => {
                                     setShowConfirmModal(false);
                                     setPendingStatusUpdate(null);
                                 }}
                             >
-                                <Text style={styles.confirmCancelText}>Cancel</Text>
+                                <Text style={styles.confirmCancelText}>{t('cancel')}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={styles.confirmOkBtn} 
+                            <TouchableOpacity
+                                style={styles.confirmOkBtn}
                                 onPress={confirmStatusUpdate}
                             >
-                                <Text style={styles.confirmOkText}>Confirm</Text>
+                                <Text style={styles.confirmOkText}>{t('confirm')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -949,9 +1791,9 @@ const styles = StyleSheet.create({
     // Scroll
     scroll: { flex: 1 },
     scrollContent: { padding: 12 },
-    emptyScreenContent: { 
-        flex: 1, 
-        justifyContent: 'center', 
+    emptyScreenContent: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 24,
     },
@@ -1053,11 +1895,11 @@ const styles = StyleSheet.create({
     sectionHeader: { fontSize: 14, fontWeight: '600', color: C.text, marginBottom: 14 },
 
     // Shipping
-    shippingHeader: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: 16 
+    shippingHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16
     },
     routeContainer: {
         paddingVertical: 4,
@@ -1269,6 +2111,121 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     confirmOkText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: C.surface,
+    },
+
+    // Upload Modals
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: C.surface,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 24,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+        maxHeight: '80%',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: C.text,
+        marginBottom: 8,
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: C.textSec,
+        marginBottom: 20,
+        lineHeight: 20,
+    },
+    uploadPlaceholder: {
+        backgroundColor: '#F0F5FF',
+        borderRadius: 12,
+        padding: 24,
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: C.primary,
+        borderStyle: 'dashed',
+    },
+    uploadText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: C.text,
+        marginTop: 12,
+        textAlign: 'center',
+    },
+    uploadSubtext: {
+        fontSize: 12,
+        color: C.textSec,
+        marginTop: 4,
+    },
+    changeFileBtn: {
+        marginTop: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: C.surface,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: C.border,
+    },
+    changeFileText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: C.primary,
+    },
+    uploadOptionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        gap: 12,
+        paddingVertical: 20,
+    },
+    uploadOptionBtn: {
+        flex: 1,
+        backgroundColor: '#F0F5FF',
+        borderRadius: 12,
+        padding: 20,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#D0E0FF',
+    },
+    uploadOptionText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: C.primary,
+        marginTop: 8,
+    },
+    modalActions: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    modalCancel: {
+        flex: 1,
+        backgroundColor: C.border,
+        borderRadius: 8,
+        paddingVertical: 14,
+        alignItems: 'center',
+    },
+    modalCancelText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: C.text,
+    },
+    modalSubmit: {
+        flex: 1,
+        backgroundColor: C.primary,
+        borderRadius: 8,
+        paddingVertical: 14,
+        alignItems: 'center',
+    },
+    modalSubmitDisabled: {
+        backgroundColor: C.textSec,
+        opacity: 0.6,
+    },
+    modalSubmitText: {
         fontSize: 14,
         fontWeight: '600',
         color: C.surface,

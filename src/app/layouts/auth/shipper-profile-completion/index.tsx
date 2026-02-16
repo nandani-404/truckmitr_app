@@ -345,6 +345,19 @@ export default function ProfileCompletionShipper() {
         setGstVerifyError(null);
         setGstCompanyName('');
         setGstRegisteredAddress('');
+
+        const getFriendlyErrorMessage = (msg: string) => {
+            if (!msg) return 'GST verification failed';
+            const lowerMsg = msg.toLowerCase();
+            if (lowerMsg.includes('invalid id number') || lowerMsg.includes('combination of inputs')) {
+                return 'Invalid or Incorrect GST number.';
+            }
+            if (lowerMsg.includes('source down')) {
+                return 'Source down';
+            }
+            return msg;
+        };
+
         try {
             const response = await axiosInstance.post(END_POINTS.SHIPPER_VERIFY_GST, { gstin });
             const data = response?.data;
@@ -357,11 +370,16 @@ export default function ProfileCompletionShipper() {
                 setGstVerified(true);
                 showToast('GST Verified Successfully');
             } else {
-                setGstVerifyError(data?.message || 'GST verification failed');
+                const mappedError = getFriendlyErrorMessage(data?.message);
+                setGstVerifyError(mappedError);
+                showToast(mappedError);
             }
         } catch (error: any) {
             console.error('GST verify error:', error);
-            setGstVerifyError(error?.response?.data?.message || 'Unable to verify GST. Please try again.');
+            const rawErrorMsg = error?.response?.data?.message || error?.message || '';
+            const mappedError = getFriendlyErrorMessage(rawErrorMsg) || 'Unable to verify GST. Please try again.';
+            setGstVerifyError(mappedError);
+            showToast(mappedError);
         } finally {
             setGstVerifying(false);
         }
@@ -640,7 +658,7 @@ export default function ProfileCompletionShipper() {
     const renderVerification = () => (
         <View style={styles.stepContainer}>
 
-            <MandatoryLabel text="Are you registered as?" />
+            <MandatoryLabel text="Are you registering as?" />
             <PillOptions
                 options={COMPANY_TYPES}
                 value={formData.companyRegType}
@@ -705,13 +723,25 @@ export default function ProfileCompletionShipper() {
                                     setGstCompanyName('');
                                     setGstRegisteredAddress('');
                                 }
-                                if (cleaned.length === 15) {
-                                    verifyGst(cleaned);
-                                }
                             }}
                         />
-                        {gstVerifying && (
+                        {gstVerifying ? (
                             <ActivityIndicator size="small" color="#246BFD" style={{ marginLeft: 10 }} />
+                        ) : (
+                            !gstVerified && formData.gstNumber?.length === 15 && (
+                                <TouchableOpacity
+                                    onPress={() => verifyGst(formData.gstNumber)}
+                                    style={{
+                                        marginLeft: 10,
+                                        backgroundColor: '#246BFD',
+                                        paddingHorizontal: 16,
+                                        paddingVertical: 10,
+                                        borderRadius: 8,
+                                    }}
+                                >
+                                    <Text style={{ color: 'white', fontWeight: '700', fontSize: 13 }}>Verify</Text>
+                                </TouchableOpacity>
+                            )
                         )}
                     </View>
 
@@ -779,25 +809,46 @@ export default function ProfileCompletionShipper() {
                 )}
 
                 <MandatoryLabel text="PAN Number" />
-                <TextInput
-                    style={[
-                        styles.classicInput,
-                        panVerified && { backgroundColor: '#F0FDF4', color: '#333' }
-                    ]}
-                    placeholder="ABCDE1234F"
-                    placeholderTextColor="#999"
-                    autoCapitalize="characters"
-                    maxLength={10}
-                    editable={!panVerified}
-                    value={formData.panNumber}
-                    onChangeText={text => {
-                        updateFormData('panNumber', text.replace(/[^a-zA-Z0-9]/g, '').toUpperCase());
-                        if (panVerified) {
-                            setPanVerified(false);
-                            setPanVerifyError(null);
-                        }
-                    }}
-                />
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TextInput
+                        style={[
+                            styles.classicInput,
+                            { flex: 1 },
+                            panVerified && { backgroundColor: '#F0FDF4', color: '#333' }
+                        ]}
+                        placeholder="ABCDE1234F"
+                        placeholderTextColor="#999"
+                        autoCapitalize="characters"
+                        maxLength={10}
+                        editable={!panVerified}
+                        value={formData.panNumber}
+                        onChangeText={text => {
+                            updateFormData('panNumber', text.replace(/[^a-zA-Z0-9]/g, '').toUpperCase());
+                            if (panVerified) {
+                                setPanVerified(false);
+                                setPanVerifyError(null);
+                            }
+                        }}
+                    />
+                    {panVerifying ? (
+                        <ActivityIndicator size="small" color="#246BFD" style={{ marginLeft: 10 }} />
+                    ) : (
+                        !panVerified && formData.panNumber?.length === 10 && (
+                            <TouchableOpacity
+                                onPress={verifyPan}
+                                style={{
+                                    marginLeft: 10,
+                                    backgroundColor: '#246BFD',
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 10,
+                                    borderRadius: 8,
+                                }}
+                            >
+                                <Text style={{ color: 'white', fontWeight: '700', fontSize: 13 }}>Verify</Text>
+                            </TouchableOpacity>
+                        )
+                    )}
+                </View>
 
                 {/* Error Message */}
                 {panVerifyError && (
@@ -829,38 +880,7 @@ export default function ProfileCompletionShipper() {
                     </Animated.View>
                 )}
 
-                {/* Verify / Re-verify Button */}
-                <Space height={16} />
-                {!panVerified && (
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={verifyPan}
-                        disabled={panVerifying}
-                        style={{
-                            backgroundColor: panVerifying ? '#93B5FD' : '#246BFD',
-                            height: 50,
-                            borderRadius: 14,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
-                            elevation: 3,
-                            shadowColor: '#246BFD',
-                            shadowOpacity: 0.25,
-                            shadowRadius: 8,
-                            shadowOffset: { width: 0, height: 3 },
-                        }}
-                    >
-                        {panVerifying ? (
-                            <ActivityIndicator color="white" size="small" />
-                        ) : (
-                            <Ionicons name="shield-checkmark-outline" size={20} color="white" />
-                        )}
-                        <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>
-                            {panVerifying ? "Verifying..." : "Verify PAN"}
-                        </Text>
-                    </TouchableOpacity>
-                )}
+
             </View>
 
 

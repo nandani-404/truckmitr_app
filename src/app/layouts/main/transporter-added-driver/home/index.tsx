@@ -8,6 +8,7 @@ import {
     RefreshControl,
     Platform,
     UIManager,
+    ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -29,6 +30,7 @@ import { isIOS } from '@truckmitr/src/app/functions';
 import { getUserBadgeText } from '@truckmitr/src/utils/global';
 import WelcomeModal from '@truckmitr/src/app/components/welcome-modal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDriverLocationTracking } from '@truckmitr/src/app/hooks/useDriverLocationTracking';
 
 if (Platform.OS === 'android') {
     if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -51,14 +53,15 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
 
     const { user, profileCompletion, subscriptionDetails } = useSelector((state: any) => state?.user) || {};
 
+    // Start global location tracking
+    useDriverLocationTracking();
+
     const [refreshing, setRefreshing] = useState(false);
     const [showWelcome, setShowWelcome] = useState(false);
     const [recentTracking, setRecentTracking] = useState<any>(null);
     const [loadingTracking, setLoadingTracking] = useState(true);
     const scrollViewRef = useRef<any>(null);
 
-    // TODO: Set to false to test empty state, true to test with dummy data
-    const USE_DUMMY_DATA = true;
 
     const [popupData, setPopupData] = useState<{
         id: any;
@@ -92,49 +95,21 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
     const fetchRecentTracking = async () => {
         try {
             setLoadingTracking(true);
-            
-            // TODO: Remove dummy data and uncomment API call when backend is ready
-            if (USE_DUMMY_DATA) {
-                // Dummy data for testing
-                const dummyTracking = {
-                    id: 12345,
-                    load_id: 'LD2024001',
-                    origin_location: 'Delhi, Delhi',
-                    destination_location: 'Mumbai, Maharashtra',
-                    current_status_label: 'In Transit',
-                    vehicle_body: 'Open Body',
-                    vechicle_body: 'Open Body',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                };
-                
-                // Simulate API delay
-                await new Promise(resolve => setTimeout(resolve, 800));
-                setRecentTracking(dummyTracking);
+
+            // Fetch active trip from API
+            const response: any = await axiosInstance.get(END_POINTS.TRUCKER_DRIVER_TRACKING);
+            console.log('Home Tracking Response:', response?.data);
+
+            if (response?.data?.status === 'success' && response?.data?.data) {
+                const tripData = response.data.data;
+                console.log('Trip Data:', tripData); // Debug log
+                setRecentTracking(tripData);
             } else {
-                // Empty state for testing
-                await new Promise(resolve => setTimeout(resolve, 800));
                 setRecentTracking(null);
             }
-            
-            /* UNCOMMENT THIS WHEN API IS READY:
-            const response: any = await axiosInstance.get(END_POINTS.ACCEPTED_JOBS_DRIVERS);
-            if (response?.data?.status) {
-                const jobs = response?.data?.data || [];
-                // Get the most recent active job
-                if (jobs.length > 0) {
-                    // Sort by created_at or updated_at to get most recent
-                    const sortedJobs = jobs.sort((a: any, b: any) => {
-                        const dateA = new Date(a.updated_at || a.created_at).getTime();
-                        const dateB = new Date(b.updated_at || b.created_at).getTime();
-                        return dateB - dateA;
-                    });
-                    setRecentTracking(sortedJobs[0]);
-                }
-            }
-            */
         } catch (error) {
             console.log('Error fetching recent tracking:', error);
+            setRecentTracking(null);
         } finally {
             setLoadingTracking(false);
         }
@@ -450,6 +425,7 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                 </View>
 
                 {/* Recent Tracking Box */}
+                {/* Recent Tracking Box */}
                 {loadingTracking ? (
                     <View
                         style={{
@@ -463,241 +439,176 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                         }}
                     >
                         <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
-                            <Text style={{ color: colors.blackOpacity(0.5), fontSize: responsiveFontSize(1.4) }}>
-                                {t('loadingTracking', 'Loading tracking...')}
+                            <ActivityIndicator size="small" color={colors.royalBlue} />
+                            <Text style={{
+                                color: colors.blackOpacity(0.5),
+                                fontSize: responsiveFontSize(1.4),
+                                marginTop: 10
+                            }}>
+                                {t('loadingTracking', 'Loading active trip...')}
                             </Text>
                         </View>
                     </View>
                 ) : recentTracking ? (
                     <TouchableOpacity
-                        activeOpacity={0.7}
+                        activeOpacity={0.9}
                         onPress={() => navigation.navigate(STACKS.TRANSPORTER_DRIVER_TRACKING, { jobId: recentTracking.id })}
                         style={{
                             marginHorizontal: responsiveWidth(4),
                             marginTop: 15,
                             backgroundColor: colors.white,
-                            borderRadius: 14,
-                            padding: 18,
+                            borderRadius: 16,
+                            padding: 0,
                             borderWidth: 1,
                             borderColor: colors.blackOpacity(0.08),
                             ...shadow,
-                            shadowColor: colors.blackOpacity(0.12),
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 1,
-                            shadowRadius: 8,
-                            elevation: 3,
+                            shadowColor: colors.blackOpacity(0.1),
+                            overflow: 'hidden'
                         }}
                     >
-                        {/* Header */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.7), fontWeight: '700', color: colors.text }}>
-                                    {recentTracking.load_id || 'N/A'}
-                                </Text>
-                                <View
-                                    style={{
-                                        backgroundColor: colors.royalBlueOpacity(0.12),
-                                        paddingHorizontal: 10,
-                                        paddingVertical: 5,
-                                        borderRadius: 8,
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        gap: 5,
-                                    }}
-                                >
-                                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.royalBlue }} />
-                                    <Text style={{ fontSize: responsiveFontSize(1.2), fontWeight: '600', color: colors.royalBlue }}>
-                                        {recentTracking.current_status_label || 'Active'}
-                                    </Text>
-                                </View>
-                            </View>
-                            <Feather name="chevron-right" size={22} color={colors.blackOpacity(0.3)} />
-                        </View>
-
-                        {/* Route Section */}
-                        <View style={{ 
-                            paddingBottom: 16, 
-                            marginBottom: 16, 
-                            borderBottomWidth: 1, 
-                            borderBottomColor: colors.blackOpacity(0.06) 
-                        }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 }}>
-                                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                                    <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#059669', marginTop: 4 }} />
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 2 }}>
-                                            {t('pickup', 'Pickup')}
-                                        </Text>
-                                        <Text
-                                            style={{
-                                                fontSize: responsiveFontSize(1.5),
-                                                fontWeight: '600',
-                                                color: colors.text,
-                                                lineHeight: 20,
-                                            }}
-                                            numberOfLines={2}
-                                        >
-                                            {recentTracking.origin_location || 'N/A'}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-                            
-                            {/* Connecting Line */}
-                            <View style={{ 
-                                marginLeft: 4, 
-                                width: 2, 
-                                height: 16, 
-                                backgroundColor: colors.blackOpacity(0.1),
-                                marginVertical: 4 
-                            }} />
-                            
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                                    <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#DC2626', marginTop: 4 }} />
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 2 }}>
-                                            {t('drop', 'Drop')}
-                                        </Text>
-                                        <Text
-                                            style={{
-                                                fontSize: responsiveFontSize(1.5),
-                                                fontWeight: '600',
-                                                color: colors.text,
-                                                lineHeight: 20,
-                                            }}
-                                            numberOfLines={2}
-                                        >
-                                            {recentTracking.destination_location || 'N/A'}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* Cargo & Vehicle Info */}
-                        <View style={{ 
-                            paddingBottom: 16, 
-                            marginBottom: 16, 
-                            borderBottomWidth: 1, 
-                            borderBottomColor: colors.blackOpacity(0.06) 
-                        }}>
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-                                {/* Material */}
-                                {recentTracking.meterial && (
-                                    <View style={{ width: '47%' }}>
-                                        <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 3 }}>
-                                            {t('material', 'Material')}
-                                        </Text>
-                                        <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '600', color: colors.text }} numberOfLines={1}>
-                                            {recentTracking.meterial}
-                                        </Text>
-                                    </View>
-                                )}
-                                
-                                {/* Quantity */}
-                                {recentTracking.meterial_quantity && (
-                                    <View style={{ width: '47%' }}>
-                                        <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 3 }}>
-                                            {t('quantity', 'Quantity')}
-                                        </Text>
-                                        <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '600', color: colors.text }}>
-                                            {recentTracking.meterial_quantity} {t('ton', 'Ton')}
-                                        </Text>
-                                    </View>
-                                )}
-                                
-                                {/* Vehicle Body */}
-                                <View style={{ width: '47%' }}>
-                                    <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 3 }}>
-                                        {t('vehicleType', 'Vehicle Type')}
-                                    </Text>
-                                    <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '600', color: colors.text }} numberOfLines={1}>
-                                        {recentTracking.vehicle_body || recentTracking.vechicle_body || 'N/A'}
-                                    </Text>
-                                </View>
-                                
-                                {/* Vehicle Length */}
-                                {(recentTracking.vehicle_length || recentTracking.vechicle_type || recentTracking.vehicle_type) && (
-                                    <View style={{ width: '47%' }}>
-                                        <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 3 }}>
-                                            {t('length', 'Length')}
-                                        </Text>
-                                        <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '600', color: colors.text }} numberOfLines={1}>
-                                            {recentTracking.vehicle_length || recentTracking.vechicle_type || recentTracking.vehicle_type}
-                                        </Text>
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-
-                        {/* Shipper Info */}
-                        {recentTracking.user?.name && (
-                            <View style={{ 
-                                paddingBottom: 16, 
-                                marginBottom: 16, 
-                                borderBottomWidth: 1, 
-                                borderBottomColor: colors.blackOpacity(0.06) 
-                            }}>
-                                <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 4 }}>
-                                    {t('shipper', 'Shipper')}
-                                </Text>
-                                <Text style={{ fontSize: responsiveFontSize(1.5), fontWeight: '700', color: colors.text }}>
-                                    {recentTracking.user.name}
-                                </Text>
-                                {recentTracking.user.unique_id && (
-                                    <Text style={{ fontSize: responsiveFontSize(1.2), color: colors.blackOpacity(0.5), marginTop: 2 }}>
-                                        ID: {recentTracking.user.unique_id}
-                                    </Text>
-                                )}
-                            </View>
-                        )}
-
-                        {/* Schedule Info */}
-                        {recentTracking.picup_date && (
-                            <View style={{ 
-                                paddingBottom: 16, 
-                                marginBottom: 16, 
-                                borderBottomWidth: 1, 
-                                borderBottomColor: colors.blackOpacity(0.06) 
-                            }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <Ionicons name="calendar-outline" size={16} color={colors.blackOpacity(0.5)} />
-                                    <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5) }}>
-                                        {t('pickupDate', 'Pickup Date')}
-                                    </Text>
-                                </View>
-                                <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '600', color: colors.text, marginTop: 4 }}>
-                                    {new Date(recentTracking.picup_date).toLocaleDateString('en-IN', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
-                                </Text>
-                            </View>
-                        )}
-
-                        {/* Action Button */}
+                        {/* Status Header */}
                         <View style={{
-                            backgroundColor: colors.royalBlue,
-                            paddingVertical: 12,
-                            borderRadius: 10,
                             flexDirection: 'row',
+                            justifyContent: 'space-between',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            backgroundColor: colors.royalBlueOpacity(0.05),
+                            borderBottomWidth: 1,
+                            borderBottomColor: colors.blackOpacity(0.05)
                         }}>
-                            <Ionicons name="location" size={18} color={colors.white} />
-                            <Text style={{ 
-                                fontSize: responsiveFontSize(1.5), 
-                                color: colors.white, 
-                                fontWeight: '700' 
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <View style={{
+                                    paddingHorizontal: 10,
+                                    paddingVertical: 4,
+                                    backgroundColor: colors.white,
+                                    borderRadius: 6,
+                                    borderWidth: 1,
+                                    borderColor: colors.royalBlueOpacity(0.2)
+                                }}>
+                                    <Text style={{
+                                        fontSize: responsiveFontSize(1.3),
+                                        fontWeight: '700',
+                                        color: colors.royalBlue
+                                    }}>
+                                        #{recentTracking.load_id || 'N/A'}
+                                    </Text>
+                                </View>
+                                {(() => {
+                                    const statusCode = parseInt(recentTracking.current_status_code || '0');
+                                    const statusLabels = [
+                                        'Load Accepted', 'Vehicle Assigned', 'Reached Pickup',
+                                        'Loaded', 'In Transit', 'Reached Destination', 'Delivered'
+                                    ];
+                                    const label = statusLabels[statusCode] || 'Active';
+                                    return (
+                                        <Text style={{
+                                            fontSize: responsiveFontSize(1.4),
+                                            fontWeight: '600',
+                                            color: colors.text
+                                        }}>
+                                            {label}
+                                        </Text>
+                                    );
+                                })()}
+                            </View>
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 4
                             }}>
-                                {t('viewTracking', 'View Live Tracking')}
-                            </Text>
-                            <Feather name="arrow-right" size={18} color={colors.white} />
+                                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E' }} />
+                                <Text style={{ fontSize: responsiveFontSize(1.2), color: '#22C55E', fontWeight: '600' }}>Live</Text>
+                            </View>
+                        </View>
+
+                        <View style={{ padding: 16 }}>
+                            {/* Route Section */}
+                            <View style={{ marginBottom: 16 }}>
+                                {/* Pickup */}
+                                <View style={{ flexDirection: 'row', gap: 12 }}>
+                                    <View style={{ alignItems: 'center', paddingTop: 4 }}>
+                                        <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: colors.white, borderWidth: 3, borderColor: '#22C55E' }} />
+                                        <View style={{ width: 2, height: 24, backgroundColor: colors.blackOpacity(0.1), marginVertical: 4 }} />
+                                    </View>
+                                    <View style={{ flex: 1, paddingBottom: 8 }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 2 }}>
+                                            PICKUP
+                                        </Text>
+                                        <Text style={{ fontSize: responsiveFontSize(1.5), fontWeight: '600', color: colors.text }} numberOfLines={1}>
+                                            {recentTracking.origin || 'N/A'}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                {/* Drop */}
+                                <View style={{ flexDirection: 'row', gap: 12 }}>
+                                    <View style={{ alignItems: 'center', paddingTop: 4 }}>
+                                        <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: colors.white, borderWidth: 3, borderColor: '#EF4444' }} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 2 }}>
+                                            DROP
+                                        </Text>
+                                        <Text style={{ fontSize: responsiveFontSize(1.5), fontWeight: '600', color: colors.text }} numberOfLines={1}>
+                                            {recentTracking.destination || 'N/A'}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Details Grid */}
+                            <View style={{
+                                flexDirection: 'row',
+                                backgroundColor: colors.blackOpacity(0.02),
+                                borderRadius: 12,
+                                padding: 12,
+                                borderWidth: 1,
+                                borderColor: colors.blackOpacity(0.05)
+                            }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 4 }}>
+                                        VEHICLE NO.
+                                    </Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        <Feather name="truck" size={14} color={colors.text} />
+                                        <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '700', color: colors.text }}>
+                                            {recentTracking.vehicle_number || 'Not Assigned'}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <View style={{ width: 1, backgroundColor: colors.blackOpacity(0.1), marginHorizontal: 12 }} />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 4 }}>
+                                        MATERIAL
+                                    </Text>
+                                    <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '700', color: colors.text }}>
+                                        {recentTracking.material_name || 'General'}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Action Footer */}
+                        <View style={{ padding: 16, paddingTop: 0 }}>
+                            <View style={{
+                                backgroundColor: colors.royalBlue,
+                                paddingVertical: 12,
+                                borderRadius: 10,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                            }}>
+                                <Text style={{
+                                    fontSize: responsiveFontSize(1.5),
+                                    color: colors.white,
+                                    fontWeight: '700'
+                                }}>
+                                    {t('viewTracking', 'View Full Details')}
+                                </Text>
+                                <Feather name="arrow-right" size={18} color={colors.white} />
+                            </View>
                         </View>
                     </TouchableOpacity>
                 ) : (
@@ -739,7 +650,7 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                         borderLeftColor: '#3B82F6',
                     }}
                 > */}
-                    {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                         <Ionicons name="information-circle" size={24} color="#3B82F6" />
                         <Text
                             style={{

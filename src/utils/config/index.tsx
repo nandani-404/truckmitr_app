@@ -303,6 +303,8 @@ export const END_POINTS = {
     SHIPPER_MY_LOADS: `api/shipper/view-load`,
     SHIPPER_VERIFY_GST: `api/shipper/verify-gst`,
     SHIPPER_VERIFY_PAN: `api/shipper/verify-pan`,
+    GET_LOAD_BY_STATUS: `api/shipper/get-load-by-status`,
+    GET_ACCEPTED_LOADS: 'api/shipper/get-accepted-loads',
 
     //------------------------------------------TMLOADMANDAL_trucker------------------------------------------
     TRUCKER_VERIFY_RC: `api/trucker/verify-rc`,
@@ -325,4 +327,7 @@ export const END_POINTS = {
     TRUCKER_BANK_DETAILS_UPDATE: `api/store-trucker-bank-details`,
     TRUCKER_BANK_DETAILS_FETCH: `api/trucker-bank-details`,
     TRUCKER_DRIVER_TRACKING: 'api/trucker/driver-tracking',
+    TRUCKER_START_TRIP: `api/trip/start`,
+    TRIP_UPDATE_LOCATION: `api/trip/update-location`,
+    TRIP_COMPLETE: `api/trip/complete`,
 }

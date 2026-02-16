@@ -105,6 +105,8 @@ const ShipperMyLoads: React.FC = () => {
         try {
             const response = await axiosInstance.get(END_POINTS.SHIPPER_MY_LOADS);
             if (response?.data?.success) {
+                console.log(`My Loads Data:`, response.data.data);
+
                 setLoads(response.data.data || []);
             } else {
                 setLoads([]);
@@ -142,8 +144,11 @@ const ShipperMyLoads: React.FC = () => {
     // ---- RENDER LOAD CARD ----
     const renderLoadCard = (load: any) => {
         const statusCfg = getStatusConfig(load.status);
-        const pickupCity = extractCity(load.origin_location);
-        const dropCity = extractCity(load.destination_location);
+        const pickupStr = load.loading_city_state || extractCity(load.origin_location);
+        const dropStr = load.unloading_city_state || extractCity(load.destination_location);
+
+        const [pickupCity, pickupState] = pickupStr.includes(',') ? pickupStr.split(',').map((s: string) => s.trim()) : [pickupStr, ''];
+        const [dropCity, dropState] = dropStr.includes(',') ? dropStr.split(',').map((s: string) => s.trim()) : [dropStr, ''];
 
         return (
             <View key={load.id} style={mlStyles.loadCard}>
@@ -159,7 +164,8 @@ const ShipperMyLoads: React.FC = () => {
                 <View style={mlStyles.routeContainer}>
                     <View style={mlStyles.routePoint}>
                         <View style={mlStyles.routeDotGreen} />
-                        <Text style={mlStyles.routeCity}>{pickupCity}</Text>
+                        <Text style={mlStyles.routeCity} numberOfLines={1}>{pickupCity}</Text>
+                        {pickupState ? <Text style={mlStyles.routeState} numberOfLines={1}>{pickupState}</Text> : null}
                     </View>
                     <View style={mlStyles.routeMiddle}>
                         <View style={mlStyles.routeLine} />
@@ -167,7 +173,8 @@ const ShipperMyLoads: React.FC = () => {
                     </View>
                     <View style={mlStyles.routePoint}>
                         <View style={mlStyles.routeDotRed} />
-                        <Text style={mlStyles.routeCity}>{dropCity}</Text>
+                        <Text style={mlStyles.routeCity} numberOfLines={1}>{dropCity}</Text>
+                        {dropState ? <Text style={mlStyles.routeState} numberOfLines={1}>{dropState}</Text> : null}
                     </View>
                 </View>
 
@@ -498,8 +505,10 @@ const mlStyles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
         paddingVertical: 6,
+        justifyContent: 'space-between',
     },
     routePoint: {
+        flex: 1,
         alignItems: 'center',
     },
     routeDotGreen: {
@@ -522,15 +531,22 @@ const mlStyles = StyleSheet.create({
     },
     routeCity: {
         fontSize: 13,
-        fontWeight: '600',
-        color: '#374151',
+        fontWeight: '700',
+        color: '#0f172a',
+        textAlign: 'center',
+    },
+    routeState: {
+        fontSize: 11,
+        color: '#64748b',
+        fontWeight: '500',
+        textAlign: 'center',
     },
     routeMiddle: {
-        flex: 1,
+        width: 60,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginHorizontal: 8,
+        marginHorizontal: 4,
     },
     routeLine: {
         position: 'absolute',

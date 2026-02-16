@@ -19,14 +19,15 @@ import {
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
+    FadeIn,
     Easing,
+    useSharedValue,
+    withTiming,
+    withSpring,
+    useAnimatedStyle,
 } from 'react-native-reanimated';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import axiosInstance from '../../../../utils/config/axiosInstance';
@@ -35,6 +36,7 @@ import { STACKS } from '@truckmitr/stacks/stacks';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 const { width } = Dimensions.get('window');
 
@@ -63,8 +65,51 @@ const LOAD_STEPS = [
     { id: 'offered_price', title: 'Offered Price', subtitle: 'Enter your budget', icon: 'cash-outline' },
 ];
 
+// --- Custom Validation Modal Component ---
+const ValidationModal = ({
+    visible,
+    message,
+    onClose,
+    title = "Validation Error"
+}: {
+    visible: boolean;
+    message: string;
+    onClose: () => void;
+    title?: string;
+}) => {
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <View style={styles.modalBackdrop}>
+                <Animated.View
+                    entering={FadeIn.duration(300)}
+                    style={styles.validationModalCard}
+                >
+                    <View style={styles.modalIconContainer}>
+                        <Ionicons name="alert-circle" size={40} color="#EF4444" />
+                    </View>
+                    <Text style={styles.modalTitleText}>{title}</Text>
+                    <Text style={styles.modalMessageText}>{message}</Text>
+                    <TouchableOpacity
+                        style={styles.modalCloseBtn}
+                        onPress={onClose}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.modalCloseBtnText}>GOT IT</Text>
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
+        </Modal>
+    );
+};
+
 const ShipperPostLoad = () => {
     const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     const safeAreaInsets = useSafeAreaInsets();
 
     // --- State ---
@@ -77,6 +122,8 @@ const ShipperPostLoad = () => {
     const [destinationLon, setDestinationLon] = useState('');
     const [exactOriginLocation, setExactOriginLocation] = useState('');
     const [exactDestinationLocation, setExactDestinationLocation] = useState('');
+    const [loadingCityState, setLoadingCityState] = useState('');
+    const [unloadingCityState, setUnloadingCityState] = useState('');
 
     const [loadQuantity, setLoadQuantity] = useState('');
     const [materialType, setMaterialType] = useState('Select Material');
@@ -103,12 +150,30 @@ const ShipperPostLoad = () => {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Validation Modal State
+    const [validationModal, setValidationModal] = useState({
+        visible: false,
+        message: '',
+        title: 'Missing Details'
+    });
+
+    const showAlert = (message: string, title = 'Missing Details') => {
+        setValidationModal({
+            visible: true,
+            message,
+            title
+        });
+    };
+
     // Location AutoComplete
+    /*
     const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
     const [destSuggestions, setDestSuggestions] = useState<any[]>([]);
     const [isSearchingOrigin, setIsSearchingOrigin] = useState(false);
     const [isSearchingDest, setIsSearchingDest] = useState(false);
     const locationiqKey = "pk.4cb9faeef9f32f52cfb9aecfe13f7adc";
+    */
+    const GOOGLE_MAPS_APIKEY = "AIzaSyCjnRRjhyPaOnsCsAuwKCCNIYfxo8Q8os0";
 
     // Material Modal
     const [isMaterialVisible, setMaterialVisible] = useState(false);
@@ -141,6 +206,32 @@ const ShipperPostLoad = () => {
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
     useEffect(() => {
+        if (route.params?.selectedLocation) {
+            const loc = route.params.selectedLocation;
+            console.log(`[PostLoad] Selected ${loc.pointType}:`, {
+                city: loc.city,
+                state: loc.state,
+                fullAddress: loc.description
+            });
+
+            if (loc.pointType === 'destination') {
+                setDestinationLocation(loc.description);
+                setDestinationLat(loc.lat);
+                setDestinationLon(loc.lon);
+                setUnloadingCityState(loc.city && loc.state ? `${loc.city}, ${loc.state}` : loc.city || loc.state || '');
+            } else {
+                setOriginLocation(loc.description);
+                setOriginLat(loc.lat);
+                setOriginLon(loc.lon);
+                setLoadingCityState(loc.city && loc.state ? `${loc.city}, ${loc.state}` : loc.city || loc.state || '');
+            }
+
+            // Clear the params to avoid re-triggering if navigated back again
+            navigation.setParams({ selectedLocation: undefined });
+        }
+    }, [route.params?.selectedLocation]);
+
+    useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
         const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
         return () => {
@@ -160,6 +251,22 @@ const ShipperPostLoad = () => {
             { scale: contentScale.value }
         ]
     }));
+
+    // --- Helper Functions ---
+    const extractCityState = (item: any) => {
+        try {
+            if (!item || !item.address) return '';
+            const address = item.address;
+            const city = address.city || address.town || address.village || address.name || '';
+            const state = address.state || '';
+
+            if (city && state) return `${city}, ${state}`;
+            return city || state || '';
+        } catch (error) {
+            console.error('Error extracting city/state:', error);
+            return '';
+        }
+    };
 
     // --- API Logic ---
     const fetchVehicleTypesByQuantity = async (qty: string) => {
@@ -203,6 +310,7 @@ const ShipperPostLoad = () => {
         }
     };
 
+    /*
     const fetchLocationIQSuggestions = async (query: string, type: 'origin' | 'destination') => {
         if (query.trim().length < 3) {
             if (type === 'origin') setOriginSuggestions([]);
@@ -226,8 +334,10 @@ const ShipperPostLoad = () => {
             else setIsSearchingDest(false);
         }
     };
+    */
 
     // --- Search Timers ---
+    /*
     const originSearchTimer = useRef<any>(null);
     useEffect(() => {
         if (originSearchTimer.current) clearTimeout(originSearchTimer.current);
@@ -257,6 +367,7 @@ const ShipperPostLoad = () => {
         }, 300);
         return () => clearTimeout(destSearchTimer.current);
     }, [destinationLocation]);
+    */
 
     // Auto-fetch bodies when quantity changes
     const qtyTimerRef = useRef<any>(null);
@@ -281,43 +392,48 @@ const ShipperPostLoad = () => {
 
         if (step.id === 'shipping_details') {
             if (!originLocation || !destinationLocation || !exactOriginLocation || !exactDestinationLocation) {
-                Alert.alert("Missing Details", "Please fill all location fields.");
+                showAlert("Please fill all location fields to proceed.");
                 return;
             }
         }
         if (step.id === 'date_time') {
             if (!pickupDate || !loadTime) {
-                Alert.alert("Missing Details", "Please select pickup date and time.");
+                showAlert("Please select both pickup date and time.");
                 return;
             }
         }
         if (step.id === 'load_quantity') {
             if (!loadQuantity) {
-                Alert.alert("Missing Details", "Please enter load quantity.");
+                showAlert("Please enter the total load quantity.");
+                return;
+            }
+            const weight = parseFloat(loadQuantity);
+            if (weight < 2.5 || weight > 45) {
+                showAlert("Total weight must be between 2.5 and 45 tonnes.", "Invalid Weight");
                 return;
             }
         }
         if (step.id === 'body_type') {
             if (!selectedBodyId) {
-                Alert.alert("Missing Details", "Please select a body type.");
+                showAlert("Please select a body type for your load.");
                 return;
             }
         }
         if (step.id === 'vehicle_type') {
             if (!selectedVehicleId) {
-                Alert.alert("Missing Details", "Please select a vehicle length.");
+                showAlert("Please select a vehicle length for your load.");
                 return;
             }
         }
         if (step.id === 'material_type') {
             if (!materialId) {
-                Alert.alert("Missing Details", "Please select a material type.");
+                showAlert("Please select a material type.");
                 return;
             }
         }
         if (step.id === 'offered_price') {
             if (!offeredPrice) {
-                Alert.alert("Missing Details", "Please enter your offered price.");
+                showAlert("Please enter your offered price.");
                 return;
             }
         }
@@ -370,6 +486,8 @@ const ShipperPostLoad = () => {
         setPickupDate(null);
         setLoadTime(null);
         setAdditionalNote('');
+        setLoadingCityState('');
+        setUnloadingCityState('');
         setCurrentStep(0);
     };
 
@@ -393,6 +511,8 @@ const ShipperPostLoad = () => {
                 additional_note: additionalNote,
                 picup_date: pickupDate ? moment(pickupDate).format('YYYY-MM-DD') : null,
                 load_time: loadTime ? moment(loadTime).format('HH:mm') : null,
+                loading_city_state: loadingCityState,
+                unloading_city_state: unloadingCityState,
             };
             const response = await axiosInstance.post(END_POINTS.POST_LOAD_SUBMIT, payload);
             if (response.data) {
@@ -407,7 +527,7 @@ const ShipperPostLoad = () => {
             }
         } catch (error) {
             console.error('Error posting load:', error);
-            Alert.alert('Error', 'Failed to post load. Please try again.');
+            showAlert("Failed to post load. Please try again later.", "Submission Error");
         } finally {
             setIsSubmitting(false);
         }
@@ -421,6 +541,90 @@ const ShipperPostLoad = () => {
                 return (
                     <View style={styles.stepContainer}>
                         <Text style={styles.classicLabel}>Loading Point</Text>
+                        <TouchableOpacity
+                            style={[styles.classicBox, { marginBottom: 10 }]}
+                            onPress={() => navigation.navigate(STACKS.MAP_VIEW, {
+                                returnScreen: STACKS.SHIPPER_POST_LOAD,
+                                pointType: 'origin',
+                                initialLocation: originLat && originLon ? {
+                                    latitude: parseFloat(originLat),
+                                    longitude: parseFloat(originLon),
+                                    address: originLocation
+                                } : undefined
+                            })}
+                        >
+                            <Text
+                                style={{
+                                    flex: 1,
+                                    fontSize: 15,
+                                    color: originLocation ? '#212529' : '#999',
+                                }}
+                                numberOfLines={1}
+                            >
+                                {originLocation || 'Tap to select Loading Point (Map)'}
+                            </Text>
+                            <Ionicons name="map-outline" size={20} color="#3b82f6" />
+                        </TouchableOpacity>
+
+                        {/* Commented out previous inline autocomplete for Loading Point */}
+                        {/*
+                        <GooglePlacesAutocomplete
+                            placeholder='Search City/Area'
+                            onPress={(data, details = null) => {
+                                setOriginLocation(data.description);
+                                if (details) {
+                                    setOriginLat(String(details.geometry.location.lat));
+                                    setOriginLon(String(details.geometry.location.lng));
+
+                                    // Extract city and state from address_components
+                                    let city = '';
+                                    let state = '';
+                                    details.address_components.forEach(component => {
+                                        if (component.types.includes('locality')) city = component.long_name;
+                                        if (component.types.includes('administrative_area_level_1')) state = component.long_name;
+                                    });
+                                    setLoadingCityState(city && state ? `${city}, ${state}` : city || state || '');
+                                }
+                            }}
+                            query={{
+                                key: GOOGLE_MAPS_APIKEY,
+                                language: 'en',
+                                components: 'country:in',
+                            }}
+                            fetchDetails={true}
+                            minLength={2}
+                            debounce={400}
+                            onFail={(error) => console.error('Google Places Error (Origin):', error)}
+                            styles={{
+                                container: { flex: 1 },
+                                textInput: {
+                                    height: 56,
+                                    color: '#333',
+                                    fontSize: 15,
+                                    paddingHorizontal: 16,
+                                    backgroundColor: 'white',
+                                    borderRadius: 12,
+                                    borderWidth: 1,
+                                    borderColor: '#CED4DA',
+                                },
+                                listView: {
+                                    backgroundColor: 'white',
+                                    borderRadius: 12,
+                                    elevation: 5,
+                                    zIndex: 1000,
+                                    marginTop: 5,
+                                },
+                                row: { padding: 13, height: 44, flexDirection: 'row' },
+                                separator: { height: 0.5, backgroundColor: '#c8c7cc' },
+                                description: { fontSize: 14, color: '#333' },
+                            }}
+                            enablePoweredByContainer={false}
+                            textInputProps={{
+                                placeholderTextColor: '#999',
+                            }}
+                        />
+                        */}
+                        {/*
                         <View style={[styles.classicBox, { marginBottom: 10 }]}>
                             <TextInput
                                 style={{ flex: 1, color: '#333' }}
@@ -440,6 +644,7 @@ const ShipperPostLoad = () => {
                                                 setOriginLocation(item.display_name);
                                                 setOriginLat(item.lat);
                                                 setOriginLon(item.lon);
+                                                setLoadingCityState(extractCityState(item));
                                                 setOriginSuggestions([]);
                                             }}>
                                                 <Text numberOfLines={2} style={styles.suggestionText}>{item.display_name}</Text>
@@ -449,6 +654,7 @@ const ShipperPostLoad = () => {
                                 </View>
                             )}
                         </View>
+                        */}
 
                         <Text style={styles.classicLabel}>Full Loading Address</Text>
                         <TextInput
@@ -461,7 +667,91 @@ const ShipperPostLoad = () => {
 
                         <View style={styles.divider} />
 
-                        <Text style={styles.classicLabel}>Unloading Point</Text>
+                        <Text style={[styles.classicLabel, { marginTop: 15 }]}>Unloading Point</Text>
+                        <TouchableOpacity
+                            style={[styles.classicBox, { marginBottom: 10 }]}
+                            onPress={() => navigation.navigate(STACKS.MAP_VIEW, {
+                                returnScreen: STACKS.SHIPPER_POST_LOAD,
+                                pointType: 'destination',
+                                initialLocation: destinationLat && destinationLon ? {
+                                    latitude: parseFloat(destinationLat),
+                                    longitude: parseFloat(destinationLon),
+                                    address: destinationLocation
+                                } : undefined
+                            })}
+                        >
+                            <Text
+                                style={{
+                                    flex: 1,
+                                    fontSize: 15,
+                                    color: destinationLocation ? '#212529' : '#999',
+                                }}
+                                numberOfLines={1}
+                            >
+                                {destinationLocation || 'Tap to select Unloading Point (Map)'}
+                            </Text>
+                            <Ionicons name="map-outline" size={20} color="#3b82f6" />
+                        </TouchableOpacity>
+
+                        {/* Commented out GooglePlacesAutocomplete for Unloading Point */}
+                        {/* 
+                        <GooglePlacesAutocomplete
+                            placeholder='Search City/Area'
+                            onPress={(data, details = null) => {
+                                setDestinationLocation(data.description);
+                                if (details) {
+                                    setDestinationLat(String(details.geometry.location.lat));
+                                    setDestinationLon(String(details.geometry.location.lng));
+
+                                    // Extract city and state from address_components
+                                    let city = '';
+                                    let state = '';
+                                    details.address_components.forEach(component => {
+                                        if (component.types.includes('locality')) city = component.long_name;
+                                        if (component.types.includes('administrative_area_level_1')) state = component.long_name;
+                                    });
+                                    setUnloadingCityState(city && state ? `${city}, ${state}` : city || state || '');
+                                }
+                            }}
+                            query={{
+                                key: GOOGLE_MAPS_APIKEY,
+                                language: 'en',
+                                components: 'country:in',
+                            }}
+                            fetchDetails={true}
+                            minLength={2}
+                            debounce={400}
+                            onFail={(error) => console.error('Google Places Error (Destination):', error)}
+                            styles={{
+                                container: { flex: 1 },
+                                textInput: {
+                                    height: 56,
+                                    color: '#333',
+                                    fontSize: 15,
+                                    paddingHorizontal: 16,
+                                    backgroundColor: 'white',
+                                    borderRadius: 12,
+                                    borderWidth: 1,
+                                    borderColor: '#CED4DA',
+                                },
+                                listView: {
+                                    backgroundColor: 'white',
+                                    borderRadius: 12,
+                                    elevation: 5,
+                                    zIndex: 1000,
+                                    marginTop: 5,
+                                },
+                                row: { padding: 13, height: 44, flexDirection: 'row' },
+                                separator: { height: 0.5, backgroundColor: '#c8c7cc' },
+                                description: { fontSize: 14, color: '#333' },
+                            }}
+                            enablePoweredByContainer={false}
+                            textInputProps={{
+                                placeholderTextColor: '#999',
+                            }}
+                        />
+                        */}
+                        {/* 
                         <View style={[styles.classicBox, { marginBottom: 10 }]}>
                             <TextInput
                                 style={{ flex: 1, color: '#333' }}
@@ -481,6 +771,7 @@ const ShipperPostLoad = () => {
                                                 setDestinationLocation(item.display_name);
                                                 setDestinationLat(item.lat);
                                                 setDestinationLon(item.lon);
+                                                setUnloadingCityState(extractCityState(item));
                                                 setDestSuggestions([]);
                                             }}>
                                                 <Text numberOfLines={2} style={styles.suggestionText}>{item.display_name}</Text>
@@ -490,6 +781,7 @@ const ShipperPostLoad = () => {
                                 </View>
                             )}
                         </View>
+                        */}
 
                         <Text style={styles.classicLabel}>Full Unloading Address</Text>
                         <TextInput
@@ -553,7 +845,7 @@ const ShipperPostLoad = () => {
                     <View style={styles.stepContainer}>
                         <Text style={styles.classicLabel}>Total Weight (Tonnes)</Text>
                         <Text style={[styles.helperText, { marginBottom: 12, marginTop: 0 }]}>
-                            Enter the approximate weight of your goods
+                            Enter the approximate weight of your goods (Min: 2.5 | Max: 45)
                         </Text>
                         <TextInput
                             style={styles.classicInput}
@@ -773,6 +1065,13 @@ const ShipperPostLoad = () => {
                     </TouchableOpacity>
                 </View>
             )}
+
+            <ValidationModal
+                visible={validationModal.visible}
+                message={validationModal.message}
+                title={validationModal.title}
+                onClose={() => setValidationModal({ ...validationModal, visible: false })}
+            />
         </View>
     );
 };
@@ -866,6 +1165,74 @@ const styles = StyleSheet.create({
     stepIconContainer: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
     stepHeaderText: { flex: 1 },
     stepTitle: { fontSize: 20, fontWeight: '700', color: '#212529', marginBottom: 4 },
+    metricHighlight: {
+        fontWeight: '700',
+        color: '#0f172a',
+    },
+
+    // Custom Validation Modal Styles
+    modalBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    validationModalCard: {
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 24,
+        width: '100%',
+        maxWidth: 340,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.2,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    modalIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: '#FEF2F2',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    modalTitleText: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#111827',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    modalMessageText: {
+        fontSize: 15,
+        color: '#4B5563',
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 24,
+    },
+    modalCloseBtn: {
+        backgroundColor: '#246BFD',
+        paddingVertical: 14,
+        paddingHorizontal: 32,
+        borderRadius: 14,
+        width: '100%',
+        alignItems: 'center',
+        shadowColor: '#246BFD',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    modalCloseBtnText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '800',
+        letterSpacing: 1,
+    },
     stepSubtitle: { fontSize: 13, color: '#6C757D' },
     divider: { height: 1, backgroundColor: '#E9ECEF', marginBottom: 24 },
     stepContainer: { width: '100%' },

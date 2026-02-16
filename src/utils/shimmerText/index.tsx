@@ -62,20 +62,19 @@ const ShimmerText: FC<ShimmerTextProps> = ({
     };
 
     // Scenario 1: Text shimmer implementation using MaskedView as a parent wrapper
-    // This clips everything to the text shape.
-    // We stack: Base Content (Bottom) + Shimmer Gradient (Top)
     if (text || (children && React.isValidElement(children) && children.type === Text)) {
         return (
             <MaskedView
                 style={[styles.container, { width }, style]}
                 maskElement={
-                    <View style={styles.contentContainer}>
+                    <View style={styles.contentContainer} onLayout={onLayout}>
                         {renderContent()}
                     </View>
                 }
             >
                 {/* Base Layer - The visible text under the shimmer */}
-                <View style={[styles.contentContainer, { opacity }]}>
+                {/* We use a slightly lower opacity for the base text so the shimmer "shines" */}
+                <View style={[styles.contentContainer, { opacity: opacity * 0.7 }]}>
                     {renderContent()}
                 </View>
 
@@ -84,10 +83,10 @@ const ShimmerText: FC<ShimmerTextProps> = ({
                     style={[
                         styles.shimmerContainer,
                         {
+                            width: layoutWidth * 1.5, // Extra width for smoother flow
                             transform: [{ translateX }],
                         },
                     ]}
-                    onLayout={onLayout}
                 >
                     <LinearGradient
                         colors={colors}
