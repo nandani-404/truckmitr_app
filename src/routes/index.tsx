@@ -21,7 +21,7 @@ import {
 } from '../redux/actions/user.action';
 import axiosInstance from '../utils/config/axiosInstance';
 import { END_POINTS } from '../utils/config';
-import { useResponsiveScale } from '../app/hooks';
+import { useResponsiveScale, useDriverLocationTracking } from '../app/hooks';
 import Subscription from '../app/layouts/main/subscription';
 import InAppUpdatePopup from '../utils/update';
 import analytics from '@react-native-firebase/analytics';
@@ -41,6 +41,9 @@ export const setNavigationReady = (ready: boolean) => {
 
 
 export default function Routes() {
+  // Start Global Location Tracking
+  useDriverLocationTracking();
+
   const dispatch = useDispatch();
   const colorScheme = useColorScheme();
   const { responsiveWidth, responsiveHeight } = useResponsiveScale();

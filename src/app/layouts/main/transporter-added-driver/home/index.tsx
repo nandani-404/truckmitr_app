@@ -43,7 +43,6 @@ type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorP
 const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    useStatusBarStyle('dark-content');
 
     const colors = useColor();
     const safeAreaInsets = useSafeAreaInsets();
@@ -51,10 +50,27 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
 
-    const { user, profileCompletion, subscriptionDetails } = useSelector((state: any) => state?.user) || {};
+    // Safe Redux state access with proper fallbacks
+    const userState = useSelector((state: any) => state?.user);
+    const user = userState?.user || null;
+    const profileCompletion = userState?.profileCompletion || 0;
+    const subscriptionDetails = userState?.subscriptionDetails || null;
 
-    // Start global location tracking
-    useDriverLocationTracking();
+    // Track if component is mounted and user is loaded
+    const [isUserLoaded, setIsUserLoaded] = useState(false);
+
+    // Set status bar style only after user is loaded
+    useStatusBarStyle(isUserLoaded ? 'dark-content' : 'light-content');
+
+    // Check when user is loaded
+    useEffect(() => {
+        if (user?.id) {
+            console.log('[TransporterAddedDriverHome] User loaded:', user.id);
+            setIsUserLoaded(true);
+        } else {
+            console.log('[TransporterAddedDriverHome] Waiting for user data...');
+        }
+    }, [user?.id]);
 
     const [refreshing, setRefreshing] = useState(false);
     const [showWelcome, setShowWelcome] = useState(false);
@@ -96,6 +112,14 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
         try {
             setLoadingTracking(true);
 
+            // Don't fetch if user is not loaded
+            if (!user?.id) {
+                console.log('User not loaded yet, skipping tracking fetch');
+                setRecentTracking(null);
+                setLoadingTracking(false);
+                return;
+            }
+
             // Fetch active trip from API
             const response: any = await axiosInstance.get(END_POINTS.TRUCKER_DRIVER_TRACKING);
             console.log('Home Tracking Response:', response?.data);
@@ -107,8 +131,8 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
             } else {
                 setRecentTracking(null);
             }
-        } catch (error) {
-            console.log('Error fetching recent tracking:', error);
+        } catch (error: any) {
+            console.log('Error fetching recent tracking:', error?.message || error);
             setRecentTracking(null);
         } finally {
             setLoadingTracking(false);
@@ -164,15 +188,31 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
     useFocusEffect(
         useCallback(() => {
             const _fetchUser = async () => {
-                const profile: any = await axiosInstance.get(END_POINTS?.GET_PROFILE);
-                if (profile?.data?.status) {
-                    dispatch(userAction(profile?.data));
+                try {
+                    console.log('[TransporterAddedDriverHome] Fetching user profile...');
+                    const profile: any = await axiosInstance.get(END_POINTS?.GET_PROFILE);
+                    if (profile?.data?.status) {
+                        console.log('[TransporterAddedDriverHome] Profile fetched successfully');
+                        dispatch(userAction(profile?.data));
+                    }
+                } catch (error: any) {
+                    console.error('[TransporterAddedDriverHome] Error fetching user profile:', error?.message || error);
                 }
             };
-            _fetchUser();
-            fetchPopupMessage();
-            fetchRecentTracking();
-        }, [])
+
+            // Only fetch if user is not loaded
+            if (!user?.id) {
+                _fetchUser();
+            } else {
+                setIsUserLoaded(true);
+            }
+
+            // Fetch popup and tracking only after user is loaded
+            if (user?.id) {
+                fetchPopupMessage();
+                fetchRecentTracking();
+            }
+        }, [user?.id])
     );
 
     // Pull to refresh
@@ -184,8 +224,8 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                 dispatch(userAction(profile?.data));
             }
             await Promise.all([fetchRecentTracking()]);
-        } catch (error) {
-            console.error('Error refreshing:', error);
+        } catch (error: any) {
+            console.error('Error refreshing:', error?.message || error);
         } finally {
             setRefreshing(false);
         }
@@ -268,6 +308,18 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
         },
     }));
 
+    // Show loading state while user data is being fetched
+    if (!isUserLoaded || !user) {
+        return (
+            <View style={{ flex: 1, backgroundColor: colors.white, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={colors.royalBlue} />
+                <Text style={{ marginTop: 16, fontSize: responsiveFontSize(1.6), color: colors.blackOpacity(0.6) }}>
+                    {t('loadingProfile', 'Loading profile...')}
+                </Text>
+            </View>
+        );
+    }
+
     return (
         <View style={{ flex: 1, backgroundColor: colors.white }}>
             <ScrollView
@@ -321,7 +373,7 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                                     letterSpacing: 0.5,
                                 }}
                             >
-                                {`${t('hi')}, ${user?.name || ''} 👋`}
+                                {`${t('hi')}, ${user?.name || 'Driver'} 👋`}
                             </Text>
                             <Text
                                 style={{
@@ -332,7 +384,7 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                                     marginTop: 0,
                                 }}
                             >
-                                {`${user?.unique_id || ''}`}
+                                {user?.unique_id ? `${user.unique_id}` : ''}
                             </Text>
                             <Text
                                 style={{
@@ -343,7 +395,7 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                                     marginTop: 0,
                                 }}
                             >
-                                {getUserBadgeText({ user, subscriptionDetails, isDriver: true })}
+                                {user ? getUserBadgeText({ user, subscriptionDetails, isDriver: true }) : ''}
                             </Text>
                         </View>
 
@@ -394,9 +446,10 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                                     }}
                                     source={{
                                         uri: user?.images
-                                            ? `${BASE_URL}public/${user?.images}`
+                                            ? `${BASE_URL}public/${user.images}`
                                             : `https://cdn-icons-png.flaticon.com/512/3177/3177440.png`,
                                     }}
+                                    defaultSource={require('@truckmitr/src/res/images/truck.png')}
                                 />
                                 <View
                                     style={{
@@ -452,7 +505,11 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                 ) : recentTracking ? (
                     <TouchableOpacity
                         activeOpacity={0.9}
-                        onPress={() => navigation.navigate(STACKS.TRANSPORTER_DRIVER_TRACKING, { jobId: recentTracking.id })}
+                        onPress={() => {
+                            if (recentTracking?.id) {
+                                navigation.navigate(STACKS.TRANSPORTER_DRIVER_TRACKING, { jobId: recentTracking.id });
+                            }
+                        }}
                         style={{
                             marginHorizontal: responsiveWidth(4),
                             marginTop: 15,
@@ -495,21 +552,33 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                                     </Text>
                                 </View>
                                 {(() => {
-                                    const statusCode = parseInt(recentTracking.current_status_code || '0');
-                                    const statusLabels = [
-                                        'Load Accepted', 'Vehicle Assigned', 'Reached Pickup',
-                                        'Loaded', 'In Transit', 'Reached Destination', 'Delivered'
-                                    ];
-                                    const label = statusLabels[statusCode] || 'Active';
-                                    return (
-                                        <Text style={{
-                                            fontSize: responsiveFontSize(1.4),
-                                            fontWeight: '600',
-                                            color: colors.text
-                                        }}>
-                                            {label}
-                                        </Text>
-                                    );
+                                    try {
+                                        const statusCode = parseInt(String(recentTracking?.current_status_code || '0'));
+                                        const statusLabels = [
+                                            'Load Accepted', 'Vehicle Assigned', 'Reached Pickup',
+                                            'Loaded', 'In Transit', 'Reached Destination', 'Delivered'
+                                        ];
+                                        const label = statusLabels[statusCode] || 'Active';
+                                        return (
+                                            <Text style={{
+                                                fontSize: responsiveFontSize(1.4),
+                                                fontWeight: '600',
+                                                color: colors.text
+                                            }}>
+                                                {label}
+                                            </Text>
+                                        );
+                                    } catch (error) {
+                                        return (
+                                            <Text style={{
+                                                fontSize: responsiveFontSize(1.4),
+                                                fontWeight: '600',
+                                                color: colors.text
+                                            }}>
+                                                Active
+                                            </Text>
+                                        );
+                                    }
                                 })()}
                             </View>
                             <View style={{

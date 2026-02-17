@@ -26,6 +26,10 @@ const appCombinedReducer = combineReducers({
 })
 
 const rootReducer = (state: any, action: any) => {
+    // Reset all state to initial values on logout
+    if (action.type === 'AUTH_LOGOUT' || action.type === 'USER_AUTHENTICATED' && action.payload === false) {
+        state = undefined;
+    }
     return appCombinedReducer(state, action)
 }
 
