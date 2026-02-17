@@ -11,6 +11,7 @@ import Geolocation from '@react-native-community/geolocation';
 import { pick } from '@react-native-documents/picker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
+import { useSelector } from 'react-redux';
 
 const { width } = Dimensions.get('window');
 
@@ -143,6 +144,9 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingStatusUpdate, setPendingStatusUpdate] = useState<number | null>(null);
 
+    // Get user from Redux
+    const { user } = useSelector((state: any) => state.user) || {};
+
     // Vehicle Assignment Modal State
     const [showAssignVehicleModal, setShowAssignVehicleModal] = useState(false);
     const [selectedVehicle, setSelectedVehicle] = useState('');
@@ -167,7 +171,16 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         payment: '',
         builty_path: null,
         pod_path: null,
+        origin_lat: null,
+        origin_lon: null,
+        destination_lat: null,
+        destination_lon: null,
+        driver_id: null,
+        trip_started: false,
     });
+
+    const [startingTrip, setStartingTrip] = useState(false);
+    const [forceUpdate, setForceUpdate] = useState(0); // Force re-render trigger
 
     useEffect(() => {
         if (loadId) {
@@ -225,7 +238,16 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                     weight: data.material_weight,
                     builty_path: data.builty_path || null,
                     pod_path: data.pod_path || null,
+                    origin_lat: data.origin_lat || null,
+                    origin_lon: data.origin_lon || null,
+                    destination_lat: data.destination_lat || null,
+                    destination_lon: data.destination_lon || null,
+                    driver_id: data.driver_id || null,
+                    trip_started: data.trip_started || data.trip_status === 'active' || false,
                 });
+
+                console.log('📊 [TRIP DATA] trip_status:', data.trip_status);
+                console.log('📊 [TRIP DATA] trip_started:', data.trip_started || data.trip_status === 'active');
 
                 // Set status
                 const statusCode = parseInt(data.current_status_code, 10);
@@ -291,13 +313,92 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
 
     // Get next action button text
     const getNextActionText = () => {
+        console.log('🔍 [BUTTON TEXT] Checking button text - Status:', currentStatus, 'Trip Started:', trip.trip_started);
+        
         if (currentStatus === 0) return 'Assign Vehicle & Driver';
-        if (currentStatus === 1) return 'Mark Reached Pickup';
+        if (currentStatus === 1 && !trip.trip_started) {
+            console.log('🔍 [BUTTON TEXT] Showing: Start Trip');
+            return 'Start Trip';
+        }
+        if (currentStatus === 1 && trip.trip_started) {
+            console.log('🔍 [BUTTON TEXT] Showing: Mark Reached Pickup');
+            return 'Mark Reached Pickup';
+        }
         if (currentStatus === 2) return 'Mark Loaded';
         if (currentStatus === 3) return 'Upload Builty & Start Transit';
         if (currentStatus === 4) return 'Mark Reached Destination';
         if (currentStatus === 5) return 'Upload POD & Complete';
         return 'Complete';
+    };
+
+    const handleStartTrip = async () => {
+        try {
+            setStartingTrip(true);
+            console.log('🚀 [START TRIP] Starting trip...');
+
+            // Validate required data
+            if (!trip.origin_lat || !trip.origin_lon || !trip.destination_lat || !trip.destination_lon) {
+                showToast('Trip coordinates not available. Please refresh and try again.');
+                return;
+            }
+
+            // Use driver_id from trip data, or fallback to user.id
+            const driverId = trip.driver_id || user?.id;
+            
+            if (!driverId) {
+                showToast('Driver information not available. Please refresh and try again.');
+                return;
+            }
+
+            const payload = {
+                driver_id: driverId,
+                load_id: loadId,
+                source_lat: parseFloat(trip.origin_lat),
+                source_lng: parseFloat(trip.origin_lon),
+                destination_lat: parseFloat(trip.destination_lat),
+                destination_lng: parseFloat(trip.destination_lon),
+            };
+
+            console.log('📤 [START TRIP] Payload:', JSON.stringify(payload, null, 2));
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_START_TRIP, payload);
+
+            console.log('📥 [START TRIP] Response:', JSON.stringify(response.data, null, 2));
+
+            // Check if status is true (boolean) or 'success' (string)
+            if (response.data?.status === true || response.data?.status === 'success') {
+                console.log('✅ [START TRIP] Trip started successfully');
+                console.log('📍 [START TRIP] Trip ID:', response.data?.trip_id);
+                
+                // CRITICAL: Update local state immediately to change button text
+                setTrip((prev: any) => {
+                    const updated = {
+                        ...prev,
+                        trip_started: true,
+                    };
+                    console.log('🔄 [START TRIP] Updated trip state:', updated);
+                    return updated;
+                });
+                
+                // Force component re-render
+                setForceUpdate(prev => prev + 1);
+                
+                console.log('🔄 [START TRIP] Updated trip_started to true in local state');
+                
+                showToast(response.data?.message || 'Trip started successfully');
+                
+                // Fetch latest tracking data in background
+                await fetchTripDetails();
+            } else {
+                console.log('⚠️ [START TRIP] Failed:', response.data?.message);
+                showToast(response.data?.message || 'Failed to start trip');
+            }
+        } catch (error: any) {
+            console.error('❌ [START TRIP] Error:', error);
+            showToast(error?.response?.data?.message || 'Failed to start trip. Please try again.');
+        } finally {
+            setStartingTrip(false);
+        }
     };
 
     const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
@@ -381,6 +482,17 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
     const updateStatus = () => {
         if (currentStatus === 0) { // Moving to Vehicle Assigned
             setShowAssignVehicleModal(true);
+            return;
+        }
+        if (currentStatus === 1) {
+            if (!trip.trip_started) {
+                // Start Trip first
+                handleStartTrip();
+            } else {
+                // Trip already started, move to Reached Pickup
+                setPendingStatusUpdate(2);
+                setShowConfirmModal(true);
+            }
             return;
         }
         if (currentStatus === 3) { // Moving from Loaded to In Transit - need builty
@@ -1215,11 +1327,14 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             {currentStatus < 6 && (
                 <View style={styles.footer}>
                     <TouchableOpacity 
-                        style={[styles.actionButton, updatingStatus && styles.actionButtonDisabled]} 
+                        style={[
+                            styles.actionButton, 
+                            (updatingStatus || startingTrip) && styles.actionButtonDisabled
+                        ]} 
                         onPress={updateStatus}
-                        disabled={updatingStatus}
+                        disabled={updatingStatus || startingTrip}
                     >
-                        {updatingStatus ? (
+                        {(updatingStatus || startingTrip) ? (
                             <ActivityIndicator size="small" color="#FFF" />
                         ) : (
                             <>

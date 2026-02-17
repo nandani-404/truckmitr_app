@@ -46,7 +46,7 @@ export interface UseTruckLocationReturn {
 
 // ─── Default event name (update when backend confirms) ───────────────────────
 
-const DEFAULT_EVENT_NAME = 'location-updated';
+const DEFAULT_EVENT_NAME = 'location.update';
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
@@ -65,10 +65,13 @@ export function useTruckLocation(
 
     // ─── Handle incoming location data ───────────────────────────────────
 
-    const handleLocationEvent = useCallback((data: any) => {
+    const handleLocationEvent = useCallback((eventData: any) => {
         if (!mountedRef.current) return;
 
         try {
+            // Handle nested data seen in logs: {"data": {"latitude": "...", ...}}
+            const data = eventData?.data || eventData;
+
             const truckLocation: TruckLocation = {
                 latitude: parseFloat(data.latitude ?? data.lat),
                 longitude: parseFloat(data.longitude ?? data.lng ?? data.lon),

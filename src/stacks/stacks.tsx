@@ -206,10 +206,15 @@ export type NavigatorParams = {
     shipperProfile: undefined;
     shipperProfileCompletion: undefined;
     shipperProfileEdit: undefined;
+
+    // Transporter Added Driver Module
+    transporterDriverTracking: { jobId?: any; driverId?: string; loadId?: string } | undefined;
+
     shipperActiveLoads: undefined;
     shipperAcceptedLoads: undefined;
     shipperPodPending: undefined;
     shipperInProgressLoads: undefined;
+    shipperTrackDetail: { load?: any } | undefined;
 };
 
 export const STACKS = {
@@ -465,6 +470,7 @@ export const STACKS = {
     SHIPPER_IN_TRANSIT_LOADS: 'shipperInTransitLoads',
     SHIPPER_POD_PENDING: 'shipperPodPending',
     SHIPPER_IN_PROGRESS_LOADS: 'shipperInProgressLoads',
+    SHIPPER_TRACK_DETAIL: 'shipperTrackDetail',
     TRANSPORTER_DRIVER_TRACKING: 'transporterDriverTracking',
 
 } as const;

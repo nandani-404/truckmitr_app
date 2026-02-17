@@ -106,7 +106,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
     const [latestLoad, setLatestLoad] = useState<any>(null);
 
     // 🔍 DEBUG: Listen to driver-location.1 channel
-    const { location: driverLocation, connectionStatus, error: pusherError, isTracking } = useTruckLocation('driver-location.1');
+    const { location: driverLocation, connectionStatus, error: pusherError, isTracking } = useTruckLocation('driver-location.13');
 
     useEffect(() => {
         console.log('🔌 [Pusher Debug] Connection Status:', connectionStatus);
@@ -499,7 +499,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                         <Text style={styles.statIconText}>⚡</Text>
                                     </View>
                                 </View>
-                                <Text style={[styles.statNum, { color: '#db2777' }]}>{dashboardData?.accepted || 0}</Text>
+                                <Text style={[styles.statNum, { color: '#db2777' }]}>{dashboardData?.in_progress || 0}</Text>
                                 <View style={styles.statBarChartContainer}>
                                     {[25, 18, 30, 22, 35, 28, 40].map((h, i) => (
                                         <View key={i} style={[styles.statBar, { height: h, backgroundColor: '#db2777' }]} />

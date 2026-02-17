@@ -327,4 +327,9 @@ export const END_POINTS = {
     TRUCKER_GET_DRIVERS: `api/trucker/drivers`,
     TRUCKER_BANK_DETAILS_UPDATE: `api/store-trucker-bank-details`,
     TRUCKER_BANK_DETAILS_FETCH: `api/trucker-bank-details`,
+    TRUCKER_DRIVER_TRACKING: 'api/trucker/driver-tracking',
+    TRUCKER_START_TRIP: `api/trip/start`,
+    TRIP_UPDATE_LOCATION: `api/trip/update-location`,
+    TRIP_COMPLETE: `api/trip/complete`,
+    TRIP_CURRENT_LOCATION: (trip_id: any) => `api/trip/current-location/${trip_id}`,
 }

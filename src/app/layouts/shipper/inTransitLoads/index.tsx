@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,102 +9,70 @@ import {
     StatusBar,
     Image,
     Modal,
+    Linking,
+    ActivityIndicator,
+    RefreshControl,
+    Platform,
+    Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path, Circle } from 'react-native-svg';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import axiosInstance from '@truckmitr/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/utils/config';
+import { STACKS } from '@truckmitr/stacks/stacks';
 
-// ==========================================
-// INTERFACES & DATA
-// ==========================================
+const { height } = Dimensions.get('window');
 
-interface InTransitLoadData {
-    id: string;
-    pickupCity: string;
-    pickupAddress: string;
-    dropCity: string;
-    dropAddress: string;
-    pickupDate: string;
-    expectedDeliveryDate: string;
-    currentStatus: 'at_pickup' | 'loading' | 'en_route' | 'unloading';
-    statusLabel: string;
-    driverName: string;
-    driverPhone: string;
-    driverImage: string;
-    truckNumber: string;
-    vehicleNumber: string;
-    truckerRating: number;
-    eta: string;
-    lastUpdated: string;
-    progress: number;
-    materialType: string;
-    quantity: string;
-    vehicleType: string;
-    price: string;
-}
-
-const inTransitLoadsData: InTransitLoadData[] = [
-    {
-        id: 'LID-883492',
-        pickupCity: 'Mumbai',
-        pickupAddress: 'Andheri East, Mumbai, Maharashtra 400069',
-        dropCity: 'New Delhi',
-        dropAddress: 'Connaught Place, New Delhi, Delhi 110001',
-        pickupDate: 'Jan 10, 10:00 AM',
-        expectedDeliveryDate: 'Jan 12, 6:00 PM',
-        currentStatus: 'en_route',
-        statusLabel: 'En Route',
-        driverName: 'Rajesh Kumar',
-        driverPhone: '+91 98765 43210',
-        driverImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-        truckNumber: 'MH 12 AB 1234',
-        vehicleNumber: 'MH 12 AB 1234',
-        truckerRating: 4.8,
-        eta: '8 hours',
-        lastUpdated: '5 mins ago',
-        progress: 60,
-        materialType: 'Electronics & Gadgets',
-        quantity: '10 Tonnes',
-        vehicleType: 'Closed Body / Container',
-        price: '₹45,000',
-    },
-    {
-        id: 'LID-775231',
-        pickupCity: 'Bangalore',
-        pickupAddress: 'Whitefield, Bangalore, Karnataka 560066',
-        dropCity: 'Chennai',
-        dropAddress: 'T Nagar, Chennai, Tamil Nadu 600017',
-        pickupDate: 'Jan 11, 6:00 PM',
-        expectedDeliveryDate: 'Jan 12, 2:00 AM',
-        currentStatus: 'loading',
-        statusLabel: 'Loading',
-        driverName: 'Suresh Singh',
-        driverPhone: '+91 87654 32109',
-        driverImage: 'https://randomuser.me/api/portraits/men/45.jpg',
-        truckNumber: 'KA 05 XY 5678',
-        vehicleNumber: 'KA 05 XY 5678',
-        truckerRating: 4.9,
-        eta: '6 hours',
-        lastUpdated: '2 mins ago',
-        progress: 25,
-        materialType: 'Furniture & Home Goods',
-        quantity: '8 Tonnes',
-        vehicleType: 'Open Body',
-        price: '₹18,500',
-    },
-];
+// ── Components ───────────────────────────────────────────────────────────────
 
 // ==========================================
 // COMPONENT
 // ==========================================
 
 const ShipperInTransit: React.FC = () => {
-    const navigation = useNavigation();
-    const [selectedLoad, setSelectedLoad] = useState<InTransitLoadData | null>(null);
+    const navigation = useNavigation<any>();
+    const [selectedLoad, setSelectedLoad] = useState<any | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [loads, setLoads] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-    const openDetail = (load: InTransitLoadData) => {
+    const fetchLoads = async (showLoading = true) => {
+        if (showLoading) setLoading(true);
+        try {
+            const response = await axiosInstance.post(END_POINTS.GET_LOAD_BY_STATUS, {
+                status: 'in-transit'
+            });
+            if (response?.data?.success) {
+                setLoads(response.data.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching transit loads:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchLoads();
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchLoads(false);
+    };
+
+    const openDetail = (load: any) => {
         setSelectedLoad(load);
         setShowDetailModal(true);
+    };
+
+    const callDriver = (phone: string) => {
+        if (phone) {
+            Linking.openURL(`tel:${phone}`);
+        }
     };
 
     const getStatusColor = (status: string) => {
@@ -122,7 +90,7 @@ const ShipperInTransit: React.FC = () => {
         }
     };
 
-    const renderLoadCard = (load: InTransitLoadData) => (
+    const renderLoadCard = (load: any) => (
         <TouchableOpacity
             key={load.id}
             style={styles.loadCard}
@@ -131,11 +99,11 @@ const ShipperInTransit: React.FC = () => {
         >
             {/* Card Header */}
             <View style={styles.cardHeader}>
-                <Text style={styles.loadIdText}>{load.id}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(load.currentStatus)}15` }]}>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(load.currentStatus) }]} />
-                    <Text style={[styles.statusText, { color: getStatusColor(load.currentStatus) }]}>
-                        {load.statusLabel}
+                <Text style={styles.loadIdText}>{load.load_id || 'N/A'}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor('en_route')}15` }]}>
+                    <View style={[styles.statusDot, { backgroundColor: getStatusColor('en_route') }]} />
+                    <Text style={[styles.statusText, { color: getStatusColor('en_route') }]}>
+                        In Transit
                     </Text>
                 </View>
             </View>
@@ -144,7 +112,7 @@ const ShipperInTransit: React.FC = () => {
             <View style={styles.routeContainer}>
                 <View style={styles.routePoint}>
                     <View style={styles.routeDotGreen} />
-                    <Text style={styles.routeCity} numberOfLines={1}>{load.pickupCity}</Text>
+                    <Text style={styles.routeCity} numberOfLines={1}>{load.loading_city_state || 'N/A'}</Text>
                 </View>
                 <View style={styles.routeMiddle}>
                     <View style={styles.routeLine} />
@@ -157,39 +125,51 @@ const ShipperInTransit: React.FC = () => {
                 </View>
                 <View style={styles.routePoint}>
                     <View style={styles.routeDotRed} />
-                    <Text style={styles.routeCity} numberOfLines={1}>{load.dropCity}</Text>
+                    <Text style={styles.routeCity} numberOfLines={1}>{load.unloading_city_state || 'N/A'}</Text>
                 </View>
             </View>
 
-            {/* Driver Info */}
+            {/* Agent Info (Support Section) */}
             <View style={styles.driverSection}>
-                <Image source={{ uri: load.driverImage }} style={styles.driverImage} />
+                {load.agent_info?.profile_img ? (
+                    <Image source={{ uri: load.agent_info?.profile_img }} style={styles.driverImage} />
+                ) : (
+                    <View style={[styles.driverImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#eff6ff' }]}>
+                        <Ionicons name="headset" size={20} color="#3b82f6" />
+                    </View>
+                )}
                 <View style={styles.driverInfo}>
-                    <Text style={styles.driverName}>{load.driverName}</Text>
-                    <Text style={styles.truckNumber}>{load.truckNumber}</Text>
+                    <Text style={styles.driverName}>{load.agent_info?.name || 'Support Agent'}</Text>
+                    <Text style={styles.truckNumber}>Contact agent for any assistance</Text>
                 </View>
-                <TouchableOpacity style={styles.callButton}>
+                <TouchableOpacity
+                    style={[styles.callButton, { backgroundColor: '#3b82f6' }]}
+                    onPress={() => callDriver(load.agent_info?.number)}
+                >
                     <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                         <Path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </Svg>
                 </TouchableOpacity>
             </View>
 
-            {/* ETA & Last Updated */}
-            <View style={styles.infoRow}>
-                <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>ETA</Text>
-                    <Text style={styles.infoValue}>{load.eta}</Text>
-                </View>
-                <View style={styles.infoDivider} />
-                <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Last Updated</Text>
-                    <Text style={styles.infoValue}>{load.lastUpdated}</Text>
+            {/* Price & Payment Summary on Card */}
+            <View style={styles.priceSummaryCard}>
+                <View style={styles.priceRow}>
+                    <View>
+                        <Text style={styles.priceLabelSmall}>Final Settled Price</Text>
+                        <Text style={styles.priceValueFinal}>₹{parseFloat(load.setteled_price || '0').toLocaleString('en-IN')}</Text>
+                    </View>
+                    <View style={styles.paymentStatusBadge}>
+                        <Text style={styles.paymentStatusText}>90% Paid</Text>
+                    </View>
                 </View>
             </View>
 
             {/* Track Button */}
-            <TouchableOpacity style={styles.trackButton}>
+            <TouchableOpacity
+                style={styles.trackButton}
+                onPress={() => navigation.navigate(STACKS.SHIPPER_TRACK_DETAIL, { load })}
+            >
                 <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                     <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     <Path d="M12 13a3 3 0 100-6 3 3 0 000 6z" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -230,18 +210,33 @@ const ShipperInTransit: React.FC = () => {
                 </TouchableOpacity>
                 <Text style={styles.screenTitle}>In-Transit Loads</Text>
                 <View style={styles.loadCountChip}>
-                    <Text style={styles.loadCountText}>2 Active</Text>
+                    <Text style={styles.loadCountText}>{loads.length} Active</Text>
                 </View>
             </View>
 
-            <FlatList
-                data={inTransitLoadsData}
-                keyExtractor={(item: InTransitLoadData) => item.id}
-                renderItem={({ item }: { item: InTransitLoadData }) => renderLoadCard(item)}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-                ListFooterComponent={<View style={{ height: 40 }} />}
-            />
+            {loading && !refreshing ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color="#3b82f6" />
+                </View>
+            ) : (
+                <FlatList
+                    data={loads}
+                    keyExtractor={(item: any) => item.id?.toString() || Math.random().toString()}
+                    renderItem={({ item }: { item: any }) => renderLoadCard(item)}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#3b82f6']} />
+                    }
+                    ListFooterComponent={<View style={{ height: 40 }} />}
+                    ListEmptyComponent={
+                        <View style={{ marginTop: 100, alignItems: 'center' }}>
+                            <Ionicons name="cube-outline" size={64} color="#cbd5e1" />
+                            <Text style={{ fontSize: 18, fontWeight: '700', color: '#475569', marginTop: 16 }}>No in-transit loads</Text>
+                        </View>
+                    }
+                />
+            )}
 
             {/* Detail Modal */}
             {selectedLoad && (
@@ -273,14 +268,14 @@ const ShipperInTransit: React.FC = () => {
                             {/* Load ID & Status */}
                             <View style={styles.detailTopCard}>
                                 <View style={styles.detailTopRow}>
-                                    <Text style={styles.detailLoadId}>{selectedLoad.id}</Text>
-                                    <View style={styles.detailStatusBadge}>
-                                        <Text style={[styles.detailStatusText, { color: getStatusColor(selectedLoad.currentStatus) }]}>
-                                            {selectedLoad.statusLabel}
+                                    <Text style={styles.detailLoadId}>{selectedLoad.load_id || 'N/A'}</Text>
+                                    <View style={[styles.detailStatusBadge, { backgroundColor: `${getStatusColor('en_route')}15` }]}>
+                                        <Text style={[styles.detailStatusText, { color: getStatusColor('en_route') }]}>
+                                            In Transit
                                         </Text>
                                     </View>
                                 </View>
-                                <Text style={styles.detailPostedOn}>Pickup: {selectedLoad.pickupDate}</Text>
+                                <Text style={styles.detailPostedOn}>Date: {selectedLoad.date || 'N/A'}</Text>
                             </View>
 
                             {/* Route Card */}
@@ -291,7 +286,10 @@ const ShipperInTransit: React.FC = () => {
                                         <View style={[styles.detailRouteDot, { backgroundColor: '#22c55e' }]} />
                                         <View style={styles.detailRouteInfo}>
                                             <Text style={styles.detailRouteLabel}>Pickup Location</Text>
-                                            <Text style={styles.detailRouteAddress}>{selectedLoad.pickupAddress}</Text>
+                                            <Text style={styles.detailRouteAddress}>{selectedLoad.origin_location || selectedLoad.loading_city_state || 'N/A'}</Text>
+                                            {selectedLoad.exact_origin_location && (
+                                                <Text style={styles.detailExactAddress}>📌 {selectedLoad.exact_origin_location}</Text>
+                                            )}
                                         </View>
                                     </View>
                                     <View style={styles.detailRouteConnector} />
@@ -299,7 +297,10 @@ const ShipperInTransit: React.FC = () => {
                                         <View style={[styles.detailRouteDot, { backgroundColor: '#ef4444' }]} />
                                         <View style={styles.detailRouteInfo}>
                                             <Text style={styles.detailRouteLabel}>Drop Location</Text>
-                                            <Text style={styles.detailRouteAddress}>{selectedLoad.dropAddress}</Text>
+                                            <Text style={styles.detailRouteAddress}>{selectedLoad.destination_location || selectedLoad.unloading_city_state || 'N/A'}</Text>
+                                            {selectedLoad.exact_destination_location && (
+                                                <Text style={styles.detailExactAddress}>📌 {selectedLoad.exact_destination_location}</Text>
+                                            )}
                                         </View>
                                     </View>
                                 </View>
@@ -311,38 +312,91 @@ const ShipperInTransit: React.FC = () => {
                                 <View style={styles.detailInfoGrid}>
                                     <View style={styles.detailInfoItem}>
                                         <Text style={styles.detailInfoLabel}>Material Type</Text>
-                                        <Text style={styles.detailInfoValue}>{selectedLoad.materialType}</Text>
+                                        <Text style={styles.detailInfoValue}>{selectedLoad.material?.name || selectedLoad.meterial || 'N/A'}</Text>
                                     </View>
                                     <View style={styles.detailInfoItem}>
                                         <Text style={styles.detailInfoLabel}>Quantity</Text>
-                                        <Text style={styles.detailInfoValue}>{selectedLoad.quantity}</Text>
+                                        <Text style={styles.detailInfoValue}>{selectedLoad.meterial_quantity || 'N/A'} Tons</Text>
                                     </View>
                                     <View style={styles.detailInfoItem}>
                                         <Text style={styles.detailInfoLabel}>Vehicle Type</Text>
-                                        <Text style={styles.detailInfoValue}>{selectedLoad.vehicleType}</Text>
+                                        <Text style={styles.detailInfoValue}>{selectedLoad.vehicle_type?.vehicle_name || 'N/A'}</Text>
                                     </View>
                                 </View>
                             </View>
 
-                            {/* Trucker Info Card */}
+                            {/* Agent Info Card */}
                             <View style={styles.detailCard}>
-                                <Text style={styles.detailCardTitle}>🚛 Trucker Information</Text>
+                                <Text style={styles.detailCardTitle}>🤝 Dedicated Support</Text>
                                 <View style={styles.detailTruckerSection}>
-                                    <Image source={{ uri: selectedLoad.driverImage }} style={styles.detailTruckerImage} />
+                                    {selectedLoad.agent_info?.profile_img ? (
+                                        <Image source={{ uri: selectedLoad.agent_info?.profile_img }} style={styles.detailTruckerImage} />
+                                    ) : (
+                                        <View style={[styles.detailTruckerImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#eff6ff' }]}>
+                                            <Ionicons name="headset" size={32} color="#3b82f6" />
+                                        </View>
+                                    )}
                                     <View style={styles.detailTruckerInfo}>
-                                        <Text style={styles.detailTruckerName}>{selectedLoad.driverName}</Text>
-                                        <Text style={styles.detailVehicleNumber}>{selectedLoad.vehicleNumber}</Text>
-                                        <View style={styles.detailRatingRow}>
-                                            <Text style={styles.detailRatingText}>★ {selectedLoad.truckerRating}</Text>
+                                        <Text style={styles.detailTruckerName}>{selectedLoad.agent_info?.name || 'Support Agent'}</Text>
+                                        <Text style={styles.detailVehicleNumber}>Your dedicated assistant for this load</Text>
+                                        <TouchableOpacity
+                                            style={styles.detailRatingRow}
+                                            onPress={() => callDriver(selectedLoad.agent_info?.number)}
+                                        >
+                                            <Ionicons name="call" size={14} color="#3b82f6" style={{ marginRight: 6 }} />
+                                            <Text style={styles.detailDriverPhone}>{selectedLoad.agent_info?.number || 'Contact Support'}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Price Negotiation Card */}
+                            <View style={styles.detailCard}>
+                                <Text style={styles.detailCardTitle}>💰 Price Negotiation</Text>
+
+                                <View style={styles.priceStoryCard}>
+                                    <View style={styles.priceColumn}>
+                                        <Text style={styles.priceLabelSmall}>You Posted</Text>
+                                        <Text style={styles.priceValueStrikethrough}>₹{parseFloat(selectedLoad.price || '0').toLocaleString('en-IN')}</Text>
+                                    </View>
+
+                                    <View style={styles.priceArrowSection}>
+                                        <Ionicons name="arrow-forward" size={16} color="#64748b" />
+                                    </View>
+
+                                    <View style={styles.priceColumn}>
+                                        <Text style={styles.priceLabelSmall}>Settled Price</Text>
+                                        <Text style={styles.priceValueFinal}>₹{parseFloat(selectedLoad.setteled_price || '0').toLocaleString('en-IN')}</Text>
+                                    </View>
+                                </View>
+
+                                {/* Payment Breakdown */}
+                                <View style={styles.paymentBreakdownCard}>
+                                    <View style={styles.paymentRow}>
+                                        <View>
+                                            <Text style={styles.paymentLabel}>Advance Paid (90%)</Text>
+                                            <Text style={styles.paymentValue}>₹{parseFloat(selectedLoad.payment_settlement?.shipper_paid_amount || '0').toLocaleString('en-IN')}</Text>
+                                        </View>
+                                        <View style={[styles.paymentStatusBadge, { backgroundColor: '#dcfce7' }]}>
+                                            <Text style={[styles.paymentStatusText, { color: '#166534' }]}>PAID</Text>
                                         </View>
                                     </View>
-                                </View>
-                            </View>
 
-                            {/* Price Card */}
-                            <View style={[styles.detailCard, { marginBottom: 40 }]}>
-                                <Text style={styles.detailCardTitle}>💰 Price</Text>
-                                <Text style={styles.detailPriceValue}>{selectedLoad.price}</Text>
+                                    <View style={styles.paymentDivider} />
+
+                                    <View style={styles.paymentRow}>
+                                        <View>
+                                            <Text style={[styles.paymentLabel, { color: '#64748b' }]}>Balance Due (10%)</Text>
+                                            <Text style={[styles.paymentValue, { color: '#64748b' }]}>₹{parseFloat(selectedLoad.payment_settlement?.shipper_due_amount || '0').toLocaleString('en-IN')}</Text>
+                                        </View>
+                                        <Text style={styles.payLaterText}>Due after delivery</Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.managerNoteBox}>
+                                    <Ionicons name="information-circle" size={14} color="#059669" />
+                                    <Text style={styles.managerNoteText}>This final price was settled by our Sales Manager after negotiation.</Text>
+                                </View>
                             </View>
                         </ScrollView>
                     </View>
@@ -701,6 +755,17 @@ const styles = StyleSheet.create({
         color: '#0f172a',
         lineHeight: 20,
     },
+    detailExactAddress: {
+        fontSize: 12,
+        color: '#3b82f6',
+        fontWeight: '600',
+        marginTop: 4,
+        backgroundColor: '#eff6ff',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+        alignSelf: 'flex-start',
+    },
     detailRouteConnector: {
         width: 2,
         height: 20,
@@ -769,6 +834,114 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#0f172a',
+    },
+    priceSummaryCard: {
+        backgroundColor: '#f8fafc',
+        borderRadius: 12,
+        padding: 12,
+        marginTop: 12,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+    },
+    priceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    priceLabelSmall: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#64748b',
+        textTransform: 'uppercase',
+        marginBottom: 2,
+    },
+    priceValueFinal: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#0f172a',
+    },
+    priceValueStrikethrough: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#94a3b8',
+        textDecorationLine: 'line-through',
+    },
+    paymentStatusBadge: {
+        backgroundColor: '#dcfce7',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    paymentStatusText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#166534',
+    },
+    priceStoryCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#f8fafc',
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 12,
+    },
+    priceColumn: {
+        flex: 1,
+    },
+    priceArrowSection: {
+        paddingHorizontal: 12,
+    },
+    paymentBreakdownCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        marginBottom: 12,
+    },
+    paymentRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    paymentLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#0f172a',
+        marginBottom: 2,
+    },
+    paymentValue: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#0f172a',
+    },
+    paymentDivider: {
+        height: 1,
+        backgroundColor: '#f1f5f9',
+        marginVertical: 10,
+    },
+    payLaterText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#64748b',
+        fontStyle: 'italic',
+    },
+    managerNoteBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ecfdf5',
+        padding: 10,
+        borderRadius: 8,
+        marginTop: 4,
+    },
+    managerNoteText: {
+        fontSize: 12,
+        color: '#059669',
+        fontWeight: '500',
+        marginLeft: 6,
+        flex: 1,
     },
 });
 
