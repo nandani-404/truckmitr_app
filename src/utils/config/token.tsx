@@ -22,9 +22,16 @@ export const getUserData = async (): Promise<string | null> => {
 
 export const deleteUserData = async () => {
     try {
-        await AsyncStorage.removeItem('@user_token');
-        await AsyncStorage.removeItem('subscription_modal_closed_count');
-        console.log('User token deleted successfully.');
+        // Clear all user-related data from AsyncStorage
+        await AsyncStorage.multiRemove([
+            '@user_token',
+            'subscription_modal_closed_count',
+            'app_session_active',
+            'SELECTED_MODULE',
+            'PENDING_NOTIFICATION_SCREEN',
+            'signup_incomplete',
+        ]);
+        console.log('User data and cache deleted successfully.');
     } catch (error) {
         console.log('Error deleting data from AsyncStorage:', error);
     }

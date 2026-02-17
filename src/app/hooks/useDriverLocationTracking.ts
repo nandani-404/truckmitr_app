@@ -11,8 +11,8 @@
 import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import Geolocation from 'react-native-geolocation-service';
-import axiosInstance from 'src/utils/config/axiosInstance';
-import { END_POINTS } from 'src/utils/config';
+import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
+import { END_POINTS } from '@truckmitr/src/utils/config';
 import { Platform, PermissionsAndroid } from 'react-native';
 
 // Calculate distance between two coordinates in meters (Haversine formula)
@@ -32,7 +32,8 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 };
 
 export function useDriverLocationTracking() {
-    const { user } = useSelector((state: any) => state.user) || {};
+    const userState = useSelector((state: any) => state?.user);
+    const user = userState?.user || null;
 
     // Refs for location tracking
     const watchIdRef = useRef<number | null>(null);
@@ -80,119 +81,148 @@ export function useDriverLocationTracking() {
 
     // Start location tracking
     const startLocationTracking = async () => {
-        if (isTrackingRef.current) {
-            console.log('ℹ️ [GLOBAL TRACKING] Already tracking, skipping start');
-            return;
-        }
-
-        // Request permissions safely
-        if (Platform.OS === 'android') {
-            await PermissionsAndroid.request(
-                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            );
-        } else {
-            await Geolocation.requestAuthorization('always');
-        }
-
-        console.log('🚀 [GLOBAL TRACKING] Starting location tracking');
-        console.log('📍 [GLOBAL TRACKING] Trip ID:', tripIdRef.current);
-        console.log('👤 [GLOBAL TRACKING] Driver ID:', user?.id);
-
-        isTrackingRef.current = true;
-
-        // Watch position changes
-        watchIdRef.current = Geolocation.watchPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-
-                console.log('📍 [GLOBAL TRACKING] New position:', {
-                    lat: latitude.toFixed(6),
-                    lng: longitude.toFixed(6),
-                    accuracy: position.coords.accuracy?.toFixed(2)
-                });
-
-                // Check if we should update (moved 30m or more)
-                if (lastLocationRef.current) {
-                    const distance = calculateDistance(
-                        lastLocationRef.current.latitude,
-                        lastLocationRef.current.longitude,
-                        latitude,
-                        longitude
-                    );
-
-                    console.log(`📏 [GLOBAL TRACKING] Distance: ${distance.toFixed(2)}m`);
-
-                    if (distance >= 30) {
-                        console.log('✅ [GLOBAL TRACKING] Moved 30m+, updating server');
-                        updateLocationToServer(latitude, longitude);
-                        lastLocationRef.current = { latitude, longitude };
-                    } else {
-                        console.log(`⏸️ [GLOBAL TRACKING] Distance < 30m, skipping (${distance.toFixed(2)}m)`);
-                    }
-                } else {
-                    // First location update
-                    console.log('🎯 [GLOBAL TRACKING] First location, updating server');
-                    updateLocationToServer(latitude, longitude);
-                    lastLocationRef.current = { latitude, longitude };
-                }
-            },
-            (error) => {
-                console.error('❌ [GLOBAL TRACKING] GPS Error:', error.message);
-            },
-            {
-                enableHighAccuracy: true,
-                distanceFilter: 10,
-                interval: 10000,
-                fastestInterval: 5000,
-                accuracy: {
-                    android: 'high',
-                    ios: 'best',
-                },
-                showsBackgroundLocationIndicator: true,
-                allowsBackgroundLocationUpdates: true, // Critical for iOS background
-                pausesLocationUpdatesAutomatically: false, // Prevent stopping in background
-                activityType: 'automotiveNavigation',
-                forceRequestLocation: true,
-                showLocationDialog: true,
-            } as any
-        );
-
-        // Set up 30-second fallback timer
-        fallbackIntervalRef.current = setInterval(() => {
-            const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-            const thirtySeconds = 30 * 1000;
-
-            if (timeSinceLastUpdate >= thirtySeconds) {
-                console.log('⏰ [GLOBAL TRACKING] 30 seconds passed, forcing update');
-
-                Geolocation.getCurrentPosition(
-                    (position) => {
-                        const { latitude, longitude } = position.coords;
-                        updateLocationToServer(latitude, longitude);
-                        lastLocationRef.current = { latitude, longitude };
-                    },
-                    (error) => {
-                        console.error('❌ [GLOBAL TRACKING] Fallback error:', error.message);
-
-                        // Use last known location
-                        if (lastLocationRef.current) {
-                            console.log('🔄 [GLOBAL TRACKING] Using last known location');
-                            updateLocationToServer(
-                                lastLocationRef.current.latitude,
-                                lastLocationRef.current.longitude
-                            );
-                        }
-                    },
-                    {
-                        enableHighAccuracy: false,
-                        timeout: 30000,
-                        maximumAge: 60000
-                    }
-                );
+        try {
+            if (isTrackingRef.current) {
+                console.log('ℹ️ [GLOBAL TRACKING] Already tracking, skipping start');
+                return;
             }
-        }, 10000);
 
-        console.log('✅ [GLOBAL TRACKING] Tracking started successfully');
+            // Request permissions safely
+            if (Platform.OS === 'android') {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                );
+                if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                    console.log('❌ [GLOBAL TRACKING] Location permission denied');
+                    return;
+                }
+            } else {
+                const authStatus = await Geolocation.requestAuthorization('always');
+                if (authStatus !== 'granted') {
+                    console.log('❌ [GLOBAL TRACKING] Location permission denied');
+                    return;
+                }
+            }
+
+            console.log('🚀 [GLOBAL TRACKING] Starting location tracking');
+            console.log('📍 [GLOBAL TRACKING] Trip ID:', tripIdRef.current);
+            console.log('👤 [GLOBAL TRACKING] Driver ID:', user?.id);
+
+            isTrackingRef.current = true;
+
+            // Watch position changes
+            const locationOptions = Platform.OS === 'ios'
+                ? {
+                    enableHighAccuracy: true,
+                    distanceFilter: 10,
+                    showsBackgroundLocationIndicator: true,
+                    allowsBackgroundLocationUpdates: true,
+                    pausesLocationUpdatesAutomatically: false,
+                    activityType: 'automotiveNavigation',
+                }
+                : {
+                    enableHighAccuracy: true,
+                    distanceFilter: 10,
+                    interval: 10000,
+                    fastestInterval: 5000,
+                    forceRequestLocation: true,
+                    showLocationDialog: true,
+                    // Android specific: explicitly disable iOS keys just in case
+                };
+
+            watchIdRef.current = Geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+
+                    console.log('📍 [GLOBAL TRACKING] New position:', {
+                        lat: latitude.toFixed(6),
+                        lng: longitude.toFixed(6),
+                        accuracy: position.coords.accuracy?.toFixed(2)
+                    });
+
+                    // Check if we should update (moved 30m or more)
+                    if (lastLocationRef.current) {
+                        const distance = calculateDistance(
+                            lastLocationRef.current.latitude,
+                            lastLocationRef.current.longitude,
+                            latitude,
+                            longitude
+                        );
+
+                        console.log(`📏 [GLOBAL TRACKING] Distance: ${distance.toFixed(2)}m`);
+
+                        if (distance >= 30) {
+                            console.log('✅ [GLOBAL TRACKING] Moved 30m+, updating server');
+                            updateLocationToServer(latitude, longitude);
+                            lastLocationRef.current = { latitude, longitude };
+                        } else {
+                            console.log(`⏸️ [GLOBAL TRACKING] Distance < 30m, skipping (${distance.toFixed(2)}m)`);
+                        }
+                    } else {
+                        // First location update
+                        console.log('🎯 [GLOBAL TRACKING] First location, updating server');
+                        updateLocationToServer(latitude, longitude);
+                        lastLocationRef.current = { latitude, longitude };
+                    }
+                },
+                (error) => {
+                    console.error('❌ [GLOBAL TRACKING] GPS Error:', error.message);
+                },
+                locationOptions as any
+            );
+
+            // Set up 30-second fallback timer
+            fallbackIntervalRef.current = setInterval(() => {
+                const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
+                const thirtySeconds = 30 * 1000;
+
+                if (timeSinceLastUpdate >= thirtySeconds) {
+                    console.log('⏰ [GLOBAL TRACKING] 30 seconds passed, forcing update');
+
+                    try {
+                        // Android options for getCurrentPosition
+                        const fallbackOptions = Platform.OS === 'ios'
+                            ? {
+                                enableHighAccuracy: true,
+                                timeout: 20000,
+                                maximumAge: 10000
+                            }
+                            : {
+                                enableHighAccuracy: true,
+                                timeout: 30000,
+                                maximumAge: 60000,
+                                forceRequestLocation: true,
+                                showLocationDialog: true
+                            };
+
+                        Geolocation.getCurrentPosition(
+                            (position) => {
+                                const { latitude, longitude } = position.coords;
+                                // Validating coordinates before update
+                                if (latitude && longitude) {
+                                    updateLocationToServer(latitude, longitude);
+                                    lastLocationRef.current = { latitude, longitude };
+                                } else {
+                                    console.warn('⚠️ [GLOBAL TRACKING] Invalid fallback coordinates received');
+                                }
+                            },
+                            (error) => {
+                                console.error('❌ [GLOBAL TRACKING] Fallback error:', error.message);
+                                // Do not use last location blindly on error to avoid stale data loops
+                            },
+                            fallbackOptions
+                        );
+                    } catch (err) {
+                        console.error('❌ [GLOBAL TRACKING] Fallback exception:', err);
+                    }
+                }
+            }, 10000);
+
+            console.log('✅ [GLOBAL TRACKING] Tracking started successfully');
+        } catch (error: any) {
+            console.error('❌ [GLOBAL TRACKING] Error starting tracking:', error?.message);
+            isTrackingRef.current = false;
+        }
     };
 
     // Stop location tracking
@@ -245,7 +275,7 @@ export function useDriverLocationTracking() {
 
                 if (tripStatus === 'active') {
                     tripIdRef.current = tripId;
-                    startLocationTracking();
+                    await startLocationTracking();
 
                     // Start periodic trip status check (every 30 seconds)
                     if (!tripStatusCheckIntervalRef.current) {
@@ -288,22 +318,29 @@ export function useDriverLocationTracking() {
         }
     };
 
-    // Main effect - check for active trip on mount
-    useEffect(() => {
-        console.log('═══════════════════════════════════════════════════════════');
-        console.log('🎬 [GLOBAL TRACKING] Hook mounted');
-        console.log('👤 [GLOBAL TRACKING] User ID:', user?.id);
-        console.log('═══════════════════════════════════════════════════════════');
+    // Main effect - check for active trip on mount with delay
+    // useEffect(() => {
+    //     let mounted = true;
 
-        if (user?.id) {
-            checkAndStartTracking();
-        }
+    //     console.log('═══════════════════════════════════════════════════════════');
+    //     console.log('🎬 [GLOBAL TRACKING] Hook mounted');
+    //     console.log('👤 [GLOBAL TRACKING] User ID:', user?.id);
+    //     console.log('═══════════════════════════════════════════════════════════');
 
-        return () => {
-            console.log('🎬 [GLOBAL TRACKING] Hook unmounting, stopping tracking');
-            stopLocationTracking();
-        };
-    }, [user?.id]);
+    //     // Add delay to prevent immediate execution on mount
+    //     const timer = setTimeout(() => {
+    //         if (mounted && user?.id) {
+    //             checkAndStartTracking();
+    //         }
+    //     }, 2000);
+
+    //     return () => {
+    //         mounted = false;
+    //         clearTimeout(timer);
+    //         console.log('🎬 [GLOBAL TRACKING] Hook unmounting, stopping tracking');
+    //         stopLocationTracking();
+    //     };
+    // }, [user?.id]);
 
     // Return nothing - this is a side-effect only hook
     return null;

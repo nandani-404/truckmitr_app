@@ -246,8 +246,13 @@ export default function DhabhaMyProfile() {
             console.warn('Analytics logout error:', error);
         }
 
+        // Clear all user data and caches
+        await deleteUserData();
+        
+        // Dispatch logout action to reset Redux state
+        dispatch({ type: 'AUTH_LOGOUT' });
         dispatch(userAuthenticatedAction(false));
-        deleteUserData();
+        
         setShowLogoutDialog(false);
     };
 
