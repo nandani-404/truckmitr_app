@@ -259,8 +259,14 @@ const ShipperTrackDetail = () => {
                 // Fetch initial location first
                 await fetchInitialLocation();
 
-                const origin = load?.loading_city_state || load?.origin || MOCK_TRACKING_DATA.origin;
-                const destination = load?.unloading_city_state || load?.destination || MOCK_TRACKING_DATA.destination;
+                // Use precise coordinates if available, otherwise fallback to city strings
+                const origin = (load?.origin_lat && load?.origin_lon)
+                    ? `${load.origin_lat},${load.origin_lon}`
+                    : (load?.loading_city_state || load?.origin || MOCK_TRACKING_DATA.origin);
+
+                const destination = (load?.destination_lat && load?.destination_lon)
+                    ? `${load.destination_lat},${load.destination_lon}`
+                    : (load?.unloading_city_state || load?.destination || MOCK_TRACKING_DATA.destination);
 
                 const apiKey = SECURE_CONFIG.GOOGLE_API_KEY;
                 const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${apiKey}`;
@@ -333,9 +339,11 @@ const ShipperTrackDetail = () => {
                         <Marker
                             coordinate={roadRoute[0]}
                             tracksViewChanges={tracksView}
+                            anchor={{ x: 0.5, y: 0.8 }}
                         >
-                            <View style={styles.markerContainer}>
-                                <View style={[styles.markerDot, { backgroundColor: C.success }]} />
+                            <View style={styles.prominentMarkerContainer}>
+                                <Ionicons name="location" size={32} color={C.success} />
+                                <View style={styles.markerInnerDot} />
                             </View>
                         </Marker>
                     )}
@@ -345,9 +353,11 @@ const ShipperTrackDetail = () => {
                         <Marker
                             coordinate={roadRoute[roadRoute.length - 1]}
                             tracksViewChanges={tracksView}
+                            anchor={{ x: 0.5, y: 0.8 }}
                         >
-                            <View style={styles.markerContainer}>
-                                <View style={[styles.markerDot, { backgroundColor: '#EF4444' }]} />
+                            <View style={styles.prominentMarkerContainer}>
+                                <Ionicons name="location" size={32} color="#EF4444" />
+                                <View style={styles.markerInnerDot} />
                             </View>
                         </Marker>
                     )}
@@ -390,6 +400,21 @@ const ShipperTrackDetail = () => {
                     </View>
                 )}
             </View>
+
+            {/* Legend above sheet */}
+            {!loading && (
+                <View style={styles.legendContainer}>
+                    <View style={styles.legendItem}>
+                        <View style={[styles.legendDot, { backgroundColor: C.success }]} />
+                        <Text style={styles.legendText}>Loading Point</Text>
+                    </View>
+                    <View style={styles.legendDivider} />
+                    <View style={styles.legendItem}>
+                        <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+                        <Text style={styles.legendText}>Unloading Point</Text>
+                    </View>
+                </View>
+            )}
 
             {/* Bottom Info Sheet */}
             <View style={styles.infoSheet}>
@@ -447,7 +472,7 @@ const ShipperTrackDetail = () => {
                                 <View style={styles.line} />
                             </View>
                             <View style={styles.locationInfo}>
-                                <Text style={styles.locLabel}>Origin</Text>
+                                <Text style={styles.locLabel}>Loading Point</Text>
                                 <Text style={styles.locValue}>
                                     {load?.origin_location || load?.loading_city_state || load?.origin || 'N/A'}
                                 </Text>
@@ -461,7 +486,7 @@ const ShipperTrackDetail = () => {
                                 <Ionicons name="location" size={16} color="#EF4444" />
                             </View>
                             <View style={styles.locationInfo}>
-                                <Text style={styles.locLabel}>Destination</Text>
+                                <Text style={styles.locLabel}>Unloading Point</Text>
                                 <Text style={styles.locValue}>
                                     {load?.destination_location || load?.unloading_city_state || load?.destination || 'N/A'}
                                 </Text>
@@ -545,20 +570,72 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    markerContainer: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: 'rgba(255,255,255,0.8)',
-        justifyContent: 'center',
+    prominentMarkerContainer: {
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: C.white,
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 4,
+        elevation: 10,
     },
-    markerDot: {
+    markerInnerDot: {
+        position: 'absolute',
+        top: 6,
         width: 10,
         height: 10,
         borderRadius: 5,
+        backgroundColor: '#ffffff',
+    },
+    markerDot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+    },
+    legendContainer: {
+        position: 'absolute',
+        bottom: height * 0.45 + 10,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        alignItems: 'center',
+    },
+    legendItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    legendDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    legendText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#1e293b',
+        textTransform: 'uppercase',
+    },
+    legendDivider: {
+        width: 1,
+        height: 14,
+        backgroundColor: '#cbd5e1',
+        marginHorizontal: 16,
+    },
+    markerWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 5,
     },
     truckMarkerWrapper: {
         alignItems: 'center',

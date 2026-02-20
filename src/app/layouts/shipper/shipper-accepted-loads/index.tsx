@@ -267,6 +267,7 @@ const ShipperAcceptedLoads: React.FC = () => {
             {/* Route Section */}
             <View style={styles.routeContainer}>
                 <View style={styles.routePoint}>
+                    <Text style={styles.routeLabel}>Loading Point</Text>
                     <View style={styles.routeDotGreen} />
                     <Text style={styles.routeCity} numberOfLines={1}>{load.pickupCity}</Text>
                     {load.pickupState ? <Text style={styles.routeState} numberOfLines={1}>{load.pickupState}</Text> : null}
@@ -276,6 +277,7 @@ const ShipperAcceptedLoads: React.FC = () => {
                     <TruckIcon />
                 </View>
                 <View style={styles.routePoint}>
+                    <Text style={styles.routeLabel}>Unloading Point</Text>
                     <View style={styles.routeDotRed} />
                     <Text style={styles.routeCity} numberOfLines={1}>{load.dropCity}</Text>
                     {load.dropState ? <Text style={styles.routeState} numberOfLines={1}>{load.dropState}</Text> : null}
@@ -559,7 +561,7 @@ const ShipperAcceptedLoads: React.FC = () => {
                                 <View style={styles.detailRouteRow}>
                                     <View style={[styles.detailRouteDot, { backgroundColor: '#22c55e' }]} />
                                     <View style={styles.detailRouteInfo}>
-                                        <Text style={styles.detailRouteLabel}>Pickup Location</Text>
+                                        <Text style={styles.detailRouteLabel}>Loading Point</Text>
                                         <Text style={styles.detailRouteAddress}>{selectedLoad.pickupAddress}</Text>
                                         {selectedLoad.rawItem?.post_load?.exact_origin_location && (
                                             <Text style={styles.detailExactAddress}>📌 {selectedLoad.rawItem.post_load.exact_origin_location}</Text>
@@ -570,7 +572,7 @@ const ShipperAcceptedLoads: React.FC = () => {
                                 <View style={styles.detailRouteRow}>
                                     <View style={[styles.detailRouteDot, { backgroundColor: '#ef4444' }]} />
                                     <View style={styles.detailRouteInfo}>
-                                        <Text style={styles.detailRouteLabel}>Drop Location</Text>
+                                        <Text style={styles.detailRouteLabel}>Unloading Point</Text>
                                         <Text style={styles.detailRouteAddress}>{selectedLoad.dropAddress}</Text>
                                         {selectedLoad.rawItem?.post_load?.exact_destination_location && (
                                             <Text style={styles.detailExactAddress}>📌 {selectedLoad.rawItem.post_load.exact_destination_location}</Text>
@@ -771,7 +773,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 12,
-        paddingVertical: 6,
+        paddingVertical: 10, // Increased from 6
         justifyContent: 'space-between',
     },
     routePoint: {
@@ -807,6 +809,13 @@ const styles = StyleSheet.create({
         color: '#64748b',
         fontWeight: '500',
         textAlign: 'center',
+    },
+    routeLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#64748b',
+        textTransform: 'uppercase',
+        marginBottom: 2,
     },
     routeMiddle: {
         width: 60,

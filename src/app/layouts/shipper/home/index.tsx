@@ -309,7 +309,7 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                 <TouchableOpacity
                     style={styles.notifBtn}
                     onPress={isUnderApproval ? undefined : () => {
-                        // navigation.navigate(STACKS.SHIPPER_NOTIFICATIONS);
+                        navigation.navigate(STACKS.SHIPPER_NOTIFICATIONS);
                     }}
                     activeOpacity={isUnderApproval ? 1 : 0.7}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -441,7 +441,24 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                     ))}
                                 </View>
                             </TouchableOpacity>
-
+                            <TouchableOpacity
+                                style={styles.statCard}
+                                onPress={() => (navigation).navigate(STACKS.SHIPPER_IN_PROGRESS_LOADS)}
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.statCardHeader}>
+                                    <Text style={styles.statLabel}>{`In Progress\nLoads`}</Text>
+                                    <View style={[styles.statIconBadge, { backgroundColor: '#fdf2f8' }]}>
+                                        <Text style={styles.statIconText}>⚡</Text>
+                                    </View>
+                                </View>
+                                <Text style={[styles.statNum, { color: '#db2777' }]}>{dashboardData?.in_progress || 0}</Text>
+                                <View style={styles.statBarChartContainer}>
+                                    {[25, 18, 30, 22, 35, 28, 40].map((h, i) => (
+                                        <View key={i} style={[styles.statBar, { height: h, backgroundColor: '#db2777' }]} />
+                                    ))}
+                                </View>
+                            </TouchableOpacity>
                             <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate(STACKS.SHIPPER_IN_TRANSIT_LOADS)}>
                                 <View style={styles.statCardHeader}>
                                     <Text style={styles.statLabel}>In Transit Loads</Text>
@@ -487,26 +504,6 @@ const ShipperHome: React.FC<ShipperDashboardProps> = ({
                                     ))}
                                 </View>
                             </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.statCard}
-                                onPress={() => (navigation).navigate(STACKS.SHIPPER_IN_PROGRESS_LOADS)}
-                                activeOpacity={0.8}
-                            >
-                                <View style={styles.statCardHeader}>
-                                    <Text style={styles.statLabel}>{`In Progress\nLoads`}</Text>
-                                    <View style={[styles.statIconBadge, { backgroundColor: '#fdf2f8' }]}>
-                                        <Text style={styles.statIconText}>⚡</Text>
-                                    </View>
-                                </View>
-                                <Text style={[styles.statNum, { color: '#db2777' }]}>{dashboardData?.in_progress || 0}</Text>
-                                <View style={styles.statBarChartContainer}>
-                                    {[25, 18, 30, 22, 35, 28, 40].map((h, i) => (
-                                        <View key={i} style={[styles.statBar, { height: h, backgroundColor: '#db2777' }]} />
-                                    ))}
-                                </View>
-                            </TouchableOpacity>
-
                             <TouchableOpacity style={styles.statCard} onPress={() => (navigation).navigate('shipperCompletedLoads')}>
                                 <View style={styles.statCardHeader}>
                                     <Text style={styles.statLabel}>Completed Loads</Text>

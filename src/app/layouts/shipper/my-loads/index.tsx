@@ -163,6 +163,7 @@ const ShipperMyLoads: React.FC = () => {
                 {/* Route */}
                 <View style={mlStyles.routeContainer}>
                     <View style={mlStyles.routePoint}>
+                        <Text style={mlStyles.routeLabel}>Loading Point</Text>
                         <View style={mlStyles.routeDotGreen} />
                         <Text style={mlStyles.routeCity} numberOfLines={1}>{pickupCity}</Text>
                         {pickupState ? <Text style={mlStyles.routeState} numberOfLines={1}>{pickupState}</Text> : null}
@@ -172,6 +173,7 @@ const ShipperMyLoads: React.FC = () => {
                         <MLTruckIcon />
                     </View>
                     <View style={mlStyles.routePoint}>
+                        <Text style={mlStyles.routeLabel}>Unloading Point</Text>
                         <View style={mlStyles.routeDotRed} />
                         <Text style={mlStyles.routeCity} numberOfLines={1}>{dropCity}</Text>
                         {dropState ? <Text style={mlStyles.routeState} numberOfLines={1}>{dropState}</Text> : null}
@@ -272,7 +274,7 @@ const ShipperMyLoads: React.FC = () => {
                                 <View style={mlStyles.detailRouteRow}>
                                     <View style={[mlStyles.detailRouteDot, { backgroundColor: '#22c55e' }]} />
                                     <View style={mlStyles.detailRouteInfo}>
-                                        <Text style={mlStyles.detailRouteLabel}>Pickup Location</Text>
+                                        <Text style={mlStyles.detailRouteLabel}>Loading Point</Text>
                                         <Text style={mlStyles.detailRouteAddress}>{selectedLoad.origin_location || '—'}</Text>
                                         {selectedLoad.exact_origin_location && selectedLoad.exact_origin_location !== 'No' && (
                                             <Text style={mlStyles.detailExactAddress}>📌 {selectedLoad.exact_origin_location}</Text>
@@ -283,7 +285,7 @@ const ShipperMyLoads: React.FC = () => {
                                 <View style={mlStyles.detailRouteRow}>
                                     <View style={[mlStyles.detailRouteDot, { backgroundColor: '#ef4444' }]} />
                                     <View style={mlStyles.detailRouteInfo}>
-                                        <Text style={mlStyles.detailRouteLabel}>Drop Location</Text>
+                                        <Text style={mlStyles.detailRouteLabel}>Unloading Point</Text>
                                         <Text style={mlStyles.detailRouteAddress}>{selectedLoad.destination_location || '—'}</Text>
                                         {selectedLoad.exact_destination_location && selectedLoad.exact_destination_location !== 'No' && (
                                             <Text style={mlStyles.detailExactAddress}>📌 {selectedLoad.exact_destination_location}</Text>
@@ -504,7 +506,7 @@ const mlStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 12,
-        paddingVertical: 6,
+        paddingVertical: 10, // Increased from 6
         justifyContent: 'space-between',
     },
     routePoint: {
@@ -540,6 +542,13 @@ const mlStyles = StyleSheet.create({
         color: '#64748b',
         fontWeight: '500',
         textAlign: 'center',
+    },
+    routeLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#64748b',
+        textTransform: 'uppercase',
+        marginBottom: 2,
     },
     routeMiddle: {
         width: 60,

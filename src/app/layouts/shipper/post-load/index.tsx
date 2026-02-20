@@ -514,7 +514,7 @@ const ShipperPostLoad = () => {
                 unloading_city_state: unloadingCityState,
             };
             const response = await axiosInstance.post(END_POINTS.POST_LOAD_SUBMIT, payload);
-            if (response.data) {
+            if (response.data && response.data.success) {
                 Alert.alert('Success', 'Load Posted Successfully!', [
                     {
                         text: 'OK', onPress: () => {
@@ -523,10 +523,14 @@ const ShipperPostLoad = () => {
                         }
                     }
                 ]);
+            } else {
+                const errorMsg = response.data?.message || "Failed to post load. Please try again.";
+                showAlert(errorMsg, "Submission Error");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error posting load:', error);
-            showAlert("Failed to post load. Please try again later.", "Submission Error");
+            const serverError = error.response?.data?.message || "Failed to post load. Please try again later.";
+            showAlert(serverError, "Submission Error");
         } finally {
             setIsSubmitting(false);
         }

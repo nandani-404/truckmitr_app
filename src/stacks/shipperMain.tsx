@@ -23,6 +23,7 @@ import ShipperInTransitLoads from '../app/layouts/shipper/inTransitLoads';
 import ShipperPODPending from '../app/layouts/shipper/pod-pending';
 import ShipperInProgressLoads from '../app/layouts/shipper/shipper-in-progress-loads';
 import ShipperTrackDetail from '../app/layouts/shipper/track/detail';
+import ShipperNotifications from '../app/layouts/shipper/shipper-notifications';
 import LocationMap from '../app/layouts/main/location/map';
 import LocationSearch from '../app/layouts/main/location/search';
 
@@ -141,6 +142,7 @@ export default function ShipperMain() {
             <Stack.Screen name={STACKS.SHIPPER_POD_PENDING} component={ShipperPODPending} />
             <Stack.Screen name={STACKS.SHIPPER_IN_PROGRESS_LOADS} component={ShipperInProgressLoads} />
             <Stack.Screen name={STACKS.SHIPPER_TRACK_DETAIL} component={ShipperTrackDetail} />
+            <Stack.Screen name={STACKS.SHIPPER_NOTIFICATIONS} component={ShipperNotifications} />
             <Stack.Screen name={STACKS.MAP_VIEW} component={LocationMap} />
             <Stack.Screen name={STACKS.LOCATION_SEARCH} component={LocationSearch} />
         </Stack.Navigator>
