@@ -198,7 +198,7 @@ export function useDriverLocationTracking() {
                         const distance = calculateDistance(
                             lastLocationRef.current.latitude,
                             lastLocationRef.current.longitude,
-                            latitude,
+                                latitude,
                             longitude
                         );
 

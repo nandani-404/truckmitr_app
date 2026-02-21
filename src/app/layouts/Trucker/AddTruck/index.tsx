@@ -384,6 +384,84 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
 
     const safe = (val: any): string => (val != null ? String(val) : '');
 
+    const isDocumentValidStr = (dateStr: string | null | undefined): boolean => {
+        if (!dateStr || dateStr === 'N/A') return false;
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return false;
+        const year = parts[2].length === 4 ? Number(parts[2]) : Number(parts[0]);
+        const month = parts[2].length === 4 ? Number(parts[1]) : Number(parts[1]);
+        const day = parts[2].length === 4 ? Number(parts[0]) : Number(parts[2]);
+        if (isNaN(year) || isNaN(month) || isNaN(day)) return false;
+        const dobj = new Date(year, month - 1, day);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diff = Math.ceil((dobj.getTime() - today.getTime()) / (1000 * 3600 * 24));
+        return diff >= 5;
+    };
+
+    const formatDisplayDate = (dateStr: string) => {
+        if (!dateStr || dateStr === 'N/A') return 'N/A';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const day = parts[0].padStart(2, '0');
+            const month = months[Number(parts[1]) - 1];
+            const year = parts[2];
+            if (month) return `${day}-${month}-${year}`;
+        }
+        return dateStr;
+    };
+
+    const getVehicleAge = (regDate: string) => {
+        if (!regDate) return 'N/A';
+        const parts = regDate.split('-');
+        if (parts.length !== 3) return 'N/A';
+        const dobj = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+        const now = new Date();
+        let years = now.getFullYear() - dobj.getFullYear();
+        let months = now.getMonth() - dobj.getMonth();
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+        return `${years} Years & ${months} months`;
+    };
+
+    const StatusRow = ({ label, value, valueColor }: { label: string, value: string, valueColor?: string }) => (
+        <View style={rcStyles.row}>
+            <Text style={rcStyles.label}>{label}</Text>
+            <Text style={[rcStyles.value, valueColor && { color: valueColor }]}>{value || 'N/A'}</Text>
+        </View>
+    );
+
+    const RcSummaryCard = () => (
+        <View style={rcStyles.card}>
+            <StatusRow label="Vehicle Number" value={vehicleNumber} />
+            <StatusRow label="Owner Name" value={ownerName} />
+            <StatusRow label="Registering Authority" value={rtoName} />
+            <StatusRow label="Vehicle Class" value={vehicleClass} />
+            <StatusRow label="Fuel Type" value={fuelType} />
+            <StatusRow label="Emission Norm" value={"BHARAT STAGE VI"} />
+            <StatusRow label="Vehicle Age" value={getVehicleAge(registrationDate)} />
+            <StatusRow label="Hypothecated" value={hypothecation && hypothecation !== 'Not Financed' ? 'Yes' : 'No'} />
+            <StatusRow label="Vehicle Status" value={rcStatus || 'ACTIVE'} valueColor={C.success} />
+
+
+
+            <View style={rcStyles.divider} />
+
+            <StatusRow label="Registration Date" value={formatDisplayDate(registrationDate)} />
+            <StatusRow label="Fitness Valid UpTo" value={formatDisplayDate(fitnessValidUpto)} />
+            <StatusRow label="Tax Valid UpTo" value={formatDisplayDate(roadTaxPaidUpto)} />
+            <StatusRow label="Insurance Valid UpTo" value={formatDisplayDate(insuranceValidity)} valueColor={!isDocumentValidStr(insuranceValidity) ? C.danger : undefined} />
+            <StatusRow label="PUCC Valid Upto" value={formatDisplayDate(pollutionValidUpto)} valueColor={!isDocumentValidStr(pollutionValidUpto) ? C.danger : undefined} />
+            <StatusRow label="State Permit Valid UpTo" value={formatDisplayDate(statePermitValidity)} valueColor={!isDocumentValidStr(statePermitValidity) ? C.danger : undefined} />
+            <StatusRow label="National Permit Valid UpTo" value={formatDisplayDate(nationalPermitValidity)} valueColor={!isDocumentValidStr(nationalPermitValidity) ? C.danger : undefined} />
+
+
+        </View>
+    );
+
     // ── Verify RC handler (Real API) ──
     const handleVerifyRC = async () => {
         if (vehicleNumber.length < 5) {
@@ -464,7 +542,25 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                 setMakerModelDesc(safe(d.manufacturer_model));
 
                 setIsVerified(true);
-                Alert.alert('RC Verified', 'Vehicle details have been fetched successfully.');
+
+                const _puc = formatDate(d.puc_valid_upto);
+                const _ins = formatDate(d.insurance_validity);
+                const _perm = isNationalPermit
+                    ? formatDate(d.permit_validity_upto || d.npermit_upto)
+                    : formatDate(d.permit_validity_upto);
+
+                const pucValid = isDocumentValidStr(_puc);
+                const insValid = isDocumentValidStr(_ins);
+                const permValid = isDocumentValidStr(_perm);
+
+                if (!pucValid || !insValid || !permValid) {
+                    Alert.alert(
+                        'Document Expiry Warning',
+                        'One or more documents (PUC, Insurance, Permit) are expired or expiring within 5 days.'
+                    );
+                } else {
+                    Alert.alert('RC Verified', 'Vehicle details have been fetched successfully.');
+                }
             } else {
                 Alert.alert('Verification Failed', data?.message || 'Could not verify RC. Please check the number and try again.');
             }
@@ -539,6 +635,15 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
         }
         if (!vehicleType) {
             Alert.alert('Required', 'Please select a vehicle type.');
+            return;
+        }
+
+        const pucValid = isDocumentValidStr(pollutionValidUpto);
+        const insValid = isDocumentValidStr(insuranceValidity);
+        const permValid = isDocumentValidStr(nationalPermitValidity) || isDocumentValidStr(statePermitValidity);
+
+        if (!pucValid || !insValid || !permValid) {
+            Alert.alert('Validation Error', 'PUC, Insurance, or Permit must be valid for at least the next 5 days to proceed.');
             return;
         }
 
@@ -716,6 +821,8 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                     {/* ── Sections 2-9: Only visible after RC verification ── */}
                     {isVerified && (
                         <>
+                            <RcSummaryCard />
+
                             {/* ═══════════════════════════════════════════ */}
                             {/* 2. Owner Information                       */}
                             {/* ═══════════════════════════════════════════ */}
@@ -1155,6 +1262,66 @@ const modalStyles = StyleSheet.create({
     optionText: {
         fontSize: 15,
         color: C.text,
+    },
+});
+
+const rcStyles = StyleSheet.create({
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 24,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+        alignItems: 'flex-start',
+    },
+    label: {
+        fontSize: 14,
+        color: '#111827',
+        flex: 1,
+        fontWeight: '500',
+    },
+    value: {
+        fontSize: 14,
+        color: '#4B5563',
+        flex: 1,
+        textAlign: 'right',
+        fontWeight: '600',
+    },
+    linkBtn: {
+        marginVertical: 12,
+        alignItems: 'center',
+    },
+    linkText: {
+        color: '#38BDF8',
+        fontSize: 14,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#E5E7EB',
+        marginVertical: 16,
+    },
+    btnRow: {
+        marginTop: 16,
+        gap: 12,
+    },
+    actionBtn: {
+        backgroundColor: '#56B5F7',
+        borderRadius: 12,
+        paddingVertical: 14,
+        alignItems: 'center',
+    },
+    actionBtnText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 
