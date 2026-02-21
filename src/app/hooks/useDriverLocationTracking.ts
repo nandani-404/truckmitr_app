@@ -14,7 +14,6 @@ import Geolocation from 'react-native-geolocation-service';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
 import { Platform, PermissionsAndroid } from 'react-native';
-import CompassHeading from 'react-native-compass-heading';
 
 // Calculate distance between two coordinates in meters (Haversine formula)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -61,12 +60,11 @@ export function useDriverLocationTracking() {
     const isTrackingRef = useRef<boolean>(false);
     const tripStatusCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const lastHeadingRef = useRef<number>(0);
-    const compassHeadingRef = useRef<number>(0);
     const prevGpsPositionRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
-    // Get the best available heading: using GPS trajectory if moving, else compass magnetometer
+    // Get the best available heading: using GPS trajectory if moving, else GPS heading
     const getVehicleHead = (latitude: number, longitude: number, gpsHeading?: number | null): number => {
-        let finalHeading = Math.round(compassHeadingRef.current);
+        let finalHeading = (gpsHeading !== undefined && gpsHeading !== null && gpsHeading >= 0) ? Math.round(gpsHeading) : lastHeadingRef.current;
 
         if (prevGpsPositionRef.current) {
             const dist = calculateDistance(
@@ -83,10 +81,10 @@ export function useDriverLocationTracking() {
                 console.log(`🧭 [GLOBAL HEADING] Moved ${dist.toFixed(1)}m. Using True GPS Bearing: ${bearing}°`);
                 finalHeading = bearing;
             } else {
-                console.log(`🧭 [GLOBAL HEADING] Stationary. Using Compass Magnetometer: ${finalHeading}°`);
+                console.log(`🧭 [GLOBAL HEADING] Stationary. Using GPS Heading: ${finalHeading}°`);
             }
         } else {
-            console.log(`🧭 [GLOBAL HEADING] First ping. Using Compass Magnetometer: ${finalHeading}°`);
+            console.log(`🧭 [GLOBAL HEADING] First ping. Using GPS Heading: ${finalHeading}°`);
         }
 
         lastHeadingRef.current = finalHeading;
@@ -160,16 +158,6 @@ export function useDriverLocationTracking() {
             console.log('👤 [GLOBAL TRACKING] Driver ID:', user?.id);
 
             isTrackingRef.current = true;
-
-            // Start Compass Tracker (Magnotometer)
-            try {
-                CompassHeading.start(3, ({ heading }: { heading: number }) => {
-                    compassHeadingRef.current = heading;
-                });
-                console.log('🧭 [GLOBAL TRACKING] Compass tracker started');
-            } catch (error) {
-                console.log('❌ [GLOBAL TRACKING] Failed to start Compass:', error);
-            }
 
             // Watch position changes
             const locationOptions = Platform.OS === 'ios'
@@ -298,8 +286,6 @@ export function useDriverLocationTracking() {
         }
 
         console.log('🛑 [GLOBAL TRACKING] Stopping location tracking');
-
-        CompassHeading.stop();
 
         if (watchIdRef.current !== null) {
             Geolocation.clearWatch(watchIdRef.current);

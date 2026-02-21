@@ -1251,10 +1251,19 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                             <View style={styles.routeContent}>
                                 <Text style={styles.routeLabel}>Drop Location</Text>
                                 <Text style={styles.routeAddress}>{trip.destination}</Text>
-                                <TouchableOpacity style={styles.navigateBtnModern} onPress={openMaps}>
-                                    <NavigationIcon color={C.surface} />
-                                    <Text style={styles.navigateTextModern}>Navigate</Text>
-                                </TouchableOpacity>
+                                <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                                    <TouchableOpacity style={[styles.navigateBtnModern, { marginTop: 0 }]} onPress={openMaps}>
+                                        <NavigationIcon color={C.surface} />
+                                        <Text style={styles.navigateTextModern}>Navigate</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.navigateBtnModern, { marginTop: 0, backgroundColor: C.surface, borderWidth: 1, borderColor: C.primary }]}
+                                        onPress={() => navigation.navigate('truckerLiveTracking', { loadId })}
+                                    >
+                                        <LocationPinIcon color={C.primary} />
+                                        <Text style={[styles.navigateTextModern, { color: C.primary }]}>Live Tracking</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         </View>
                     </View>

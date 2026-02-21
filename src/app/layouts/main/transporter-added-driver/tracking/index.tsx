@@ -12,7 +12,6 @@ import Geolocation from '@react-native-community/geolocation';
 import { useSelector } from 'react-redux';
 import { pick } from '@react-native-documents/picker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import CompassHeading from 'react-native-compass-heading';
 import { requestCameraPermission, requestPhotoLibraryPermission } from '@truckmitr/src/utils/permissions/imagePermissions';
 import { useTranslation } from 'react-i18next';
 import { fetchDirections } from 'src/utils/maps/google.apis';
@@ -190,7 +189,6 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
     const lastUpdateTimeRef = useRef<number>(Date.now());
     const fallbackIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const lastHeadingRef = useRef<number>(0);
-    const compassHeadingRef = useRef<number>(0);
     // Track every GPS position for bearing calculation (separate from lastLocationRef which only updates on 30m+ moves)
     const prevGpsPositionRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
@@ -297,9 +295,9 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
         return (bearing + 360) % 360; // Normalize to 0-360
     };
 
-    // Get the best available heading: using GPS trajectory if moving, else compass magnetometer
+    // Get the best available heading: using GPS trajectory if moving, else GPS heading
     const getVehicleHead = (latitude: number, longitude: number, gpsHeading?: number | null): number => {
-        let finalHeading = Math.round(compassHeadingRef.current);
+        let finalHeading = (gpsHeading !== undefined && gpsHeading !== null && gpsHeading >= 0) ? Math.round(gpsHeading) : lastHeadingRef.current;
 
         if (prevGpsPositionRef.current) {
             const dist = calculateDistance(
@@ -316,10 +314,10 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 console.log(`🧭 [HEADING] Moved ${dist.toFixed(1)}m. Using True GPS Bearing: ${bearing}°`);
                 finalHeading = bearing;
             } else {
-                console.log(`🧭 [HEADING] Stationary. Using Compass Magnetometer: ${finalHeading}°`);
+                console.log(`🧭 [HEADING] Stationary. Using GPS Heading: ${finalHeading}°`);
             }
         } else {
-            console.log(`🧭 [HEADING] First ping. Using Compass Magnetometer: ${finalHeading}°`);
+            console.log(`🧭 [HEADING] First ping. Using GPS Heading: ${finalHeading}°`);
         }
 
         lastHeadingRef.current = finalHeading;
@@ -388,16 +386,6 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
 
         // Stop any existing tracking
         stopLocationTracking();
-
-        // Start Compass Tracker (Magnotometer)
-        try {
-            CompassHeading.start(3, ({ heading }: { heading: number }) => {
-                compassHeadingRef.current = heading;
-            });
-            console.log('🧭 [LOCATION TRACKING] Compass tracker started');
-        } catch (error) {
-            console.log('❌ [LOCATION TRACKING] Failed to start Compass:', error);
-        }
 
         // Watch position changes
         watchIdRef.current = Geolocation.watchPosition(
@@ -528,8 +516,6 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
             watchIdRef.current = null;
             console.log('🛑 [LOCATION TRACKING] Watch cleared');
         }
-
-        CompassHeading.stop();
 
         if (fallbackIntervalRef.current) {
             clearInterval(fallbackIntervalRef.current);

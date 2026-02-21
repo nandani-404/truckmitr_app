@@ -12,6 +12,7 @@ import MapView, { Callout, Marker, Polyline, PROVIDER_GOOGLE } from 'react-nativ
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import polyline from '@mapbox/polyline';
 import axiosInstance from 'src/utils/config/axiosInstance';
+import { END_POINTS } from 'src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 
 const LIVE_POLL_INTERVAL_MS = 15000;
@@ -52,11 +53,8 @@ type VehicleTrackingItem = {
 };
 
 type Props = {
-    visible: boolean;
-    onClose: () => void;
-    endpoint: string;
-    /** Selected route polyline (encoded) from Google Directions — source to destination */
-    selectedRoutePolyline?: string;
+    route?: any;
+    navigation?: any;
 };
 
 const COLOR_BY_CODE: Record<string, string> = {
@@ -150,7 +148,9 @@ const StatusAlert: React.FC<{ alerts: { vehicle_number?: string; code: string; l
 // ──────────────────────────────────────────────────────────────────────────────
 // Main component
 // ──────────────────────────────────────────────────────────────────────────────
-const ColorTrackingMap: React.FC<Props> = ({ visible, onClose, endpoint, selectedRoutePolyline }) => {
+const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
+    const { loadId, selectedRoutePolyline } = route?.params || {};
+    const endpoint = END_POINTS.TRUCKER_TRACKING_DASHBOARD(loadId);
     const mapRef = useRef<MapView>(null);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const animRef = useRef<Record<string, ReturnType<typeof setInterval>>>({});
@@ -179,11 +179,6 @@ const ColorTrackingMap: React.FC<Props> = ({ visible, onClose, endpoint, selecte
     }, [endpoint]);
 
     useEffect(() => {
-        if (!visible) {
-            // Reset the initial fit flag when modal is closed so it fits again on next open
-            initialFitDone.current = false;
-            return;
-        }
         fetchTrackingData();
         pollRef.current = setInterval(fetchTrackingData, LIVE_POLL_INTERVAL_MS);
         return () => {
@@ -191,7 +186,7 @@ const ColorTrackingMap: React.FC<Props> = ({ visible, onClose, endpoint, selecte
             Object.values(animRef.current).forEach(id => clearInterval(id));
             animRef.current = {};
         };
-    }, [visible, fetchTrackingData]);
+    }, [fetchTrackingData]);
 
     // ── Parse ────────────────────────────────────────────────────────────────
     const vehiclesWithParsedCoords = useMemo(() => {
@@ -351,7 +346,7 @@ const ColorTrackingMap: React.FC<Props> = ({ visible, onClose, endpoint, selecte
 
     // ── Fit map to all points (only on initial load, not on every poll) ─────
     useEffect(() => {
-        if (!visible || !mapRef.current || initialFitDone.current) return;
+        if (!mapRef.current || initialFitDone.current) return;
         const allPolylinePoints = routeOverlays.flatMap(r => r.points);
         const trailPoints = trailOverlays.flatMap(r => r.points);
         const markerPoints: LatLng[] = vehiclesForMap.map(v => ({
@@ -369,139 +364,137 @@ const ColorTrackingMap: React.FC<Props> = ({ visible, onClose, endpoint, selecte
                 });
             }, 300);
         }
-    }, [visible, routeOverlays, trailOverlays, vehiclesForMap]);
+    }, [routeOverlays, trailOverlays, vehiclesForMap]);
 
     // ── Render ───────────────────────────────────────────────────────────────
     return (
-        <Modal visible={visible} animationType="slide" transparent={false}>
-            <View style={styles.container}>
-                <MapView
-                    ref={mapRef}
-                    provider={PROVIDER_GOOGLE}
-                    style={StyleSheet.absoluteFillObject}
-                    initialRegion={{
-                        latitude: 28.6139,
-                        longitude: 77.209,
-                        latitudeDelta: 2,
-                        longitudeDelta: 2,
-                    }}
-                    showsUserLocation={false}
-                    showsMyLocationButton={false}
-                    showsCompass={true}
-                    rotateEnabled={true}
-                    mapType="standard"
-                >
-                    {/* Planned route (geo-fenced) — solid colored line */}
-                    {routeOverlays.map(route =>
-                        route.points.length > 1 ? (
-                            <Polyline
-                                key={`route-${route.key}`}
-                                coordinates={route.points}
-                                strokeColor={route.color}
-                                strokeWidth={6}
-                                lineCap="round"
-                                lineJoin="round"
-                            />
-                        ) : null,
-                    )}
-
-                    {/* Actual traveled trail — dashed lighter line */}
-                    {trailOverlays.map(trail =>
-                        trail.points.length > 1 ? (
-                            <Polyline
-                                key={`trail-${trail.key}`}
-                                coordinates={trail.points}
-                                strokeColor="#1E88E5"
-                                strokeWidth={4}
-                                lineCap="round"
-                                lineJoin="round"
-                                lineDashPattern={[8, 6]}
-                            />
-                        ) : null,
-                    )}
-
-                    {/* Truck markers — 3D PNG, flat on map, rotates by heading */}
-                    {vehiclesForMap.map((vehicle, idx) => {
-                        const code = (vehicle.color_code || '').toUpperCase();
-                        const statusLabel = COLOR_LABELS[code] || code;
-                        const truckImg = getTruckImage(vehicle.color_code);
-
-                        return (
-                            <Marker
-                                key={`truck-${vehicle._uniqueKey}-${code}`}
-                                coordinate={{ latitude: vehicle.displayLat, longitude: vehicle.displayLng }}
-                                image={truckImg}
-                                anchor={{ x: 0.5, y: 0.5 }}
-                                rotation={vehicle.displayHeading}
-                                flat={true}
-                                zIndex={200 + idx}
-                                title={vehicle.vehicle_number || 'Vehicle'}
-                                description={`${vehicle.driver_name || 'Driver'} • ${statusLabel}`}
-                            />
-                        );
-                    })}
-                </MapView>
-
-                {/* Top bar */}
-                <View style={styles.topBar}>
-                    <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                        <MaterialCommunityIcons name="close" size={20} color="#212121" />
-                    </TouchableOpacity>
-                    <View style={styles.statusChip}>
-                        <View style={styles.liveBadge}>
-                            <View style={styles.liveDot} />
-                            <Text style={styles.liveText}>LIVE</Text>
-                        </View>
-                        <Text style={styles.statusText}>
-                            {loading ? 'Refreshing...' : `Updated ${lastFetchedAt || '--'}`}
-                        </Text>
-                    </View>
-                    <TouchableOpacity style={styles.refreshBtn} onPress={fetchTrackingData}>
-                        <MaterialCommunityIcons name="refresh" size={20} color="#2874F0" />
-                    </TouchableOpacity>
-                </View>
-
-                {/* Off-route alert */}
-                <OffRouteAlert vehicles={offRouteVehicles} />
-
-                {/* Status alert for YELLOW/RED */}
-                <StatusAlert alerts={statusAlerts} />
-
-                {/* Legend */}
-                <View style={styles.legend}>
-                    <View style={styles.legendRow}>
-                        <View style={styles.legendCol}>
-                            <Text style={styles.legendTitle}>Route</Text>
-                            <View style={styles.legendItem}>
-                                <View style={[styles.legendLine, { backgroundColor: '#2ecc71' }]} />
-                                <Text style={styles.legendText}>Planned</Text>
-                            </View>
-                            <View style={styles.legendItem}>
-                                <View style={[styles.legendLine, { backgroundColor: '#1E88E5', borderStyle: 'dashed' }]} />
-                                <Text style={styles.legendText}>Traveled</Text>
-                            </View>
-                        </View>
-                        <View style={styles.legendCol}>
-                            <Text style={styles.legendTitle}>Truck Status</Text>
-                            {Object.entries(COLOR_BY_CODE).map(([label, color]) => (
-                                <View key={label} style={styles.legendItem}>
-                                    <View style={[styles.legendDot, { backgroundColor: color }]} />
-                                    <Text style={styles.legendText}>{COLOR_LABELS[label]}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    </View>
-                </View>
-
-                {/* Initial loader */}
-                {loading && vehicles.length === 0 && (
-                    <View style={styles.loaderOverlay}>
-                        <ActivityIndicator size="large" color="#2874F0" />
-                        <Text style={styles.loaderText}>Loading live tracking...</Text>
-                    </View>
+        <View style={styles.container}>
+            <MapView
+                ref={mapRef}
+                provider={PROVIDER_GOOGLE}
+                style={StyleSheet.absoluteFillObject}
+                initialRegion={{
+                    latitude: 28.6139,
+                    longitude: 77.209,
+                    latitudeDelta: 2,
+                    longitudeDelta: 2,
+                }}
+                showsUserLocation={false}
+                showsMyLocationButton={false}
+                showsCompass={true}
+                rotateEnabled={true}
+                mapType="standard"
+            >
+                {/* Planned route (geo-fenced) — solid colored line */}
+                {routeOverlays.map(route =>
+                    route.points.length > 1 ? (
+                        <Polyline
+                            key={`route-${route.key}`}
+                            coordinates={route.points}
+                            strokeColor={route.color}
+                            strokeWidth={6}
+                            lineCap="round"
+                            lineJoin="round"
+                        />
+                    ) : null,
                 )}
+
+                {/* Actual traveled trail — dashed lighter line */}
+                {trailOverlays.map(trail =>
+                    trail.points.length > 1 ? (
+                        <Polyline
+                            key={`trail-${trail.key}`}
+                            coordinates={trail.points}
+                            strokeColor="#1E88E5"
+                            strokeWidth={4}
+                            lineCap="round"
+                            lineJoin="round"
+                            lineDashPattern={[8, 6]}
+                        />
+                    ) : null,
+                )}
+
+                {/* Truck markers — 3D PNG, flat on map, rotates by heading */}
+                {vehiclesForMap.map((vehicle, idx) => {
+                    const code = (vehicle.color_code || '').toUpperCase();
+                    const statusLabel = COLOR_LABELS[code] || code;
+                    const truckImg = getTruckImage(vehicle.color_code);
+
+                    return (
+                        <Marker
+                            key={`truck-${vehicle._uniqueKey}-${code}`}
+                            coordinate={{ latitude: vehicle.displayLat, longitude: vehicle.displayLng }}
+                            image={truckImg}
+                            anchor={{ x: 0.5, y: 0.5 }}
+                            rotation={vehicle.displayHeading}
+                            flat={true}
+                            zIndex={200 + idx}
+                            title={vehicle.vehicle_number || 'Vehicle'}
+                            description={`${vehicle.driver_name || 'Driver'} • ${statusLabel}`}
+                        />
+                    );
+                })}
+            </MapView>
+
+            {/* Top bar */}
+            <View style={styles.topBar}>
+                <TouchableOpacity style={styles.closeBtn} onPress={() => navigation?.goBack()}>
+                    <MaterialCommunityIcons name="close" size={20} color="#212121" />
+                </TouchableOpacity>
+                <View style={styles.statusChip}>
+                    <View style={styles.liveBadge}>
+                        <View style={styles.liveDot} />
+                        <Text style={styles.liveText}>LIVE</Text>
+                    </View>
+                    <Text style={styles.statusText}>
+                        {loading ? 'Refreshing...' : `Updated ${lastFetchedAt || '--'}`}
+                    </Text>
+                </View>
+                <TouchableOpacity style={styles.refreshBtn} onPress={fetchTrackingData}>
+                    <MaterialCommunityIcons name="refresh" size={20} color="#2874F0" />
+                </TouchableOpacity>
             </View>
-        </Modal>
+
+            {/* Off-route alert */}
+            <OffRouteAlert vehicles={offRouteVehicles} />
+
+            {/* Status alert for YELLOW/RED */}
+            <StatusAlert alerts={statusAlerts} />
+
+            {/* Legend */}
+            <View style={styles.legend}>
+                <View style={styles.legendRow}>
+                    <View style={styles.legendCol}>
+                        <Text style={styles.legendTitle}>Route</Text>
+                        <View style={styles.legendItem}>
+                            <View style={[styles.legendLine, { backgroundColor: '#2ecc71' }]} />
+                            <Text style={styles.legendText}>Planned</Text>
+                        </View>
+                        <View style={styles.legendItem}>
+                            <View style={[styles.legendLine, { backgroundColor: '#1E88E5', borderStyle: 'dashed' }]} />
+                            <Text style={styles.legendText}>Traveled</Text>
+                        </View>
+                    </View>
+                    <View style={styles.legendCol}>
+                        <Text style={styles.legendTitle}>Truck Status</Text>
+                        {Object.entries(COLOR_BY_CODE).map(([label, color]) => (
+                            <View key={label} style={styles.legendItem}>
+                                <View style={[styles.legendDot, { backgroundColor: color }]} />
+                                <Text style={styles.legendText}>{COLOR_LABELS[label]}</Text>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+            </View>
+
+            {/* Initial loader */}
+            {loading && vehicles.length === 0 && (
+                <View style={styles.loaderOverlay}>
+                    <ActivityIndicator size="large" color="#2874F0" />
+                    <Text style={styles.loaderText}>Loading live tracking...</Text>
+                </View>
+            )}
+        </View>
     );
 };
 
@@ -637,5 +630,4 @@ const styles = StyleSheet.create({
     },
     loaderText: { marginTop: 10, fontSize: 14, color: '#444', fontWeight: '600' },
 });
-
-export default ColorTrackingMap;
+export default LiveTrackingScreen;
