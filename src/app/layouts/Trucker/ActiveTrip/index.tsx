@@ -136,9 +136,9 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showPODModal, setShowPODModal] = useState(false);
-    const [showBuiltyModal, setShowBuiltyModal] = useState(false);
-    const [builtyFile, setBuiltyFile] = useState<any>(null);
-    const [uploadingBuilty, setUploadingBuilty] = useState(false);
+    const [showBilityModal, setShowBilityModal] = useState(false);
+    const [builtyFile, setBilityFile] = useState<any>(null);
+    const [uploadingBility, setUploadingBility] = useState(false);
     const [podFile, setPodFile] = useState<any>(null);
     const [uploadingPOD, setUploadingPOD] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -177,6 +177,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         destination_lon: null,
         driver_id: null,
         trip_started: false,
+        sim_tracking_consent: null,
     });
 
     const [startingTrip, setStartingTrip] = useState(false);
@@ -244,6 +245,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                     destination_lon: data.destination_lon || null,
                     driver_id: data.driver_id || null,
                     trip_started: data.trip_started || data.trip_status === 'active' || false,
+                    sim_tracking_consent: data.sim_tracking_consent || null,
                 });
 
                 console.log('📊 [TRIP DATA] trip_status:', data.trip_status);
@@ -287,7 +289,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             console.log('📋 [DRIVERS] Fetching drivers...');
             const response = await axiosInstance.get(END_POINTS.TRUCKER_GET_DRIVERS);
             console.log('📋 [DRIVERS] Response:', JSON.stringify(response.data, null, 2));
-            
+
             if (response?.data?.status === 'success') {
                 const list = response.data.data?.drivers || [];
                 console.log('📋 [DRIVERS] Drivers list:', list);
@@ -314,7 +316,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
     // Get next action button text
     const getNextActionText = () => {
         console.log('🔍 [BUTTON TEXT] Checking button text - Status:', currentStatus, 'Trip Started:', trip.trip_started);
-        
+
         if (currentStatus === 0) return 'Assign Vehicle & Driver';
         if (currentStatus === 1 && !trip.trip_started) {
             console.log('🔍 [BUTTON TEXT] Showing: Start Trip');
@@ -325,7 +327,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             return 'Mark Reached Pickup';
         }
         if (currentStatus === 2) return 'Mark Loaded';
-        if (currentStatus === 3) return 'Upload Builty & Start Transit';
+        if (currentStatus === 3) return 'Upload Bility & Start Transit';
         if (currentStatus === 4) return 'Mark Reached Destination';
         if (currentStatus === 5) return 'Upload POD & Complete';
         return 'Complete';
@@ -344,7 +346,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
 
             // Use driver_id from trip data, or fallback to user.id
             const driverId = trip.driver_id || user?.id;
-            
+
             if (!driverId) {
                 showToast('Driver information not available. Please refresh and try again.');
                 return;
@@ -369,7 +371,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             if (response.data?.status === true || response.data?.status === 'success') {
                 console.log('✅ [START TRIP] Trip started successfully');
                 console.log('📍 [START TRIP] Trip ID:', response.data?.trip_id);
-                
+
                 // CRITICAL: Update local state immediately to change button text
                 setTrip((prev: any) => {
                     const updated = {
@@ -379,14 +381,14 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                     console.log('🔄 [START TRIP] Updated trip state:', updated);
                     return updated;
                 });
-                
+
                 // Force component re-render
                 setForceUpdate(prev => prev + 1);
-                
+
                 console.log('🔄 [START TRIP] Updated trip_started to true in local state');
-                
+
                 showToast(response.data?.message || 'Trip started successfully');
-                
+
                 // Fetch latest tracking data in background
                 await fetchTripDetails();
             } else {
@@ -428,7 +430,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             // Get current location
             let latitude = 0;
             let longitude = 0;
-            
+
             try {
                 const location = await getCurrentLocation();
                 latitude = location.latitude;
@@ -460,7 +462,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                 console.log('✅ [STATUS UPDATE] Status updated successfully');
                 setCurrentStatus(newStatusCode);
                 showToast(`Status updated to "${statuses[newStatusCode].label}"`);
-                
+
                 // Hit both APIs simultaneously
                 console.log('📍 [STATUS UPDATE] Updating location and fetching tracking data simultaneously');
                 await Promise.all([
@@ -496,7 +498,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             return;
         }
         if (currentStatus === 3) { // Moving from Loaded to In Transit - need builty
-            setShowBuiltyModal(true);
+            setShowBilityModal(true);
             return;
         }
         if (currentStatus === 5) { // Moving to Delivered
@@ -550,7 +552,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             if (response.data?.status === 'success') {
                 // Update status FIRST
                 setCurrentStatus(1);
-                
+
                 // Update Trip Data locally
                 setTrip((prev: any) => ({
                     ...prev,
@@ -559,20 +561,20 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                 }));
 
                 setShowAssignVehicleModal(false);
-                
+
                 // Clear form
                 setSelectedVehicle('');
                 setSelectedDriver(null);
                 setDriverName('');
                 setDriverPhone('');
                 setDriverDL('');
-                
+
                 showToast('Vehicle Assigned Successfully');
 
                 // Update status with location (this saves both status and location)
                 console.log('📍 [ASSIGN VEHICLE] Updating status to 1 with location');
                 await updateStatusToBackend(1);
-                
+
                 console.log('🔄 [ASSIGN VEHICLE] Fetching latest tracking data');
                 await fetchTripDetails();
             } else {
@@ -601,7 +603,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             // Get current location
             let latitude = 0;
             let longitude = 0;
-            
+
             try {
                 const location = await getCurrentLocation();
                 latitude = location.latitude;
@@ -642,11 +644,11 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
     const updateLocationAPIWithStatus = async (statusCode: number) => {
         try {
             console.log(`📍 [LOCATION UPDATE] Starting location update with status code ${statusCode}...`);
-            
+
             // Get current location
             let latitude = 0;
             let longitude = 0;
-            
+
             try {
                 const location = await getCurrentLocation();
                 latitude = location.latitude;
@@ -738,7 +740,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                 // Get current location
                 let latitude = 0;
                 let longitude = 0;
-                
+
                 try {
                     const location = await getCurrentLocation();
                     latitude = location.latitude;
@@ -771,10 +773,10 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                     setShowPODModal(false);
                     setPodFile(null);
                     setCurrentStatus(6);
-                    
+
                     // Fetch latest tracking data
                     await fetchTripDetails();
-                    
+
                     showToast('POD uploaded successfully. Trip completed!');
                     if (onComplete) onComplete();
                 } else {
@@ -859,7 +861,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         }
     };
 
-    const handleBuiltyPick = async () => {
+    const handleBilityPick = async () => {
         try {
             const [file] = await pick({
                 type: ['*/*'],
@@ -867,7 +869,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             });
 
             if (file) {
-                setBuiltyFile(file);
+                setBilityFile(file);
                 console.log('📄 [BUILTY] File selected:', file.name);
             }
         } catch (error: any) {
@@ -878,7 +880,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         }
     };
 
-    const handleBuiltyCamera = async () => {
+    const handleBilityCamera = async () => {
         try {
             const result = await launchCamera({
                 mediaType: 'photo',
@@ -888,10 +890,10 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
 
             if (result.assets && result.assets[0]) {
                 const photo = result.assets[0];
-                setBuiltyFile({
+                setBilityFile({
                     uri: photo.uri,
                     type: photo.type || 'image/jpeg',
-                    name: photo.fileName || `Builty_${Date.now()}.jpg`,
+                    name: photo.fileName || `Bility_${Date.now()}.jpg`,
                     size: photo.fileSize || 0,
                 });
                 console.log('📷 [BUILTY] Photo captured:', photo.fileName);
@@ -902,7 +904,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         }
     };
 
-    const handleBuiltyGallery = async () => {
+    const handleBilityGallery = async () => {
         try {
             const result = await launchImageLibrary({
                 mediaType: 'photo',
@@ -911,10 +913,10 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
 
             if (result.assets && result.assets[0]) {
                 const photo = result.assets[0];
-                setBuiltyFile({
+                setBilityFile({
                     uri: photo.uri,
                     type: photo.type || 'image/jpeg',
-                    name: photo.fileName || `Builty_${Date.now()}.jpg`,
+                    name: photo.fileName || `Bility_${Date.now()}.jpg`,
                     size: photo.fileSize || 0,
                 });
                 console.log('🖼️ [BUILTY] Image selected from gallery:', photo.fileName);
@@ -925,14 +927,14 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         }
     };
 
-    const handleBuiltyUpload = async () => {
+    const handleBilityUpload = async () => {
         if (!builtyFile) {
-            showToast('Please select a builty document to upload');
+            showToast('Please select a bility document to upload');
             return;
         }
 
         try {
-            setUploadingBuilty(true);
+            setUploadingBility(true);
             console.log('📤 [BUILTY] Uploading builty document...');
 
             const formData = new FormData();
@@ -961,21 +963,21 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             console.log('📥 [BUILTY] Response:', JSON.stringify(response.data, null, 2));
 
             if (response.data?.status === 'success') {
-                console.log('✅ [BUILTY] Builty uploaded successfully');
-                setShowBuiltyModal(false);
-                setBuiltyFile(null);
-                
+                console.log('✅ [BUILTY] Bility uploaded successfully');
+                setShowBilityModal(false);
+                setBilityFile(null);
+
                 // Now update status to In Transit
                 await updateStatusWithAPI(4);
             } else {
                 console.log('⚠️ [BUILTY] Upload failed:', response.data?.message);
-                showToast(response.data?.message || 'Failed to upload builty');
+                showToast(response.data?.message || 'Failed to upload bility');
             }
         } catch (error) {
             console.error('❌ [BUILTY] Error uploading:', error);
-            showToast('Failed to upload builty. Please try again');
+            showToast('Failed to upload bility. Please try again');
         } finally {
-            setUploadingBuilty(false);
+            setUploadingBility(false);
         }
     };
 
@@ -986,16 +988,16 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         if (trip.driver?.phone) Linking.openURL(`tel:${trip.driver.phone}`);
     };
 
-    const downloadBuilty = () => {
+    const downloadBility = () => {
         if (trip.builty_path) {
             const url = `${BASE_URL}public/${trip.builty_path}`;
             console.log('📥 [BUILTY] Downloading from:', url);
             Linking.openURL(url).catch(err => {
                 console.error('❌ [BUILTY] Error opening URL:', err);
-                showToast('Failed to open builty document');
+                showToast('Failed to open bility document');
             });
         } else {
-            showToast('Builty document not available');
+            showToast('Bility document not available');
         }
     };
 
@@ -1017,7 +1019,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         console.log('🗺️ [NAVIGATION] Opening in-app navigation');
         console.log('🗺️ [NAVIGATION] Origin:', trip.origin);
         console.log('🗺️ [NAVIGATION] Destination:', trip.destination);
-        
+
         if (navigation) {
             navigation.navigate('truckerMapNavigation', {
                 origin: trip.origin,
@@ -1151,9 +1153,9 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                 <View style={{ width: 24 }} />
             </View>
 
-            <ScrollView 
-                style={styles.scroll} 
-                contentContainerStyle={styles.scrollContent} 
+            <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
@@ -1270,14 +1272,14 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                 {(trip.builty_path || trip.pod_path) && (
                     <View style={styles.card}>
                         <Text style={styles.sectionHeader}>Documents</Text>
-                        
+
                         {trip.builty_path && (
-                            <TouchableOpacity style={styles.documentRow} onPress={downloadBuilty}>
+                            <TouchableOpacity style={styles.documentRow} onPress={downloadBility}>
                                 <View style={styles.documentIconContainer}>
                                     <DocumentIcon />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.documentTitle}>Builty Document</Text>
+                                    <Text style={styles.documentTitle}>Bility Document</Text>
                                     <Text style={styles.documentSubtitle}>Tap to view or download</Text>
                                 </View>
                                 <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1326,13 +1328,29 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             {/* Bottom Action Button */}
             {currentStatus < 6 && (
                 <View style={styles.footer}>
-                    <TouchableOpacity 
+                    {/* Consent Pending Button - Show before Start Trip button when pending */}
+                    {currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING' && (
+                        <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: '#F39C12', marginBottom: 10, flexDirection: 'column', paddingVertical: 8 }]}
+                            onPress={onRefresh}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.actionButtonText}>
+                                Consent Pending ({trip.sim_tracking_consent?.tel})
+                            </Text>
+                            <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: '600', marginTop: 2 }}>
+                                {trip.sim_tracking_consent?.operator} • Tap to check status
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
                         style={[
-                            styles.actionButton, 
-                            (updatingStatus || startingTrip) && styles.actionButtonDisabled
-                        ]} 
+                            styles.actionButton,
+                            (updatingStatus || startingTrip || (currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING')) && styles.actionButtonDisabled
+                        ]}
                         onPress={updateStatus}
-                        disabled={updatingStatus || startingTrip}
+                        disabled={updatingStatus || startingTrip || (currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING')}
                     >
                         {(updatingStatus || startingTrip) ? (
                             <ActivityIndicator size="small" color="#FFF" />
@@ -1362,7 +1380,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                                 <Text style={styles.uploadSubtext}>
                                     {((podFile.size || 0) / 1024).toFixed(2)} KB
                                 </Text>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.changeFileBtn}
                                     onPress={() => setPodFile(null)}
                                 >
@@ -1396,8 +1414,8 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                         )}
 
                         <View style={[styles.modalActions, { marginTop: 20 }]}>
-                            <TouchableOpacity 
-                                style={styles.modalCancel} 
+                            <TouchableOpacity
+                                style={styles.modalCancel}
                                 onPress={() => {
                                     setShowPODModal(false);
                                     setPodFile(null);
@@ -1405,8 +1423,8 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                             >
                                 <Text style={styles.modalCancelText}>Cancel</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={[styles.modalSubmit, (uploadingPOD || !podFile) && styles.modalSubmitDisabled]} 
+                            <TouchableOpacity
+                                style={[styles.modalSubmit, (uploadingPOD || !podFile) && styles.modalSubmitDisabled]}
                                 onPress={handlePODUpload}
                                 disabled={uploadingPOD || !podFile}
                             >
@@ -1441,14 +1459,15 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                             <View style={styles.dropdownList}>
                                 <ScrollView style={{ maxHeight: 150 }}>
                                     {vehicles.map((v: any, index: number) => {
+                                        if (!v) return null;
                                         const vNum = typeof v === 'string' ? v : (v.registration_number || v.vehicle_number || 'Unknown Vehicle');
                                         return (
-                                            <TouchableOpacity 
-                                                key={index} 
-                                                style={styles.dropdownItem} 
-                                                onPress={() => { 
-                                                    setSelectedVehicle(vNum); 
-                                                    setShowVehicleList(false); 
+                                            <TouchableOpacity
+                                                key={index}
+                                                style={styles.dropdownItem}
+                                                onPress={() => {
+                                                    setSelectedVehicle(vNum);
+                                                    setShowVehicleList(false);
                                                 }}
                                             >
                                                 <Text style={styles.dropdownItemText}>{vNum}</Text>
@@ -1466,8 +1485,8 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
 
                         {/* Driver Dropdown */}
                         <Text style={styles.inputLabel}>Select Driver</Text>
-                        <TouchableOpacity 
-                            style={styles.dropdown} 
+                        <TouchableOpacity
+                            style={styles.dropdown}
                             onPress={() => {
                                 console.log('📋 [DRIVERS] Opening driver dropdown. Current drivers:', drivers.length);
                                 setShowDriverList(!showDriverList);
@@ -1483,11 +1502,12 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                             <View style={styles.dropdownList}>
                                 <ScrollView style={{ maxHeight: 200 }}>
                                     {drivers.map((driver: any, index: number) => {
+                                        if (!driver) return null;
                                         console.log('📋 [DRIVERS] Rendering driver:', driver.name, driver.mobile);
                                         return (
-                                            <TouchableOpacity 
-                                                key={index} 
-                                                style={styles.dropdownItem} 
+                                            <TouchableOpacity
+                                                key={index}
+                                                style={styles.dropdownItem}
                                                 onPress={() => handleDriverSelect(driver)}
                                             >
                                                 <View>
@@ -1510,36 +1530,36 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                         )}
 
                         <Text style={styles.inputLabel}>Driver Name</Text>
-                        <TextInput 
-                            style={styles.input} 
-                            value={driverName} 
-                            onChangeText={setDriverName} 
-                            placeholder="Enter Driver Name" 
-                            placeholderTextColor={C.textSec} 
+                        <TextInput
+                            style={styles.input}
+                            value={driverName}
+                            onChangeText={setDriverName}
+                            placeholder="Enter Driver Name"
+                            placeholderTextColor={C.textSec}
                         />
 
                         <Text style={styles.inputLabel}>Driver Phone</Text>
-                        <TextInput 
-                            style={styles.input} 
-                            value={driverPhone} 
-                            onChangeText={setDriverPhone} 
-                            placeholder="Enter Driver Phone" 
-                            placeholderTextColor={C.textSec} 
-                            keyboardType="phone-pad" 
+                        <TextInput
+                            style={styles.input}
+                            value={driverPhone}
+                            onChangeText={setDriverPhone}
+                            placeholder="Enter Driver Phone"
+                            placeholderTextColor={C.textSec}
+                            keyboardType="phone-pad"
                         />
 
                         <Text style={styles.inputLabel}>Driver DL (Optional)</Text>
-                        <TextInput 
-                            style={styles.input} 
-                            value={driverDL} 
-                            onChangeText={setDriverDL} 
-                            placeholder="Enter Driving License No" 
-                            placeholderTextColor={C.textSec} 
+                        <TextInput
+                            style={styles.input}
+                            value={driverDL}
+                            onChangeText={setDriverDL}
+                            placeholder="Enter Driving License No"
+                            placeholderTextColor={C.textSec}
                         />
 
                         <View style={[styles.modalActions, { marginTop: 20 }]}>
-                            <TouchableOpacity 
-                                style={styles.modalCancel} 
+                            <TouchableOpacity
+                                style={styles.modalCancel}
                                 onPress={() => {
                                     setShowAssignVehicleModal(false);
                                     setSelectedVehicle('');
@@ -1559,12 +1579,12 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                 </View>
             </Modal>
 
-            {/* Builty Upload Modal */}
-            <Modal visible={showBuiltyModal} animationType="slide" transparent>
+            {/* Bility Upload Modal */}
+            <Modal visible={showBilityModal} animationType="slide" transparent>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Upload Builty Document</Text>
-                        <Text style={styles.modalSubtitle}>Please upload the builty document before marking as In Transit.</Text>
+                        <Text style={styles.modalTitle}>Upload Bility Document</Text>
+                        <Text style={styles.modalSubtitle}>Please upload the bility document before marking as In Transit.</Text>
 
                         {builtyFile ? (
                             <View style={styles.uploadPlaceholder}>
@@ -1573,16 +1593,16 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                                 <Text style={styles.uploadSubtext}>
                                     {((builtyFile.size || 0) / 1024).toFixed(2)} KB
                                 </Text>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.changeFileBtn}
-                                    onPress={() => setBuiltyFile(null)}
+                                    onPress={() => setBilityFile(null)}
                                 >
                                     <Text style={styles.changeFileText}>Change File</Text>
                                 </TouchableOpacity>
                             </View>
                         ) : (
                             <View style={styles.uploadOptionsContainer}>
-                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyCamera}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBilityCamera}>
                                     <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
                                         <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                                         <Circle cx="12" cy="13" r="4" />
@@ -1590,7 +1610,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                                     <Text style={styles.uploadOptionText}>Camera</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyGallery}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBilityGallery}>
                                     <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
                                         <Rect x="3" y="3" width="18" height="18" rx="2" />
                                         <Circle cx="8.5" cy="8.5" r="1.5" />
@@ -1599,7 +1619,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                                     <Text style={styles.uploadOptionText}>Gallery</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyPick}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBilityPick}>
                                     <DocumentIcon />
                                     <Text style={styles.uploadOptionText}>Document</Text>
                                 </TouchableOpacity>
@@ -1607,21 +1627,21 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                         )}
 
                         <View style={[styles.modalActions, { marginTop: 20 }]}>
-                            <TouchableOpacity 
-                                style={styles.modalCancel} 
+                            <TouchableOpacity
+                                style={styles.modalCancel}
                                 onPress={() => {
-                                    setShowBuiltyModal(false);
-                                    setBuiltyFile(null);
+                                    setShowBilityModal(false);
+                                    setBilityFile(null);
                                 }}
                             >
                                 <Text style={styles.modalCancelText}>Cancel</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={[styles.modalSubmit, (uploadingBuilty || !builtyFile) && styles.modalSubmitDisabled]} 
-                                onPress={handleBuiltyUpload}
-                                disabled={uploadingBuilty || !builtyFile}
+                            <TouchableOpacity
+                                style={[styles.modalSubmit, (uploadingBility || !builtyFile) && styles.modalSubmitDisabled]}
+                                onPress={handleBilityUpload}
+                                disabled={uploadingBility || !builtyFile}
                             >
-                                {uploadingBuilty ? (
+                                {uploadingBility ? (
                                     <ActivityIndicator size="small" color="#FFF" />
                                 ) : (
                                     <Text style={styles.modalSubmitText}>Upload & Continue</Text>
@@ -1648,8 +1668,8 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                             Are you sure you want to update the status to "{pendingStatusUpdate !== null ? statuses[pendingStatusUpdate].label : ''}"?
                         </Text>
                         <View style={styles.confirmActions}>
-                            <TouchableOpacity 
-                                style={styles.confirmCancelBtn} 
+                            <TouchableOpacity
+                                style={styles.confirmCancelBtn}
                                 onPress={() => {
                                     setShowConfirmModal(false);
                                     setPendingStatusUpdate(null);
@@ -1657,8 +1677,8 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                             >
                                 <Text style={styles.confirmCancelText}>Cancel</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={styles.confirmOkBtn} 
+                            <TouchableOpacity
+                                style={styles.confirmOkBtn}
                                 onPress={confirmStatusUpdate}
                             >
                                 <Text style={styles.confirmOkText}>OK</Text>
@@ -1717,11 +1737,11 @@ const styles = StyleSheet.create({
     sectionHeader: { fontSize: 14, fontWeight: '600', color: C.text, marginBottom: 14 },
 
     // Shipping
-    shippingHeader: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: 16 
+    shippingHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16
     },
     routeContainer: {
         paddingVertical: 4,

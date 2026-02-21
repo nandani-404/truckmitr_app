@@ -7,7 +7,7 @@ import { useImage } from "@truckmitr/hooks/images"
 import useShadow from "@truckmitr/hooks/shadow"
 import { useSubscription } from "@truckmitr/hooks/useSubscription"
 import { useTruckLocation } from "@truckmitr/hooks/useTruckLocation"
-import { useDriverLocationTracking } from "@truckmitr/hooks/useDriverLocationTracking"
+import useDriverLocationTracking from "@truckmitr/hooks/useDriverLocationTracking"
 
 export {
     useResponsiveScale,

@@ -327,7 +327,9 @@ export const END_POINTS = {
     TRUCKER_BANK_DETAILS_UPDATE: `api/store-trucker-bank-details`,
     TRUCKER_BANK_DETAILS_FETCH: `api/trucker-bank-details`,
     TRUCKER_DRIVER_TRACKING: 'api/trucker/driver-tracking',
+    TRUCKER_TRACKING_DASHBOARD: (loadId: any) => `api/trucker/tracking-dashboard/${loadId}`,
     TRUCKER_START_TRIP: `api/trip/start`,
+    TRIP_SAVE_SELECTED_ROUTE: `api/trip/save-selected-route`,
     TRIP_UPDATE_LOCATION: `api/trip/update-location`,
     TRIP_COMPLETE: `api/trip/complete`,
 }
