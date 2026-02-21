@@ -216,6 +216,7 @@ export type NavigatorParams = {
     shipperInProgressLoads: undefined;
     shipperTrackDetail: { load?: any } | undefined;
     shipperNotifications: undefined;
+    shipperEditLoad: { editData: any };
 };
 
 export const STACKS = {
@@ -473,6 +474,7 @@ export const STACKS = {
     SHIPPER_IN_PROGRESS_LOADS: 'shipperInProgressLoads',
     SHIPPER_TRACK_DETAIL: 'shipperTrackDetail',
     SHIPPER_NOTIFICATIONS: 'shipperNotifications',
+    SHIPPER_EDIT_LOAD: 'shipperEditLoad',
     TRANSPORTER_DRIVER_TRACKING: 'transporterDriverTracking',
 
 } as const;

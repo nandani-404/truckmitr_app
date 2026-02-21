@@ -16,6 +16,7 @@ import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/utils/config';
 import { ActivityIndicator, RefreshControl } from 'react-native';
 import moment from 'moment';
+import { STACKS } from '@truckmitr/stacks/stacks';
 
 // ==========================================
 // INTERFACES & DATA
@@ -107,11 +108,12 @@ const formatTime = (time: string): string => {
 };
 
 const ShipperActiveLoads: React.FC = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
     const [selectedLoad, setSelectedLoad] = useState<LoadData | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [showMenuModal, setShowMenuModal] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
     const [selectedCancelReason, setSelectedCancelReason] = useState<string | null>(null);
 
     const [loadsData, setLoadsData] = useState<LoadData[]>([]);
@@ -264,28 +266,55 @@ const ShipperActiveLoads: React.FC = () => {
                 {load.offersCount > 0 && (
                     <View style={mlStyles.interestedRow}>
                         <View style={mlStyles.interestedPill}>
-                            <Text style={mlStyles.interestedText}>🔥 {load.offersCount} interested truckers</Text>
+                            <Text style={mlStyles.interestedText}>🔥 {load.offersCount} interested {load.offersCount === 1 ? 'trucker' : 'truckers'}</Text>
                         </View>
                     </View>
                 )}
 
-                {/* Action Buttons */}
-                <View style={mlStyles.actionButtons}>
+                {/* Row 1: View Detail & Call Sales Manager */}
+                <View style={mlStyles.actionRow}>
                     <TouchableOpacity
-                        style={mlStyles.viewDetailButton}
+                        style={[mlStyles.actionButtonBase, mlStyles.viewDetailButton]}
                         onPress={() => openDetail(load)}
                         activeOpacity={0.8}
                     >
                         <Text style={mlStyles.viewDetailButtonText}>View Detail</Text>
                     </TouchableOpacity>
+
                     <TouchableOpacity
-                        style={mlStyles.callSalesButton}
+                        style={[mlStyles.actionButtonBase, mlStyles.callSalesButton]}
                         onPress={callSalesManager}
                         activeOpacity={0.8}
                     >
-                        <Text style={mlStyles.callSalesButtonText}>Call Sales Manager</Text>
+                        <Text style={mlStyles.callSalesButtonText} numberOfLines={1}>Call Sales Manager</Text>
                     </TouchableOpacity>
                 </View>
+
+                {/* Row 2: Edit Load / Locked & Cancel Load */}
+                {load.offersCount === 0 ? (
+                    <View style={[mlStyles.actionRow, { marginTop: 8 }]}>
+                        <TouchableOpacity
+                            style={[mlStyles.actionButtonBase, { backgroundColor: '#e0f2fe', borderColor: '#e0f2fe' }]}
+                            onPress={() => navigation.navigate(STACKS.SHIPPER_EDIT_LOAD, { editData: load.rawItem })}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[mlStyles.viewDetailButtonText, { color: '#0284c7' }]}>Edit Load</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[mlStyles.actionButtonBase, mlStyles.cancelBtnCard]}
+                            onPress={() => { setSelectedLoad(load); setShowCancelConfirm(true); }}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={mlStyles.cancelBtnText}>Cancel Load</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={[mlStyles.actionRow, { marginTop: 8 }]}>
+                        <View style={[mlStyles.lockedInfoBox, { flex: 1, marginTop: 0, marginBottom: 0 }]}>
+                            <Text style={mlStyles.lockedInfoText}>🔒 Editing and cancellation are locked as interests received</Text>
+                        </View>
+                    </View>
+                )}
             </View>
         );
     };
@@ -404,9 +433,11 @@ const ShipperActiveLoads: React.FC = () => {
                                     <Text style={mlStyles.detailPriceLabel}>Shipment Price</Text>
                                     <Text style={mlStyles.detailPriceAmount}>{formatPrice(selectedLoad.rawPrice)}</Text>
                                 </View>
-                                <View style={mlStyles.detailOffersChip}>
-                                    <Text style={mlStyles.detailOffersText}>🔥 {selectedLoad.offersCount} Truckers Quoted</Text>
-                                </View>
+                                {selectedLoad.offersCount > 0 && (
+                                    <View style={mlStyles.detailOffersChip}>
+                                        <Text style={mlStyles.detailOffersText}>🔥 {selectedLoad.offersCount} {selectedLoad.offersCount === 1 ? 'Trucker' : 'Truckers'} Quoted</Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
 
@@ -446,6 +477,22 @@ const ShipperActiveLoads: React.FC = () => {
                         onPress={() => setShowMenuModal(false)}
                     >
                         <View style={mlStyles.menuContainer}>
+                            <TouchableOpacity
+                                style={mlStyles.menuItem}
+                                disabled={selectedLoad?.offersCount > 0}
+                                onPress={() => {
+                                    setShowMenuModal(false);
+                                    setShowDetailModal(false);
+                                    navigation.navigate(STACKS.SHIPPER_EDIT_LOAD, { editData: selectedLoad.rawItem });
+                                }}
+                            >
+                                <Text style={[
+                                    mlStyles.menuItemText,
+                                    { color: selectedLoad?.offersCount > 0 ? '#94a3b8' : '#3b82f6' }
+                                ]}>
+                                    ✏️ Edit Load {selectedLoad?.offersCount > 0 ? '(Locked)' : ''}
+                                </Text>
+                            </TouchableOpacity>
                             <TouchableOpacity
                                 style={mlStyles.menuItem}
                                 onPress={() => {
@@ -545,6 +592,15 @@ const ShipperActiveLoads: React.FC = () => {
                     data={loadsData}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => renderLoadCard(item)}
+                    ListHeaderComponent={
+                        loadsData.length > 0 ? (
+                            <View style={mlStyles.infoBanner}>
+                                <Text style={mlStyles.infoBannerText}>
+                                    💡 Tip: You can edit load details only until a trucker shows interest.
+                                </Text>
+                            </View>
+                        ) : null
+                    }
                     contentContainerStyle={mlStyles.scrollContent}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
@@ -560,6 +616,42 @@ const ShipperActiveLoads: React.FC = () => {
             )}
 
             {renderDetailModal()}
+
+            {/* Cancel Confirmation Modal */}
+            <Modal
+                visible={showCancelConfirm}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowCancelConfirm(false)}
+            >
+                <View style={mlStyles.confirmModalOverlay}>
+                    <View style={mlStyles.confirmModalContainer}>
+                        <View style={mlStyles.confirmIconContainer}>
+                            <Text style={{ fontSize: 32 }}>⚠️</Text>
+                        </View>
+                        <Text style={mlStyles.confirmTitle}>Cancel Load?</Text>
+                        <Text style={mlStyles.confirmMessage}>Are you sure you want to cancel this load? This action cannot be undo.</Text>
+                        <View style={mlStyles.confirmActions}>
+                            <TouchableOpacity
+                                style={mlStyles.confirmNoBtn}
+                                onPress={() => setShowCancelConfirm(false)}
+                            >
+                                <Text style={mlStyles.confirmNoText}>No, Keep It</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={mlStyles.confirmYesBtn}
+                                onPress={() => {
+                                    setShowCancelConfirm(false);
+                                    Alert.alert("Success", "Load cancellation request sent.");
+                                    // Later will call cancellation API
+                                }}
+                            >
+                                <Text style={mlStyles.confirmYesText}>Yes, Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 
@@ -771,30 +863,73 @@ const mlStyles = StyleSheet.create({
         flexDirection: 'row',
         gap: 8,
     },
-    viewDetailButton: {
-        flex: 1,
-        backgroundColor: '#f1f5f9',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
+    infoBanner: {
+        backgroundColor: '#f0f9ff',
+        padding: 12,
         borderRadius: 8,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#bae6fd',
+    },
+    infoBannerText: {
+        fontSize: 12,
+        color: '#0369a1',
+        fontWeight: '500',
+    },
+    lockedInfoBox: {
+        backgroundColor: '#f8fafc',
+        padding: 10,
+        borderRadius: 8,
+        marginTop: 8,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        borderColor: '#e2e8f0',
+    },
+    lockedInfoText: {
+        fontSize: 11,
+        color: '#64748b',
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+    actionRow: {
+        flexDirection: 'row',
+        gap: 8,
         alignItems: 'center',
     },
-    viewDetailButtonText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#3b82f6',
+    actionButtonBase: {
+        flex: 1,
+        height: 44,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+    },
+    viewDetailButton: {
+        backgroundColor: '#ffffff',
+        borderColor: '#3b82f6',
     },
     callSalesButton: {
-        flex: 1,
         backgroundColor: '#3b82f6',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        alignItems: 'center',
+        borderColor: '#3b82f6',
+    },
+    cancelBtnCard: {
+        backgroundColor: '#fef2f2',
+        borderColor: '#fee2e2',
+    },
+    viewDetailButtonText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#3b82f6',
+    },
+    cancelBtnText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#ef4444',
     },
     callSalesButtonText: {
-        fontSize: 13,
-        fontWeight: '600',
+        fontSize: 12,
+        fontWeight: '700',
         color: '#ffffff',
     },
 
@@ -863,43 +998,6 @@ const mlStyles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
         color: '#ea580c',
-    },
-
-    // Action Buttons
-    actionRow: {
-        flexDirection: 'row',
-        gap: 10,
-    },
-    viewDetailBtn: {
-        flex: 1,
-        backgroundColor: '#f1f5f9',
-        paddingVertical: 12,
-        borderRadius: 12,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-    },
-    viewDetailText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#475569',
-    },
-    viewInterestBtn: {
-        flex: 1,
-        backgroundColor: '#3b82f6',
-        paddingVertical: 12,
-        borderRadius: 12,
-        alignItems: 'center',
-        shadowColor: '#3b82f6',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    viewInterestText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#ffffff',
     },
 
     // ---- MODALS ----
@@ -1255,6 +1353,74 @@ const mlStyles = StyleSheet.create({
         color: '#64748b',
         marginTop: 4,
         fontStyle: 'italic',
+    },
+    confirmModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    confirmModalContainer: {
+        backgroundColor: '#ffffff',
+        borderRadius: 20,
+        padding: 24,
+        width: '100%',
+        maxWidth: 340,
+        alignItems: 'center',
+    },
+    confirmIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: '#fff7ed',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    confirmTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#1e293b',
+        marginBottom: 8,
+    },
+    confirmMessage: {
+        fontSize: 15,
+        color: '#64748b',
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 24,
+    },
+    confirmActions: {
+        flexDirection: 'row',
+        width: '100%',
+        gap: 12,
+    },
+    confirmNoBtn: {
+        flex: 1,
+        height: 48,
+        borderRadius: 12,
+        backgroundColor: '#f1f5f9',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    confirmNoText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#64748b',
+    },
+    confirmYesBtn: {
+        flex: 1,
+        height: 48,
+        borderRadius: 12,
+        backgroundColor: '#ef4444',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    confirmYesText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#ffffff',
     },
 });
 

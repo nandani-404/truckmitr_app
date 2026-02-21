@@ -394,8 +394,8 @@ export default function ProfileCompletionShipper() {
 
 
         if (step.id === 'business_details') {
-            if (!formData.yearsInBusiness || !formData.monthlyLoadVolume) {
-                showToast('Please select years in business and load volume');
+            if (!formData.yearsInBusiness) {
+                showToast('Please select years in business');
                 return;
             }
         }
@@ -437,7 +437,7 @@ export default function ProfileCompletionShipper() {
             apiPayload.append('company_name', formData.companyName || '');
             apiPayload.append('company_registration_type', formData.companyRegType || '');
             apiPayload.append('years_in_business', formData.yearsInBusiness || '');
-            apiPayload.append('shipper_expected_load', formData.monthlyLoadVolume || '');
+            // apiPayload.append('shipper_expected_load', formData.monthlyLoadVolume || '');
             apiPayload.append('pincode', formData.pincode || '');
             apiPayload.append('dob', formData.dob || '');
             apiPayload.append('no_second_poc', !showPOC ? '1' : '0');
@@ -645,13 +645,13 @@ export default function ProfileCompletionShipper() {
                 onSelect={val => updateFormData('yearsInBusiness', val)}
             />
 
-            <Space height={24} />
+            {/* <Space height={24} />
             <MandatoryLabel text="Average monthly load volume" />
             <PillOptions
                 options={LOAD_VOLUME}
                 value={formData.monthlyLoadVolume}
                 onSelect={val => updateFormData('monthlyLoadVolume', val)}
-            />
+            /> */}
         </View>
     );
 

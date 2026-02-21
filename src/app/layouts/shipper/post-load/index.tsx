@@ -115,18 +115,25 @@ const ShipperPostLoad = () => {
 
     // --- State ---
     const [currentStep, setCurrentStep] = useState(0);
-    const [originLocation, setOriginLocation] = useState('');
-    const [destinationLocation, setDestinationLocation] = useState('');
-    const [originLat, setOriginLat] = useState('');
-    const [originLon, setOriginLon] = useState('');
-    const [destinationLat, setDestinationLat] = useState('');
-    const [destinationLon, setDestinationLon] = useState('');
-    const [exactOriginLocation, setExactOriginLocation] = useState('');
-    const [exactDestinationLocation, setExactDestinationLocation] = useState('');
-    const [loadingCityState, setLoadingCityState] = useState('');
-    const [unloadingCityState, setUnloadingCityState] = useState('');
+    const [originLocation, setOriginLocation] = useState(route.params?.originLocation || '');
+    const [destinationLocation, setDestinationLocation] = useState(route.params?.destinationLocation || '');
+    const [originLat, setOriginLat] = useState(route.params?.originLat || '');
+    const [originLon, setOriginLon] = useState(route.params?.originLon || '');
+    const [destinationLat, setDestinationLat] = useState(route.params?.destinationLat || '');
+    const [destinationLon, setDestinationLon] = useState(route.params?.destinationLon || '');
+    const [exactOriginLocation, setExactOriginLocation] = useState(route.params?.exactOriginLocation || '');
+    const [exactDestinationLocation, setExactDestinationLocation] = useState(route.params?.exactDestinationLocation || '');
+    const [loadingCityState, setLoadingCityState] = useState(route.params?.loadingCityState || '');
+    const [unloadingCityState, setUnloadingCityState] = useState(route.params?.unloadingCityState || '');
+
+    useEffect(() => {
+        if (route.params?.originLocation && route.params?.exactOriginLocation) {
+            setCurrentStep(1);
+        }
+    }, [route.params]);
 
     const [loadQuantity, setLoadQuantity] = useState('');
+    const [qtyError, setQtyError] = useState('');
     const [materialType, setMaterialType] = useState('Select Material');
     const [materialId, setMaterialId] = useState<number | null>(null);
 
@@ -385,6 +392,29 @@ const ShipperPostLoad = () => {
         }
     }, [selectedBodyId, loadQuantity]);
 
+    const handleQuantityChange = (val: string) => {
+        setLoadQuantity(val);
+        setSelectedBodyId(null);
+        setSelectedBodyType('');
+        setVehicleBodies([]);
+        setSelectedVehicleId(null);
+        setSelectedVehicleType('');
+        setVehicleLengths([]);
+
+        if (val) {
+            const qty = parseFloat(val);
+            if (isNaN(qty)) {
+                setQtyError('Invalid number');
+            } else if (qty < 2.5 || qty > 45) {
+                setQtyError('Quantity should be between 2.5 to 45');
+            } else {
+                setQtyError('');
+            }
+        } else {
+            setQtyError('');
+        }
+    };
+
     // --- Actions ---
     const handleNext = () => {
         const step = LOAD_STEPS[currentStep];
@@ -408,7 +438,7 @@ const ShipperPostLoad = () => {
             }
             const weight = parseFloat(loadQuantity);
             if (weight < 2.5 || weight > 45) {
-                showAlert("Total weight must be between 2.5 and 45 tonnes.", "Invalid Weight");
+                showAlert("Quantity should be between 2.5 to 45", "Invalid Weight");
                 return;
             }
         }
@@ -848,17 +878,16 @@ const ShipperPostLoad = () => {
                 return (
                     <View style={styles.stepContainer}>
                         <Text style={styles.classicLabel}>Total Weight (Tonnes)</Text>
-                        <Text style={[styles.helperText, { marginBottom: 12, marginTop: 0 }]}>
-                            Enter the approximate weight of your goods (Min: 2.5 | Max: 45)
-                        </Text>
                         <TextInput
-                            style={styles.classicInput}
-                            placeholder="e.g. 15"
+                            style={[styles.classicInput, qtyError ? { borderColor: '#ef4444', borderWidth: 1 } : {}]}
+                            placeholder="e.g. 15.5"
                             placeholderTextColor="#999"
                             keyboardType="numeric"
                             value={loadQuantity}
-                            onChangeText={setLoadQuantity}
+                            onChangeText={handleQuantityChange}
                         />
+                        {qtyError ? <Text style={styles.errorText}>{qtyError}</Text> : null}
+                        <Text style={styles.helperText}>Between 2.5 and 45 tonnes</Text>
                     </View>
                 );
             case 'body_type':
@@ -972,7 +1001,7 @@ const ShipperPostLoad = () => {
                             keyboardType="numeric"
                             value={offeredPrice}
                             onChangeText={(val) => {
-                                const raw = unformatPrice(val);
+                                const raw = unformatPrice(val).split('.')[0];
                                 setOfferedPrice(formatPrice(raw));
                             }}
                         />
@@ -1261,7 +1290,8 @@ const styles = StyleSheet.create({
     experienceTileTextSelected: { color: '#246BFD', fontWeight: '700' },
     suggestionOverlay: { position: 'absolute', top: 60, left: 0, right: 0, backgroundColor: 'white', borderRadius: 12, elevation: 5, zIndex: 100, borderWidth: 1, borderColor: '#EEE' },
     suggestionItem: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#EEE' },
-    suggestionText: { fontSize: 14, color: '#333' }
+    suggestionText: { fontSize: 14, color: '#333' },
+    errorText: { color: '#ef4444', fontSize: 13, marginTop: -15, marginBottom: 15, fontWeight: '600' },
 });
 
 export default ShipperPostLoad;

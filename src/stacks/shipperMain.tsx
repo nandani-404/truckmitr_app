@@ -26,6 +26,7 @@ import ShipperTrackDetail from '../app/layouts/shipper/track/detail';
 import ShipperNotifications from '../app/layouts/shipper/shipper-notifications';
 import LocationMap from '../app/layouts/main/location/map';
 import LocationSearch from '../app/layouts/main/location/search';
+import ShipperEditLoad from '../app/layouts/shipper/edit-load';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -145,6 +146,7 @@ export default function ShipperMain() {
             <Stack.Screen name={STACKS.SHIPPER_NOTIFICATIONS} component={ShipperNotifications} />
             <Stack.Screen name={STACKS.MAP_VIEW} component={LocationMap} />
             <Stack.Screen name={STACKS.LOCATION_SEARCH} component={LocationSearch} />
+            <Stack.Screen name={STACKS.SHIPPER_EDIT_LOAD} component={ShipperEditLoad} />
         </Stack.Navigator>
     );
 }

@@ -98,10 +98,18 @@ const BasicDetailsTab = () => {
         }
     };
 
-    // Fetch pincode data on mount if pincode already exists
+    // Fetch pincode data on mount if pincode already exists but city/state is missing
     useEffect(() => {
         if (profileData.pincode?.length === 6) {
-            fetchPincodeData(profileData.pincode);
+            const hasLocationData = profileData.city && profileData.state;
+
+            if (!hasLocationData) {
+                console.log('Fetching pincode data: Pincode exists but city/state missing');
+                fetchPincodeData(profileData.pincode);
+            } else {
+                console.log('Skipping pincode fetch: Already have city/state');
+                setStateName(getStateNameById(profileData.state));
+            }
         } else if (profileData.state) {
             // If state ID already exists (from API), resolve its name
             setStateName(getStateNameById(profileData.state));
@@ -159,15 +167,15 @@ const BasicDetailsTab = () => {
 
                     <RenderInputField
                         label="District"
-                        value={profileData.pincode?.length === 6 ? profileData.city : ''}
-                        placeholder={profileData.pincode?.length === 6 ? 'Auto-filled from Pincode' : 'Fill pincode first'}
+                        value={profileData.city || ''}
+                        placeholder={profileData.pincode?.length === 6 ? 'District' : 'Fill pincode first'}
                         editable={false}
                     />
 
                     <RenderInputField
                         label="State"
-                        value={profileData.pincode?.length === 6 ? stateName : ''}
-                        placeholder={profileData.pincode?.length === 6 ? 'Auto-filled from Pincode' : 'Fill pincode first'}
+                        value={stateName || ''}
+                        placeholder={profileData.pincode?.length === 6 ? 'State' : 'Fill pincode first'}
                         editable={false}
                     />
                 </View>
