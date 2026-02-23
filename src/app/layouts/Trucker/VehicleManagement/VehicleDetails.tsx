@@ -65,12 +65,42 @@ const InfoItem = ({ label, value, half = false }: { label: string; value: string
 );
 
 /** Horizontal key-value row – label left, value right */
-const DetailRow = ({ label, value, last = false }: { label: string; value: string | number | null; last?: boolean }) => (
-    <View style={[s.detailRow, !last && s.detailRowBorder]}>
-        <Text style={s.detailLabel}>{label}</Text>
-        <Text style={s.detailValue}>{value ? String(value) : '—'}</Text>
+const DetailRow = ({ label, value, last = false, valueColor, isInvalid = false }: { label: string; value: string | number | null; last?: boolean; valueColor?: string; isInvalid?: boolean }) => (
+    <View style={[s.detailRow, !last && s.detailRowBorder, isInvalid && { backgroundColor: '#FEF2F2' }]}>
+        <Text style={[s.detailLabel, isInvalid && { color: C.danger, fontWeight: '600' }]}>{label}</Text>
+        <Text style={[s.detailValue, valueColor ? { color: valueColor } : null, isInvalid && { color: C.danger }]}>{value ? String(value) : (isInvalid ? 'Absent' : '—')}</Text>
     </View>
 );
+
+const formatDisplayDate = (dateStr: string | null | undefined) => {
+    if (!dateStr || dateStr === 'N/A') return 'N/A';
+    const cleanStr = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+    const parts = cleanStr.split('-');
+    if (parts.length === 3) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const year = parts[2].length === 4 ? parts[2] : parts[0];
+        const monthNum = Number(parts[1]);
+        const day = parts[2].length === 4 ? parts[0] : parts[2];
+        const month = months[monthNum - 1];
+        if (month) return `${String(day).padStart(2, '0')} ${month} ${year}`;
+    }
+    return cleanStr;
+};
+
+const isDocumentValidStr = (dateStr: string | null | undefined): boolean => {
+    if (!dateStr || dateStr === 'N/A') return false;
+    const parts = dateStr.includes('T') ? dateStr.split('T')[0].split('-') : dateStr.split('-');
+    if (parts.length !== 3) return false;
+    const year = parts[2].length === 4 ? Number(parts[2]) : Number(parts[0]);
+    const month = parts[2].length === 4 ? Number(parts[1]) : Number(parts[1]);
+    const day = parts[2].length === 4 ? Number(parts[0]) : Number(parts[2]);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return false;
+    const dobj = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.ceil((dobj.getTime() - today.getTime()) / (1000 * 3600 * 24));
+    return diff >= 5;
+};
 
 // ─────────────────────────────────────────────
 // Screen
@@ -155,10 +185,10 @@ const VehicleDetailsScreen: React.FC<Props> = ({ route, navigation, onBack }) =>
                 <View style={s.section}>
                     <Text style={s.sectionTitle}>Registration</Text>
                     <View style={s.card}>
-                        <DetailRow label="Registration Date" value={vehicle.registration_date} />
+                        <DetailRow label="Registration Date" value={formatDisplayDate(vehicle.registration_date)} />
                         <DetailRow label="RTO" value={vehicle.rto_name} />
                         <DetailRow label="RC Status" value={vehicle.rc_status} />
-                        <DetailRow label="Registration Valid Upto" value={vehicle.registration_valid_upto} last />
+                        <DetailRow label="Registration Valid Upto" value={formatDisplayDate(vehicle.registration_valid_upto)} last={true} />
                     </View>
                 </View>
 
@@ -175,27 +205,34 @@ const VehicleDetailsScreen: React.FC<Props> = ({ route, navigation, onBack }) =>
                     </View>
                 </View>
 
-                {/* ── Validity & Insurance ── */}
+                {/* ── Document Validity ── */}
                 <View style={s.section}>
-                    <Text style={s.sectionTitle}>Validity & Insurance</Text>
+                    <Text style={s.sectionTitle}>Document Validity</Text>
                     <View style={s.card}>
-                        <DetailRow label="Fitness Valid Upto" value={vehicle.fitness_valid_upto} />
-                        <DetailRow label="Pollution Valid Upto" value={vehicle.pollution_valid_upto} />
-                        <DetailRow label="Insurance Company" value={vehicle.insurance_company} />
-                        <DetailRow label="Policy Number" value={vehicle.insurance_policy_number} />
-                        <DetailRow label="Insurance Valid Upto" value={vehicle.insurance_validity} />
-                        <DetailRow label="Road Tax Paid Upto" value={vehicle.road_tax_paid_upto} last />
+                        <DetailRow label="Fitness Valid Upto" value={formatDisplayDate(vehicle.fitness_valid_upto)} isInvalid={!isDocumentValidStr(vehicle.fitness_valid_upto)} />
+                        <DetailRow label="Tax Valid Upto" value={formatDisplayDate(vehicle.road_tax_paid_upto)} isInvalid={!isDocumentValidStr(vehicle.road_tax_paid_upto)} />
+                        <DetailRow label="Insurance Valid Upto" value={formatDisplayDate(vehicle.insurance_validity)} isInvalid={!isDocumentValidStr(vehicle.insurance_validity)} />
+                        <DetailRow label="PUCC Valid Upto" value={formatDisplayDate(vehicle.pollution_valid_upto)} isInvalid={!isDocumentValidStr(vehicle.pollution_valid_upto)} />
+                        <DetailRow label="State Permit Valid Upto" value={formatDisplayDate(vehicle.state_permit_validity)} isInvalid={!isDocumentValidStr(vehicle.state_permit_validity)} />
+                        <DetailRow label="National Permit Valid Upto" value={formatDisplayDate(vehicle.national_permit_validity)} isInvalid={!isDocumentValidStr(vehicle.national_permit_validity)} last={true} />
                     </View>
                 </View>
 
-                {/* ── Permits ── */}
+                {/* ── Insurance Details ── */}
                 <View style={s.section}>
-                    <Text style={s.sectionTitle}>Permits</Text>
+                    <Text style={s.sectionTitle}>Insurance Details</Text>
+                    <View style={s.card}>
+                        <DetailRow label="Insurance Company" value={vehicle.insurance_company} />
+                        <DetailRow label="Policy Number" value={vehicle.insurance_policy_number} last />
+                    </View>
+                </View>
+
+                {/* ── Permit Details ── */}
+                <View style={s.section}>
+                    <Text style={s.sectionTitle}>Permit Details</Text>
                     <View style={s.card}>
                         <DetailRow label="National Permit No." value={vehicle.national_permit_number} />
-                        <DetailRow label="National Permit Valid" value={vehicle.national_permit_validity} />
-                        <DetailRow label="State Permit No." value={vehicle.state_permit_number} />
-                        <DetailRow label="State Permit Valid" value={vehicle.state_permit_validity} last />
+                        <DetailRow label="State Permit No." value={vehicle.state_permit_number} last />
                     </View>
                 </View>
 

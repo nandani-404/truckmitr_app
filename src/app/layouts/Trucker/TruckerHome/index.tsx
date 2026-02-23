@@ -177,7 +177,7 @@ const AcceptedBidCard = ({ bid, index, isMultiple, onPress, fadeAnim }: any) => 
         if (bid.current_status_label === 'Load Accepted') return 'Add Vehicle & Driver';
         if (bid.current_status_label === 'Vehicle Assigned') return 'Mark Reached Pickup';
         if (bid.current_status_label === 'Reached Pickup') return 'Mark Loaded';
-        if (bid.current_status_label === 'Loaded') return 'Upload Builty & Start Transit';
+        if (bid.current_status_label === 'Loaded') return 'Upload Bility & Start Transit';
         if (bid.current_status_label === 'In Transit') return 'Mark Reached Destination';
         if (bid.current_status_label === 'Reached Destination') return 'Upload POD & Complete';
         if (bid.current_status_label === 'Delivered') return 'Completed';
@@ -250,7 +250,14 @@ const AcceptedBidCard = ({ bid, index, isMultiple, onPress, fadeAnim }: any) => 
                         {formatCurrency(bid.trucker_updated_price || bid.trucker_price)}
                     </Text>
                 </View>
-                {bid.trucker_updated_price && (
+                {parseFloat(bid.trucker_received_amount) > 0 ? (
+                    <View style={[styles.bidPriceItem, { backgroundColor: COLORS.successLight }]}>
+                        <Text style={[styles.bidPriceLabel, { color: COLORS.success }]}>Received</Text>
+                        <Text style={[styles.bidPriceValue, { color: COLORS.success }]}>
+                            {formatCurrency(bid.trucker_received_amount)}
+                        </Text>
+                    </View>
+                ) : bid.trucker_updated_price && (
                     <View style={styles.bidPriceItem}>
                         <Text style={styles.bidPriceLabel}>Your Bid</Text>
                         <Text

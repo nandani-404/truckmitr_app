@@ -142,11 +142,11 @@ const SkeletonLoadCard = ({ index }: { index: number }) => {
     const cardAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        Animated.timing(cardAnim, { 
-            toValue: 1, 
-            duration: 400, 
-            delay: index * 80, 
-            useNativeDriver: true 
+        Animated.timing(cardAnim, {
+            toValue: 1,
+            duration: 400,
+            delay: index * 80,
+            useNativeDriver: true
         }).start();
     }, []);
 
@@ -335,7 +335,7 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
             if (currentStatus === 'Load Accepted') return 'Add Vehicle & Driver';
             if (currentStatus === 'Vehicle Assigned') return 'Mark Reached Pickup';
             if (currentStatus === 'Reached Pickup') return 'Mark Loaded';
-            if (currentStatus === 'Loaded') return 'Upload Builty & Start Transit';
+            if (currentStatus === 'Loaded') return 'Upload Bility & Start Transit';
             if (currentStatus === 'In Transit') return 'Mark Reached Destination';
             if (currentStatus === 'Reached Destination') return 'Upload POD & Complete';
             if (currentStatus === 'Delivered') return 'Completed';
@@ -427,6 +427,12 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                             <View style={s.bidRow}>
                                 <Text style={s.bidLabel}>Your Bid</Text>
                                 <Text style={s.bidValue}>{formatPrice(load.trucker_price)}</Text>
+                            </View>
+                        )}
+                        {parseFloat(load.trucker_received_amount) > 0 && (
+                            <View style={[s.bidRow, { marginTop: 4 }]}>
+                                <Text style={s.bidLabel}>Received</Text>
+                                <Text style={[s.bidValue, { color: C.success, fontSize: 15 }]}>{formatPrice(load.trucker_received_amount)}</Text>
                             </View>
                         )}
                     </View>
@@ -632,6 +638,18 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                                         </View>
                                     )}
                                 </View>
+
+                                {parseFloat(selectedLoad.trucker_received_amount) > 0 && (
+                                    <View style={[s.sheetSection, { marginTop: -8 }]}>
+                                        <Text style={s.sheetLabel}>Payment Received</Text>
+                                        <View style={{ backgroundColor: C.successLight, padding: 12, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={[s.sheetValueHuge, { color: C.success }]}>{formatPrice(selectedLoad.trucker_received_amount)}</Text>
+                                            <View style={{ backgroundColor: C.success, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                                                <Text style={{ color: C.white, fontSize: 10, fontWeight: '700' }}>PAID</Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                )}
 
                                 {/* Cargo & Vehicle */}
                                 <View style={s.sheetSection}>

@@ -14,9 +14,14 @@ import { pick } from '@react-native-documents/picker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { requestCameraPermission, requestPhotoLibraryPermission } from '@truckmitr/src/utils/permissions/imagePermissions';
 import { useTranslation } from 'react-i18next';
+import { fetchDirections } from 'src/utils/maps/google.apis';
+import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
+import ColorTrackingMap from './ColorTrackingMap';
 // import pusherService, { LocationUpdate } from 'src/services/pusherService';
 
-const { width } = Dimensions.get('window');
+const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const ROUTE_COLORS = ['#2874F0', '#F39C12', '#26A541', '#E74C3C', '#9B59B6'];
 
 // ── Classic Color Palette (Flipkart Style) ──
 const C = {
@@ -66,6 +71,20 @@ const LocationPinIcon = ({ color = C.primary }) => (
 const NavigationIcon = ({ color = C.primary }) => (
     <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Path d="M3 11l19-9-9 19-2-8-8-2z" />
+    </Svg>
+);
+
+const RouteIcon = ({ color = C.primary }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M18 6L6 18" />
+        <Path d="M8 6H18V16" />
+    </Svg>
+);
+
+const ClockIcon = ({ color = C.textSec }) => (
+    <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Circle cx="12" cy="12" r="10" />
+        <Path d="M12 6v6l4 2" />
     </Svg>
 );
 
@@ -138,12 +157,26 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingStatusUpdate, setPendingStatusUpdate] = useState<number | null>(null);
+    const [showColorTrackingMap, setShowColorTrackingMap] = useState(false);
 
-    // POD and Builty upload states
+    // Route selection states
+    const [showRouteModal, setShowRouteModal] = useState(false);
+    const [availableRoutes, setAvailableRoutes] = useState<any[]>([]);
+    const [decodedRoutes, setDecodedRoutes] = useState<{ latitude: number; longitude: number }[][]>([]);
+    const [fetchingRoutes, setFetchingRoutes] = useState(false);
+    const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(null);
+    const [selectedTripRoute, setSelectedTripRoute] = useState<any | null>(null);
+    const [selectedTripRoutePoints, setSelectedTripRoutePoints] = useState<{ latitude: number; longitude: number }[]>([]);
+    const routeMapRef = useRef<MapView>(null);
+
+    // Start trip state
+    const [startingTrip, setStartingTrip] = useState(false);
+
+    // POD and Bility upload states
     const [showPODModal, setShowPODModal] = useState(false);
-    const [showBuiltyModal, setShowBuiltyModal] = useState(false);
-    const [builtyFile, setBuiltyFile] = useState<any>(null);
-    const [uploadingBuilty, setUploadingBuilty] = useState(false);
+    const [showBilityModal, setShowBilityModal] = useState(false);
+    const [builtyFile, setBilityFile] = useState<any>(null);
+    const [uploadingBility, setUploadingBility] = useState(false);
     const [podFile, setPodFile] = useState<any>(null);
     const [uploadingPOD, setUploadingPOD] = useState(false);
 
@@ -155,6 +188,9 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
     const lastLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
     const lastUpdateTimeRef = useRef<number>(Date.now());
     const fallbackIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const lastHeadingRef = useRef<number>(0);
+    // Track every GPS position for bearing calculation (separate from lastLocationRef which only updates on 30m+ moves)
+    const prevGpsPositionRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
     // Trip Data
     const [trip, setTrip] = useState<any>({
@@ -178,6 +214,9 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
         payment: '',
         builty_path: null,
         pod_path: null,
+        driver_id: null,
+        trip_started: false,
+        sim_tracking_consent: null,
     });
 
     useEffect(() => {
@@ -240,8 +279,54 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
         return R * c; // Distance in meters
     };
 
+    // Calculate bearing (heading) between two GPS coordinates in degrees (0-360)
+    const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const toRad = (deg: number) => (deg * Math.PI) / 180;
+        const toDeg = (rad: number) => (rad * 180) / Math.PI;
+
+        const φ1 = toRad(lat1);
+        const φ2 = toRad(lat2);
+        const Δλ = toRad(lon2 - lon1);
+
+        const y = Math.sin(Δλ) * Math.cos(φ2);
+        const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+        let bearing = toDeg(Math.atan2(y, x));
+        return (bearing + 360) % 360; // Normalize to 0-360
+    };
+
+    // Get the best available heading: using GPS trajectory if moving, else GPS heading
+    const getVehicleHead = (latitude: number, longitude: number, gpsHeading?: number | null): number => {
+        let finalHeading = (gpsHeading !== undefined && gpsHeading !== null && gpsHeading >= 0) ? Math.round(gpsHeading) : lastHeadingRef.current;
+
+        if (prevGpsPositionRef.current) {
+            const dist = calculateDistance(
+                prevGpsPositionRef.current.latitude, prevGpsPositionRef.current.longitude,
+                latitude, longitude
+            );
+
+            // If moved more than 2 meters, use True GPS Trajectory (much more accurate in a moving truck)
+            if (dist >= 2) {
+                const bearing = Math.round(calculateBearing(
+                    prevGpsPositionRef.current.latitude, prevGpsPositionRef.current.longitude,
+                    latitude, longitude
+                ));
+                console.log(`🧭 [HEADING] Moved ${dist.toFixed(1)}m. Using True GPS Bearing: ${bearing}°`);
+                finalHeading = bearing;
+            } else {
+                console.log(`🧭 [HEADING] Stationary. Using GPS Heading: ${finalHeading}°`);
+            }
+        } else {
+            console.log(`🧭 [HEADING] First ping. Using GPS Heading: ${finalHeading}°`);
+        }
+
+        lastHeadingRef.current = finalHeading;
+        prevGpsPositionRef.current = { latitude, longitude };
+        return finalHeading;
+    };
+
     // Update location to server
-    const updateLocationToServer = async (latitude: number, longitude: number) => {
+    const updateLocationToServer = async (latitude: number, longitude: number, vehicleHead: number = 0) => {
         try {
             if (!trip.trip_id || !user?.id) {
                 console.warn('⚠️ [LOCATION UPDATE] Missing trip_id or driver_id');
@@ -255,6 +340,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 driver_id: user.id,
                 latitude,
                 longitude,
+                vehicle_head: vehicleHead,
             };
 
             console.log('═══════════════════════════════════════════════════════════');
@@ -304,16 +390,22 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
         // Watch position changes
         watchIdRef.current = Geolocation.watchPosition(
             (position) => {
-                const { latitude, longitude } = position.coords;
+                const { latitude, longitude, heading } = position.coords;
+                const vehicleHead = getVehicleHead(latitude, longitude, heading);
                 console.log('═══════════════════════════════════════════════════════════');
                 console.log('📍 [LOCATION TRACKING] New position received from GPS');
                 console.log('📍 [LOCATION TRACKING] Latitude:', latitude.toFixed(6));
                 console.log('📍 [LOCATION TRACKING] Longitude:', longitude.toFixed(6));
+                console.log('📍 [LOCATION TRACKING] GPS Heading (raw):', heading);
+                console.log('📍 [LOCATION TRACKING] Vehicle Head (final):', vehicleHead, 'degrees');
                 console.log('📍 [LOCATION TRACKING] Accuracy:', position.coords.accuracy?.toFixed(2), 'meters');
                 console.log('📍 [LOCATION TRACKING] Timestamp:', new Date(position.timestamp).toISOString());
                 console.log('═══════════════════════════════════════════════════════════');
 
                 setCurrentLocation({ latitude, longitude });
+
+                // Always update prev GPS position for bearing calculation on next tick
+                prevGpsPositionRef.current = { latitude, longitude };
 
                 // Check if we should update (moved 30m or more)
                 if (lastLocationRef.current) {
@@ -330,7 +422,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
 
                     if (distance >= 30) {
                         console.log('✅ [LOCATION TRACKING] Moved 30m+, updating server');
-                        updateLocationToServer(latitude, longitude);
+                        updateLocationToServer(latitude, longitude, vehicleHead);
                         lastLocationRef.current = { latitude, longitude };
                     } else {
                         console.log(`⏸️ [LOCATION TRACKING] Distance < 30m, skipping update (${distance.toFixed(2)}m)`);
@@ -338,7 +430,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 } else {
                     // First location update
                     console.log('🎯 [LOCATION TRACKING] First location received, updating server');
-                    updateLocationToServer(latitude, longitude);
+                    updateLocationToServer(latitude, longitude, vehicleHead);
                     lastLocationRef.current = { latitude, longitude };
                 }
             },
@@ -389,29 +481,20 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 // Try to get current position with relaxed settings
                 Geolocation.getCurrentPosition(
                     (position) => {
-                        const { latitude, longitude } = position.coords;
-                        console.log('✅ [LOCATION TRACKING] Fallback position obtained:', { latitude, longitude });
-                        updateLocationToServer(latitude, longitude);
+                        const { latitude, longitude, heading } = position.coords;
+                        const vehicleHead = getVehicleHead(latitude, longitude, heading);
+                        console.log('✅ [LOCATION TRACKING] Fallback position obtained:', { latitude, longitude, vehicleHead });
+                        updateLocationToServer(latitude, longitude, vehicleHead);
                         lastLocationRef.current = { latitude, longitude };
+                        prevGpsPositionRef.current = { latitude, longitude };
                         setCurrentLocation({ latitude, longitude });
                     },
                     (error) => {
                         console.error('═══════════════════════════════════════════════════════════');
                         console.error('❌ [LOCATION TRACKING] Fallback error:', error.message);
                         console.error('❌ [LOCATION TRACKING] Error code:', error.code);
+                        console.warn('⚠️ [LOCATION TRACKING] GPS unavailable - skipping update (no stale data sent)');
                         console.error('═══════════════════════════════════════════════════════════');
-
-                        // If we have a last known location, use that
-                        if (lastLocationRef.current) {
-                            console.log('🔄 [LOCATION TRACKING] Using last known location as fallback');
-                            console.log('📍 [LOCATION TRACKING] Last known position:', lastLocationRef.current);
-                            updateLocationToServer(
-                                lastLocationRef.current.latitude,
-                                lastLocationRef.current.longitude
-                            );
-                        } else {
-                            console.warn('⚠️ [LOCATION TRACKING] No location available - skipping update');
-                        }
                     },
                     {
                         enableHighAccuracy: false, // Use network location for faster response
@@ -511,6 +594,9 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                     weight: data.material_weight,
                     builty_path: data.builty_path || null,
                     pod_path: data.pod_path || null,
+                    driver_id: data.driver_id || null,
+                    trip_started: data.trip_started || data.trip_status === 'active' || false,
+                    sim_tracking_consent: data.sim_tracking_consent || null,
                 });
 
                 console.log('═══════════════════════════════════════════════════════════');
@@ -705,7 +791,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
         }
     };
 
-    const downloadBuilty = () => {
+    const downloadBility = () => {
         if (trip.builty_path) {
             const url = `${BASE_URL}public/${trip.builty_path}`;
             console.log('📥 [BUILTY] Downloading from:', url);
@@ -714,7 +800,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 showToast('Failed to open builty document');
             });
         } else {
-            showToast('Builty document not available');
+            showToast('Bility document not available');
         }
     };
 
@@ -732,46 +818,434 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
     };
 
     const openMaps = () => {
-        // Use the new keys requested by the user
-        const originLat = trip.origin_lat || trip.source_lat;
-        const originLng = trip.origin_lon || trip.source_lng;
+        const pickupLat = trip.origin_lat || trip.source_lat;
+        const pickupLng = trip.origin_lon || trip.source_lng;
         const destLat = trip.destination_lat;
         const destLng = trip.destination_lon || trip.destination_lng;
 
+        // Use current GPS location as origin, fallback to pickup
+        const originLat = currentLocation?.latitude || pickupLat;
+        const originLng = currentLocation?.longitude || pickupLng;
+
         console.log('🗺️ [NAVIGATION] Opening Google Maps');
-        console.log(`🗺️ [NAVIGATION] Origin: ${originLat}, ${originLng}`);
-        console.log(`🗺️ [NAVIGATION] Destination: ${destLat}, ${destLng}`);
+        console.log('🗺️ [NAVIGATION] Origin (current):', originLat, originLng);
+        console.log('🗺️ [NAVIGATION] Pickup:', pickupLat, pickupLng);
+        console.log('🗺️ [NAVIGATION] Destination:', destLat, destLng);
 
-        if (originLat && originLng && destLat && destLng) {
-            const url = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}`;
-            Linking.canOpenURL(url).then(supported => {
-                if (supported) {
-                    Linking.openURL(url);
-                } else {
-                    Alert.alert(t('error_title'), t('unable_to_open_maps') || 'Unable to open maps');
-                }
+        if (destLat && destLng) {
+            // Build URL: current location → pickup (waypoint) → destination
+            let url = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=driving`;
+
+            // Add pickup as a waypoint if we have pickup coordinates
+            if (pickupLat && pickupLng) {
+                url += `&waypoints=${pickupLat},${pickupLng}`;
+            }
+
+            console.log('🗺️ [NAVIGATION] URL:', url);
+            Linking.openURL(url).catch(err => {
+                console.error('❌ [NAVIGATION] Error opening maps:', err);
+                showToast('Unable to open maps');
             });
-        } else if (trip.origin && trip.destination) {
-            // Fallback to address search if coordinates are missing
-            const origin = encodeURIComponent(trip.origin);
-            const destination = encodeURIComponent(trip.destination);
-            const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
-
-            Linking.canOpenURL(url).then(supported => {
-                if (supported) {
-                    Linking.openURL(url);
-                } else {
-                    Alert.alert(t('error_title'), t('unable_to_open_maps') || 'Unable to open maps');
-                }
+        } else if (trip.destination && trip.destination !== 'Loading...') {
+            // Fallback: use address strings
+            let url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.destination)}&travelmode=driving`;
+            if (trip.origin && trip.origin !== 'Loading...' && trip.origin !== 'Unknown') {
+                url += `&waypoints=${encodeURIComponent(trip.origin)}`;
+            }
+            console.log('🗺️ [NAVIGATION] Using address fallback URL:', url);
+            Linking.openURL(url).catch(err => {
+                console.error('❌ [NAVIGATION] Error opening maps:', err);
+                showToast('Unable to open maps');
             });
         } else {
-            showToast(t('location_disabled') || 'Location data missing');
+            showToast('Destination coordinates not available');
+        }
+    };
+
+    // Decode Google Maps encoded polyline to extract coordinates
+    const decodePolyline = (encoded: string): { latitude: number; longitude: number }[] => {
+        const points: { latitude: number; longitude: number }[] = [];
+        let index = 0, lat = 0, lng = 0;
+        while (index < encoded.length) {
+            let b, shift = 0, result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+
+            shift = 0; result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+
+            points.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+        }
+        return points;
+    };
+
+    const toNumberOrNaN = (value: any): number => {
+        const num = typeof value === 'number' ? value : parseFloat(value);
+        return Number.isFinite(num) ? num : NaN;
+    };
+
+    const selectRouteByIndex = (index: number) => {
+        const route = availableRoutes[index];
+        const points = decodedRoutes[index] || [];
+        setSelectedRouteIndex(index);
+        if (route) {
+            setSelectedTripRoute(route);
+            setSelectedTripRoutePoints(points);
+            console.log('🛣️ [ROUTE SELECT] Selected route index:', index);
+            console.log('🛣️ [ROUTE SELECT] Selected route summary:', route?.summary);
+            console.log('🛣️ [ROUTE SELECT] Encoded polyline:', route?.overview_polyline?.points);
+            console.log('🛣️ [ROUTE SELECT] Decoded polyline points:', JSON.stringify(points));
+        }
+    };
+
+    // Fetch alternative routes from Google Directions API
+    const fetchAvailableRoutes = async () => {
+        try {
+            setFetchingRoutes(true);
+            setAvailableRoutes([]);
+            setDecodedRoutes([]);
+            setSelectedRouteIndex(null);
+
+            const originLat = trip.origin_lat || trip.source_lat;
+            const originLng = trip.origin_lon || trip.source_lng;
+            const destLat = trip.destination_lat;
+            const destLng = trip.destination_lon || trip.destination_lng;
+
+            if (!originLat || !originLng || !destLat || !destLng) {
+                showToast(t('route_coordinates_missing') || 'Origin or destination coordinates missing');
+                return;
+            }
+
+            console.log('🗺️ [ROUTES] Fetching routes...');
+            console.log('🗺️ [ROUTES] Origin:', originLat, originLng);
+            console.log('🗺️ [ROUTES] Destination:', destLat, destLng);
+
+            const response = await fetchDirections(
+                { latitude: parseFloat(originLat), longitude: parseFloat(originLng) },
+                { latitude: parseFloat(destLat), longitude: parseFloat(destLng) },
+                true
+            );
+
+            console.log('🗺️ [ROUTES] API Response status:', response.data?.status);
+
+            if (response.data?.status === 'OK' && response.data?.routes?.length > 0) {
+                const routes = response.data.routes;
+                console.log(`🗺️ [ROUTES] Found ${routes.length} route(s)`);
+
+                const decoded: { latitude: number; longitude: number }[][] = [];
+                routes.forEach((route: any, i: number) => {
+                    const leg = route.legs?.[0];
+                    console.log(`  Route ${i + 1}: ${route.summary} - ${leg?.distance?.text} - ${leg?.duration?.text}`);
+                    const polyline = route.overview_polyline?.points;
+                    decoded.push(polyline ? decodePolyline(polyline) : []);
+                });
+
+                setAvailableRoutes(routes);
+                setDecodedRoutes(decoded);
+                setSelectedTripRoute(null);
+                setSelectedTripRoutePoints([]);
+
+                // Fit map to show all routes after a short delay
+                setTimeout(() => {
+                    if (routeMapRef.current && decoded.length > 0) {
+                        const allPoints = decoded.flat();
+                        if (allPoints.length > 0) {
+                            routeMapRef.current.fitToCoordinates(allPoints, {
+                                edgePadding: { top: 60, right: 40, bottom: 40, left: 40 },
+                                animated: true,
+                            });
+                        }
+                    }
+                }, 500);
+            } else {
+                console.warn('⚠️ [ROUTES] No routes found or API error:', response.data?.status);
+                showToast(t('no_routes_found') || 'Could not fetch routes');
+            }
+        } catch (error) {
+            console.error('❌ [ROUTES] Error fetching routes:', error);
+            showToast(t('route_fetch_failed') || 'Failed to fetch routes');
+        } finally {
+            setFetchingRoutes(false);
+        }
+    };
+
+    // Open Google Maps with strict 2-leg flow:
+    // current location -> pickup(origin) -> destination
+    const openMapsWithSelectedRoute = (route: any) => {
+        const pickupLat = trip.origin_lat || trip.source_lat;
+        const pickupLng = trip.origin_lon || trip.source_lng;
+        const destLat = trip.destination_lat;
+        const destLng = trip.destination_lon || trip.destination_lng;
+
+        if (!pickupLat || !pickupLng || !destLat || !destLng) {
+            showToast(t('route_coordinates_missing') || 'Location data missing');
+            return;
+        }
+
+        const navOriginLat = currentLocation?.latitude || pickupLat;
+        const navOriginLng = currentLocation?.longitude || pickupLng;
+        const selectedPolyline = route?.overview_polyline?.points;
+        const selectedPoints =
+            selectedTripRoutePoints.length > 0
+                ? selectedTripRoutePoints
+                : (selectedPolyline ? decodePolyline(selectedPolyline) : []);
+
+        // Keep flow: current -> pickup -> destination.
+        // To force the chosen alternative, add non-stop "via:" shaping points
+        // only on the pickup->destination leg.
+        const shapingViaPoints: string[] = [];
+        if (selectedPoints.length > 8) {
+            const total = selectedPoints.length;
+            const candidateIndexes = [
+                Math.floor(total * 0.25),
+                Math.floor(total * 0.5),
+                Math.floor(total * 0.75),
+            ];
+
+            for (const idx of candidateIndexes) {
+                const p = selectedPoints[idx];
+                if (!p) continue;
+                const distFromPickup = calculateDistance(
+                    parseFloat(String(pickupLat)),
+                    parseFloat(String(pickupLng)),
+                    p.latitude,
+                    p.longitude
+                );
+                const distFromDestination = calculateDistance(
+                    parseFloat(String(destLat)),
+                    parseFloat(String(destLng)),
+                    p.latitude,
+                    p.longitude
+                );
+                // Avoid points too close to pickup/destination to reduce rerouting noise.
+                if (distFromPickup > 800 && distFromDestination > 800) {
+                    shapingViaPoints.push(`via:${p.latitude},${p.longitude}`);
+                }
+            }
+        }
+
+        const allWaypoints = [`${pickupLat},${pickupLng}`, ...shapingViaPoints];
+        const waypointParam = `&waypoints=${encodeURIComponent(allWaypoints.join('|'))}`;
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${navOriginLat},${navOriginLng}&destination=${destLat},${destLng}${waypointParam}&travelmode=driving`;
+
+        console.log('🧭 [NAVIGATION FLOW] Current -> Pickup -> Destination');
+        console.log('🧭 [NAVIGATION FLOW] Current:', navOriginLat, navOriginLng);
+        console.log('🧭 [NAVIGATION FLOW] Pickup:', pickupLat, pickupLng);
+        console.log('🧭 [NAVIGATION FLOW] Destination:', destLat, destLng);
+        console.log('🧭 [NAVIGATION FLOW] Selected route shaping via points:', shapingViaPoints);
+
+        Linking.openURL(url).catch(err => {
+            console.error('❌ [NAVIGATION] Error opening maps:', err);
+            showToast(t('unable_to_open_maps') || 'Unable to open maps');
+        });
+    };
+
+    // Handle route selection and start trip
+    const handleRouteSelectAndStartTrip = async () => {
+        if (selectedRouteIndex === null) {
+            showToast(t('select_route_first') || 'Please select a route first');
+            return;
+        }
+        const selectedRoute = availableRoutes[selectedRouteIndex];
+        const selectedPoints = decodedRoutes[selectedRouteIndex] || [];
+        if (!selectedRoute) {
+            showToast(t('select_route_first') || 'Please select a route first');
+            return;
+        }
+
+        // Persist selected route for Shipping Route "Navigate" button
+        setSelectedTripRoute(selectedRoute);
+        setSelectedTripRoutePoints(selectedPoints);
+        console.log('🛣️ [START TRIP] Selected route polyline (encoded):', selectedRoute?.overview_polyline?.points);
+        console.log('🛣️ [START TRIP] Selected route polyline points:', JSON.stringify(selectedPoints));
+
+        const leg = selectedRoute?.legs?.[0];
+        const tripId = trip.trip_id || null;
+        const driverId = trip.driver_id || user?.id;
+        const loadId = toNumberOrNaN(trip.id || trip.load_id);
+
+        const sourceLat = toNumberOrNaN(
+            trip.origin_lat ??
+            trip.source_lat ??
+            leg?.start_location?.lat ??
+            selectedPoints?.[0]?.latitude
+        );
+        const sourceLng = toNumberOrNaN(
+            trip.origin_lon ??
+            trip.source_lng ??
+            leg?.start_location?.lng ??
+            selectedPoints?.[0]?.longitude
+        );
+        const destinationLat = toNumberOrNaN(
+            trip.destination_lat ??
+            leg?.end_location?.lat ??
+            selectedPoints?.[selectedPoints.length - 1]?.latitude
+        );
+        const destinationLng = toNumberOrNaN(
+            trip.destination_lon ??
+            trip.destination_lng ??
+            leg?.end_location?.lng ??
+            selectedPoints?.[selectedPoints.length - 1]?.longitude
+        );
+
+        if (!driverId || Number.isNaN(loadId) || Number.isNaN(sourceLat) || Number.isNaN(sourceLng) || Number.isNaN(destinationLat) || Number.isNaN(destinationLng)) {
+            showToast('Missing route data. Please select route again.');
+            return;
+        }
+
+        const saveRoutePayload = {
+            trip_id: tripId,
+            load_id: loadId,
+            driver_id: driverId,
+            route_index: selectedRouteIndex + 1,
+            route_summary: selectedRoute?.summary || '',
+            distance_meters: leg?.distance?.value || 0,
+            distance_text: leg?.distance?.text || '',
+            duration_seconds: leg?.duration?.value || 0,
+            duration_text: leg?.duration?.text || '',
+            encoded_polyline: selectedRoute?.overview_polyline?.points || '',
+            decoded_polyline_points: selectedPoints,
+            source_lat: sourceLat,
+            source_lng: sourceLng,
+            destination_lat: destinationLat,
+            destination_lng: destinationLng,
+        };
+
+        console.log('📤 [ROUTE SAVE] Payload:', JSON.stringify(saveRoutePayload, null, 2));
+        try {
+            const saveRouteResponse = await axiosInstance.post(END_POINTS.TRIP_SAVE_SELECTED_ROUTE, saveRoutePayload);
+            console.log('📥 [ROUTE SAVE] Response:', JSON.stringify(saveRouteResponse.data, null, 2));
+            if (!(saveRouteResponse.data?.status === true || saveRouteResponse.data?.status === 'success')) {
+                showToast(saveRouteResponse.data?.message || 'Failed to save selected route');
+                return;
+            }
+        } catch (error: any) {
+            console.error('❌ [ROUTE SAVE] Error:', error?.response?.data || error);
+            showToast(error?.response?.data?.message || 'Failed to save selected route');
+            return;
+        }
+
+        setShowRouteModal(false);
+
+        // Call start trip API
+        await handleStartTrip();
+
+        // Open Google Maps with the selected route
+        if (selectedRoute) {
+            openMapsWithSelectedRoute(selectedRoute);
+        }
+    };
+
+    // Format duration text for display
+    const formatRouteDuration = (seconds: number): string => {
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        if (hours > 0) return `${hours}h ${mins}m`;
+        return `${mins} min`;
+    };
+
+    // Start trip API call (same as Trucker ActiveTrip)
+    const handleStartTrip = async () => {
+        try {
+            setStartingTrip(true);
+            console.log('🚀 [START TRIP] Starting trip...');
+
+            const driverId = trip.driver_id || user?.id;
+            if (!driverId) {
+                showToast(t('driver_info_unavailable'));
+                return;
+            }
+
+            const routeLeg = selectedTripRoute?.legs?.[0];
+            const sourceLat = toNumberOrNaN(
+                trip.origin_lat ??
+                trip.source_lat ??
+                routeLeg?.start_location?.lat ??
+                selectedTripRoutePoints?.[0]?.latitude
+            );
+            const sourceLng = toNumberOrNaN(
+                trip.origin_lon ??
+                trip.source_lng ??
+                routeLeg?.start_location?.lng ??
+                selectedTripRoutePoints?.[0]?.longitude
+            );
+            const destinationLat = toNumberOrNaN(
+                trip.destination_lat ??
+                routeLeg?.end_location?.lat ??
+                selectedTripRoutePoints?.[selectedTripRoutePoints.length - 1]?.latitude
+            );
+            const destinationLng = toNumberOrNaN(
+                trip.destination_lon ??
+                trip.destination_lng ??
+                routeLeg?.end_location?.lng ??
+                selectedTripRoutePoints?.[selectedTripRoutePoints.length - 1]?.longitude
+            );
+            const loadId = toNumberOrNaN(trip.id || trip.load_id);
+
+            if (Number.isNaN(sourceLat) || Number.isNaN(sourceLng) || Number.isNaN(destinationLat) || Number.isNaN(destinationLng)) {
+                showToast(t('trip_coordinates_unavailable'));
+                return;
+            }
+            if (Number.isNaN(loadId)) {
+                showToast('Load information not available. Please refresh and try again.');
+                return;
+            }
+
+            const payload = {
+                driver_id: driverId,
+                load_id: loadId,
+                source_lat: sourceLat,
+                source_lng: sourceLng,
+                destination_lat: destinationLat,
+                destination_lng: destinationLng,
+            };
+
+            console.log('📤 [START TRIP] Payload:', JSON.stringify(payload, null, 2));
+
+            const response = await axiosInstance.post(END_POINTS.TRUCKER_START_TRIP, payload);
+
+            console.log('📥 [START TRIP] Response:', JSON.stringify(response.data, null, 2));
+
+            if (response.data?.status === true || response.data?.status === 'success') {
+                console.log('✅ [START TRIP] Trip started successfully');
+
+                setTrip((prev: any) => ({
+                    ...prev,
+                    trip_started: true,
+                }));
+
+                showToast(response.data?.message || t('trip_started_success'));
+                await fetchActiveTripAndLocation();
+            } else {
+                console.log('⚠️ [START TRIP] Failed:', response.data?.message);
+                showToast(response.data?.message || t('trip_start_failed'));
+            }
+        } catch (error: any) {
+            console.error('❌ [START TRIP] Error:', error);
+            showToast(error?.response?.data?.message || t('trip_start_failed'));
+        } finally {
+            setStartingTrip(false);
         }
     };
 
     // Get next action button text based on current status
     const getNextActionText = () => {
         if (currentStatus >= 6) return t('completed');
+        if (currentStatus === 1 && !trip.trip_started) {
+            return t('start_trip');
+        }
+        if (currentStatus === 1 && trip.trip_started) {
+            return `${t('mark_as')} ${statuses[2]?.label}`;
+        }
         const nextStatus = statuses[currentStatus + 1];
         return `${t('mark_as')} ${nextStatus?.label || 'Next Status'}`;
     };
@@ -858,9 +1332,23 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
 
     // Handle status update button click
     const updateStatus = () => {
+        // For status 1 (Vehicle Assigned)
+        if (currentStatus === 1) {
+            if (!trip.trip_started) {
+                // Start Trip → show route selection, then call start trip API
+                setShowRouteModal(true);
+                fetchAvailableRoutes();
+            } else {
+                // Trip already started → move to Reached Pickup
+                setPendingStatusUpdate(2);
+                setShowConfirmModal(true);
+            }
+            return;
+        }
+
         // For status 3 (Loaded) → need builty before moving to In Transit
         if (currentStatus === 3) {
-            setShowBuiltyModal(true);
+            setShowBilityModal(true);
             return;
         }
 
@@ -1088,8 +1576,8 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
         }
     };
 
-    // Builty Upload Handlers
-    const handleBuiltyPick = async () => {
+    // Bility Upload Handlers
+    const handleBilityPick = async () => {
         try {
             const [file] = await pick({
                 type: ['*/*'],
@@ -1097,7 +1585,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
             });
 
             if (file) {
-                setBuiltyFile(file);
+                setBilityFile(file);
                 console.log('📄 [BUILTY] File selected:', file.name);
             }
         } catch (error: any) {
@@ -1108,7 +1596,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
         }
     };
 
-    const handleBuiltyCamera = async () => {
+    const handleBilityCamera = async () => {
         try {
             const hasPermission = await requestCameraPermission();
 
@@ -1125,10 +1613,10 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
 
             if (result.assets && result.assets[0]) {
                 const photo = result.assets[0];
-                setBuiltyFile({
+                setBilityFile({
                     uri: photo.uri,
                     type: photo.type || 'image/jpeg',
-                    name: photo.fileName || `Builty_${Date.now()}.jpg`,
+                    name: photo.fileName || `Bility_${Date.now()}.jpg`,
                     size: photo.fileSize || 0,
                 });
                 console.log('📷 [BUILTY] Photo captured:', photo.fileName);
@@ -1139,7 +1627,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
         }
     };
 
-    const handleBuiltyGallery = async () => {
+    const handleBilityGallery = async () => {
         try {
             const hasPermission = await requestPhotoLibraryPermission();
 
@@ -1155,10 +1643,10 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
 
             if (result.assets && result.assets[0]) {
                 const photo = result.assets[0];
-                setBuiltyFile({
+                setBilityFile({
                     uri: photo.uri,
                     type: photo.type || 'image/jpeg',
-                    name: photo.fileName || `Builty_${Date.now()}.jpg`,
+                    name: photo.fileName || `Bility_${Date.now()}.jpg`,
                     size: photo.fileSize || 0,
                 });
                 console.log('🖼️ [BUILTY] Image selected from gallery:', photo.fileName);
@@ -1169,14 +1657,14 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
         }
     };
 
-    const handleBuiltyUpload = async () => {
+    const handleBilityUpload = async () => {
         if (!builtyFile) {
             showToast(t('select_builty_error'));
             return;
         }
 
         try {
-            setUploadingBuilty(true);
+            setUploadingBility(true);
             console.log('📤 [BUILTY] Uploading builty document...');
             console.log('📤 [BUILTY] Trip data:', {
                 id: trip.id,
@@ -1209,9 +1697,9 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
             console.log('📥 [BUILTY] Response:', JSON.stringify(response.data, null, 2));
 
             if (response.data?.status === 'success') {
-                console.log('✅ [BUILTY] Builty uploaded successfully');
-                setShowBuiltyModal(false);
-                setBuiltyFile(null);
+                console.log('✅ [BUILTY] Bility uploaded successfully');
+                setShowBilityModal(false);
+                setBilityFile(null);
 
                 // Now update status to In Transit (status 4)
                 await updateStatusWithAPI(4);
@@ -1224,7 +1712,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
             console.error('❌ [BUILTY] Error response:', error?.response?.data);
             showToast('Failed to upload builty. Please try again');
         } finally {
-            setUploadingBuilty(false);
+            setUploadingBility(false);
         }
     };
 
@@ -1416,10 +1904,10 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                             <Text style={styles.summaryValue}>{trip.vehicle}</Text>
                         </View>
                         <View style={styles.verticalDivider} />
-                        <View style={styles.summaryItem}>
+                        {/* <View style={styles.summaryItem}>
                             <Text style={styles.summaryLabel}>{t('amount')}</Text>
                             <Text style={styles.summaryValue}>{trip.payment}</Text>
-                        </View>
+                        </View> */}
                     </View>
                 </View>
 
@@ -1467,6 +1955,12 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 <View style={styles.card}>
                     <View style={styles.shippingHeader}>
                         <Text style={styles.sectionHeader}>{t('shipping_route')}</Text>
+                        <TouchableOpacity
+                            style={styles.colorTrackBtn}
+                            onPress={() => setShowColorTrackingMap(true)}
+                        >
+                            <Text style={styles.colorTrackBtnText}>{t('live_color_tracking') || 'Live Color Tracking'}</Text>
+                        </TouchableOpacity>
                     </View>
 
                     {/* Modern Route Display */}
@@ -1518,7 +2012,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                         <Text style={styles.sectionHeader}>{t('documents')}</Text>
 
                         {trip.builty_path && (
-                            <TouchableOpacity style={styles.documentRow} onPress={downloadBuilty}>
+                            <TouchableOpacity style={styles.documentRow} onPress={downloadBility}>
                                 <View style={styles.documentIconContainer}>
                                     <DocumentIcon />
                                 </View>
@@ -1572,12 +2066,31 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
             {/* Bottom Action Button */}
             {currentStatus < 6 && (
                 <View style={styles.footer}>
+                    {/* SIM Consent Pending - Show before Start Trip when pending */}
+                    {currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING' && (
+                        <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: '#F39C12', marginBottom: 10, flexDirection: 'column', paddingVertical: 8 }]}
+                            onPress={() => fetchActiveTripAndLocation()}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.actionButtonText}>
+                                {t('consent_pending')} ({trip.sim_tracking_consent?.tel})
+                            </Text>
+                            <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: '600', marginTop: 2 }}>
+                                {trip.sim_tracking_consent?.operator} • {t('tap_to_check_status')}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+
                     <TouchableOpacity
-                        style={[styles.actionButton, updatingStatus && styles.actionButtonDisabled]}
+                        style={[
+                            styles.actionButton,
+                            (updatingStatus || startingTrip || (currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING')) && styles.actionButtonDisabled
+                        ]}
                         onPress={updateStatus}
-                        disabled={updatingStatus}
+                        disabled={updatingStatus || startingTrip || (currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING')}
                     >
-                        {updatingStatus ? (
+                        {(updatingStatus || startingTrip) ? (
                             <ActivityIndicator size="small" color="#FFF" />
                         ) : (
                             <Text style={styles.actionButtonText}>
@@ -1661,8 +2174,8 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 </View>
             </Modal>
 
-            {/* Builty Upload Modal */}
-            <Modal visible={showBuiltyModal} animationType="slide" transparent>
+            {/* Bility Upload Modal */}
+            <Modal visible={showBilityModal} animationType="slide" transparent>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>{t('upload_builty_title')}</Text>
@@ -1677,14 +2190,14 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                                 </Text>
                                 <TouchableOpacity
                                     style={styles.changeFileBtn}
-                                    onPress={() => setBuiltyFile(null)}
+                                    onPress={() => setBilityFile(null)}
                                 >
                                     <Text style={styles.changeFileText}>{t('change_file')}</Text>
                                 </TouchableOpacity>
                             </View>
                         ) : (
                             <View style={styles.uploadOptionsContainer}>
-                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyCamera}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBilityCamera}>
                                     <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
                                         <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                                         <Circle cx="12" cy="13" r="4" />
@@ -1692,7 +2205,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                                     <Text style={styles.uploadOptionText}>{t('camera')}</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyGallery}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBilityGallery}>
                                     <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2">
                                         <Rect x="3" y="3" width="18" height="18" rx="2" />
                                         <Circle cx="8.5" cy="8.5" r="1.5" />
@@ -1701,7 +2214,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                                     <Text style={styles.uploadOptionText}>{t('gallery')}</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBuiltyPick}>
+                                <TouchableOpacity style={styles.uploadOptionBtn} onPress={handleBilityPick}>
                                     <DocumentIcon />
                                     <Text style={styles.uploadOptionText}>{t('document')}</Text>
                                 </TouchableOpacity>
@@ -1712,21 +2225,195 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                             <TouchableOpacity
                                 style={styles.modalCancel}
                                 onPress={() => {
-                                    setShowBuiltyModal(false);
-                                    setBuiltyFile(null);
+                                    setShowBilityModal(false);
+                                    setBilityFile(null);
                                 }}
                             >
                                 <Text style={styles.modalCancelText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalSubmit, (uploadingBuilty || !builtyFile) && styles.modalSubmitDisabled]}
-                                onPress={handleBuiltyUpload}
-                                disabled={uploadingBuilty || !builtyFile}
+                                style={[styles.modalSubmit, (uploadingBility || !builtyFile) && styles.modalSubmitDisabled]}
+                                onPress={handleBilityUpload}
+                                disabled={uploadingBility || !builtyFile}
                             >
-                                {uploadingBuilty ? (
+                                {uploadingBility ? (
                                     <ActivityIndicator size="small" color="#FFF" />
                                 ) : (
                                     <Text style={styles.modalSubmitText}>{t('upload_continue')}</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Route Selection Modal - Full Screen with Map */}
+            <Modal visible={showRouteModal} animationType="slide" transparent={false}>
+                <View style={styles.routeModalContainer}>
+                    {/* Map Section */}
+                    <View style={styles.routeMapContainer}>
+                        <MapView
+                            ref={routeMapRef}
+                            provider={PROVIDER_GOOGLE}
+                            style={StyleSheet.absoluteFillObject}
+                            initialRegion={{
+                                latitude: parseFloat(trip.origin_lat || trip.source_lat || '28.6139'),
+                                longitude: parseFloat(trip.origin_lon || trip.source_lng || '77.2090'),
+                                latitudeDelta: 2,
+                                longitudeDelta: 2,
+                            }}
+                            showsUserLocation
+                            showsMyLocationButton={false}
+                            mapType="standard"
+                        >
+                            {/* Draw all route polylines - unselected first, selected on top */}
+                            {decodedRoutes.map((points, index) => {
+                                if (index === selectedRouteIndex || points.length === 0) return null;
+                                return (
+                                    <Polyline
+                                        key={`route-${index}`}
+                                        coordinates={points}
+                                        strokeColor={ROUTE_COLORS[index % ROUTE_COLORS.length] + '66'}
+                                        strokeWidth={4}
+                                        lineCap="round"
+                                        lineJoin="round"
+                                        tappable
+                                        onPress={() => selectRouteByIndex(index)}
+                                    />
+                                );
+                            })}
+                            {/* Selected route drawn last so it's on top */}
+                            {selectedRouteIndex !== null && decodedRoutes[selectedRouteIndex] && decodedRoutes[selectedRouteIndex].length > 0 && (
+                                <Polyline
+                                    coordinates={decodedRoutes[selectedRouteIndex]}
+                                    strokeColor={ROUTE_COLORS[selectedRouteIndex % ROUTE_COLORS.length]}
+                                    strokeWidth={6}
+                                    lineCap="round"
+                                    lineJoin="round"
+                                />
+                            )}
+
+                            {/* Origin Marker */}
+                            {trip.origin_lat && trip.origin_lon && (
+                                <Marker
+                                    coordinate={{
+                                        latitude: parseFloat(trip.origin_lat),
+                                        longitude: parseFloat(trip.origin_lon),
+                                    }}
+                                >
+                                    <View style={styles.mapMarker}>
+                                        <View style={[styles.mapMarkerInner, { backgroundColor: C.success }]}>
+                                            <Text style={styles.mapMarkerText}>P</Text>
+                                        </View>
+                                    </View>
+                                </Marker>
+                            )}
+
+                            {/* Destination Marker */}
+                            {trip.destination_lat && trip.destination_lon && (
+                                <Marker
+                                    coordinate={{
+                                        latitude: parseFloat(trip.destination_lat),
+                                        longitude: parseFloat(trip.destination_lon),
+                                    }}
+                                >
+                                    <View style={styles.mapMarker}>
+                                        <View style={[styles.mapMarkerInner, { backgroundColor: '#000' }]}>
+                                            <Text style={styles.mapMarkerText}>D</Text>
+                                        </View>
+                                    </View>
+                                </Marker>
+                            )}
+                        </MapView>
+
+                        {/* Back / Close button on map */}
+                        <SafeAreaView style={styles.routeMapTopBar} edges={['top']}>
+                            <TouchableOpacity
+                                style={styles.routeMapBackBtn}
+                                onPress={() => setShowRouteModal(false)}
+                            >
+                                <BackIcon />
+                            </TouchableOpacity>
+                            <View style={styles.routeMapTitleBadge}>
+                                <Text style={styles.routeMapTitleText}>{t('choose_route_title')}</Text>
+                            </View>
+                        </SafeAreaView>
+
+                        {/* Loading overlay on map */}
+                        {fetchingRoutes && (
+                            <View style={styles.routeMapLoading}>
+                                <ActivityIndicator size="large" color={C.primary} />
+                                <Text style={styles.routeMapLoadingText}>{t('fetching_routes')}</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Bottom Sheet - Route List */}
+                    <View style={styles.routeBottomSheet}>
+                        {availableRoutes.length > 0 ? (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.routeCardsScroll}
+                                snapToInterval={width * 0.75 + 10}
+                                decelerationRate="fast"
+                            >
+                                {availableRoutes.map((route: any, index: number) => {
+                                    const leg = route.legs?.[0];
+                                    const isSelected = selectedRouteIndex === index;
+                                    const routeColor = ROUTE_COLORS[index % ROUTE_COLORS.length];
+                                    return (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={[
+                                                styles.routeMapCard,
+                                                isSelected && { borderColor: routeColor, borderWidth: 2.5 },
+                                            ]}
+                                            onPress={() => selectRouteByIndex(index)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <View style={styles.routeMapCardHeader}>
+                                                <View style={[styles.routeColorDot, { backgroundColor: routeColor }]} />
+                                                <Text style={[styles.routeMapCardName, isSelected && { color: C.text }]} numberOfLines={1}>
+                                                    {route.summary || `${t('route')} ${index + 1}`}
+                                                </Text>
+                                                {index === 0 && (
+                                                    <View style={styles.fastestBadge}>
+                                                        <Text style={styles.fastestBadgeText}>{t('fastest_route')}</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                            <View style={styles.routeMapCardStats}>
+                                                <Text style={styles.routeMapCardStatValue}>{leg?.distance?.text || '--'}</Text>
+                                                <View style={styles.routeDetailDivider} />
+                                                <Text style={styles.routeMapCardStatValue}>{leg?.duration?.text || '--'}</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        ) : !fetchingRoutes ? (
+                            <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+                                <Text style={{ color: C.textSec, fontSize: 14 }}>{t('no_routes_found')}</Text>
+                            </View>
+                        ) : null}
+
+                        <View style={styles.routeBottomActions}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.routeStartBtn,
+                                    (fetchingRoutes || availableRoutes.length === 0 || selectedRouteIndex === null) && styles.actionButtonDisabled,
+                                ]}
+                                onPress={handleRouteSelectAndStartTrip}
+                                disabled={fetchingRoutes || availableRoutes.length === 0 || selectedRouteIndex === null}
+                            >
+                                {startingTrip ? (
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                ) : (
+                                    <>
+                                        <NavigationIcon color={C.surface} />
+                                        <Text style={styles.routeStartBtnText}>{t('start_trip')}</Text>
+                                    </>
                                 )}
                             </TouchableOpacity>
                         </View>
@@ -1769,6 +2456,13 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                     </View>
                 </View>
             </Modal>
+
+            <ColorTrackingMap
+                visible={showColorTrackingMap}
+                onClose={() => setShowColorTrackingMap(false)}
+                endpoint={END_POINTS.TRUCKER_TRACKING_DASHBOARD(trip.id)}
+                selectedRoutePolyline={selectedTripRoute?.overview_polyline?.points}
+            />
         </SafeAreaView>
     );
 };
@@ -1900,6 +2594,19 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 16
+    },
+    colorTrackBtn: {
+        backgroundColor: '#E3F2FD',
+        borderRadius: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderWidth: 1,
+        borderColor: '#BBDEFB',
+    },
+    colorTrackBtnText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: C.primary,
     },
     routeContainer: {
         paddingVertical: 4,
@@ -2227,6 +2934,198 @@ const styles = StyleSheet.create({
     },
     modalSubmitText: {
         fontSize: 14,
+        fontWeight: '600',
+        color: C.surface,
+    },
+
+    // Route Selection Modal (Full-Screen Map)
+    routeModalContainer: {
+        flex: 1,
+        backgroundColor: C.surface,
+    },
+    routeMapContainer: {
+        flex: 1,
+    },
+    routeMapTopBar: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    routeMapBackBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: C.surface,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+    },
+    routeMapTitleBadge: {
+        flex: 1,
+        marginLeft: 12,
+        backgroundColor: C.surface,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 22,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+    },
+    routeMapTitleText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: C.text,
+        textAlign: 'center',
+    },
+    routeMapLoading: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    routeMapLoadingText: {
+        fontSize: 14,
+        color: C.textSec,
+        marginTop: 12,
+        fontWeight: '500',
+    },
+    mapMarker: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    mapMarkerInner: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#FFF',
+        elevation: 6,
+    },
+    mapMarkerText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#FFF',
+    },
+    routeBottomSheet: {
+        backgroundColor: C.surface,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingTop: 16,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+        elevation: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+    },
+    routeCardsScroll: {
+        paddingHorizontal: 16,
+        gap: 10,
+    },
+    routeMapCard: {
+        width: width * 0.75,
+        backgroundColor: '#FAFAFA',
+        borderRadius: 12,
+        padding: 14,
+        borderWidth: 1.5,
+        borderColor: C.border,
+    },
+    routeMapCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+        gap: 8,
+    },
+    routeColorDot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+    },
+    routeMapCardName: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '600',
+        color: C.textSec,
+    },
+    routeMapCardStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    routeMapCardStatValue: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: C.text,
+    },
+    routeDetailDivider: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: C.border,
+        marginHorizontal: 6,
+    },
+    fastestBadge: {
+        backgroundColor: '#E8F5E9',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 4,
+    },
+    fastestBadgeText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: C.success,
+    },
+    routeBottomActions: {
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        paddingTop: 14,
+        gap: 12,
+    },
+    routeSkipBtn: {
+        flex: 1,
+        backgroundColor: C.border,
+        borderRadius: 8,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    routeSkipBtnText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: C.text,
+    },
+    routeStartBtn: {
+        flex: 2,
+        backgroundColor: C.primary,
+        borderRadius: 8,
+        paddingVertical: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        shadowColor: C.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    routeStartBtnText: {
+        fontSize: 15,
         fontWeight: '600',
         color: C.surface,
     },

@@ -73,6 +73,16 @@ const autocompletePlaces = async (input: string, sessionToken?: string): Promise
     return fetchData(url);
 };
 
+// Fetch directions with alternative routes
+const fetchDirections = async (
+    origin: Coordinates,
+    destination: Coordinates,
+    alternatives: boolean = true
+): Promise<ServiceResponse> => {
+    const url = `${SECURE_CONFIG.DIRECTIONS_URL}?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&alternatives=${alternatives}&key=${SECURE_CONFIG.GOOGLE_API_KEY}`;
+    return fetchData(url);
+};
+
 // Simple visual UUID generator for session tokens
 export const generateSessionToken = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -84,4 +94,4 @@ export const generateSessionToken = () => {
 
 
 
-export { reverseGeocode, placeDetails, distanceMatrix, autocompletePlaces };
+export { reverseGeocode, placeDetails, distanceMatrix, autocompletePlaces, fetchDirections };

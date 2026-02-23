@@ -31,6 +31,22 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
     return R * c; // Distance in meters
 };
 
+// Calculate bearing (heading) between two GPS coordinates in degrees (0-360)
+const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const toDeg = (rad: number) => (rad * 180) / Math.PI;
+
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δλ = toRad(lon2 - lon1);
+
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+    let bearing = toDeg(Math.atan2(y, x));
+    return (bearing + 360) % 360; // Normalize to 0-360
+};
+
 export function useDriverLocationTracking() {
     const userState = useSelector((state: any) => state?.user);
     const user = userState?.user || null;
@@ -43,9 +59,41 @@ export function useDriverLocationTracking() {
     const tripIdRef = useRef<string | null>(null);
     const isTrackingRef = useRef<boolean>(false);
     const tripStatusCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const lastHeadingRef = useRef<number>(0);
+    const prevGpsPositionRef = useRef<{ latitude: number; longitude: number } | null>(null);
+
+    // Get the best available heading: using GPS trajectory if moving, else GPS heading
+    const getVehicleHead = (latitude: number, longitude: number, gpsHeading?: number | null): number => {
+        let finalHeading = (gpsHeading !== undefined && gpsHeading !== null && gpsHeading >= 0) ? Math.round(gpsHeading) : lastHeadingRef.current;
+
+        if (prevGpsPositionRef.current) {
+            const dist = calculateDistance(
+                prevGpsPositionRef.current.latitude, prevGpsPositionRef.current.longitude,
+                latitude, longitude
+            );
+
+            // If moved more than 2 meters, use True GPS Trajectory (much more accurate in a moving truck)
+            if (dist >= 2) {
+                const bearing = Math.round(calculateBearing(
+                    prevGpsPositionRef.current.latitude, prevGpsPositionRef.current.longitude,
+                    latitude, longitude
+                ));
+                console.log(`🧭 [GLOBAL HEADING] Moved ${dist.toFixed(1)}m. Using True GPS Bearing: ${bearing}°`);
+                finalHeading = bearing;
+            } else {
+                console.log(`🧭 [GLOBAL HEADING] Stationary. Using GPS Heading: ${finalHeading}°`);
+            }
+        } else {
+            console.log(`🧭 [GLOBAL HEADING] First ping. Using GPS Heading: ${finalHeading}°`);
+        }
+
+        lastHeadingRef.current = finalHeading;
+        prevGpsPositionRef.current = { latitude, longitude };
+        return finalHeading;
+    };
 
     // Update location to server
-    const updateLocationToServer = async (latitude: number, longitude: number) => {
+    const updateLocationToServer = async (latitude: number, longitude: number, vehicleHead: number = 0) => {
         try {
             if (!tripIdRef.current || !user?.id) {
                 console.warn('⚠️ [GLOBAL TRACKING] Missing trip_id or driver_id');
@@ -57,6 +105,7 @@ export function useDriverLocationTracking() {
                 driver_id: user.id,
                 latitude,
                 longitude,
+                vehicle_head: vehicleHead,
             };
 
             console.log('═══════════════════════════════════════════════════════════');
@@ -132,20 +181,24 @@ export function useDriverLocationTracking() {
 
             watchIdRef.current = Geolocation.watchPosition(
                 (position) => {
-                    const { latitude, longitude } = position.coords;
+                    const { latitude, longitude, heading } = position.coords;
+                    const vehicleHead = getVehicleHead(latitude, longitude, heading);
 
                     console.log('📍 [GLOBAL TRACKING] New position:', {
                         lat: latitude.toFixed(6),
                         lng: longitude.toFixed(6),
+                        gpsHeading: heading,
+                        vehicleHead: vehicleHead,
                         accuracy: position.coords.accuracy?.toFixed(2)
                     });
+
 
                     // Check if we should update (moved 30m or more)
                     if (lastLocationRef.current) {
                         const distance = calculateDistance(
                             lastLocationRef.current.latitude,
                             lastLocationRef.current.longitude,
-                            latitude,
+                                latitude,
                             longitude
                         );
 
@@ -153,7 +206,7 @@ export function useDriverLocationTracking() {
 
                         if (distance >= 30) {
                             console.log('✅ [GLOBAL TRACKING] Moved 30m+, updating server');
-                            updateLocationToServer(latitude, longitude);
+                            updateLocationToServer(latitude, longitude, vehicleHead);
                             lastLocationRef.current = { latitude, longitude };
                         } else {
                             console.log(`⏸️ [GLOBAL TRACKING] Distance < 30m, skipping (${distance.toFixed(2)}m)`);
@@ -161,7 +214,7 @@ export function useDriverLocationTracking() {
                     } else {
                         // First location update
                         console.log('🎯 [GLOBAL TRACKING] First location, updating server');
-                        updateLocationToServer(latitude, longitude);
+                        updateLocationToServer(latitude, longitude, vehicleHead);
                         lastLocationRef.current = { latitude, longitude };
                     }
                 },
@@ -197,10 +250,11 @@ export function useDriverLocationTracking() {
 
                         Geolocation.getCurrentPosition(
                             (position) => {
-                                const { latitude, longitude } = position.coords;
+                                const { latitude, longitude, heading } = position.coords;
+                                const vehicleHead = getVehicleHead(latitude, longitude, heading);
                                 // Validating coordinates before update
                                 if (latitude && longitude) {
-                                    updateLocationToServer(latitude, longitude);
+                                    updateLocationToServer(latitude, longitude, vehicleHead);
                                     lastLocationRef.current = { latitude, longitude };
                                 } else {
                                     console.warn('⚠️ [GLOBAL TRACKING] Invalid fallback coordinates received');

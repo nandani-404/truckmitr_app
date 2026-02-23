@@ -10,6 +10,7 @@ export const SECURE_CONFIG = {
     PLACE_DETAIL_URL: 'https://maps.googleapis.com/maps/api/place/details/json?place_id=',
     DISTANCE_MATRIX_URL: 'https://maps.googleapis.com/maps/api/distancematrix/json?origins=',
     AUTOCOMPLETE_URL: 'https://maps.googleapis.com/maps/api/place/autocomplete/json',
+    DIRECTIONS_URL: 'https://maps.googleapis.com/maps/api/directions/json',
 
     GOOGLE_API_KEY: Platform.select({
         ios: 'AIzaSyCrCdzmSHRs7IkE-n9LMs11_D7R70qcT84',

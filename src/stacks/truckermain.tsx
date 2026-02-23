@@ -23,6 +23,7 @@ import MyLoadsScreen from '../app/layouts/Trucker/MyLoads/index';
 import NotificationsScreen from '../app/layouts/Trucker/Notifications/index';
 import PaidHistoryScreen from '../app/layouts/Trucker/PaidHistory/index';
 import PendingPaymentsScreen from '../app/layouts/Trucker/PendingPayments/index';
+import LiveTrackingScreen from '../app/layouts/Trucker/ActiveTrip/Livetracking/index';
 import PersonalRoutesScreen from '../app/layouts/Trucker/PersonalRoutes/index';
 import VehicleManagementScreen from '../app/layouts/Trucker/VehicleManagement/index';
 import VehicleDetailsScreen from '../app/layouts/Trucker/VehicleManagement/VehicleDetails';
@@ -73,6 +74,17 @@ const ActiveTripWrapper = () => {
             loadId={route.params?.loadId || route.params?.tripId}
             onBack={() => navigation.goBack()}
             onComplete={() => navigation.goBack()}
+            navigation={navigation}
+        />
+    );
+};
+
+const LiveTrackingWrapper = () => {
+    const navigation = useNavigation();
+    const route = useRoute<any>();
+    return (
+        <LiveTrackingScreen
+            route={route}
             navigation={navigation}
         />
     );
@@ -271,6 +283,10 @@ export default function TruckerMain() {
             <Stack.Screen
                 name={TRUCKER_STACKS.ACTIVE_TRIP}
                 component={ActiveTripWrapper}
+            />
+            <Stack.Screen
+                name="truckerLiveTracking"
+                component={LiveTrackingWrapper}
             />
             <Stack.Screen
                 name="truckerMapNavigation"
