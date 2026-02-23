@@ -188,6 +188,7 @@ const DhabaBankDetails = () => {
                         ]}
                         value={value}
                         onChangeText={(text) => setBankData({ ...bankData, [key]: text })}
+                        maxLength={20}
                         keyboardType={keyboardType}
                         autoCapitalize={autoCapitalize}
                         placeholder={`${t('enter')} ${label}`}

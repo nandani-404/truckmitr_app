@@ -1084,7 +1084,7 @@ export default function ForemanAddDriver() {
                                 placeholder={t('enterOtp')}
                                 placeholderTextColor={COLORS.textLight}
                                 keyboardType="number-pad"
-                                maxLength={6}
+                                maxLength={4}
                                 style={[
                                     styles.otpInput,
                                     otpError ? styles.otpInputError : null

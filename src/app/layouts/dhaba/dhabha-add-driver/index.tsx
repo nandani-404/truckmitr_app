@@ -538,7 +538,7 @@ export default function DhabhaAddDriver() {
                                 placeholder={t('enterOtp') || 'Enter 6-digit OTP'}
                                 placeholderTextColor={'#9CA3AF'}
                                 keyboardType="number-pad"
-                                maxLength={6}
+                                maxLength={4}
                                 style={styles.otpInput}
                                 autoFocus={true}
                             />
@@ -552,10 +552,10 @@ export default function DhabhaAddDriver() {
                         {/* Verify Button */}
                         <TouchableOpacity
                             onPress={handleVerifyOtp}
-                            disabled={otpLoading || otp.length < 6}
+                            disabled={otpLoading || otp.length < 4}
                             style={[
                                 styles.otpVerifyButton,
-                                (otpLoading || otp.length < 6) && styles.otpVerifyButtonDisabled
+                                (otpLoading || otp.length < 4) && styles.otpVerifyButtonDisabled
                             ]}
                             activeOpacity={0.8}
                         >

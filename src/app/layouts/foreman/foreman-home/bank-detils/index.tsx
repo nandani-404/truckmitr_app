@@ -180,6 +180,7 @@ const BankDetails = () => {
                         onChangeText={(text) => setBankData({ ...bankData, [key]: text })}
                         keyboardType={keyboardType}
                         autoCapitalize={autoCapitalize}
+                        maxLength={20}
                         placeholder={`Enter ${label}`}
                         placeholderTextColor={colors.blackOpacity(0.3)}
                     />

@@ -223,6 +223,7 @@ export default function ForemanHome() {
     });
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
+    const hasShownSubscriptionModal = useRef(false);
 
     // Format currency
     const formatCurrency = (amount: number) => {
@@ -318,20 +319,23 @@ export default function ForemanHome() {
 
                         console.log('hasActiveForeman after fetch:', hasActiveForeman);
 
-                        // Only open payment modal if no active subscription found
-                        if (!hasActiveForeman && isMounted) {
+                        // Only open payment modal if no active subscription found AND not already shown
+                        if (!hasActiveForeman && isMounted && !hasShownSubscriptionModal.current) {
+                            hasShownSubscriptionModal.current = true;
                             dispatch(subscriptionModalAction(true));
                         }
                     } else {
                         // No subscription data - show modal
-                        if (isMounted) {
+                        if (isMounted && !hasShownSubscriptionModal.current) {
+                            hasShownSubscriptionModal.current = true;
                             dispatch(subscriptionModalAction(true));
                         }
                     }
                 } catch (error) {
                     console.error('Error fetching foreman subscription:', error);
                     // On error, show payment modal to be safe
-                    if (isMounted) {
+                    if (isMounted && !hasShownSubscriptionModal.current) {
+                        hasShownSubscriptionModal.current = true;
                         dispatch(subscriptionModalAction(true));
                     }
                 }
@@ -498,40 +502,54 @@ export default function ForemanHome() {
     };
 
     const handleShare = async () => {
-        console.log('user clicked');
-
         if (user?.Referral_Code) {
             try {
-                let imageUrl = 'https://truckmitr.com/public/front/assets/images/logotrick.png';
-                let imagePath = null;
-                try {
-                    // Using PROFILE_PLACEHOLDER as a fallback if no specific banner URL is provided
-                    const imageToShare = 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png';
-                    const res = await ReactNativeBlobUtil.config({
-                        fileCache: true,
-                    }).fetch('GET', imageToShare);
-                    imagePath = res.path();
-                    const base64Data = await res.readFile('base64');
-                    imageUrl = `data:image/png;base64,${base64Data}`;
-                } catch (err) {
-                    console.log('Error preparing image for share:', err);
+                const foremanDisplayName = user?.name || 'Foreman';
+                const shareMessage = `*नमस्ते भाई,*
+
+मैं TruckMitr में Foreman Partner के रूप में काम कर रहा हूँ।
+आप मेरे रेफरल कोड का उपयोग करके TruckMitr App पर रजिस्टर करें और कई खास सुविधाओं का लाभ उठाएँ:
+
+🚛 *Verified Jobs* – भरोसेमंद ट्रांसपोर्टर्स से सीधी नौकरी के अवसर
+🎓 *Training Videos, Quizzes & Certificates* – सीखें और प्रमाणपत्र पाएं
+🆔 *ID & Background Check* – आपकी प्रोफाइल बने ज्यादा भरोसेमंद
+📢 *Driver Ki Awaz* – ड्राइवरों की आवाज़ और सुझाव के लिए मंच
+🤝 *Driver Welfare* – ड्राइवरों के हित और लाभ की योजनाएँ
+⭐ और भी बहुत कुछ… – बेहतर कमाई के अवसर, सीधा संपर्क, सुरक्षित और भरोसेमंद प्लेटफॉर्म
+
+📲 आज ही TruckMitr App डाउनलोड करें
+👉 https://play.google.com/store/apps/details?id=com.truckmitr
+
+🔑 मेरा Referral Code: *${user.Referral_Code}*
+
+रजिस्ट्रेशन में किसी भी मदद के लिए आप मुझे कभी भी कॉल कर सकते हैं।
+
+धन्यवाद 🙏
+*${foremanDisplayName}*`;
+
+                // Image sharing commented out for now
+                // let filePath: string | null = null;
+                // try {
+                //     console.log('📥 Downloading image...');
+                //     const cacheDir = ReactNativeBlobUtil.fs.dirs.CacheDir;
+                //     const path = `${cacheDir}/truckmitr_share.png`;
+                //     const res = await ReactNativeBlobUtil.config({
+                //         path: path,
+                //     }).fetch('GET', 'https://truckmitr.com/public/front/assets/images/logotrick.png');
+                //     filePath = res.path();
+                //     console.log('✅ Image saved to:', filePath);
+                // } catch (err) {
+                //     console.log('❌ Error downloading image:', err);
+                // }
+
+                await Share.open({
+                    message: shareMessage,
+                    failOnCancel: false,
+                });
+            } catch (error: any) {
+                if (error?.message !== 'User did not share') {
+                    console.log('Error sharing:', error);
                 }
-
-                const options: { message: string; url?: string } = {
-                    message: `${t('shareReferralMessage') || 'Use my referral code to join TruckMitr:'} ${user.Referral_Code}`,
-                };
-
-                if (imageUrl) {
-                    options.url = imageUrl;
-                }
-
-                await Share.open(options);
-
-                if (imagePath) {
-                    ReactNativeBlobUtil.fs.unlink(imagePath).catch(() => { });
-                }
-            } catch (error) {
-                console.log('Error sharing:', error);
             }
         }
     };

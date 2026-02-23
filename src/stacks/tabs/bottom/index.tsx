@@ -189,7 +189,7 @@ function TabBarTransporter({ state, descriptors, navigation }: { state: any, des
                         case STACKS.DRIVER_LIST:
                             return t('drivers');
                         case STACKS.PROFILE:
-                            return t('profile');
+                            return t('account');
                         default:
                             return label;
                     }
@@ -448,14 +448,14 @@ function TabBarDriver({ state, descriptors, navigation, homeRef }: { state: any,
 export default function Bottom() {
     const homeRef = useRef<any>(null);
     const { isTransporter, user } = useSelector((state: any) => state?.user)
-    
+
     // Check if driver is a restricted driver (added by transporter)
     // The user object from Redux is stored as state.user.user (from the reducer)
     // So we need to check user.sub_id directly (not user.data.sub_id)
     const userRole = user?.role;
     const subId = user?.sub_id;
     const isRestrictedDriver = userRole === 'driver' && subId !== null && subId !== undefined;
-    
+
     // Debug logging
     useEffect(() => {
         console.log('🔍 Bottom Tab - User Data:', {
@@ -466,7 +466,7 @@ export default function Bottom() {
             fullUser: user
         });
     }, [user]);
-    
+
     useEffect(() => {
         SystemNavigationBar.setNavigationColor('translucent');
     }, []);

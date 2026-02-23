@@ -27,7 +27,7 @@ function ForemanTabBar({ state, descriptors, navigation }: any) {
         { name: STACKS.FOREMAN_ADD_DRIVER, icon: 'account-plus', label: 'Add Driver' },
         { name: STACKS.FOREMAN_DRIVER_KI_AWAZ, icon: 'mic', label: '', isSpecial: true },
         { name: STACKS.FOREMAN_MY_EARNINGS, icon: 'cash-multiple', label: 'Earnings' },
-        { name: STACKS.FOREMAN_PROFILE, icon: 'account-circle', label: 'Profile' },
+        { name: STACKS.FOREMAN_PROFILE, icon: 'account-circle', label: 'Account' },
     ];
 
     return (

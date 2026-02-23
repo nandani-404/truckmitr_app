@@ -59,7 +59,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
         { name: STACKS.DRIVER_ASSOCIATION_ADD_DRIVER, label: t('addDriver') || 'Add Driver', icon: 'person-add' },
         { name: STACKS.DRIVER_KI_AWAZ_INFO, label: '', icon: 'mic', isSpecial: true },
         { name: STACKS.DRIVER_ASSOCIATION_EARNINGS, label: t('earnings') || 'Earnings', icon: 'wallet' },
-        { name: STACKS.DRIVER_ASSOCIATION_PROFILE, label: t('profile') || 'Profile', icon: 'person' },
+        { name: STACKS.DRIVER_ASSOCIATION_PROFILE, label: t('account') || 'Account', icon: 'person' },
     ];
 
     return (

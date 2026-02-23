@@ -228,7 +228,7 @@ const PhotosTab = () => {
                             ) : (
                                 <View style={localStyles.placeholderContainer}>
                                     <Ionicons name="add-circle" size={32} color={colors.royalBlue} />
-                                    <Text style={localStyles.placeholderText}>{t('stepLabel')} {index + 1}</Text>
+                                    <Text style={localStyles.placeholderText}>{t('image') || 'Image'} {index + 1}</Text>
                                 </View>
                             )}
                         </TouchableOpacity>

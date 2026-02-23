@@ -510,7 +510,7 @@ const Otp = () => {
                         navigation.navigate(STACKS.OTP as any, { formData: { mobile: formData?.mobile }, flow: 'login' });
                         setTimer(30);
                         setAutoVerificationAttempted(false);
-                        setOtp(['', '', '', '', '', '']);
+                        setOtp(['', '', '', '']);
                     } else {
                         seterror(response?.data?.message);
                     }
@@ -522,7 +522,7 @@ const Otp = () => {
                         navigation.navigate('otp' as any, { formData: formPayload });
                         setTimer(30);
                         setAutoVerificationAttempted(false);
-                        setOtp(['', '', '', '', '', '']);
+                        setOtp(['', '', '', '']);
                     } else {
                         seterror(response?.data?.message);
                     }

@@ -22,6 +22,10 @@ import { subscriptionModalAction } from '@truckmitr/redux/actions/user.action';
 import { useTranslation } from 'react-i18next';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { getUserBadgeText } from '@truckmitr/src/utils/global/userBadge';
+import Clipboard from '@react-native-clipboard/clipboard';
+import Toast from 'react-native-simple-toast';
+import Share from 'react-native-share';
+import ShimmerText from '@truckmitr/src/utils/shimmerText';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -237,6 +241,51 @@ export default function DriverAssociation() {
         }
     };
 
+    const handleCopy = () => {
+        if (user?.Referral_Code) {
+            Clipboard.setString(user.Referral_Code);
+            Toast.showWithGravity(t('referralCodeCopied') || 'Referral Code Copied', Toast.SHORT, Toast.BOTTOM);
+        }
+    };
+
+    const handleShare = async () => {
+        if (user?.Referral_Code) {
+            try {
+                const associationDisplayName = dashboardData?.association_name || user?.name || 'Association Partner';
+                const shareMessage = `*नमस्ते भाई,*
+
+मैं TruckMitr में *Association Partner* के रूप में काम कर रहा हूँ।
+आप मेरे रेफरल कोड का उपयोग करके TruckMitr App पर रजिस्टर करें और कई खास सुविधाओं का लाभ उठाएँ:
+
+🚛 *Verified Jobs* – भरोसेमंद ट्रांसपोर्टर्स से सीधी नौकरी के अवसर
+🎓 *Training Videos, Quizzes & Certificates* – सीखें और प्रमाणपत्र पाएं
+🆔 *ID & Background Check* – आपकी प्रोफाइल बने ज्यादा भरोसेमंद
+📢 *Driver Ki Awaz* – ड्राइवरों की आवाज़ और सुझाव के लिए मंच
+🤝 *Driver Welfare* – ड्राइवरों के हित और लाभ की योजनाएँ
+⭐ और भी बहुत कुछ… – बेहतर कमाई के अवसर, सीधा संपर्क, सुरक्षित और भरोसेमंद प्लेटफॉर्म
+
+📲 आज ही TruckMitr App डाउनलोड करें
+👉 https://play.google.com/store/apps/details?id=com.truckmitr
+
+🔑 मेरा Referral Code: *${user.Referral_Code}*
+
+रजिस्ट्रेशन में किसी भी मदद के लिए आप मुझे कभी भी कॉल कर सकते हैं।
+
+धन्यवाद 🙏
+*${associationDisplayName}*`;
+
+                await Share.open({
+                    message: shareMessage,
+                    failOnCancel: false,
+                });
+            } catch (error: any) {
+                if (error?.message !== 'User did not share') {
+                    console.log('Error sharing:', error);
+                }
+            }
+        }
+    };
+
     // SCREEN 1: Main List Screen
     const renderListScreen = () => (
         <View style={styles.container}>
@@ -348,6 +397,36 @@ export default function DriverAssociation() {
                         </View>
                         <Ionicons name="chevron-forward" size={18} color={colors.royalBlue} />
                     </TouchableOpacity>
+                </View>
+
+                {/* Referral Banner */}
+                <View style={styles.referralBanner}>
+                    <View style={styles.referralContent}>
+                        <View style={styles.referralIconBox}>
+                            <Ionicons name="ticket-outline" size={24} color="#3B82F6" />
+                        </View>
+                        <View style={styles.referralInfo}>
+                            <ShimmerText
+                                text={t('yourReferralCode')}
+                                textStyle={styles.referralLabel}
+                                colors={['#3B82F6', '#FFFFFF', '#3B82F6']}
+                            />
+                            <ShimmerText
+                                text={user?.Referral_Code || 'N/A'}
+                                textStyle={styles.referralCode}
+                                colors={['#3B82F6', '#FFFFFF', '#3B82F6']}
+                            />
+                        </View>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <TouchableOpacity onPress={handleCopy} style={{ padding: 8 }}>
+                                <Ionicons name="copy-outline" size={20} color="#3B82F6" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleShare} style={{ padding: 8 }}>
+                                <Ionicons name="share-social-outline" size={20} color="#3B82F6" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
 
                 {/* Dashboard Cards Content */}
@@ -1030,6 +1109,48 @@ export default function DriverAssociation() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFFFFF' },
+
+    // Referral Banner
+    referralBanner: {
+        marginHorizontal: 16,
+        marginTop: 8,
+        marginBottom: 8,
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#DBEAFE',
+    },
+    referralContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        backgroundColor: '#EFF6FF',
+    },
+    referralIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#DBEAFE',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    referralInfo: {
+        flex: 1,
+    },
+    referralLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#1E40AF',
+        marginBottom: 2,
+    },
+    referralCode: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: '#1E3A8A',
+        letterSpacing: 1,
+    },
 
     // Header
     header: { paddingHorizontal: 16, paddingBottom: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },

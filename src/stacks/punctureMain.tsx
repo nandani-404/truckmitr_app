@@ -55,7 +55,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
         { name: STACKS.PUNCTURE_ADD_DRIVER, label: t('addDriver') || 'Add Driver', icon: 'person-add' },
         { name: STACKS.PUNCTURE_DRIVER_KI_AWAZ, label: '', icon: 'mic', isSpecial: true },
         { name: STACKS.PUNCTURE_WALLET, label: t('wallet') || 'My Wallet', icon: 'wallet' },
-        { name: STACKS.PUNCTURE_PROFILE, label: t('profile') || 'Profile', icon: 'person' },
+        { name: STACKS.PUNCTURE_PROFILE, label: t('account') || 'Account', icon: 'person' },
     ];
 
     return (

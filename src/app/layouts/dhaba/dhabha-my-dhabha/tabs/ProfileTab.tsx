@@ -4,15 +4,14 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    ScrollView,
     TextInput,
     ActivityIndicator,
     Image,
-    KeyboardAvoidingView,
     Platform,
     TouchableWithoutFeedback,
     Modal
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
 import { useSelector, useDispatch } from 'react-redux';
@@ -145,85 +144,88 @@ const ProfileTab = () => {
 
     return (
         <View style={styles.container}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={{ flex: 1 }}
+            <KeyboardAwareScrollView
+                contentContainerStyle={styles.content}
+                enableOnAndroid={true}
+                extraScrollHeight={Platform.OS === 'ios' ? 20 : 80}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
             >
-                <ScrollView contentContainerStyle={styles.content}>
-                    {/* Profile Image - Editable */}
-                    <View style={styles.imageContainer}>
-                        <View style={[styles.imageWrapper, shadow]}>
-                            <Image
-                                source={{
-                                    uri: newProfileImage
-                                        ? newProfileImage.path
-                                        : (user?.images
-                                            ? (user.images.startsWith('http') ? user.images : `${BASE_URL}public/${user.images}`)
-                                            : (profileImage
-                                                ? (profileImage.startsWith('http') ? profileImage : `${BASE_URL}storage/app/public/${profileImage}`)
-                                                : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png'))
-                                }}
-                                style={styles.profileImage}
-                                resizeMode="cover"
-                            />
-                            {/* Camera Icon Overlay */}
-                            <TouchableOpacity
-                                style={styles.cameraButton}
-                                onPress={() => setPickerVisible(true)}
-                            >
-                                <Ionicons name="camera" size={18} color="#fff" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* Name Field (Editable) */}
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>{t('name', 'Name')}</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={name}
-                            onChangeText={setName}
-                            placeholder={t('enterName', 'Enter your name')}
+                {/* Profile Image - Editable */}
+                <View style={styles.imageContainer}>
+                    <View style={[styles.imageWrapper, shadow]}>
+                        <Image
+                            source={{
+                                uri: newProfileImage
+                                    ? newProfileImage.path
+                                    : (user?.images
+                                        ? (user.images.startsWith('http') ? user.images : `${BASE_URL}public/${user.images}`)
+                                        : (profileImage
+                                            ? (profileImage.startsWith('http') ? profileImage : `${BASE_URL}storage/app/public/${profileImage}`)
+                                            : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png'))
+                            }}
+                            style={styles.profileImage}
+                            resizeMode="cover"
                         />
+                        {/* Camera Icon Overlay */}
+                        <TouchableOpacity
+                            style={styles.cameraButton}
+                            onPress={() => setPickerVisible(true)}
+                        >
+                            <Ionicons name="camera" size={18} color="#fff" />
+                        </TouchableOpacity>
                     </View>
+                </View>
 
-                    {/* Mobile Number (Read-Only) */}
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>{t('mobile', 'Mobile Number')}</Text>
-                        <View style={styles.readOnlyInput}>
-                            <Text style={styles.readOnlyText}>{mobile}</Text>
-                            <Ionicons name="lock-closed-outline" size={16} color="#999" />
-                        </View>
+                {/* Name Field (Editable) */}
+                <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>{t('name', 'Name')}</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={name}
+                        onChangeText={setName}
+                        placeholder={t('enterName', 'Enter your name')}
+                    />
+                </View>
+
+                {/* Mobile Number (Read-Only) */}
+                <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>{t('mobile', 'Mobile Number')}</Text>
+                    <View style={styles.readOnlyInput}>
+                        <Text style={styles.readOnlyText}>{mobile}</Text>
+                        <Ionicons name="lock-closed-outline" size={16} color="#999" />
                     </View>
+                </View>
 
-                    {/* Editable Email Field */}
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>{t('email', 'Email Address')}</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={email}
-                            onChangeText={setEmail}
-                            placeholder={t('enterEmail', 'Enter your email')}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                    </View>
+                {/* Editable Email Field */}
+                <View style={styles.fieldContainer}>
+                    {/* <Text style={styles.label}>{t('email', 'Email Address')}</Text> */}
+                    <Text style={styles.label}>{t('email', 'Email Address')}</Text>
 
-                    {/* Update Button */}
-                    <TouchableOpacity
-                        style={[styles.updateButton, { backgroundColor: colors.royalBlue || '#246BFD' }, shadow]}
-                        onPress={handleUpdate}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.updateButtonText}>{t('update', 'Update')}</Text>
-                        )}
-                    </TouchableOpacity>
+                    <TextInput
+                        style={styles.input}
+                        value={email}
+                        onChangeText={setEmail}
+                        placeholder={t('enterEmail', 'Enter your email')}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                    />
+                </View>
 
-                </ScrollView>
-            </KeyboardAvoidingView>
+                {/* Update Button */}
+                <TouchableOpacity
+                    style={[styles.updateButton, { backgroundColor: colors.royalBlue || '#246BFD' }, shadow]}
+                    onPress={handleUpdate}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.updateButtonText}>{t('update', 'Update')}</Text>
+                    )}
+                </TouchableOpacity>
+
+            </KeyboardAwareScrollView>
 
             {/* Image Picker Modal */}
             <Modal

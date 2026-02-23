@@ -210,7 +210,30 @@ export default function DhabhaMyProfile() {
 
     const _onPressShareApp = async () => {
         try {
-            await Share.share({ message: t('shareAppMessage') || "Check out TruckMitr App!" });
+            const dhabaDisplayName = user?.dhabha_name || user?.name || 'Dhaba Partner';
+            const shareMessage = `*नमस्ते भाई,*
+
+मैं TruckMitr में *Dhaba Partner* के रूप में काम कर रहा हूँ।
+आप मेरे रेफरल कोड का उपयोग करके TruckMitr App पर रजिस्टर करें और कई खास सुविधाओं का लाभ उठाएँ:
+
+🚛 *Verified Jobs* – भरोसेमंद ट्रांसपोर्टर्स से सीधी नौकरी के अवसर
+🎓 *Training Videos, Quizzes & Certificates* – सीखें और प्रमाणपत्र पाएं
+🆔 *ID & Background Check* – आपकी प्रोफाइल बने ज्यादा भरोसेमंद
+📢 *Driver Ki Awaz* – ड्राइवरों की आवाज़ और सुझाव के लिए मंच
+🤝 *Driver Welfare* – ड्राइवरों के हित और लाभ की योजनाएँ
+⭐ और भी बहुत कुछ… – बेहतर कमाई के अवसर, सीधा संपर्क, सुरक्षित और भरोसेमंद प्लेटफॉर्म
+
+📲 आज ही TruckMitr App डाउनलोड करें
+👉 https://play.google.com/store/apps/details?id=com.truckmitr
+
+🔑 मेरा Referral Code: *${user?.Referral_Code || 'N/A'}*
+
+रजिस्ट्रेशन में किसी भी मदद के लिए आप मुझे कभी भी कॉल कर सकते हैं।
+
+धन्यवाद 🙏
+*${dhabaDisplayName}*`;
+
+            await Share.share({ message: shareMessage });
         } catch (error) {
             console.error('Error sharing app:', error);
         }
@@ -248,11 +271,11 @@ export default function DhabhaMyProfile() {
 
         // Clear all user data and caches
         await deleteUserData();
-        
+
         // Dispatch logout action to reset Redux state
         dispatch({ type: 'AUTH_LOGOUT' });
         dispatch(userAuthenticatedAction(false));
-        
+
         setShowLogoutDialog(false);
     };
 
