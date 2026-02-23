@@ -54,7 +54,7 @@ const Otp = () => {
     const { shadow } = useShadow();
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
 
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '']);
     const [error, seterror] = useState<string | null>(null);
     const otpInputs = useRef<Array<TextInput | null>>([]);
     const [focusedField, setFocusedField] = useState<number | null>(null);
@@ -165,7 +165,7 @@ const Otp = () => {
     const otpHandler = (message: string) => {
         console.log('SMS received:', message);
         if (!message) return;
-        const match = /(\d{6})/.exec(message);
+        const match = /(\d{4})/.exec(message);
         if (match && match[1]) {
             const extractedOtp = match[1];
             setOtp(extractedOtp.split(""));
@@ -217,7 +217,7 @@ const Otp = () => {
     const checkClipboardForOtp = async () => {
         try {
             const clipboardContent = await Clipboard.getString();
-            const otpMatch = clipboardContent.match(/\b\d{6}\b/);
+            const otpMatch = clipboardContent.match(/\b\d{4}\b/);
             if (otpMatch) {
                 const extractedOtp = otpMatch[0];
                 if (extractedOtp.length === otp.length) {
@@ -235,11 +235,11 @@ const Otp = () => {
     const handleOtpChange = (index: number, text: string) => {
         // Handle paste - if text has multiple digits, distribute them
         if (text.length > 1) {
-            const digits = text.replace(/\D/g, '').slice(0, 6);
+            const digits = text.replace(/\D/g, '').slice(0, 4);
             if (digits.length > 0) {
                 const newOtp = [...otp];
                 digits.split('').forEach((digit, i) => {
-                    if (index + i < 6) {
+                    if (index + i < 4) {
                         newOtp[index + i] = digit;
                     }
                 });
@@ -250,7 +250,7 @@ const Otp = () => {
                 if (nextEmptyIndex !== -1) {
                     otpInputs.current[nextEmptyIndex]?.focus();
                 } else {
-                    otpInputs.current[5]?.focus();
+                    otpInputs.current[3]?.focus();
                     Keyboard.dismiss();
                 }
                 animateAutoFill();
