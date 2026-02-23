@@ -254,7 +254,7 @@ export default function DriverAssociation() {
                 const associationDisplayName = dashboardData?.association_name || user?.name || 'Association Partner';
                 const shareMessage = `*नमस्ते भाई,*
 
-मैं TruckMitr में *Association Partner* के रूप में काम कर रहा हूँ।
+मैं TruckMitr में *Driver Association Partner* के रूप में काम कर रहा हूँ।
 आप मेरे रेफरल कोड का उपयोग करके TruckMitr App पर रजिस्टर करें और कई खास सुविधाओं का लाभ उठाएँ:
 
 🚛 *Verified Jobs* – भरोसेमंद ट्रांसपोर्टर्स से सीधी नौकरी के अवसर

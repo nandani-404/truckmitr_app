@@ -14,7 +14,6 @@ export interface FacilityState {
     security_staff: boolean;
     wheel_alignment: boolean;
     mechanic: boolean;
-    wifi: boolean;
 }
 
 export interface FoodTypeState {
@@ -93,7 +92,6 @@ export const DhabhaProfileProvider: React.FC<{ children: React.ReactNode }> = ({
             security_staff: userEdit?.security_staff || false,
             wheel_alignment: userEdit?.wheel_alignment || false,
             mechanic: userEdit?.mechanic || false,
-            wifi: userEdit?.wifi || false
         },
         foodType: {
             foodOption: userEdit?.food_type?.[0]?.includes('Both') ? 'both'
@@ -124,7 +122,6 @@ export const DhabhaProfileProvider: React.FC<{ children: React.ReactNode }> = ({
         electric: [],
         cctv: [],
         guard: [],
-        wifi: []
     });
 
     return (

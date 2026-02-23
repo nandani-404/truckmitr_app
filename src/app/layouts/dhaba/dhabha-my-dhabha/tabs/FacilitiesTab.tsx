@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useDhabhaProfile, FacilityState } from '../DhabhaProfileContext';
@@ -6,6 +6,7 @@ import { styles } from '../styles';
 import { useColor } from '@truckmitr/src/app/hooks';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/src/utils/config';
+import { useFocusEffect } from '@react-navigation/native';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -16,44 +17,44 @@ const FacilitiesTab = () => {
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchFacilities = async () => {
-            try {
-                const response: any = await axiosInstance.get(END_POINTS.GET_DHABA_FACILITIES);
-                console.log('GET_DHABA_FACILITIES response:', response?.data);
-                if (response?.data?.success && response?.data?.facilities) {
-                    // console.log('Facilities:', response.data);
+    useFocusEffect(
+        useCallback(() => {
+            const fetchFacilities = async () => {
+                try {
+                    setLoading(true);
+                    const response: any = await axiosInstance.get(END_POINTS.GET_DHABA_FACILITIES);
+                    console.log('GET_DHABA_FACILITIES response:', response?.data);
+                    if (response?.data?.success && response?.data?.facilities) {
+                        const f = response.data.facilities;
+                        console.log('Facilities:', f);
 
-                    const f = response.data.facilities;
-                    console.log('Facilities:', f);
-
-                    setProfileData(prev => ({
-                        ...prev,
-                        facilities: {
-                            sitting_facility: f?.sitting_facility === 1,
-                            clean_restrooms: f?.clean_restrooms === 1,
-                            drinking_water: f?.drinking_water === 1,
-                            parking_small: f?.parking_small === 1,
-                            parking_large: f?.parking_large === 1,
-                            sleeping_area: f?.sleeping_area === 1,
-                            washing_area: f?.washing_area === 1,
-                            electric_point: f?.electric_point === 1,
-                            cctv: f?.cctv === 1,
-                            security_staff: f?.security_staff === 1,
-                            wheel_alignment: f?.wheel_alignment === 1,
-                            mechanic: f?.mechanic === 1,
-                            wifi: f?.wifi === 1
-                        }
-                    }));
+                        setProfileData(prev => ({
+                            ...prev,
+                            facilities: {
+                                sitting_facility: f?.sitting_facility === 1,
+                                clean_restrooms: f?.clean_restrooms === 1,
+                                drinking_water: f?.drinking_water === 1,
+                                parking_small: f?.parking_small === 1,
+                                parking_large: f?.parking_large === 1,
+                                sleeping_area: f?.sleeping_area === 1,
+                                washing_area: f?.washing_area === 1,
+                                electric_point: f?.electric_point === 1,
+                                cctv: f?.cctv === 1,
+                                security_staff: f?.security_staff === 1,
+                                wheel_alignment: f?.wheel_alignment === 1,
+                                mechanic: f?.mechanic === 1,
+                            }
+                        }));
+                    }
+                } catch (error) {
+                    console.error('Error fetching facilities:', error);
+                } finally {
+                    setLoading(false);
                 }
-            } catch (error) {
-                console.error('Error fetching facilities:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchFacilities();
-    }, []);
+            };
+            fetchFacilities();
+        }, [])
+    );
 
     const toggleFacility = (key: keyof FacilityState) => {
         setProfileData(prev => ({
@@ -89,7 +90,7 @@ const FacilitiesTab = () => {
                 'sitting_facility', 'clean_restrooms', 'drinking_water',
                 'parking_small', 'parking_large', 'sleeping_area',
                 'washing_area', 'electric_point', 'cctv',
-                'security_staff', 'wheel_alignment', 'mechanic', 'wifi'
+                'security_staff', 'wheel_alignment', 'mechanic'
             ];
 
             fields.forEach(field => {
@@ -124,7 +125,6 @@ const FacilitiesTab = () => {
         { key: 'security_staff', label: t('security_staff') },
         { key: 'wheel_alignment', label: t('wheel_alignment') },
         { key: 'mechanic', label: t('mechanic') },
-        { key: 'wifi', label: t('wifi') },
     ];
 
     const renderFacilityItem = (item: { key: keyof FacilityState; label: string }) => {

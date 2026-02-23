@@ -624,11 +624,11 @@ export default function Profile() {
 
     // Clear all user data and caches
     await deleteUserData();
-    
+
     // Dispatch logout action to reset Redux state
     dispatch({ type: 'AUTH_LOGOUT' });
     dispatch(userAuthenticatedAction(false));
-    
+
     setShowLogoutDialog(false);
   };
 
@@ -1379,10 +1379,10 @@ export default function Profile() {
           {isDriver && (() => {
             // Check if driver is restricted (added by transporter)
             const isRestrictedDriver = user?.role === 'driver' && user?.sub_id !== null && user?.sub_id !== undefined;
-            
+
             // Don't show these buttons for restricted drivers
             if (isRestrictedDriver) return null;
-            
+
             return (
               <>
                 <View style={[styles.divider, { backgroundColor: colors.blackOpacity(0.06) }]} />

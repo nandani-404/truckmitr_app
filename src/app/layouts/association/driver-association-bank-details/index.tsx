@@ -273,8 +273,7 @@ const AssociationBankDetails = () => {
                     <Text style={[styles.headerTitle, { color: colors.black, fontSize: responsiveFontSize(2.2) }]}>
                         {t('bankDetails')}
                     </Text>
-                    <View style={{ width: 40 }} />
-                    {/* {hasBankDetails && !isEditing && (
+                    {hasBankDetails && !isEditing ? (
                         <TouchableOpacity
                             onPress={() => setIsEditing(true)}
                             style={styles.editButton}
@@ -284,7 +283,9 @@ const AssociationBankDetails = () => {
                                 {t('edit')}
                             </Text>
                         </TouchableOpacity>
-                    )} */}
+                    ) : (
+                        <View style={{ width: 40 }} />
+                    )}
                 </View>
             </View>
 
