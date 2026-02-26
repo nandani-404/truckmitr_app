@@ -540,8 +540,8 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
             const isHindi = i18n.language === 'hi' || i18n.language === 'hn';
 
             const message = isHindi
-                ? `🚛 मैंने अपनी आवाज Driver Ki Awaz पर शेयर की है!\n\nयह TruckMitr का खास प्लेटफॉर्म है जहाँ ड्राइवर अपनी समस्या, अनुभव और कहानी खुलकर बता सकते हैं।\n\nआप भी अपनी आवाज उठाइए।\nआज ही TruckMitr ऐप डाउनलोड करें और रजिस्टर करें。\n\n📲 अभी जुड़ें: ${shareUrl}`
-                : `🚛 I have shared my voice on Driver Ki Awaz!\n\nThis is a special platform by TruckMitr where drivers can openly share their problems, experiences, and personal stories.\n\nNow it’s your turn to raise your voice.\nDownload the TruckMitr App today and register to be part of the community.\n\n📲 Join now: ${shareUrl}`;
+                ? `🚛 मैंने अपनी आवाज *Driver Ki Awaz!* पर शेयर की है!\n\nयह *TruckMitr* का खास प्लेटफॉर्म है जहाँ ड्राइवर अपनी समस्या, अनुभव और कहानी खुलकर बता सकते हैं।\n\nआप भी अपनी आवाज उठाइए।\nआज ही *TruckMitr ऐप डाउनलोड करें* और रजिस्टर करें।\n\n📲 *अभी जुड़ें:* ${shareUrl}`
+                : `🚛 I have shared my voice on *Driver Ki Awaz!*\n\nThis is a special platform by *TruckMitr* where drivers can openly share their problems, experiences, and personal stories.\n\nNow it’s your turn to raise your voice.\n*Download the TruckMitr App* today and register to be part of the community.\n\n📲 *Join now:* ${shareUrl}`;
 
             await Share.share({
                 message: message,

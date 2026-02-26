@@ -1,13 +1,16 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
     StatusBar, Animated, Modal, RefreshControl, ActivityIndicator,
+    Dimensions, Platform, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Circle, Polyline, Line } from 'react-native-svg';
+import Svg, { Path, Circle, Polyline, Line, Rect, G } from 'react-native-svg';
 import axiosInstance from 'src/utils/config/axiosInstance';
 import { END_POINTS } from 'src/utils/config';
 import { useFocusEffect } from '@react-navigation/native';
+import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 // ═══════════════════════════════════════════════════
 // Design Tokens — classic white, single blue accent
@@ -60,6 +63,11 @@ const ChevronRight = () => (
         <Path d="M9 18l6-6-6-6" />
     </Svg>
 );
+const PackageIcon = () => (
+    <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="1.5" strokeLinecap="round">
+        <Path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    </Svg>
+);
 const ArrowRightIcon = () => (
     <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="1.5" strokeLinecap="round">
         <Path d="M5 12h14M12 5l7 7-7 7" />
@@ -70,6 +78,77 @@ const CheckIcon = () => (
         <Polyline points="20 6 9 17 4 12" />
     </Svg>
 );
+
+// Map View Icon
+const MapViewIcon = ({ active }: { active?: boolean }) => (
+    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? C.white : C.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z" />
+        <Line x1="8" y1="2" x2="8" y2="18" />
+        <Line x1="16" y1="6" x2="16" y2="22" />
+    </Svg>
+);
+
+// List View Icon
+const ListViewIcon = ({ active }: { active?: boolean }) => (
+    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? C.white : C.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <Line x1="8" y1="6" x2="21" y2="6" />
+        <Line x1="8" y1="12" x2="21" y2="12" />
+        <Line x1="8" y1="18" x2="21" y2="18" />
+        <Line x1="3" y1="6" x2="3.01" y2="6" />
+        <Line x1="3" y1="12" x2="3.01" y2="12" />
+        <Line x1="3" y1="18" x2="3.01" y2="18" />
+    </Svg>
+);
+
+// Custom Marker wrapper to prevent Android clipping bug
+const CustomLoadMarker = ({ coordinate, onPress }: any) => {
+    // tracksViewChanges must be true initially to render the image, then set to false for performance once loaded.
+    const [tracksViewChanges, setTracksViewChanges] = useState(true);
+
+    return (
+        <Marker
+            coordinate={coordinate}
+            onPress={onPress}
+            tracksViewChanges={tracksViewChanges}
+            anchor={{ x: 0.5, y: 1 }}
+        >
+            <View style={markerStyles.markerContainer}>
+                <Image
+                    source={require('src/assets/tracking_color_truck/logo2.0.png')}
+                    style={markerStyles.markerImage}
+                    resizeMode="contain"
+                    fadeDuration={0} // Important to prevent Android MapView from snapping mid-fade
+                    onLoad={() => {
+                        // Allow layout to fully measure before locking the view capture
+                        setTimeout(() => setTracksViewChanges(false), 250);
+                    }}
+                />
+            </View>
+        </Marker>
+    );
+};
+
+const markerStyles = StyleSheet.create({
+    markerContainer: {
+        width: 100,
+        height: 80,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'visible',
+    },
+    markerImage: {
+        width: 100,
+        height: 80,
+    }
+});
+
+// India region default for the map and its boundaries
+const INDIA_REGION: Region = {
+    latitude: 22.5937,
+    longitude: 78.9629,
+    latitudeDelta: 20,
+    longitudeDelta: 20,
+};
 
 // ═══════════════════════════════════════════════════
 // Skeleton Components
@@ -119,11 +198,11 @@ const SkeletonLoadCard = ({ index }: { index: number }) => {
     const cardAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        Animated.timing(cardAnim, { 
-            toValue: 1, 
-            duration: 400, 
-            delay: index * 80, 
-            useNativeDriver: true 
+        Animated.timing(cardAnim, {
+            toValue: 1,
+            duration: 400,
+            delay: index * 80,
+            useNativeDriver: true
         }).start();
     }, []);
 
@@ -171,6 +250,19 @@ const SkeletonLoadCard = ({ index }: { index: number }) => {
 // ═══════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════
+const formatPrice = (price: string | number | null | undefined) => {
+    if (!price) return 'N/A';
+    const num = parseFloat(String(price));
+    if (isNaN(num)) return String(price);
+    return '₹' + num.toLocaleString('en-IN');
+};
+
+const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'Not specified';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
 const safeString = (val: any) => {
     if (val === null || val === undefined) return '';
     if (typeof val === 'object') return val.length_label || val.name || val.label || '';
@@ -208,6 +300,9 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
     const [selectedStates, setSelectedStates] = useState<string[]>([]);
     const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
     const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
+    const [showMapView, setShowMapView] = useState(false);
+    const [selectedMapLoad, setSelectedMapLoad] = useState<any>(null);
+    const mapRef = useRef<MapView>(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
     const filters = [
@@ -257,6 +352,54 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
     const clearFilters = () => {
         setSelectedStates([]); setSelectedMaterials([]); setSelectedVehicles([]);
     };
+
+    // ── Map Load Detail Row ──
+    const MapDetailRow = ({ label, value, isLast }: { label: string; value: any; isLast?: boolean }) => (
+        <View style={[{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 }, !isLast && { borderBottomWidth: 1, borderBottomColor: C.borderLight }]}>
+            <Text style={{ fontSize: 13, color: C.textSec, flex: 1 }}>{label}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: C.text, flex: 1.2, textAlign: 'right' }}>{safeString(value) || 'N/A'}</Text>
+        </View>
+    );
+
+    // Parse loads with valid coordinates for map markers
+    const mapLoads = useMemo(() => {
+        return loads.filter(load => {
+            const lat = parseFloat(load.origin_lat);
+            const lon = parseFloat(load.origin_lon);
+            return !isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0;
+        });
+    }, [loads]);
+
+    // Fit map to show all markers
+    const fitMapToMarkers = useCallback(() => {
+        if (mapRef.current && mapLoads.length > 0) {
+            const coordinates = mapLoads.map(load => ({
+                latitude: parseFloat(load.origin_lat),
+                longitude: parseFloat(load.origin_lon),
+            }));
+            setTimeout(() => {
+                mapRef.current?.fitToCoordinates(coordinates, {
+                    edgePadding: { top: 80, right: 60, bottom: 80, left: 60 },
+                    animated: true,
+                });
+            }, 500);
+        }
+    }, [mapLoads]);
+
+    const handleMapReady = useCallback(() => {
+        if (mapRef.current) {
+            try {
+                // Restrict the camera strictly to India
+                mapRef.current.setMapBoundaries(
+                    { latitude: 37.0902, longitude: 97.3953 }, // NorthEast
+                    { latitude: 6.7535, longitude: 68.1623 }   // SouthWest
+                );
+            } catch (e) {
+                console.log('Error setting map boundaries', e);
+            }
+            fitMapToMarkers();
+        }
+    }, [fitMapToMarkers]);
 
     // ── Load Card ──
     const LoadCard = ({ load, index }: { load: any; index: number }) => {
@@ -397,6 +540,23 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
 
             {/* ── Quick Filters ── */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.quickFilters} contentContainerStyle={s.quickFiltersContent}>
+                {/* Map / List toggle button */}
+                <TouchableOpacity
+                    style={[s.mapToggleBtn, showMapView && s.mapToggleBtnActive]}
+                    onPress={() => {
+                        setShowMapView(!showMapView);
+                        setSelectedMapLoad(null);
+                    }}
+                    activeOpacity={0.7}
+                >
+                    {showMapView ? <ListViewIcon active /> : <MapViewIcon />}
+                    <Text style={[s.mapToggleText, showMapView && s.mapToggleTextActive]}>
+                        {showMapView ? 'List' : 'Map'}
+                    </Text>
+                </TouchableOpacity>
+
+                <View style={s.filterDivider} />
+
                 {filters.map(f => (
                     <TouchableOpacity
                         key={f.key}
@@ -408,39 +568,198 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
                 ))}
             </ScrollView>
 
-            {/* ── Results Header ── */}
-            <View style={s.resultsHeader}>
-                <Text style={s.resultsCount}><Text style={s.resultsCountBold}>{loads.length}</Text> loads available</Text>
-                <TouchableOpacity style={s.sortBtn}>
-                    <Text style={s.sortText}>Nearest first</Text>
-                    <ArrowRightIcon />
-                </TouchableOpacity>
-            </View>
+            {showMapView ? (
+                /* ══════════ MAP VIEW ══════════ */
+                <View style={s.mapContainer}>
+                    {/* Results header on map */}
+                    <View style={s.mapResultsHeader}>
+                        <Text style={s.resultsCount}>
+                            <Text style={s.resultsCountBold}>{mapLoads.length}</Text> loads on map
+                        </Text>
+                        <TouchableOpacity style={s.mapFitBtn} onPress={fitMapToMarkers}>
+                            <Text style={s.mapFitBtnText}>Fit All</Text>
+                        </TouchableOpacity>
+                    </View>
 
-            {/* ── Load Cards ── */}
-            <ScrollView
-                style={s.listArea}
-                contentContainerStyle={s.listContent}
-                showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
-            >
-                {loading ? (
-                    <View style={{ paddingTop: 20 }}>
-                        {[1, 2, 3, 4].map((_, index) => (
-                            <SkeletonLoadCard key={index} index={index} />
-                        ))}
+                    <MapView
+                        ref={mapRef}
+                        provider={PROVIDER_GOOGLE}
+                        style={s.map}
+                        initialRegion={INDIA_REGION}
+                        mapType="standard"
+                        minZoomLevel={4.5}
+                        maxZoomLevel={20}
+                        showsUserLocation={true}
+                        showsMyLocationButton={true}
+                        showsCompass={true}
+                        zoomControlEnabled={true}
+                        toolbarEnabled={false}
+                        onMapReady={handleMapReady}
+                    >
+                        {mapLoads.map((load, index) => {
+                            const lat = parseFloat(load.origin_lat);
+                            const lon = parseFloat(load.origin_lon);
+                            const material = safeString(load.meterial);
+                            const qty = safeString(load.load_qty) || safeString(load.meterial_quantity);
+                            const price = load.price ? `₹${Number(load.price).toLocaleString('en-IN')}` : '';
+                            const originCity = safeString(load.loading_city_state) || safeString(load.origin_location);
+                            const destCity = safeString(load.unloading_city_state) || safeString(load.destination_location);
+
+                            return (
+                                <CustomLoadMarker
+                                    key={load.id || index}
+                                    coordinate={{ latitude: lat, longitude: lon }}
+                                    onPress={() => setSelectedMapLoad(load)}
+                                />
+                            );
+                        })}
+                    </MapView>
+
+                    {/* ══════════ SELECTED LOAD MODAL (Same as LoadDetail UI) ══════════ */}
+                    <Modal visible={!!selectedMapLoad} animationType="slide" transparent>
+                        <View style={s.bottomSheetOverlay} pointerEvents="box-none">
+                            <TouchableOpacity style={{ flex: 1 }} onPress={() => setSelectedMapLoad(null)} activeOpacity={1} />
+
+                            <View style={s.bottomSheetModal}>
+                                <View style={s.bottomSheetHandle} />
+                                <TouchableOpacity style={s.bottomSheetClose} onPress={() => setSelectedMapLoad(null)}>
+                                    <CloseIcon />
+                                </TouchableOpacity>
+
+                                {/* Modal Header */}
+                                <Text style={s.bottomSheetModalTitle}>Load #{selectedMapLoad?.load_id}</Text>
+                                <Text style={s.bottomSheetModalSubtitle}>Posted {selectedMapLoad ? getTimeAgo(selectedMapLoad.created_at) : ''}</Text>
+
+                                <ScrollView style={{ flex: 1, marginTop: 16 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+
+                                    {/* Route Card */}
+                                    <View style={s.detailCard}>
+                                        <Text style={s.detailSectionTitle}>Route</Text>
+                                        <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                                            <View style={{ alignItems: 'center', marginRight: 14, paddingTop: 3 }}>
+                                                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.success }} />
+                                                <View style={{ width: 2, height: 35, backgroundColor: C.border, marginVertical: 4 }} />
+                                                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.danger }} />
+                                            </View>
+                                            <View style={{ flex: 1, gap: 16 }}>
+                                                <View>
+                                                    <Text style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase', marginBottom: 2 }}>Pickup</Text>
+                                                    <Text style={{ fontSize: 15, fontWeight: '600', color: C.text }}>{selectedMapLoad?.origin_location}</Text>
+                                                </View>
+                                                <View>
+                                                    <Text style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase', marginBottom: 2 }}>Drop</Text>
+                                                    <Text style={{ fontSize: 15, fontWeight: '600', color: C.text }}>{selectedMapLoad?.destination_location}</Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </View>
+
+                                    {/* Pricing Card */}
+                                    <View style={[s.detailCard, { borderColor: C.accentLight, borderWidth: 1.5 }]}>
+                                        <Text style={s.detailSectionTitle}>Pricing</Text>
+                                        <Text style={{ fontSize: 24, fontWeight: '800', color: C.success, marginBottom: 12 }}>
+                                            {selectedMapLoad?.price ? `₹${Number(selectedMapLoad.price).toLocaleString('en-IN')}` : 'N/A'}
+                                        </Text>
+                                        <MapDetailRow label="Advance Price" value={parseFloat(selectedMapLoad?.adv_price) > 0 ? formatPrice(selectedMapLoad?.adv_price) : 'Nil'} />
+                                        <MapDetailRow label="Settled Price" value={parseFloat(selectedMapLoad?.setteled_price) > 0 ? formatPrice(selectedMapLoad?.setteled_price) : 'Not settled'} />
+                                        <MapDetailRow label="Settled By" value={selectedMapLoad?.setteled_by || 'N/A'} isLast />
+                                    </View>
+
+                                    {/* Cargo Details */}
+                                    <View style={s.detailCard}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                            <PackageIcon />
+                                            <Text style={[s.detailSectionTitle, { marginBottom: 0 }]}>Cargo Details</Text>
+                                        </View>
+                                        <MapDetailRow label="Material" value={selectedMapLoad?.meterial} />
+                                        <MapDetailRow label="Material Quantity" value={selectedMapLoad?.meterial_quantity ? `${selectedMapLoad.meterial_quantity} Ton` : 'N/A'} />
+                                        <MapDetailRow label="Load Quantity" value={selectedMapLoad?.load_qty ? `${selectedMapLoad.load_qty} Ton` : 'N/A'} />
+                                        <MapDetailRow label="ODC" value={selectedMapLoad?.odc || 'No'} isLast />
+                                    </View>
+
+                                    {/* Vehicle Details */}
+                                    <View style={s.detailCard}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                            <TruckSmall />
+                                            <Text style={[s.detailSectionTitle, { marginBottom: 0 }]}>Vehicle Requirements</Text>
+                                        </View>
+                                        <MapDetailRow label="Vehicle Body" value={selectedMapLoad?.vechicle_body || selectedMapLoad?.vehicle_body || 'N/A'} />
+                                        <MapDetailRow label="Vehicle Type" value={selectedMapLoad?.vechicle_type || 'N/A'} />
+                                        <MapDetailRow label="Container Size" value={selectedMapLoad?.container_feet} />
+                                        <MapDetailRow label="Vehicle Length" value={selectedMapLoad?.vehicle_length} isLast />
+                                    </View>
+
+                                    {/* Schedule */}
+                                    <View style={s.detailCard}>
+                                        <Text style={s.detailSectionTitle}>Schedule</Text>
+                                        <MapDetailRow label="Pickup Date" value={formatDate(selectedMapLoad?.picup_date)} />
+                                        <MapDetailRow label="Load Time" value={selectedMapLoad?.load_time || 'Not specified'} isLast />
+                                    </View>
+
+                                </ScrollView>
+
+                                <View style={{ paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border }}>
+                                    <TouchableOpacity
+                                        style={s.bidButton}
+                                        activeOpacity={0.8}
+                                        onPress={() => {
+                                            const load = selectedMapLoad;
+                                            setSelectedMapLoad(null);
+                                            onLoadSelect?.(load.load_id, load);
+                                        }}
+                                    >
+                                        <Text style={s.bidButtonText}>Proceed to Place Bid</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+                    </Modal>
+
+                    {loading && (
+                        <View style={s.mapLoadingOverlay}>
+                            <ActivityIndicator size="large" color={C.accent} />
+                            <Text style={s.mapLoadingText}>Loading loads...</Text>
+                        </View>
+                    )}
+                </View>
+            ) : (
+                /* ══════════ LIST VIEW ══════════ */
+                <>
+                    {/* ── Results Header ── */}
+                    <View style={s.resultsHeader}>
+                        <Text style={s.resultsCount}><Text style={s.resultsCountBold}>{loads.length}</Text> loads available</Text>
+                        <TouchableOpacity style={s.sortBtn}>
+                            <Text style={s.sortText}>Nearest first</Text>
+                            <ArrowRightIcon />
+                        </TouchableOpacity>
                     </View>
-                ) : loads.length === 0 ? (
-                    <View style={{ paddingTop: 60, alignItems: 'center' }}>
-                        <Text style={{ fontSize: 40, marginBottom: 12 }}>📦</Text>
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: C.text, marginBottom: 4 }}>No loads available</Text>
-                        <Text style={{ fontSize: 13, color: C.textMuted }}>Pull down to refresh</Text>
-                    </View>
-                ) : (
-                    loads.map((load, i) => <LoadCard key={load.id || i} load={load} index={i} />)
-                )}
-                <View style={{ height: 100 }} />
-            </ScrollView>
+
+                    {/* ── Load Cards ── */}
+                    <ScrollView
+                        style={s.listArea}
+                        contentContainerStyle={s.listContent}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
+                    >
+                        {loading ? (
+                            <View style={{ paddingTop: 20 }}>
+                                {[1, 2, 3, 4].map((_, index) => (
+                                    <SkeletonLoadCard key={index} index={index} />
+                                ))}
+                            </View>
+                        ) : loads.length === 0 ? (
+                            <View style={{ paddingTop: 60, alignItems: 'center' }}>
+                                <Text style={{ fontSize: 40, marginBottom: 12 }}>📦</Text>
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: C.text, marginBottom: 4 }}>No loads available</Text>
+                                <Text style={{ fontSize: 13, color: C.textMuted }}>Pull down to refresh</Text>
+                            </View>
+                        ) : (
+                            loads.map((load, i) => <LoadCard key={load.id || i} load={load} index={i} />)
+                        )}
+                        <View style={{ height: 100 }} />
+                    </ScrollView>
+                </>
+            )}
 
             {/* ════════ Filter Modal ════════ */}
             <Modal visible={showFilterModal} animationType="slide" transparent>
@@ -499,11 +818,23 @@ const s = StyleSheet.create({
     filterBadge: { position: 'absolute', top: 5, right: 5, width: 16, height: 16, borderRadius: 8, backgroundColor: C.danger, justifyContent: 'center', alignItems: 'center' },
     filterBadgeText: { color: C.white, fontSize: 9, fontWeight: '700' },
     quickFilters: { maxHeight: 52, backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border },
-    quickFiltersContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
+    quickFiltersContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },
     quickChip: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface },
     quickChipActive: { backgroundColor: C.accent, borderColor: C.accent },
     quickChipText: { fontSize: 13, fontWeight: '500', color: C.textSec },
     quickChipTextActive: { color: C.white },
+
+    // Map toggle button
+    mapToggleBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 5,
+        paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
+        borderWidth: 1, borderColor: C.accent, backgroundColor: C.accentLight,
+    },
+    mapToggleBtnActive: { backgroundColor: C.accent, borderColor: C.accent },
+    mapToggleText: { fontSize: 12, fontWeight: '600', color: C.accent },
+    mapToggleTextActive: { color: C.white },
+    filterDivider: { width: 1, height: 24, backgroundColor: C.border, marginHorizontal: 2 },
+
     resultsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
     resultsCount: { fontSize: 13, color: C.textSec },
     resultsCountBold: { fontWeight: '700', color: C.text },
@@ -535,6 +866,78 @@ const s = StyleSheet.create({
     metaTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 },
     metaTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.surfaceAlt, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 6, gap: 4, maxWidth: '48%' },
     metaTagText: { fontSize: 11, color: C.textSec, fontWeight: '500', flexShrink: 1 },
+
+    // Map View styles
+    mapContainer: { flex: 1, position: 'relative' },
+    map: { flex: 1 },
+    mapResultsHeader: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingHorizontal: 16, paddingVertical: 8,
+        backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border,
+    },
+    mapFitBtn: {
+        paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6,
+        backgroundColor: C.accentLight, borderWidth: 1, borderColor: C.accent,
+    },
+    mapFitBtnText: { fontSize: 12, fontWeight: '600', color: C.accent },
+    mapLoadingOverlay: {
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(255,255,255,0.8)', justifyContent: 'center', alignItems: 'center',
+    },
+    mapLoadingText: { marginTop: 8, fontSize: 14, color: C.textSec, fontWeight: '500' },
+
+    // Callout styles
+    calloutContainer: {
+        width: 240, backgroundColor: C.white, borderRadius: 12, padding: 12,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8,
+        borderWidth: 1, borderColor: C.border,
+    },
+    calloutHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    calloutId: { fontSize: 12, fontWeight: '700', color: C.accent },
+    calloutPrice: { fontSize: 13, fontWeight: '700', color: C.success },
+    calloutRoute: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 },
+    calloutDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: C.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+    calloutDotInner: { width: 8, height: 8, borderRadius: 4 },
+    calloutCity: { fontSize: 12, color: C.text, fontWeight: '500', flex: 1 },
+    calloutMeta: { flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' },
+    calloutMetaText: { fontSize: 10, color: C.textSec, backgroundColor: C.surfaceAlt, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+    calloutTap: { fontSize: 10, color: C.accent, fontWeight: '600', marginTop: 8, textAlign: 'center' },
+
+    // Map Detail Modal Styles
+    bottomSheetOverlay: {
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
+    },
+    bottomSheetModal: {
+        height: '85%', backgroundColor: C.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 34 : 20, paddingTop: 12,
+        shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 20,
+    },
+    bottomSheetHandle: {
+        width: 48, height: 5, backgroundColor: C.border, borderRadius: 3,
+        alignSelf: 'center', marginBottom: 12,
+    },
+    bottomSheetClose: {
+        position: 'absolute', top: 16, right: 16,
+        width: 32, height: 32, borderRadius: 16, backgroundColor: C.surfaceAlt,
+        justifyContent: 'center', alignItems: 'center', zIndex: 10,
+    },
+    bottomSheetModalTitle: { fontSize: 18, fontWeight: '700', color: C.text, textAlign: 'center', marginTop: 4 },
+    bottomSheetModalSubtitle: { fontSize: 13, color: C.textMuted, textAlign: 'center', marginTop: 2 },
+
+    // Modern Cards for Detail View
+    detailCard: {
+        backgroundColor: C.surface, borderRadius: 12, padding: 16, marginBottom: 16,
+        borderWidth: 1, borderColor: C.border,
+    },
+    detailSectionTitle: { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 12, letterSpacing: -0.1 },
+
+    bidButton: {
+        backgroundColor: C.accent, paddingVertical: 16, borderRadius: 14,
+        alignItems: 'center', justifyContent: 'center',
+        shadowColor: C.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+    },
+    bidButtonText: { color: C.white, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
     modalSheet: { height: '80%', backgroundColor: C.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },

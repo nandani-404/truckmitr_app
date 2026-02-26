@@ -65,7 +65,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         } else {
             try {
                 await Share.share({
-                    message: 'Check out this post on Driver Ki Awaz - TruckMitr App',
+                    message: 'Check out this post on *Driver Ki Awaz!* - *Download the TruckMitr App*',
                     title: 'Driver Ki Awaz',
                 });
             } catch (error) {

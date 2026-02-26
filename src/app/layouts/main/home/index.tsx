@@ -1188,7 +1188,7 @@ const Home = React.forwardRef((props, ref) => {
     const _navigateAddJob = () => {
         // Clear any existing job data from Redux
         dispatch(jobAddAction({}));
-        return navigation.navigate(STACKS.ADD_JOB)
+        // return navigation.navigate(STACKS.ADD_JOB)
         if (subscriptionDetails?.showSubscriptionModel && isTransporter) {
             dispatch(subscriptionModalAction(true))
         } else {
@@ -1284,7 +1284,7 @@ const Home = React.forwardRef((props, ref) => {
             callerName: 'Test User',
             callId: 'test-call-1',
             channelName: 'testing',
-            agoraToken: '007eJxTYPiwosxUub2tVilJzIZJp4Nd++67eRqLEhdpFdzfPPfLjWwFBiMzAxOjZNMUEzNDAxODFBNLCwOLtCRTA0sglZhinnry7vzMhkBGhrrCn8yMDBAI4rMzlKQWl2TmpTMwAABX7SCa',
+            agoraToken: '007eJxTYHBcfDTi1ytpX8+XAdcYj8S4qz/bcC/CbXH2sSZ2VtaaE0sUGIzMDEyMkk1TTMwMDUwMUkwsLQws0pJMDSyBVGKKeeo5/wWZDYGMDGe63FkYGSAQxGdnKEktLsnMS2dgAACeRSB5',
         });
     }
     // const _navigateRcCheckResult = () => {
@@ -2585,8 +2585,8 @@ const Home = React.forwardRef((props, ref) => {
             >
                 <Text style={{ color: '#fff', fontSize: responsiveFontSize(1.8), fontWeight: '700' }}>
                     Test Video Call
-                </Text>
-            </TouchableOpacity> */}
+                </Text> */}
+            {/* </TouchableOpacity> */}
             {/* Curtain Drop - Trucker Home Overlay */}
             {isOverlayVisible && (
                 <Reanimated.View style={[{

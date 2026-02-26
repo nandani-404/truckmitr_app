@@ -237,10 +237,13 @@ const CourtCheckInfo = () => {
                         {t('courtCheckDesc')}
                     </Text>
                     <TouchableOpacity
-                        onPress={_startCourtCheck}
-                        style={{ backgroundColor: colors.royalBlue, paddingVertical: responsiveHeight(1.8), paddingHorizontal: responsiveWidth(8), borderRadius: 12, marginTop: responsiveHeight(2) }}
+                        onPress={courtCheckData?.report ? undefined : _startCourtCheck}
+                        disabled={!!courtCheckData?.report}
+                        style={{ backgroundColor: courtCheckData?.report ? '#10B981' : colors.royalBlue, paddingVertical: responsiveHeight(1.8), paddingHorizontal: responsiveWidth(8), borderRadius: 12, marginTop: responsiveHeight(2) }}
                     >
-                        <Text style={{ color: colors.white, fontSize: responsiveFontSize(1.9), fontWeight: '600' }}>{t('startCourtCheck')}</Text>
+                        <Text style={{ color: colors.white, fontSize: responsiveFontSize(1.9), fontWeight: '600' }}>
+                            {courtCheckData?.report ? t('courtCheckIsDone') : t('checkCourtCheckNow')}
+                        </Text>
                     </TouchableOpacity>
                 </View>
 
@@ -432,7 +435,7 @@ const CourtCheckInfo = () => {
                                     <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.0), fontWeight: 'bold' }}>{t('submitting') || 'Submitting...'}</Text>
                                 </>
                             ) : (
-                                <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.0), fontWeight: 'bold' }}>{t('startCourtCheck')}</Text>
+                                <Text style={{ color: colors.white, fontSize: responsiveFontSize(2.0), fontWeight: 'bold' }}>{t('checkCourtCheckNow')}</Text>
                             )}
                         </TouchableOpacity>
                     </View>

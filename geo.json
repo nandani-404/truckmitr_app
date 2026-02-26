@@ -1,0 +1,123 @@
+{
+    "version": 8,
+    "name": "Guardian Dark Navigation",
+    "sources": {
+        "mapbox": {
+            "type": "vector",
+            "url": "mapbox://mapbox.mapbox-streets-v8"
+        }
+    },
+    "sprite": "mapbox://sprites/mapbox/dark-v11",
+    "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+    "layers": [
+        {
+            "id": "background",
+            "type": "background",
+            "paint": {
+                "background-color": "#0B0E13"
+            }
+        },
+        {
+            "id": "water",
+            "type": "fill",
+            "source": "mapbox",
+            "source-layer": "water",
+            "paint": {
+                "fill-color": "#0F1722"
+            }
+        },
+        {
+            "id": "land",
+            "type": "fill",
+            "source": "mapbox",
+            "source-layer": "landuse",
+            "paint": {
+                "fill-color": "#11151C"
+            }
+        },
+        {
+            "id": "roads-minor",
+            "type": "line",
+            "source": "mapbox",
+            "source-layer": "road",
+            "filter": [
+                "==",
+                "class",
+                "street"
+            ],
+            "paint": {
+                "line-color": "#1F2937",
+                "line-width": 1
+            }
+        },
+        {
+            "id": "roads-major",
+            "type": "line",
+            "source": "mapbox",
+            "source-layer": "road",
+            "filter": [
+                "in",
+                "class",
+                "primary",
+                "secondary"
+            ],
+            "paint": {
+                "line-color": "#2E3A4A",
+                "line-width": 2
+            }
+        },
+        {
+            "id": "highways",
+            "type": "line",
+            "source": "mapbox",
+            "source-layer": "road",
+            "filter": [
+                "==",
+                "class",
+                "motorway"
+            ],
+            "paint": {
+                "line-color": "#3B82F6",
+                "line-width": 3
+            }
+        },
+        {
+            "id": "road-labels",
+            "type": "symbol",
+            "source": "mapbox",
+            "source-layer": "road",
+            "layout": {
+                "text-field": [
+                    "get",
+                    "name"
+                ],
+                "text-font": [
+                    "Open Sans Regular"
+                ],
+                "text-size": 10
+            },
+            "paint": {
+                "text-color": "#9CA3AF"
+            }
+        },
+        {
+            "id": "place-labels",
+            "type": "symbol",
+            "source": "mapbox",
+            "source-layer": "place_label",
+            "layout": {
+                "text-field": [
+                    "get",
+                    "name_en"
+                ],
+                "text-size": 12,
+                "text-font": [
+                    "Open Sans Bold"
+                ]
+            },
+            "paint": {
+                "text-color": "#E5E7EB"
+            }
+        }
+    ]
+}
