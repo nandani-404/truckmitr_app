@@ -59,10 +59,10 @@ const navigateWithDeepLink = (data?: NotificationData) => {
         console.log('🔕 No screen in notification data');
         return;
     }
-    
+
     const deepLink = getDeepLinkFromScreen(data.screen);
     console.log('🔗 Navigating with deep link:', deepLink);
-    
+
     // Use Linking to trigger deep link - React Navigation's linking config will handle it
     Linking.openURL(deepLink).catch(err => {
         console.error('❌ Error opening deep link:', err);
@@ -224,10 +224,10 @@ export const handleNotificationNavigation = async (data?: NotificationData) => {
     }
 
     console.log('📍 Notification navigation (deep link):', data.screen);
-    
+
     // Clear pending notification
     await AsyncStorage.removeItem(PENDING_NOTIFICATION_KEY);
-    
+
     // Navigate using deep link
     navigateWithDeepLink(data);
 };
@@ -335,11 +335,19 @@ const attachNotificationListeners = () => {
 
     messaging().onMessage(async (msg: FirebaseMessagingTypes.RemoteMessage) => {
         console.log('--- Foreground message received (onMessage) ---');
+        console.log(`fcm message-----`, msg);
+
+        // If it's a video call, let the native side handle it exclusively
+        if (msg.data?.type === 'VIDEO_CALL') {
+            console.log('✅ Video call detected in foreground, letting native handle it...');
+            return;
+        }
+
         console.log('Message:', JSON.stringify(msg, null, 2));
 
         // Prevent duplicate notifications
         if (notificationShown) {
-            console.log('Notification already shown, skipping duplicate...');
+            console.log('⚠️ Notification already shown, skipping UI duplicate...');
             return;
         }
 
@@ -363,24 +371,8 @@ const attachNotificationListeners = () => {
         console.log('------------------------------------------------');
     });
 
-    // messaging().setBackgroundMessageHandler(async msg => {
-    //     console.log('--- Background message received (setBackgroundMessageHandler) ---');
-    //     console.log('Message:', JSON.stringify(msg, null, 2));
-
-    //     const title: any = msg.notification?.title || msg.data?.title;
-    //     const body: any = msg.notification?.body || msg.data?.body;
-
-    //     try {
-    //         await displayNotificationWithTruckSound(title, body, msg.data);
-    //     } catch (displayError) {
-    //         console.error('Error displaying background notification:', displayError);
-    //     }
-
-    //     console.log('----------------------------------------------------');
-    // });
-
     // BACKGROUND STATE: Now handled by linking.subscribe() in routes/index.tsx
-    // This is just for logging purposes
+    // AND by the global handler in index.js for logging/kill support.
     messaging().onNotificationOpenedApp(async msg => {
         console.log('🟡 BG notification tap:', msg?.data);
         console.log('🟡 Background: Navigation will be handled by linking.subscribe()');

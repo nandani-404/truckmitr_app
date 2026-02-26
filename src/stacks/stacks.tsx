@@ -217,6 +217,12 @@ export type NavigatorParams = {
     shipperTrackDetail: { load?: any } | undefined;
     shipperNotifications: undefined;
     shipperEditLoad: { editData: any };
+    incomingCall: {
+        callerName?: string;
+        callId?: string;
+        channelName?: string;
+        agoraToken?: string;
+    } | undefined;
 };
 
 export const STACKS = {
@@ -476,6 +482,7 @@ export const STACKS = {
     SHIPPER_NOTIFICATIONS: 'shipperNotifications',
     SHIPPER_EDIT_LOAD: 'shipperEditLoad',
     TRANSPORTER_DRIVER_TRACKING: 'transporterDriverTracking',
+    INCOMING_CALL: 'incomingCall',
 
 } as const;
 

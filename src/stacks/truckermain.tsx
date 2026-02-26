@@ -35,7 +35,8 @@ import DriverList from '../app/layouts/main/driver-list/index';
 // Import shared screens (reused from transporter)
 import ProfileOverview from '../app/layouts/main/profile-overview';
 import ProfileEditNew from '../app/layouts/main/profile-edit-new';
-import { TRUCKER_STACKS } from './stacks';
+import IncomingCallScreen from '../app/layouts/main/IncomingCallScreen';
+import { TRUCKER_STACKS, STACKS } from './stacks';
 
 // Import Trucker Auth screens (Profile Completion Flow)
 
@@ -394,6 +395,11 @@ export default function TruckerMain() {
                 name={TRUCKER_STACKS.PROFILE_VERIFICATION_STATUS}
                 component={ProfileVerificationStatusWrapper}
             /> */}
+            <Stack.Screen
+                name={STACKS.INCOMING_CALL}
+                component={IncomingCallScreen}
+                options={{ animation: 'fade', gestureEnabled: false }}
+            />
         </Stack.Navigator>
     );
 }

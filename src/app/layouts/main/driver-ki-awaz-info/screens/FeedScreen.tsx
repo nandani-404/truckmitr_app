@@ -16,6 +16,7 @@ import {
     Share,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -228,6 +229,7 @@ const PostCard: React.FC<{
 };
 
 const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
+    const { i18n } = useTranslation();
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const insets = useSafeAreaInsets();
     const [posts, setPosts] = useState<PostData[]>([]);
@@ -390,8 +392,15 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
 
     const sharePost = async (post: PostData) => {
         try {
+            const shareUrl = 'https://play.google.com/store/apps/details?id=com.truckmitr';
+            const isHindi = i18n.language === 'hi' || i18n.language === 'hn';
+
+            const message = isHindi
+                ? `🚛 मैंने अपनी आवाज Driver Ki Awaz पर शेयर की है!\n\nयह TruckMitr का खास प्लेटफॉर्म है जहाँ ड्राइवर अपनी समस्या, अनुभव और कहानी खुलकर बता सकते हैं।\n\nआप भी अपनी आवाज उठाइए।\nआज ही TruckMitr ऐप डाउनलोड करें और रजिस्टर करें。\n\n📲 अभी जुड़ें: ${shareUrl}`
+                : `🚛 I have shared my voice on Driver Ki Awaz!\n\nThis is a special platform by TruckMitr where drivers can openly share their problems, experiences, and personal stories.\n\nNow it’s your turn to raise your voice.\nDownload the TruckMitr App today and register to be part of the community.\n\n📲 Join now: ${shareUrl}`;
+
             await Share.share({
-                message: `${post.userName} on Driver Ki Awaz:\n\n${post.content || 'Voice message'}\n\n#DriverKiAwaz`,
+                message: message,
             });
             await DriverKiAwazService.sharePost(post.id);
             setPosts(prev => prev.map(p => p.id === post.id ? { ...p, shareCount: p.shareCount + 1 } : p));

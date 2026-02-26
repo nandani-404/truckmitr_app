@@ -1,4 +1,4 @@
-import { StatusBar, useColorScheme, View, Image, AppState, Linking, TouchableOpacity, Text } from 'react-native';
+import { StatusBar, useColorScheme, View, Image, AppState, Linking, TouchableOpacity, Text, NativeModules } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { darkTheme, lightTheme } from '@truckmitr/res/colors';
@@ -14,13 +14,13 @@ import { validateToken } from '../utils/config/tokenValidator';
 import { CommonActions } from '@react-navigation/native';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import { onTokenExpired } from '../utils/config/authEvents';
+import { END_POINTS, STATICS } from '../utils/config';
 import {
   subscriptionDetailsAction,
   userAction,
   userAuthenticatedAction,
 } from '../redux/actions/user.action';
 import axiosInstance from '../utils/config/axiosInstance';
-import { END_POINTS } from '../utils/config';
 import { useResponsiveScale, useDriverLocationTracking } from '../app/hooks';
 import Subscription from '../app/layouts/main/subscription';
 import InAppUpdatePopup from '../utils/update';
@@ -31,6 +31,7 @@ import { consumePendingNotificationNavigation, resetNotificationFlag } from '../
 import messaging from '@react-native-firebase/messaging';
 import * as TYPES from '@truckmitr/redux/actions/types';
 import PunctureProfileCompletionStack from '../stacks/punctureProfileCompletion';
+import { agoraService } from '../services/agora';
 // import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 
 export let isNavigationReady = false;
@@ -72,6 +73,7 @@ export default function Routes() {
   const appState = useRef(AppState.currentState);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const hasInitialized = useRef(false);
+  const hasInitializedAgora = useRef(false);
   const lastBackgroundTime = useRef<number>(0);
   const pendingDeepLink = useRef<string | null>(null); // Store pending deep link
   const isProfileCompleted = Boolean(
@@ -217,6 +219,68 @@ export default function Routes() {
   // -------------------------------
   // 🔹 Handle App State Changes
   // -------------------------------
+  useEffect(() => {
+    const currentRole = String(user?.role || user?.data?.role || '').toLowerCase();
+    const isDriver = currentRole === 'driver';
+    const agoraUserId = String(user?.unique_id || user?.id || user?.data?.id || '');
+    const agoraUserName = String(user?.name || user?.data?.name || 'Driver');
+
+    console.log('[Agora][Gate] Auth/role check at root.', {
+      isAuthenticated,
+      currentRole,
+      isDriver,
+      hasInitializedAgoraRef: hasInitializedAgora.current,
+      serviceInitialized: agoraService.isInitialized(),
+      agoraUserId,
+      hasAgoraAppId: Boolean(STATICS.AGORA_APP_ID?.trim()),
+    });
+
+    if (isAuthenticated && isDriver) {
+      if (hasInitializedAgora.current && agoraService.isInitialized()) {
+        console.log('[Agora][Gate] Skip initialize: already initialized for current session.');
+        return;
+      }
+
+      console.log('[Agora][Gate] Starting Agora initialization from root effect...');
+      const initialized = agoraService.initialize({
+        appId: STATICS.AGORA_APP_ID,
+        userId: agoraUserId,
+        userName: agoraUserName,
+      });
+
+      hasInitializedAgora.current = initialized;
+      console.log('[Agora][Gate] Root init result:', initialized);
+      return;
+    }
+
+    if (hasInitializedAgora.current || agoraService.isInitialized()) {
+      console.log('[Agora][Gate] Conditions not met. Destroying Agora engine if active...');
+      agoraService.destroy();
+      hasInitializedAgora.current = false;
+    } else {
+      console.log('[Agora][Gate] Conditions not met and no active Agora engine.');
+    }
+  }, [
+    isAuthenticated,
+    user?.role,
+    user?.data?.role,
+    user?.id,
+    user?.data?.id,
+    user?.unique_id,
+    user?.name,
+    user?.data?.name
+  ]);
+
+  useEffect(() => {
+    return () => {
+      console.log('[Agora][Gate] Routes unmount cleanup triggered.');
+      if (agoraService.isInitialized()) {
+        agoraService.destroy();
+      }
+      hasInitializedAgora.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       // Track when app goes to background
@@ -412,6 +476,38 @@ export default function Routes() {
     init();
     SystemNavigationBar.setNavigationColor('translucent');
   }, []);
+
+  const [navReady, setNavReady] = useState(false);
+
+  // -------------------------------
+  // 🔹 Handle Incoming Call Navigation (from Native Bridge)
+  // -------------------------------
+  useEffect(() => {
+    if (isAuthenticated && navReady) {
+      const checkCallData = async () => {
+        try {
+          const { IncomingCallModule } = NativeModules;
+          if (!IncomingCallModule) return;
+
+          const callData = await IncomingCallModule.getCallData();
+
+          if (callData) {
+            console.log('📞 Accepted Call Data found:', callData);
+            // Navigate to IncomingCallScreen
+            if (navigationRef.current) {
+              (navigationRef.current as any)?.navigate(STACKS.INCOMING_CALL, callData);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error checking call data:', error);
+        }
+      };
+
+      // Small delay to ensure the UI is rendered
+      const timer = setTimeout(checkCallData, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, navReady]);
 
   // -------------------------------
   // 🔹 Handle Pending Notification Navigation (after auth)
@@ -787,6 +883,7 @@ export default function Routes() {
       ref={navigationRef}
       theme={theme}
       onReady={async () => {
+        setNavReady(true);
         setNavigationReady(true);
         console.log('🟢 NavigationContainer READY');
         // Note: Pending notification navigation is handled by useEffect when isAuthenticated becomes true

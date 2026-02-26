@@ -160,7 +160,7 @@ dependencies {
     // implementation platform('com.google.firebase:firebase-bom:31.0.2')
     // // When using the BoM, don't specify versions in Firebase dependencies
     // implementation 'com.google.firebase:firebase-analytics'
-    // implementation 'com.google.firebase:firebase-messaging:23.2.1'
+    implementation 'com.google.firebase:firebase-messaging:23.2.1'
     // implementation 'im.zego:zpns-fcm:2.8.0'   // The ZPNs package for FCM
 
     if (hermesEnabled.toBoolean()) {

@@ -1340,6 +1340,8 @@
     "jobDescriptionHintDetail": "Describe the job responsibilities and requirements",
     "jobTitleHintDetail": "Enter a clear and descriptive job title",
     "jobTitlePlaceholder": "e.g. Long Haul Truck Driver for Interstate Routes",
+    "maxCharacterReached": "Maximum 250 characters allowed",
+    "jobTitleTooLong": "Job title cannot exceed 250 characters",
     "jobLocationHintDetail": "Select the state where the job is located",
     "tapToSelectLocation": "Tap to select location",
     "vehicleTypeHintDetail": "Select the type of vehicle required for this job",

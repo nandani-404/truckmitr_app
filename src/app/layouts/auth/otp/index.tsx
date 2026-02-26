@@ -490,8 +490,15 @@ const Otp = () => {
                 setAutoVerificationAttempted(false);
             }
         } catch (error: any) {
-            showToast(error?.message || "Verification failed")
-            seterror(error?.message || "Verification failed");
+            const errorMsg = error?.message || "";
+            if (errorMsg.includes('SERVICE_NOT_AVAILABLE')) {
+                const friendlyMessage = "Something went wrong while connecting to the server. Please try again later.";
+                showToast(friendlyMessage);
+                seterror(friendlyMessage);
+            } else {
+                showToast(errorMsg || "Verification failed");
+                seterror(errorMsg || "Verification failed");
+            }
             triggerShakeAnimation();
             setAutoVerificationAttempted(false);
         } finally {

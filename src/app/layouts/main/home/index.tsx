@@ -1188,7 +1188,7 @@ const Home = React.forwardRef((props, ref) => {
     const _navigateAddJob = () => {
         // Clear any existing job data from Redux
         dispatch(jobAddAction({}));
-        // return navigation.navigate(STACKS.ADD_JOB)
+        return navigation.navigate(STACKS.ADD_JOB)
         if (subscriptionDetails?.showSubscriptionModel && isTransporter) {
             dispatch(subscriptionModalAction(true))
         } else {
@@ -1278,6 +1278,14 @@ const Home = React.forwardRef((props, ref) => {
 
     const _navigateConvoy = () => {
         navigation.navigate(STACKS.CONVOY)
+    }
+    const _navigateAgoraTestCall = () => {
+        navigation.navigate(STACKS.INCOMING_CALL, {
+            callerName: 'Test User',
+            callId: 'test-call-1',
+            channelName: 'testing',
+            agoraToken: '007eJxTYPiwosxUub2tVilJzIZJp4Nd++67eRqLEhdpFdzfPPfLjWwFBiMzAxOjZNMUEzNDAxODFBNLCwOLtCRTA0sglZhinnry7vzMhkBGhrrCn8yMDBAI4rMzlKQWl2TmpTMwAABX7SCa',
+        });
     }
     // const _navigateRcCheckResult = () => {
     //     navigation.navigate(STACKS.RC_CHECK_RESULT, { rcNumber: '' }) // Needs params usually
@@ -1998,7 +2006,7 @@ const Home = React.forwardRef((props, ref) => {
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 🚛 TRUCKER MODE TOGGLE CARD                    */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <TruckerModeToggle onToggle={handleStartTransition} />
+                        {/* <TruckerModeToggle onToggle={handleStartTransition} /> */}
 
                         {/* Jobs Management Section */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>
@@ -2558,6 +2566,27 @@ const Home = React.forwardRef((props, ref) => {
 
 
             </View>
+            {/* <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={_navigateAgoraTestCall}
+                style={{
+                    position: 'absolute',
+                    left: 16,
+                    right: 16,
+                    bottom: safeAreaInsets.bottom + 12,
+                    height: 52,
+                    borderRadius: 14,
+                    backgroundColor: '#0B57D0',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 12000,
+                    elevation: 14,
+                }}
+            >
+                <Text style={{ color: '#fff', fontSize: responsiveFontSize(1.8), fontWeight: '700' }}>
+                    Test Video Call
+                </Text>
+            </TouchableOpacity> */}
             {/* Curtain Drop - Trucker Home Overlay */}
             {isOverlayVisible && (
                 <Reanimated.View style={[{

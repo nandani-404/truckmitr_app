@@ -5,6 +5,11 @@
         android:name="android.hardware.camera"
         android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <!-- Storage permissions for different Android versions -->
@@ -112,16 +117,32 @@
 
 </activity>
 
+        <!-- Incoming Call Activity -->
+        <activity
+            android:name=".IncomingCallActivity"
+            android:exported="false"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:showWhenLocked="true"
+            android:launchMode="singleTop"
+            android:theme="@android:style/Theme.NoTitleBar"
+            android:noHistory="true" />
 
-        <!-- ✅ Firebase Messaging service with tools override -->
+
+        <!-- ✅ Custom Firebase Messaging service override -->
         <service
-            android:name="io.invertase.firebase.messaging.ReactNativeFirebaseMessagingService"
-            android:exported="true"
-            tools:replace="android:exported">
-            <intent-filter>
+            android:name=".MyFirebaseMessagingService"
+            android:exported="true">
+            <intent-filter android:priority="999">
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- ✅ Foreground service for non-dismissable call notification -->
+        <service
+            android:name=".IncomingCallService"
+            android:foregroundServiceType="shortService"
+            android:exported="false" />
 
         <!--  Google Map  -->
         <meta-data

@@ -665,6 +665,17 @@ export default function AddJob() {
                 showToast(t('pleaseEnterFastagAmount') || 'Please enter FASTag/Road Kharcha amount');
                 return;
             }
+        } else if (step.id === 'job_title') {
+            if (!addJob?.job_title || addJob.job_title.trim() === '') {
+                triggerShake();
+                showToast(t('pleaseEnterJobTitle') || 'Please enter job title');
+                return;
+            }
+            if (addJob.job_title.length > 250) {
+                triggerShake();
+                showToast(t('jobTitleTooLong') || 'Job title cannot exceed 250 characters');
+                return;
+            }
         } else if (step.field && step.required && !addJob?.[step.field]) {
             triggerShake();
             showToast(t('pleaseEnterAllRequiredDetails') || 'Please fill in this field');
@@ -993,13 +1004,33 @@ export default function AddJob() {
                             {t('jobTitleHintDetail') || 'Enter a clear and descriptive job title'}
                         </Text>
                         <TextInput
-                            style={[styles.classicInput, styles.largeInput]}
+                            style={[
+                                styles.classicInput,
+                                styles.largeInput,
+                                (addJob?.job_title || '').length > 250 && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }
+                            ]}
                             placeholder={t('jobTitlePlaceholder') || "e.g. Long Haul Truck Driver for Interstate Routes"}
                             placeholderTextColor="#999"
                             value={addJob?.job_title || ''}
                             onChangeText={(text) => dispatch(jobAddAction({ ...addJob, job_title: text }))}
                             multiline
                         />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                            <View style={{ flex: 1 }}>
+                                {(addJob?.job_title || '').length > 250 && (
+                                    <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '500' }}>
+                                        {t('maxCharacterReached') || 'Maximum 250 characters allowed'}
+                                    </Text>
+                                )}
+                            </View>
+                            <Text style={[
+                                styles.charCounter,
+                                { marginTop: 0 },
+                                (addJob?.job_title || '').length > 250 && { color: '#EF4444', fontWeight: '700' }
+                            ]}>
+                                {(addJob?.job_title || '').length} / 250
+                            </Text>
+                        </View>
                     </View>
                 );
 
@@ -3288,6 +3319,12 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#212529',
         marginBottom: 4,
+    },
+    charCounter: {
+        fontSize: 12,
+        color: '#6C757D',
+        textAlign: 'right',
+        marginTop: 4,
     },
     classicBox: {
         flexDirection: 'row',

@@ -1,3 +1,7 @@
 <resources>
     <color name="bootsplash_background">#ffffff</color>
+    <color name="call_accept">#4CD964</color>
+    <color name="call_decline">#FF3B30</color>
+    <color name="call_background">#1C1C1E</color>
+    <color name="white">#FFFFFF</color>
 </resources>

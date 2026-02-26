@@ -39,6 +39,7 @@ import FuelDiscount from '../app/layouts/main/fuel-discount';
 import TruckInsurance from '../app/layouts/main/truck-insurance';
 import AddSingleDriverInfo from '../app/layouts/main/add-single-driver-info';
 import PurchaseInvoices from '../app/layouts/main/purchase-invoices';
+import IncomingCallScreen from '../app/layouts/main/IncomingCallScreen';
 import { AppState } from 'react-native';
 
 const Stack = createNativeStackNavigator();
@@ -234,6 +235,8 @@ export default function Main() {
       <Stack.Screen name={STACKS.JOB_SUMMARY} component={JobSummary} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.EDIT_JOB} component={EditJob} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.PROFILE_OVERVIEW} component={ProfileOverview} options={{ animation: 'fade' }} />
+      <Stack.Screen name={STACKS.INCOMING_CALL} component={IncomingCallScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+
 
       {/* DriverInvites usually mapped to STACKS.DRIVERINVITES, but checking stacks definition: invites */}
       {/* already there at line 165 as invites? No line 165 is DriverInvites component from local import. */}

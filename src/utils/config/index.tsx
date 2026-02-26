@@ -1,6 +1,6 @@
 
-export const BASE_URL = `https://development.truckmitr.com/`
-// export const BASE_URL = `https://truckmitr.com/`
+// export const BASE_URL = `https://development.truckmitr.com/`
+export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.29.156:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
 // export const BASE_URL = 'https://devtruckmitr.in/'
@@ -10,6 +10,9 @@ export const AWAZ_URL = 'https://truckmitr.com/'
 export const STATICS = {
     RAYZORPAY_KEY_ID: 'rzp_live_sZcCjZPcBGzMSm',  // live
     RAYZORPAY_SECRET: 'Jo14oUIoX75fb0WJejakbRvQ', // live
+    AGORA_APP_ID: '26042c5d461040d49808fb50908fad7e',
+    AGORA_TEST_CHANNEL: 'testing',
+    AGORA_TEMP_TOKEN: '007eJxTYFjnkvlsalVx8ZsrwhPrZCZV9PRHZkd9tP8QtfSkxV2nnT4KDEZmBiZGyaYpJmaGBiYGKSaWFgYWaUmmBpZAKjHFPDX/zLzMhkBGBm4eV2ZGBggE8dkZSlKLSzLz0hkYANerIHk=',
     // RAYZORPAY_KEY_ID: 'rzp_test_bbrUGMV7qq3mYP',  // testing
     // RAYZORPAY_SECRET: 'fU9jFstLp7qdUkNC3KNhuMnS'  // testing
 }

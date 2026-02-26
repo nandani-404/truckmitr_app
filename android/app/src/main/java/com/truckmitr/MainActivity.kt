@@ -22,6 +22,11 @@ class MainActivity : ReactActivity() {
         super.onCreate(null)
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent) // Required for RN to see the latest intent
+    }
+
 
     /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]

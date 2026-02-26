@@ -13,6 +13,7 @@ import {
     LayoutAnimation,
     Platform,
     UIManager,
+    NativeModules,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
