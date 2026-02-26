@@ -1,0 +1,58 @@
+--- src/app/layouts/Trucker/FindLoads/index.tsx
++++ src/app/layouts/Trucker/FindLoads/index.tsx
+@@ -102,9 +102,11 @@
+ 
+ // Custom Marker wrapper to prevent Android clipping bug
+ const CustomLoadMarker = ({ coordinate, onPress, load }: any) => {
+-    // tracksViewChanges must be true initially to render the image, then set to false for performance once loaded.
++    const [imageLoaded, setImageLoaded] = useState(false);
+     const [tracksViewChanges, setTracksViewChanges] = useState(true);
+ 
+     return (
+         <Marker
+             coordinate={coordinate}
+             onPress={onPress}
+             tracksViewChanges={tracksViewChanges}
+-            anchor={{ x: 0.5, y: 1 }}
++            anchor={{ x: 0.5, y: 0.5 }}
++            zIndex={tracksViewChanges ? 2 : 1}
+         >
+             <View style={markerStyles.markerContainer}>
++                {!imageLoaded && (
++                    <ActivityIndicator size="small" color={C.accent} style={{ position: 'absolute' }} />
++                )}
+                 <Image
+                     source={require('src/assets/tracking_color_truck/logo2.0.png')}
+-                    style={markerStyles.markerImage}
++                    style={[markerStyles.markerImage, { opacity: imageLoaded ? 1 : 0 }]}
+                     resizeMode="contain"
+                     fadeDuration={0} // Important to prevent Android MapView from snapping mid-fade
+                     onLoad={() => {
+-                        // Allow layout to fully measure before locking the view capture
+-                        setTimeout(() => setTracksViewChanges(false), 500);
++                        setImageLoaded(true);
++                        // Allow layout to fully measure and render before locking the view capture. 1500ms guarantees it.
++                        setTimeout(() => setTracksViewChanges(false), 1500);
+                     }}
+                 />
+             </View>
+@@ -126,13 +128,13 @@
+ 
+ const markerStyles = StyleSheet.create({
+     markerContainer: {
+-        width: 120, // Adjusted to exactly match 1.5 aspect ratio of the 1280x853 image
+-        height: 80,
++        width: 140, // Increased box to completely prevent any clipping
++        height: 100,
+         alignItems: 'center',
+         justifyContent: 'center',
+         overflow: 'visible',
+         backgroundColor: 'transparent',
+     },
+     markerImage: {
+-        width: 120,
+-        height: 80,
++        width: 110,
++        height: 70, // Kept proportional
+     }
+ });

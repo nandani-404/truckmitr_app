@@ -484,6 +484,7 @@ export const TRUCKER_STACKS = {
     TRUCKER_TABS: 'truckerTabs',
     LOAD_DETAIL: 'truckerLoadDetail',
     ACTIVE_TRIP: 'truckerActiveTrip',
+    ALL_LIVE_TRACKING: 'truckerAllLiveTracking',
     ADD_TRUCK: 'truckerAddTruck',
     DOCUMENT_RENEWAL: 'truckerDocumentRenewal',
     EARNINGS: 'truckerEarningsDetail',

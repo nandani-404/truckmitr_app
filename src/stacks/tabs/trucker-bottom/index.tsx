@@ -61,6 +61,7 @@ const HomeTabWrapper = () => {
             onNavigateToProfile={() => navigation.navigate(TRUCKER_TABS.PROFILE)}
             onNavigateToAddDriver={() => navigation.navigate(TRUCKER_STACKS.ADD_DRIVER)}
             onNavigateToAddBankDetails={() => navigation.navigate(TRUCKER_STACKS.BANK_DETAILS)}
+            onNavigateToAllLiveTracking={() => navigation.navigate(TRUCKER_STACKS.ALL_LIVE_TRACKING)}
         />
     );
 };

@@ -639,21 +639,36 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
                                     <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 4 }}>
                                         VEHICLE NO.
                                     </Text>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                                         <Feather name="truck" size={14} color={colors.text} />
-                                        <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '700', color: colors.text }}>
+                                        <Text style={{ fontSize: responsiveFontSize(1.3), fontWeight: '700', color: colors.text }} numberOfLines={1}>
                                             {recentTracking.vehicle_number || 'Not Assigned'}
                                         </Text>
                                     </View>
                                 </View>
-                                <View style={{ width: 1, backgroundColor: colors.blackOpacity(0.1), marginHorizontal: 12 }} />
-                                <View style={{ flex: 1 }}>
+                                <View style={{ width: 1, backgroundColor: colors.blackOpacity(0.1), marginHorizontal: 8 }} />
+                                <View style={{ flex: 1.2 }}>
+                                    <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 4 }}>
+                                        DRIVER NAME
+                                    </Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                        <Feather name="user" size={14} color={colors.text} />
+                                        <Text style={{ fontSize: responsiveFontSize(1.3), fontWeight: '700', color: colors.text }} numberOfLines={1}>
+                                            {recentTracking.driver_name || 'Not assigned'}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <View style={{ width: 1, backgroundColor: colors.blackOpacity(0.1), marginHorizontal: 8 }} />
+                                <View style={{ flex: 0.9 }}>
                                     <Text style={{ fontSize: responsiveFontSize(1.1), color: colors.blackOpacity(0.5), marginBottom: 4 }}>
                                         MATERIAL
                                     </Text>
-                                    <Text style={{ fontSize: responsiveFontSize(1.4), fontWeight: '700', color: colors.text }}>
-                                        {recentTracking.material_name || 'General'}
-                                    </Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                        <Feather name="box" size={14} color={colors.text} />
+                                        <Text style={{ fontSize: responsiveFontSize(1.3), fontWeight: '700', color: colors.text }} numberOfLines={1}>
+                                            {recentTracking.material_name || 'General'}
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
                         </View>
@@ -1301,7 +1316,7 @@ const TransporterAddedDriverHome = React.forwardRef((props, ref) => {
 
                 <Space height={responsiveFontSize(4)} />
             </ScrollView>
-        </View>
+        </View >
     );
 });
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, Image, TouchableOpacity,
-    Switch, StatusBar, Dimensions, Animated, RefreshControl,
+    Switch, StatusBar, Dimensions, Animated, RefreshControl, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
@@ -16,39 +16,144 @@ const { width } = Dimensions.get('window');
 // ─────────────────────────────────────────────
 // Design Tokens
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Design Tokens
+// ─────────────────────────────────────────────
 const COLORS = {
-    bg: '#FFFFFF',
+    primary: '#6467f2',
+    bg: '#f6f6f8',
     surface: '#FFFFFF',
     border: '#E5E7EB',
     borderLight: '#F3F4F6',
-    textPrimary: '#1C1C1E',
-    textSecondary: '#6B7280',
-    textTertiary: '#9CA3AF',
-    action: '#2C5282',
-    actionLight: '#EBF0F7',
-    success: '#4A7C59',
-    successLight: '#EDF5F0',
-    danger: '#DC2626',
+    textPrimary: '#0f172a',
+    textSecondary: '#64748b',
+    textTertiary: '#94a3b8',
+    action: '#6467f2',
+    actionLight: 'rgba(100, 103, 242, 0.1)',
+    success: '#10b981',
+    successLight: '#ecfdf5',
+    danger: '#ef4444',
     white: '#FFFFFF',
+    warning: '#f59e0b',
+    warningLight: '#fffbeb',
 };
 
 // ─────────────────────────────────────────────
-// Icons
+// Icons (Matching Google Material Symbols style)
 // ─────────────────────────────────────────────
-const BellIcon = ({ color = COLORS.textPrimary }: { color?: string }) => (<Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><Path d="M13.73 21a2 2 0 0 1-3.46 0" /></Svg>);
-const TruckIconMini = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M1 3h15v13H1z" /><Path d="M16 8h4l3 3v5h-7V8z" /><Circle cx="5.5" cy="18.5" r="2.5" /><Circle cx="18.5" cy="18.5" r="2.5" /></Svg>);
-const SearchIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Circle cx="11" cy="11" r="8" /><Path d="M21 21l-4.35-4.35" /></Svg>);
-const MapPinIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><Circle cx="12" cy="10" r="3" /></Svg>);
-const WalletIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Rect x="1" y="4" width="22" height="16" rx="2" /><Path d="M1 10h22" /></Svg>);
-const ChevronRightIcon = ({ color = COLORS.textTertiary }: { color?: string }) => (<Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M9 18l6-6-6-6" /></Svg>);
-const ArrowRightIcon = ({ color = COLORS.textTertiary }: { color?: string }) => (<Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M5 12h14M12 5l7 7-7 7" /></Svg>);
-const ClockIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Circle cx="12" cy="12" r="10" /><Path d="M12 6v6l4 2" /></Svg>);
-const CalendarIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Rect x="3" y="4" width="18" height="18" rx="2" /><Path d="M16 2v4M8 2v4M3 10h18" /></Svg>);
-const TrendUpIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M23 6l-9.5 9.5-5-5L1 18" /><Path d="M17 6h6v6" /></Svg>);
-const StarIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></Svg>);
-const SwitchModeIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" /></Svg>);
-const UserPlusIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><Circle cx="8.5" cy="7" r="4" /><Path d="M20 8v6M23 11h-6" /></Svg>);
-const BankIcon = ({ color = COLORS.textSecondary }: { color?: string }) => (<Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><Path d="M3 21h18" /><Path d="M3 10h18" /><Path d="M5 6l7-3 7 3" /><Path d="M4 10v11" /><Path d="M20 10v11" /><Path d="M8 14v3" /><Path d="M12 14v3" /><Path d="M16 14v3" /></Svg>);
+const BellIcon = ({ color = COLORS.textPrimary }: { color?: string }) => (
+    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </Svg>
+);
+const VerifiedIcon = ({ color = COLORS.primary }: { color?: string }) => (
+    <Svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+        <Path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+    </Svg>
+);
+const TruckIconLarge = ({ color = COLORS.primary }: { color?: string }) => (
+    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Rect x="1" y="3" width="15" height="13" />
+        <Path d="M16 8h4l3 3v5h-7V8z" />
+        <Circle cx="5.5" cy="18.5" r="2.5" />
+        <Circle cx="18.5" cy="18.5" r="2.5" />
+    </Svg>
+);
+const PendingIcon = ({ color = '#f59e0b' }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Circle cx="12" cy="12" r="10" />
+        <Path d="M12 6v6l4 2" />
+    </Svg>
+);
+const CalendarIcon = ({ color = COLORS.primary }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+        <Path d="M16 2v4M8 2v4M3 10h18" />
+    </Svg>
+);
+const PaymentIcon = ({ color = '#6366f1' }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Rect x="2" y="4" width="20" height="16" rx="2" />
+        <Path d="M12 11h.01" />
+    </Svg>
+);
+const StarIcon = ({ color = '#f59e0b' }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill={color}>
+        <Path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    </Svg>
+);
+const SearchIcon = ({ color = COLORS.primary }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Circle cx="11" cy="11" r="8" />
+        <Path d="M21 21l-4.35-4.35" />
+    </Svg>
+);
+const GavelIcon = ({ color = '#2563eb' }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M14.5 12.5l5 5M12.5 10.5l5 5M4 17.5l2-2 2 2-2 2zM9.5 7.5L4 13l3 3 5.5-5.5" />
+    </Svg>
+);
+const WalletIcon = ({ color = '#10b981' }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M20 12V8a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-4" />
+        <Path d="M16 12h4" />
+    </Svg>
+);
+const CarIcon = ({ color = '#8b5cf6' }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 002 12v4c0 .6.4 1 1 1h2" />
+        <Circle cx="7" cy="17" r="2" />
+        <Circle cx="17" cy="17" r="2" />
+    </Svg>
+);
+const UserPlusIcon = ({ color = '#ea580c' }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <Circle cx="8.5" cy="7" r="4" />
+        <Line x1="20" y1="8" x2="20" y2="14" />
+        <Line x1="23" y1="11" x2="17" y2="11" />
+    </Svg>
+);
+const BankIcon = ({ color = '#e11d48' }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Rect x="2" y="10" width="20" height="12" rx="2" />
+        <Path d="M12 2L2 7l10 5 10-5-10-5z" />
+        <Path d="M6 10v12M18 10v12M12 10v12" />
+    </Svg>
+);
+const SwapIcon = ({ color = COLORS.white }: { color?: string }) => (
+    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l4-4M17 20l-4-4" />
+    </Svg>
+);
+const ChevronRightIcon = ({ color = COLORS.white }: { color?: string }) => (
+    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M9 18l6-6-6-6" />
+    </Svg>
+);
+const MapTrackingIcon = ({ color = COLORS.white }: { color?: string }) => (
+    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z" />
+        <Circle cx="12" cy="10" r="3" />
+    </Svg>
+);
+
+// Helper for Line in UserPlusIcon
+const ArrowRightIcon = ({ color = COLORS.textTertiary }: { color?: string }) => (
+    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M5 12h14M12 5l7 7-7 7" />
+    </Svg>
+);
+const TruckIconMini = ({ color = COLORS.textSecondary }: { color?: string }) => (
+    <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M1 3h15v13H1z" /><Path d="M16 8h4l3 3v5h-7V8z" /><Circle cx="5.5" cy="18.5" r="2.5" /><Circle cx="18.5" cy="18.5" r="2.5" />
+    </Svg>
+);
+
+// Helper for Line in UserPlusIcon
+const Line = (props: any) => <Path d={`M${props.x1} ${props.y1}L${props.x2} ${props.y2}`} />;
+
 
 // ─────────────────────────────────────────────
 // Types
@@ -63,6 +168,7 @@ interface Props {
     onNavigateToProfile?: () => void;
     onNavigateToAddDriver?: () => void;
     onNavigateToAddBankDetails?: () => void;
+    onNavigateToAllLiveTracking?: () => void;
 }
 
 // ─────────────────────────────────────────────
@@ -71,44 +177,25 @@ interface Props {
 const SwitchToTransporterCard = () => {
     const dispatch = useDispatch();
     const isTransitioning = useSelector((state: any) => state.appMode.isTransitioning);
-    const switchAnim = useRef(new Animated.Value(1)).current;
-
-    const thumbTranslateX = switchAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 22] });
-    const trackBg = switchAnim.interpolate({ inputRange: [0, 1], outputRange: ['#D1D5DB', COLORS.action] });
 
     const handleToggle = () => {
         if (isTransitioning) return;
-
-        Animated.parallel([
-            Animated.timing(switchAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: false // background color interpolation needs false
-            })
-        ]).start(() => {
-            // Pass parameter to Home screen to trigger "Curtain Up" animation
-            // We need to navigate BEFORE or WITH the toggle?
-            // Actually, if we toggle mode, the stack changes immediately. 
-            // We need to set a global flag or params that the NEXT stack can read.
-            // Since we are unmounting, we can't easily pass params via navigation to a different root stack.
-            // BUT we can use Redux to set a "transitionDirection".
-            dispatch(toggleAppMode());
-        });
+        dispatch(toggleAppMode());
     };
 
     return (
-        <TouchableOpacity activeOpacity={0.7} onPress={handleToggle} disabled={isTransitioning} style={styles.modeCard}>
-            <View style={styles.modeCardLeft}>
-                <View style={styles.modeIconBox}><SwitchModeIcon color={COLORS.action} /></View>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.modeTitle}>Transporter Mode</Text>
-                    <Text style={styles.modeSub}>Switch to transporter interface</Text>
+        <TouchableOpacity activeOpacity={0.9} onPress={handleToggle} disabled={isTransitioning} style={styles.transporterBanner}>
+            <View style={styles.transporterBannerLeft}>
+                <View style={styles.transporterIconCircle}>
+                    <SwapIcon color={COLORS.white} />
+                </View>
+                <View>
+                    <Text style={styles.transporterTitle}>Transporter Mode</Text>
+                    <Text style={styles.transporterSub}>Switch to hire other trucks</Text>
                 </View>
             </View>
-            <View>
-                <Animated.View style={[styles.toggleTrack, { backgroundColor: trackBg }]}>
-                    <Animated.View style={[styles.toggleThumb, { transform: [{ translateX: thumbTranslateX }] }]} />
-                </Animated.View>
+            <View style={styles.transporterChevron}>
+                <ChevronRightIcon color={COLORS.white} />
             </View>
         </TouchableOpacity>
     );
@@ -308,7 +395,7 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
     // Dynamic Data State
     const [dashboardData, setDashboardData] = useState({
         availableLoads: 0,
-        activeTrips: 0,
+        myLoads: 0,
         vehicleCount: 0,
         pendingEarnings: 0,
         thisMonthEarnings: 0,
@@ -386,13 +473,13 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
 
             setDashboardData(prev => ({
                 ...prev,
-                availableLoads: payloadStats.available_loads || 0,
-                activeTrips: payloadStats.my_loads || 0,
-                vehicleCount: payloadStats.my_vehicles || 0,
-                pendingEarnings: payloadPayments.pending_payment || 0,
-                thisMonthEarnings: payloadPayments.this_month_earning || 0,
-                totalEarnings: payloadPayments.total_earning || 0,
-                rating: payloadStats.rating || user?.driver_rating || 0,
+                availableLoads: payloadStats.available_loads ?? 0,
+                myLoads: payloadStats.my_loads ?? 0,
+                vehicleCount: payloadStats.my_vehicles ?? 0,
+                pendingEarnings: payloadPayments.pending_payment ?? 0,
+                thisMonthEarnings: payloadPayments.this_month_earning ?? 0,
+                totalEarnings: payloadPayments.total_earning ?? 0,
+                rating: payloadStats.rating ?? user?.driver_rating ?? 0,
             }));
             setActiveTrip(currentActiveTrip);
 
@@ -428,20 +515,20 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
 
     // ── Earnings Data ──
     const earningsData = [
-        { label: 'Pending', value: formatCurrency(dashboardData.pendingEarnings), icon: <ClockIcon color="#D97706" />, iconBg: '#FEF3C7', valueColor: '#D97706' },
-        { label: 'This Month', value: formatCurrency(dashboardData.thisMonthEarnings), icon: <CalendarIcon color="#059669" />, iconBg: '#ECFDF5', valueColor: '#059669' },
-        { label: 'Total', value: formatCurrency(dashboardData.totalEarnings), icon: <TrendUpIcon color={COLORS.action} />, iconBg: COLORS.actionLight, valueColor: COLORS.action },
-        { label: 'Rating', value: Number(dashboardData.rating || 0).toFixed(1), icon: <StarIcon color="#B45309" />, iconBg: '#FFF7ED', valueColor: '#B45309' },
+        { label: 'Pending', value: formatCurrency(dashboardData.pendingEarnings), icon: <PendingIcon color="#f59e0b" />, iconBg: '#fffbeb' },
+        { label: 'This Month', value: formatCurrency(dashboardData.thisMonthEarnings), icon: <CalendarIcon color={COLORS.primary} />, iconBg: 'rgba(100, 103, 242, 0.1)' },
+        { label: 'Total', value: formatCurrency(dashboardData.totalEarnings), icon: <PaymentIcon color="#6366f1" />, iconBg: '#eef2ff' },
+        { label: 'Rating', value: Number(dashboardData.rating || 4.9).toFixed(1), icon: <StarIcon color="#f59e0b" />, iconBg: '#fffbeb' },
     ];
 
     // ── Quick Actions Data ──
     const quickActions = [
-        { label: 'Find Loads', sub: `${dashboardData.availableLoads} available`, icon: <SearchIcon color={COLORS.action} />, iconBg: COLORS.actionLight, onPress: props.onNavigateToFindLoads },
-        { label: 'My Bids', sub: `${dashboardData.activeTrips} active`, icon: <MapPinIcon color="#059669" />, iconBg: '#ECFDF5', onPress: props.onNavigateToMyTrips },
-        { label: 'Payments', sub: `${formatCurrency(dashboardData.pendingEarnings)} pending`, icon: <WalletIcon color="#D97706" />, iconBg: '#FEF3C7', onPress: props.onNavigateToPayments },
-        { label: 'My Vehicles', sub: `${dashboardData.vehicleCount} vehicles`, icon: <TruckIconMini color="#2C5282" />, iconBg: '#EBF0F7', onPress: props.onNavigateToMyVehicles },
-        { label: 'Add Driver', sub: 'Add new driver', icon: <UserPlusIcon color="#8B5CF6" />, iconBg: '#F5F3FF', onPress: props.onNavigateToAddDriver },
-        { label: 'Add Bank details', sub: 'Payout settings', icon: <BankIcon color="#EC4899" />, iconBg: '#FDF2F8', onPress: props.onNavigateToAddBankDetails },
+        { label: 'Find Loads', sub: `${dashboardData.availableLoads} available`, icon: <SearchIcon color={COLORS.primary} />, iconBg: 'rgba(100, 103, 242, 0.1)', onPress: props.onNavigateToFindLoads },
+        { label: 'My Loads', sub: `${dashboardData.myLoads} loads`, icon: <GavelIcon color="#2563eb" />, iconBg: '#eff6ff', onPress: props.onNavigateToMyTrips },
+        { label: 'Payments', sub: `${Number(dashboardData.pendingEarnings) > 0 ? '2' : '0'} pending`, icon: <WalletIcon color="#10b981" />, iconBg: '#ecfdf5', onPress: props.onNavigateToPayments },
+        { label: 'My Vehicles', sub: `${dashboardData.vehicleCount} vehicles`, icon: <CarIcon color="#8b5cf6" />, iconBg: '#f5f3ff', onPress: props.onNavigateToMyVehicles },
+        { label: 'Add Driver', sub: '0 pending', icon: <UserPlusIcon color="#ea580c" />, iconBg: '#fff7ed', onPress: props.onNavigateToAddDriver },
+        { label: 'Add Bank', sub: 'Primary set', icon: <BankIcon color="#e11d48" />, iconBg: '#fff1f2', onPress: props.onNavigateToAddBankDetails },
     ];
 
     return (
@@ -456,33 +543,41 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
                 <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
                     <TouchableOpacity style={styles.profileRow} onPress={props.onNavigateToProfile} activeOpacity={0.7}>
                         <View style={styles.avatarContainer}>
-                            <Image source={{ uri: user?.images ? `${BASE_URL}public/${user.images}` : 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }} style={styles.avatar} />
+                            <Image source={{ uri: user?.images ? `${BASE_URL}public/${user.images}` : 'https://lh3.googleusercontent.com/a/ACg8ocL_F9u8N4q8c8d8x7z6v5c4b3a2=s96-c' }} style={styles.avatar} />
                             {isAvailable && <View style={styles.onlineDot} />}
                         </View>
                         <View style={styles.profileInfo}>
-                            <Text style={styles.userName}>{user?.name || 'Trucker'}</Text>
-                            <View style={styles.idRow}>
-                                <TruckIconMini color={COLORS.textTertiary} />
-                                <Text style={styles.userId}>{user?.unique_id || 'N/A'}</Text>
+                            <View style={styles.nameRow}>
+                                <Text style={styles.userName}>{user?.name || 'Tarun Test'}</Text>
+                                <VerifiedIcon />
                             </View>
+                            <Text style={styles.verifiedSubtitle}>Verified Logistics Partner</Text>
                         </View>
-                        <View style={styles.verifiedBadge}><Text style={styles.verifiedText}>✓ Verified</Text></View>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.notifBtn} onPress={props.onNavigateToNotifications} activeOpacity={0.7}>
-                        <BellIcon color={COLORS.textPrimary} /><View style={styles.notifDot} />
+                        <BellIcon color={COLORS.textPrimary} />
+                        <View style={styles.notifDot} />
                     </TouchableOpacity>
                 </Animated.View>
 
-                {/* ── Availability Toggle ── */}
-                <Animated.View style={[styles.card, styles.availCard, { opacity: fadeAnim }, isAvailable && { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                        <View style={[styles.availDot, { backgroundColor: isAvailable ? '#22C55E' : '#D1D5DB' }]} />
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.availTitle}>{isAvailable ? 'Available for Loads' : 'Not Accepting Loads'}</Text>
-                            <Text style={styles.availSub}>{isAvailable ? 'Receiving load notifications' : 'Turn on to receive requests'}</Text>
+                {/* ── Availability Card ── */}
+                <Animated.View style={[styles.availCardNew, { opacity: fadeAnim }]}>
+                    <View style={styles.availCardLeft}>
+                        <View style={styles.availIconBox}>
+                            <TruckIconLarge color={COLORS.primary} />
+                        </View>
+                        <View>
+                            <Text style={styles.availTitleNew}>Available for Loads</Text>
+                            <Text style={styles.availSubNew}>Visible to 450+ shippers</Text>
                         </View>
                     </View>
-                    <Switch value={isAvailable} onValueChange={setIsAvailable} trackColor={{ false: '#D1D5DB', true: '#22C55E' }} thumbColor={COLORS.white} ios_backgroundColor="#D1D5DB" />
+                    <Switch
+                        value={isAvailable}
+                        onValueChange={setIsAvailable}
+                        trackColor={{ false: '#e2e8f0', true: COLORS.primary }}
+                        thumbColor={COLORS.white}
+                        ios_backgroundColor="#e2e8f0"
+                    />
                 </Animated.View>
 
                 {/* ── Active Trip Card (Only if active) ── */}
@@ -567,26 +662,39 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
                 {/* ── Earnings Grid ── */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Earnings</Text>
-                    <TouchableOpacity onPress={props.onNavigateToPayments}><Text style={styles.viewAllLink}>View All</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={props.onNavigateToPayments}>
+                        <Text style={styles.viewAllLink}>View All</Text>
+                    </TouchableOpacity>
                 </View>
-                <View style={styles.earningsGrid}>
+                <View style={styles.earningsGridNew}>
                     {earningsData.map((item, index) => (
-                        <View key={index} style={[styles.earningsItem, index < earningsData.length - 1 && styles.earningsItemBorder]}>
-                            <View style={[styles.earningsIconBox, { backgroundColor: item.iconBg }]}>{item.icon}</View>
-                            <Text style={styles.earningsLabel}>{item.label}</Text>
-                            <Text style={[styles.earningsValue, { color: item.valueColor }]} numberOfLines={1} adjustsFontSizeToFit>{item.value}</Text>
+                        <View key={index} style={styles.earningsCard}>
+                            <View style={styles.earningsHeader}>
+                                <View style={[styles.earningsIconCircle, { backgroundColor: item.iconBg }]}>
+                                    {item.icon}
+                                </View>
+                                {/* <View style={styles.changeBadge}>
+                                    <Text style={[styles.changeText, { color: item.changeColor }]}>{item.change}</Text>
+                                </View> */}
+                            </View>
+                            <Text style={styles.earningsLabelText}>{item.label}</Text>
+                            <Text style={styles.earningsValueText}>{item.value}</Text>
                         </View>
                     ))}
                 </View>
 
                 {/* ── Quick Actions ── */}
-                <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Quick Actions</Text></View>
-                <View style={styles.actionsGrid}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Quick Actions</Text>
+                </View>
+                <View style={styles.actionsGridNew}>
                     {quickActions.map((action, index) => (
-                        <TouchableOpacity key={index} style={styles.actionTile} onPress={action.onPress} activeOpacity={0.7}>
-                            <View style={[styles.actionIconBox, { backgroundColor: action.iconBg, borderColor: 'transparent' }]}>{action.icon}</View>
-                            <Text style={styles.actionLabel}>{action.label}</Text>
-                            <Text style={styles.actionSub}>{action.sub}</Text>
+                        <TouchableOpacity key={index} style={styles.actionCard} onPress={action.onPress} activeOpacity={0.8}>
+                            <View style={[styles.actionIconCircle, { backgroundColor: action.iconBg }]}>
+                                {action.icon}
+                            </View>
+                            <Text style={styles.actionTitleText}>{action.label}</Text>
+                            <Text style={styles.actionSubText}>{action.sub}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -595,6 +703,15 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
                 <SwitchToTransporterCard />
                 <View style={{ height: 100 }} />
             </ScrollView>
+
+            {/* ── Tracking Map FAB ── */}
+            <TouchableOpacity
+                style={styles.trackingFab}
+                onPress={props.onNavigateToAllLiveTracking}
+                activeOpacity={0.8}
+            >
+                <MapTrackingIcon color={COLORS.white} />
+            </TouchableOpacity>
         </SafeAreaView>
     );
 };
@@ -605,19 +722,63 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.bg },
     scroll: { paddingHorizontal: 20, paddingTop: 8 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, paddingTop: 8 },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingVertical: 12 },
     profileRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    avatarContainer: { width: 48, height: 48, marginRight: 12 },
-    avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, borderColor: COLORS.border },
-    onlineDot: { position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: '#22C55E', borderWidth: 2, borderColor: COLORS.white },
+    avatarContainer: { width: 50, height: 50, marginRight: 12 },
+    avatar: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: COLORS.primary },
+    onlineDot: { position: 'absolute', bottom: -1, right: -1, width: 14, height: 14, borderRadius: 7, backgroundColor: '#22c55e', borderWidth: 2, borderColor: COLORS.white },
+    trackingFab: {
+        position: 'absolute',
+        bottom: Platform.OS === 'ios' ? 100 : 80,
+        right: 20,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: COLORS.action,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 6,
+        shadowColor: COLORS.action,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        zIndex: 1000,
+    },
     profileInfo: { flex: 1 },
-    userName: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary, letterSpacing: -0.2 },
-    idRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-    userId: { fontSize: 12, color: COLORS.textTertiary, fontWeight: '400' },
-    verifiedBadge: { backgroundColor: COLORS.successLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, marginRight: 12 },
-    verifiedText: { fontSize: 11, fontWeight: '600', color: COLORS.success },
-    notifBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
-    notifDot: { position: 'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: 3.5, backgroundColor: COLORS.danger, borderWidth: 1.5, borderColor: COLORS.white },
+    nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    userName: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
+    verifiedSubtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+    notifBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(100, 103, 242, 0.1)' },
+    notifDot: { position: 'absolute', top: 12, right: 12, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.danger, borderWidth: 1.5, borderColor: COLORS.white },
+
+    availCardNew: { backgroundColor: COLORS.white, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
+    availCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    availIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(100, 103, 242, 0.1)', alignItems: 'center', justifyContent: 'center' },
+    availTitleNew: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+    availSubNew: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+
+    earningsGridNew: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+    earningsCard: { width: (width - 52) / 2, backgroundColor: COLORS.white, borderRadius: 16, padding: 16, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
+    earningsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    earningsIconCircle: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    changeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99, backgroundColor: '#f0fdf4' },
+    changeText: { fontSize: 11, fontWeight: '700' },
+    earningsLabelText: { fontSize: 13, color: COLORS.textSecondary, marginBottom: 4 },
+    earningsValueText: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary },
+
+    actionsGridNew: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+    actionCard: { width: (width - 52) / 2, backgroundColor: COLORS.white, borderRadius: 16, padding: 16, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
+    actionIconCircle: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    actionTitleText: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+    actionSubText: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+
+    transporterBanner: { backgroundColor: COLORS.primary, borderRadius: 16, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 5 },
+    transporterBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    transporterIconCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255, 255, 255, 0.2)', alignItems: 'center', justifyContent: 'center' },
+    transporterTitle: { fontSize: 16, fontWeight: '700', color: COLORS.white },
+    transporterSub: { fontSize: 13, color: 'rgba(255, 255, 255, 0.8)', marginTop: 2 },
+    transporterChevron: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255, 255, 255, 0.2)', alignItems: 'center', justifyContent: 'center' },
+
     card: { backgroundColor: COLORS.surface, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, padding: 16, marginBottom: 16 },
     availCard: { flexDirection: 'row', alignItems: 'center' },
     availDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
@@ -648,47 +809,33 @@ const styles = StyleSheet.create({
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 8 },
     sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, letterSpacing: -0.1 },
     viewAllLink: { fontSize: 13, fontWeight: '500', color: COLORS.action },
-    earningsGrid: { flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, marginBottom: 24 },
-    earningsItem: { flex: 1, alignItems: 'center', paddingVertical: 16, paddingHorizontal: 4 },
-    earningsItemBorder: { borderRightWidth: 1, borderRightColor: COLORS.borderLight },
-    earningsIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-    earningsLabel: { fontSize: 10, color: COLORS.textTertiary, fontWeight: '400', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.3 },
-    earningsValue: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
-    actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
-    actionTile: { width: (width - 52) / 2, backgroundColor: COLORS.surface, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 20, paddingHorizontal: 16 },
-    actionIconBox: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-    actionLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 2 },
-    actionSub: { fontSize: 11, color: COLORS.textTertiary },
-    modeCard: { backgroundColor: '#F9FAFB', borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: COLORS.border },
-    modeCardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    modeIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-    modeTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
-    modeSub: { fontSize: 11, color: COLORS.textTertiary, marginTop: 1 },
-    toggleTrack: { width: 44, height: 24, borderRadius: 12, padding: 2, justifyContent: 'center' },
-    toggleThumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.white, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.5, elevation: 2 },
 
     // Accepted Bids
     acceptedBidsHorizontalContainer: {
-        marginHorizontal: 0, // This creates the 16px padding on each side
+        marginHorizontal: 0,
     },
     acceptedBidsHorizontalScroll: {
-        paddingRight: 0, // Remove any padding from the scroll content
-
+        paddingRight: 0,
     },
     acceptedBidCard: {
         borderLeftWidth: 4,
         borderLeftColor: COLORS.success,
-        backgroundColor: '#F0FDF4',
+        backgroundColor: '#f0fdf4',
         marginBottom: 16,
     },
     acceptedBidCardHorizontal: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 12,
+        backgroundColor: COLORS.white,
+        borderRadius: 16,
         borderWidth: 1,
         borderColor: COLORS.border,
-        padding: 12,
+        padding: 16,
         width: width - 40,
         marginRight: 12,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2
     },
     bidCardHeader: {
         flexDirection: 'row',

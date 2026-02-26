@@ -269,6 +269,7 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
         const arrow2Anim = useRef(new Animated.Value(0)).current;
         const arrow3Anim = useRef(new Animated.Value(0)).current;
         const navigation = useNavigation<any>();
+        const isRestricted = Number(load.trucker_shown_intrest) === 1;
 
         // Show arrows for In Transit and Reached Destination (until Delivered)
         const isInTransit = load.current_status_label === 'In Transit' || load.current_status_label === 'Reached Destination';
@@ -332,6 +333,12 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
         // Get button text based on current_status_label
         const getButtonText = () => {
             const currentStatus = load.current_status_label;
+
+            if (isRestricted && currentStatus !== 'Load Accepted' && currentStatus !== null) {
+                if (currentStatus === 'Delivered') return 'Completed';
+                return 'Update Status';
+            }
+
             if (currentStatus === 'Load Accepted') return 'Add Vehicle & Driver';
             if (currentStatus === 'Vehicle Assigned') return 'Mark Reached Pickup';
             if (currentStatus === 'Reached Pickup') return 'Mark Loaded';
@@ -350,7 +357,13 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                 <TouchableOpacity
                     style={s.loadCard}
                     activeOpacity={0.7}
-                    onPress={() => setSelectedLoad(load)}
+                    onPress={() => {
+                        if (load.shipper_status === 'accepted') {
+                            navigation.navigate('truckerActiveTrip', { loadId: load.id });
+                        } else {
+                            setSelectedLoad(load);
+                        }
+                    }}
                 >
                     {/* Header Row */}
                     <View style={s.cardHeader}>
@@ -450,7 +463,10 @@ const MyLoadsScreen: React.FC<Props> = ({ onBack, onLoadPress }) => {
                     {/* Track Button (Only for Accepted) */}
                     {load.shipper_status === 'accepted' && (
                         <TouchableOpacity
-                            style={s.trackButton}
+                            style={[
+                                s.trackButton,
+                                (isRestricted && load.current_status_label !== 'Load Accepted') && { backgroundColor: C.accent, opacity: 1 }
+                            ]}
                             onPress={() => navigation.navigate('truckerActiveTrip', { loadId: load.id })}
                         >
                             {isInTransit ? (

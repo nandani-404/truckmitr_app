@@ -178,6 +178,8 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         driver_id: null,
         trip_started: false,
         sim_tracking_consent: null,
+        trucker_shown_intrest: 0,
+        received_amount: 0,
     });
 
     const [startingTrip, setStartingTrip] = useState(false);
@@ -246,6 +248,8 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                     driver_id: data.driver_id || null,
                     trip_started: data.trip_started || data.trip_status === 'active' || false,
                     sim_tracking_consent: data.sim_tracking_consent || null,
+                    trucker_shown_intrest: Number(data.trucker_shown_intrest) || 0,
+                    received_amount: parseFloat(data.trucker_received_amount) || 0,
                 });
 
                 console.log('📊 [TRIP DATA] trip_status:', data.trip_status);
@@ -317,9 +321,14 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
     const getNextActionText = () => {
         console.log('🔍 [BUTTON TEXT] Checking button text - Status:', currentStatus, 'Trip Started:', trip.trip_started);
 
+        if (trip.trucker_shown_intrest === 1 && currentStatus >= 1) {
+            return 'Assignment Completed';
+        }
+
         if (currentStatus === 0) return 'Assign Vehicle & Driver';
         if (currentStatus === 1 && !trip.trip_started) {
             console.log('🔍 [BUTTON TEXT] Showing: Start Trip');
+            if (trip.received_amount <= 0) return 'Payment Pending to Start Trip';
             return 'Start Trip';
         }
         if (currentStatus === 1 && trip.trip_started) {
@@ -488,6 +497,10 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
         }
         if (currentStatus === 1) {
             if (!trip.trip_started) {
+                if (trip.received_amount <= 0) {
+                    showToast('Advance payment is pending. You cannot start the trip yet.');
+                    return;
+                }
                 // Start Trip first
                 handleStartTrip();
             } else {
@@ -1337,8 +1350,17 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             {/* Bottom Action Button */}
             {currentStatus < 6 && (
                 <View style={styles.footer}>
+                    {/* Restricted Completion Message */}
+                    {trip.trucker_shown_intrest === 1 && currentStatus >= 1 && (
+                        <View style={{ backgroundColor: C.success + '15', padding: 12, borderRadius: 8, marginBottom: 12, borderWidth: 1, borderColor: C.success + '30' }}>
+                            <Text style={{ color: C.success, fontSize: 13, fontWeight: '600', textAlign: 'center' }}>
+                                Assignment Completed. Further updates are handled by the system.
+                            </Text>
+                        </View>
+                    )}
+
                     {/* Consent Pending Button - Show before Start Trip button when pending */}
-                    {currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING' && (
+                    {currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING' && trip.received_amount > 0 && (
                         <TouchableOpacity
                             style={[styles.actionButton, { backgroundColor: '#F39C12', marginBottom: 10, flexDirection: 'column', paddingVertical: 8 }]}
                             onPress={onRefresh}
@@ -1356,10 +1378,11 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                     <TouchableOpacity
                         style={[
                             styles.actionButton,
-                            (updatingStatus || startingTrip || (currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING')) && styles.actionButtonDisabled
+                            (updatingStatus || startingTrip || (currentStatus === 1 && !trip.trip_started && (trip.sim_tracking_consent?.consent === 'PENDING' || trip.received_amount <= 0)) || (trip.trucker_shown_intrest === 1 && currentStatus >= 1)) && styles.actionButtonDisabled,
+                            (trip.trucker_shown_intrest === 1 && currentStatus >= 1) && { backgroundColor: C.success, opacity: 0.9 }
                         ]}
                         onPress={updateStatus}
-                        disabled={updatingStatus || startingTrip || (currentStatus === 1 && !trip.trip_started && trip.sim_tracking_consent?.consent === 'PENDING')}
+                        disabled={updatingStatus || startingTrip || (currentStatus === 1 && !trip.trip_started && (trip.sim_tracking_consent?.consent === 'PENDING' || trip.received_amount <= 0)) || (trip.trucker_shown_intrest === 1 && currentStatus >= 1)}
                     >
                         {(updatingStatus || startingTrip) ? (
                             <ActivityIndicator size="small" color="#FFF" />
