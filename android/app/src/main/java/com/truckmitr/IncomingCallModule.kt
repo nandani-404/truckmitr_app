@@ -83,6 +83,7 @@ class IncomingCallModule(private val reactContext: ReactApplicationContext) :
 
             // Start the foreground service and pass call data via Intent extras.
             // The service builds the notification internally and calls startForeground() immediately.
+            /*
             try {
                 val serviceIntent = Intent(context, IncomingCallService::class.java).apply {
                     action = IncomingCallService.ACTION_START
@@ -117,16 +118,19 @@ class IncomingCallModule(private val reactContext: ReactApplicationContext) :
                     .build()
                 notificationManager.notify(NOTIFICATION_ID, notification)
             }
+            */
         }
 
         /**
          * Stops the foreground service and removes the notification.
          */
         fun stopCallService(context: Context) {
+            /*
             val serviceIntent = Intent(context, IncomingCallService::class.java).apply {
                 action = "STOP"
             }
             context.startService(serviceIntent)
+            */
         }
 
         private fun createNotificationChannel(notificationManager: NotificationManager) {

@@ -88,7 +88,7 @@ android {
         applicationId "com.truckmitr"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 34
+        versionCode 38
         versionName "4.2.6"
         
         ndk {

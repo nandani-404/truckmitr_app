@@ -48,6 +48,7 @@ class IncomingCallService : Service() {
         
         val notification = buildCallNotification(callerName, callId, channelName, agoraToken)
 
+        /*
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startForeground(IncomingCallModule.NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE)
@@ -62,6 +63,7 @@ class IncomingCallService : Service() {
             // Even if startForeground fails, we must try to stop self or it might hang
             stopSelf()
         }
+        */
 
         return START_NOT_STICKY
     }
