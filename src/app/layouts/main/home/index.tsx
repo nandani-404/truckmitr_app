@@ -129,6 +129,7 @@ const TruckerModeToggle = ({ onToggle }: { onToggle?: () => void }) => {
             // API returns string "true" or "false"
             const isVerified = user?.verified_trucker_shipper === "true" || user?.verified_trucker_shipper === true || user?.verified_trucker_shipper === 1;
 
+
             if (!isVerified) {
                 setShowUnderReviewModal(true);
                 return;
@@ -2006,7 +2007,7 @@ const Home = React.forwardRef((props, ref) => {
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 🚛 TRUCKER MODE TOGGLE CARD                    */}
                         {/* ═══════════════════════════════════════════════ */}
-                        {/* <TruckerModeToggle onToggle={handleStartTransition} /> */}
+                        <TruckerModeToggle onToggle={handleStartTransition} />
 
                         {/* Jobs Management Section */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>

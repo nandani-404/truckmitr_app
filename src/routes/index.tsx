@@ -83,6 +83,11 @@ export default function Routes() {
   console.log('--------------------------user data------------------', user);
   console.log('--------------------------is profile completed------------------', isProfileCompleted);
 
+  const userRoleStr = (user?.role || user?.data?.role || '').toLowerCase();
+  const subId = user?.sub_id || user?.data?.sub_id;
+  const isRestrictedDriver = userRoleStr === 'driver' && subId !== null && subId !== undefined;
+
+
   // -------------------------------
   // 🔹 Logout and Redirect to Login
   // -------------------------------
@@ -954,6 +959,8 @@ export default function Routes() {
         <PunctureMain />
       ) : selectedModule === 'shipper' || user?.data?.role?.toLowerCase() === 'shipper' || user?.role?.toLowerCase() === 'shipper' ? (
         <ShipperMain />
+      ) : isRestrictedDriver ? (
+        <Main />
       ) : appMode === 'trucker' ? (
         <TruckerMain />
       ) : (

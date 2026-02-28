@@ -47,7 +47,7 @@ const ROLE_DATA = [
     { id: 'association', labelKey: 'module_selection_driver_association', color: '#E74C3C', icon: 'groups', module: 'association' }, // Red
     { id: 'dhaba', labelKey: 'module_selection_dhaba_sathi', color: '#2ECC71', icon: 'restaurant', module: 'dhaba' }, // Green
     { id: 'puncture', labelKey: 'module_selection_puncture_point', color: '#F1C40F', icon: 'build', module: 'puncture_shop' }, // Yellow
-    // { id: 'shipper', labelKey: 'module_selection_shipper', color: '#FF4081', icon: 'local-shipping', module: 'shipper' }, // Pink
+    { id: 'shipper', labelKey: 'module_selection_shipper', color: '#FF4081', icon: 'local-shipping', module: 'shipper' }, // Pink
     // { id: 'trucker', labelKey: 'module_selection_trucker', color: '#00BCD4', icon: 'directions-bus', module: 'trucker' }, // Cyan
 ];
 

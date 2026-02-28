@@ -1,10 +1,12 @@
 
 // export const BASE_URL = `https://development.truckmitr.com/`
-export const BASE_URL = `https://truckmitr.com/`
+// export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.29.156:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
-// export const BASE_URL = 'https://devtruckmitr.in/'
-export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
+export const BASE_URL = 'https://devtruckmitr.in/'
+// export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
+export const DRIVER_KI_AWAZ_BASE = 'https://awaz.devtruckmitr.in/'
+
 // export const DRIVER_KI_AWAZ_STREAM = 'https://driverkiawaz.truckmitr.com/' //+ filepath(1770288688561.mp4)
 export const AWAZ_URL = 'https://truckmitr.com/'
 export const STATICS = {
@@ -325,6 +327,7 @@ export const END_POINTS = {
     TRUCKER_TRACKING: (id: any) => `api/trucker/tracking/${id}`,
     TRUCKER_UPDATE_VEHICLE_NUMBER: `api/trucker/update-vehicle-number`,
     TRUCKER_UPDATE_STATUS: `api/trucker/update-status`,
+    TRUCKER_VERIFY_EWB: `api/trucker/verify-ewb`,
     TRUCKER_UPLOAD_BUILTY: `api/trucker/upload-builty`,
     TRUCKER_UPLOAD_POD: `api/trucker/upload-pod`,
     TRUCKER_GET_DRIVERS: `api/trucker/drivers`,
@@ -332,6 +335,7 @@ export const END_POINTS = {
     TRUCKER_BANK_DETAILS_FETCH: `api/trucker-bank-details`,
     TRUCKER_DRIVER_TRACKING: 'api/trucker/driver-tracking',
     TRUCKER_TRACKING_DASHBOARD: (loadId: any) => `api/trucker/tracking-dashboard/${loadId}`,
+    TRUCKER_TRACKING_DASHBOARD_ALL: `api/trucker/tracking-dashboard`,
     TRUCKER_START_TRIP: `api/trip/start`,
     TRIP_SAVE_SELECTED_ROUTE: `api/trip/save-selected-route`,
     TRIP_UPDATE_LOCATION: `api/trip/update-location`,

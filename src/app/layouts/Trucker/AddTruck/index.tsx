@@ -277,6 +277,7 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
     const [vehicleBody, setVehicleBody] = useState('');
     const [vehicleType, setVehicleType] = useState('');
     const [vehicleNumber, setVehicleNumber] = useState('');
+    const [txnId, setTxnId] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
 
@@ -312,6 +313,7 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
 
     // ── 3. Registration Details ──
     const [registrationDate, setRegistrationDate] = useState('');
+    const [vehicleAge, setVehicleAge] = useState('');
     const [vehicleCategory, setVehicleCategory] = useState('');
     const [vehicleClass, setVehicleClass] = useState('');
     const [rtoName, setRtoName] = useState('');
@@ -386,13 +388,34 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
 
     const isDocumentValidStr = (dateStr: string | null | undefined): boolean => {
         if (!dateStr || dateStr === 'N/A') return false;
+
+        const monthsNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         const parts = dateStr.split('-');
         if (parts.length !== 3) return false;
-        const year = parts[2].length === 4 ? Number(parts[2]) : Number(parts[0]);
-        const month = parts[2].length === 4 ? Number(parts[1]) : Number(parts[1]);
-        const day = parts[2].length === 4 ? Number(parts[0]) : Number(parts[2]);
-        if (isNaN(year) || isNaN(month) || isNaN(day)) return false;
-        const dobj = new Date(year, month - 1, day);
+
+        let day, monthIdx, year;
+
+        if (parts[0].length === 4) {
+            year = parseInt(parts[0]);
+            monthIdx = parseInt(parts[1]) - 1;
+            day = parseInt(parts[2]);
+        } else {
+            day = parseInt(parts[0]);
+            year = parseInt(parts[2]);
+            const m = parts[1].toUpperCase();
+            const idx = monthsNames.indexOf(m);
+            if (idx !== -1) {
+                monthIdx = idx;
+            } else {
+                monthIdx = parseInt(parts[1]) - 1;
+            }
+        }
+
+        if (isNaN(day) || isNaN(monthIdx) || isNaN(year)) return false;
+
+        const dobj = new Date(year, monthIdx, day);
+        if (isNaN(dobj.getTime())) return false;
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const diff = Math.ceil((dobj.getTime() - today.getTime()) / (1000 * 3600 * 24));
@@ -414,9 +437,28 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
 
     const getVehicleAge = (regDate: string) => {
         if (!regDate) return 'N/A';
+        const monthsNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         const parts = regDate.split('-');
         if (parts.length !== 3) return 'N/A';
-        const dobj = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+
+        let day, monthIdx, year;
+        if (parts[2].length === 4) {
+            day = parseInt(parts[0]);
+            year = parseInt(parts[2]);
+            const m = parts[1].toUpperCase();
+            const idx = monthsNames.indexOf(m);
+            monthIdx = idx !== -1 ? idx : parseInt(parts[1]) - 1;
+        } else {
+            year = parseInt(parts[0]);
+            monthIdx = parseInt(parts[1]) - 1;
+            day = parseInt(parts[2]);
+        }
+
+        if (isNaN(day) || isNaN(monthIdx) || isNaN(year)) return 'N/A';
+
+        const dobj = new Date(year, monthIdx, day);
+        if (isNaN(dobj.getTime())) return 'N/A';
+
         const now = new Date();
         let years = now.getFullYear() - dobj.getFullYear();
         let months = now.getMonth() - dobj.getMonth();
@@ -442,7 +484,7 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
             <StatusRow label="Vehicle Class" value={vehicleClass} />
             <StatusRow label="Fuel Type" value={fuelType} />
             <StatusRow label="Emission Norm" value={"BHARAT STAGE VI"} />
-            <StatusRow label="Vehicle Age" value={getVehicleAge(registrationDate)} />
+            <StatusRow label="Vehicle Age" value={vehicleAge || getVehicleAge(registrationDate)} />
             <StatusRow label="Hypothecated" value={hypothecation && hypothecation !== 'Not Financed' ? 'Yes' : 'No'} />
             <StatusRow label="Vehicle Status" value={rcStatus || 'ACTIVE'} valueColor={C.success} />
 
@@ -477,77 +519,85 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
             const data = response?.data;
 
             if (data?.status === 'success' && data?.details) {
-                const d = data.details;
+                const d = data.details || {};
+                const r = d.data?.result || {};
+                const txn = d.data?.txn_id || '';
+
+                if (txn) setTxnId(txn);
 
                 // 2. Owner Information
-                setOwnerName(safe(d.owner_name));
-                setFatherName(safe(d.father_name));
-                setPermanentAddress(safe(d.permanent_address));
+                setOwnerName(safe(d.owner_name || r.user_name));
+                setFatherName(safe(d.father_name || r.father_name));
+                setPermanentAddress(safe(d.permanent_address || r.user_permanent_address || d.present_address || r.user_present_address));
 
                 // 3. Registration Details
-                setRegistrationDate(formatDate(d.registration_date));
-                setVehicleCategory(safe(d.vehicle_category));
-                setVehicleClass(safe(d.vehicle_class));
-                setRtoName(safe(d.registered_place));
+                setRegistrationDate(formatDate(d.registration_date || r.registration_date));
+                setVehicleAge(safe(r.vehicle_age || d.vehicle_age));
+                setVehicleCategory(safe(d.vehicle_category || r.vehicle_category));
+                setVehicleClass(safe(d.vehicle_class || r.vehicle_class_description));
+                setRtoName(safe(d.rto_code || r.registration_location || r.registered_place));
 
                 // 4. Vehicle Specifications
-                setManufacturer(safe(d.manufacturer));
-                setModel(safe(d.manufacturer_model));
-                setFuelType(safe(d.fuel_type));
-                setEngineNumber(safe(d.engine_number));
-                setChassisNumber(safe(d.chassis_number));
-                setColor(safe(d.colour));
-                setSeatingCapacity(safe(d.seating_capacity));
-                setStandingCapacity(safe(d.standing_capacity));
-                setCubicCapacity(safe(d.cubic_capacity));
-                setGrossVehicleWeight(safe(d.gross_vehicle_weight));
-                setUnladenWeight(safe(d.unladden_weight));
-                setBodyType(safe(d.body_type));
+                setManufacturer(safe(d.manufacturer || r.vehicle_maker_description));
+                setModel(safe(d.model || r.vehicle_make_model || d.manufacturer_model));
+                setFuelType(safe(d.fuel_type || r.vehicle_fuel_description));
+                setEngineNumber(safe(d.engine_number || r.engine_number));
+                setChassisNumber(safe(d.chassis_number || r.chassis_number));
+                setColor(safe(d.vehicle_color || r.vehicle_color || d.colour));
+                setSeatingCapacity(safe(r.vehicle_seating_capacity || d.seating_capacity));
+                setStandingCapacity(safe(r.vehicle_stand_capacity || d.standing_capacity));
+                setCubicCapacity(safe(r.vehicle_cubic_capacity || d.cubic_capacity));
+                setGrossVehicleWeight(safe(r.vehicle_gross_weight || d.gross_vehicle_weight));
+                setUnladenWeight(safe(r.vehicle_unladen_weight || d.unladden_weight));
+                setBodyType(safe(r.body_type_description || r.body_type || d.body_type));
 
                 // 5. Location Information
-                setLocationState(safe(d.state));
-                setLocationDistrict(safe(d.registered_place));
+                setLocationState(safe(r.state || d.state));
+                setLocationDistrict(safe(r.city || d.registered_place));
 
                 // 6. Validity & Insurance
-                setFitnessValidUpto(formatDate(d.fitness_upto));
-                setInsuranceCompany(safe(d.insurance_name));
-                setInsurancePolicyNumber(safe(d.insurance_policy_no));
-                setInsuranceValidity(formatDate(d.insurance_validity));
-                setPollutionValidUpto(formatDate(d.puc_valid_upto));
-                setRoadTaxPaidUpto(formatDate(d.mv_tax_upto));
+                setFitnessValidUpto(formatDate(r.fit_upto || d.fitness_upto));
+                setInsuranceCompany(safe(d.insurance_company || r.insurance?.company || d.insurance_name));
+                setInsurancePolicyNumber(safe(d.insurance_policy_number || r.insurance?.policy_number || d.insurance_policy_no));
+                setInsuranceValidity(formatDate(d.insurance_expiry_date || r.insurance?.expiry_date || d.insurance_validity));
+                setPollutionValidUpto(formatDate(r.pucc_expiry_date || d.puc_valid_upto));
+                setRoadTaxPaidUpto(formatDate(r.tax_upto || d.mv_tax_upto));
 
                 // 7. Permit Information — map based on permit_type
-                const isNationalPermit = d.permit_type?.toUpperCase()?.includes('NATIONAL');
+                const permitType = String(r.permit_type || d.permit_type || '').toUpperCase();
+                const isNationalPermit = permitType.includes('NATIONAL') || permitType.includes('ALL INDIA');
                 if (isNationalPermit) {
-                    setNationalPermitNumber(safe(d.permit_no || d.npermit_no));
-                    setNationalPermitValidity(formatDate(d.permit_validity_upto || d.npermit_upto));
+                    setNationalPermitNumber(safe(r.national_permit_number || r.permit_number || d.permit_no || d.npermit_no));
+                    setNationalPermitValidity(formatDate(r.national_permit_expiry_date || r.permit_expiry_date || d.permit_validity_upto || d.npermit_upto));
                     setStatePermitNumber('');
                     setStatePermitValidity('');
                 } else {
-                    setNationalPermitNumber(safe(d.npermit_no));
-                    setNationalPermitValidity(formatDate(d.npermit_upto));
-                    setStatePermitNumber(safe(d.permit_no));
-                    setStatePermitValidity(formatDate(d.permit_validity_upto));
+                    setNationalPermitNumber(safe(r.national_permit_number || d.npermit_no));
+                    setNationalPermitValidity(formatDate(r.national_permit_expiry_date || d.npermit_upto));
+                    setStatePermitNumber(safe(r.permit_number || d.permit_no));
+                    setStatePermitValidity(formatDate(r.permit_expiry_date || d.permit_validity_upto));
                 }
 
                 // 8. Additional Information
-                setHypothecation(d.is_financed ? safe(d.financer) : 'Not Financed');
-                setNocDetails(safe(d.noc_details));
-                setBlacklistStatus(safe(d.blacklist_status));
-                setTaxStatus(d.mv_tax_upto ? 'Paid' : 'N/A');
-                setRcStatus(safe(d.status_verification));
+                const isFinanced = r.vehicle_financed !== undefined ? r.vehicle_financed : d.is_financed;
+                const financer = r.financer || d.financer;
+                setHypothecation(isFinanced ? safe(financer) : 'Not Financed');
+                setNocDetails(safe(r.noc_details || d.noc_details));
+                setBlacklistStatus(safe(r.blacklist_status || d.blacklist_status));
+                setTaxStatus((r.tax_upto || d.mv_tax_upto) ? 'Paid' : 'N/A');
+                setRcStatus(safe(d.rc_status || r.status || d.status_verification));
                 setSmartCardIssued('');
-                setRegistrationValidUpto(formatDate(d.fitness_upto));
+                setRegistrationValidUpto(formatDate(d.expiry_date || r.expiry_date || d.fitness_upto));
                 setPreviousRegNumber('');
-                setMakerModelDesc(safe(d.manufacturer_model));
+                setMakerModelDesc(safe(d.model || r.vehicle_make_model || d.manufacturer_model));
 
                 setIsVerified(true);
 
-                const _puc = formatDate(d.puc_valid_upto);
-                const _ins = formatDate(d.insurance_validity);
+                const _puc = formatDate(r.pucc_expiry_date || d.puc_valid_upto);
+                const _ins = formatDate(d.insurance_expiry_date || r.insurance?.expiry_date || d.insurance_validity);
                 const _perm = isNationalPermit
-                    ? formatDate(d.permit_validity_upto || d.npermit_upto)
-                    : formatDate(d.permit_validity_upto);
+                    ? formatDate(r.national_permit_expiry_date || r.permit_expiry_date || d.permit_validity_upto || d.npermit_upto)
+                    : formatDate(r.permit_expiry_date || d.permit_validity_upto);
 
                 const pucValid = isDocumentValidStr(_puc);
                 const insValid = isDocumentValidStr(_ins);
@@ -597,19 +647,32 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
 
     // ── Helper: convert dd-mm-yyyy back to yyyy-mm-dd for API ──
     const toApiDate = (dateStr: string): string | null => {
-        if (!dateStr) return null;
+        if (!dateStr || dateStr === 'N/A') return null;
+        const monthsNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         const parts = dateStr.split('-');
-        if (parts.length === 3 && parts[2].length === 4) {
-            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        if (parts.length !== 3) return dateStr;
+
+        let day, monthStr, year;
+        if (parts[0].length === 4) {
+            year = parts[0];
+            const m = parts[1].toUpperCase();
+            const idx = monthsNames.indexOf(m);
+            monthStr = idx !== -1 ? String(idx + 1).padStart(2, '0') : parts[1].padStart(2, '0');
+            day = parts[2].padStart(2, '0');
+        } else {
+            day = parts[0].padStart(2, '0');
+            year = parts[2];
+            const m = parts[1].toUpperCase();
+            const idx = monthsNames.indexOf(m);
+            monthStr = idx !== -1 ? String(idx + 1).padStart(2, '0') : parts[1].padStart(2, '0');
         }
-        // Already yyyy-mm-dd or other format
-        return dateStr;
+        return `${year}-${monthStr}-${day}`;
     };
 
     const emptyToNull = (val: string): string | null => (val.trim() ? val.trim() : null);
 
     const resetForm = () => {
-        setVehicleBody(''); setVehicleType(''); setVehicleNumber(''); setIsVerifying(false); setIsVerified(false);
+        setVehicleBody(''); setVehicleType(''); setVehicleNumber(''); setTxnId(''); setIsVerifying(false); setIsVerified(false);
         setOwnerName(''); setFatherName(''); setPermanentAddress('');
         setRegistrationDate(''); setVehicleCategory(''); setVehicleClass(''); setRtoName('');
         setManufacturer(''); setModel(''); setFuelType(''); setEngineNumber(''); setChassisNumber(''); setColor('');
@@ -658,8 +721,11 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
 
             const payload = {
                 vechicle_body: String(bodyIndex),
+                vehicle_body: String(bodyIndex),
                 vechicle_type: String(typeIndex),
+                vehicle_type: String(typeIndex),
                 registration_number: vehicleNumber.replace(/\s/g, ''),
+                txn_id: emptyToNull(txnId),
                 owner_name: emptyToNull(ownerName),
                 father_name: emptyToNull(fatherName),
                 permanent_address: emptyToNull(permanentAddress),
@@ -700,6 +766,7 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                 registration_valid_upto: toApiDate(registrationValidUpto),
                 previous_registration_number: emptyToNull(previousRegNumber),
                 maker_model_description: emptyToNull(makerModelDesc),
+                vehicle_age: emptyToNull(vehicleAge),
             };
 
             console.log('Final Payload:', JSON.stringify(payload, null, 2));
@@ -828,9 +895,9 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                             {/* ═══════════════════════════════════════════ */}
                             <View style={styles.section}>
                                 <SectionHeader title="Owner Information" number={2} />
-                                <FormInput label="Owner Name" value={ownerName} onChangeText={setOwnerName} />
-                                <FormInput label="Father / Care Of" value={fatherName} onChangeText={setFatherName} />
-                                <FormInput label="Permanent Address" value={permanentAddress} onChangeText={setPermanentAddress} multiline />
+                                <FormInput label="Owner Name" value={ownerName} onChangeText={setOwnerName} editable={!ownerName} />
+                                <FormInput label="Father / Care Of" value={fatherName} onChangeText={setFatherName} editable={!fatherName} />
+                                <FormInput label="Permanent Address" value={permanentAddress} onChangeText={setPermanentAddress} multiline editable={!permanentAddress} />
                             </View>
 
                             {/* ═══════════════════════════════════════════ */}
@@ -838,10 +905,11 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                             {/* ═══════════════════════════════════════════ */}
                             <View style={styles.section}>
                                 <SectionHeader title="Registration Details" number={3} />
-                                <FormDateField label="Registration Date" value={registrationDate} onChange={setRegistrationDate} />
-                                <FormInput label="Vehicle Category" value={vehicleCategory} onChangeText={setVehicleCategory} />
-                                <FormInput label="Vehicle Class" value={vehicleClass} onChangeText={setVehicleClass} />
-                                <FormInput label="RTO Name" value={rtoName} onChangeText={setRtoName} />
+                                <FormInput label="Vehicle Age" value={vehicleAge} onChangeText={setVehicleAge} editable={!vehicleAge} />
+                                <FormInput label="Registration Date" value={registrationDate} onChangeText={setRegistrationDate} editable={!registrationDate} />
+                                <FormInput label="Vehicle Category" value={vehicleCategory} onChangeText={setVehicleCategory} editable={!vehicleCategory} />
+                                <FormInput label="Vehicle Class" value={vehicleClass} onChangeText={setVehicleClass} editable={!vehicleClass} />
+                                <FormInput label="RTO Name" value={rtoName} onChangeText={setRtoName} editable={!rtoName} />
                             </View>
 
                             {/* ═══════════════════════════════════════════ */}
@@ -849,18 +917,18 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                             {/* ═══════════════════════════════════════════ */}
                             <View style={styles.section}>
                                 <SectionHeader title="Vehicle Specifications" number={4} />
-                                <FormInput label="Manufacturer" value={manufacturer} onChangeText={setManufacturer} />
-                                <FormInput label="Model" value={model} onChangeText={setModel} />
-                                <FormSelect label="Fuel Type" value={fuelType} options={fuelTypeOptions} onSelect={setFuelType} />
-                                <FormInput label="Color" value={color} onChangeText={setColor} />
-                                <FormInput label="Engine Number" value={engineNumber} onChangeText={setEngineNumber} />
-                                <FormInput label="Chassis Number" value={chassisNumber} onChangeText={setChassisNumber} />
-                                <FormInput label="Seating Capacity" value={seatingCapacity} onChangeText={setSeatingCapacity} keyboardType="numeric" />
-                                <FormInput label="Standing Capacity" value={standingCapacity} onChangeText={setStandingCapacity} keyboardType="numeric" />
-                                <FormInput label="Cubic Capacity (cc)" value={cubicCapacity} onChangeText={setCubicCapacity} keyboardType="numeric" />
-                                <FormInput label="Body Type" value={bodyType} onChangeText={setBodyType} />
-                                <FormInput label="Gross Vehicle Weight (kg)" value={grossVehicleWeight} onChangeText={setGrossVehicleWeight} keyboardType="numeric" />
-                                <FormInput label="Unladen Weight (kg)" value={unladenWeight} onChangeText={setUnladenWeight} keyboardType="numeric" />
+                                <FormInput label="Manufacturer" value={manufacturer} onChangeText={setManufacturer} editable={!manufacturer} />
+                                <FormInput label="Model" value={model} onChangeText={setModel} editable={!model} />
+                                <FormInput label="Fuel Type" value={fuelType} onChangeText={setFuelType} editable={!fuelType} />
+                                <FormInput label="Color" value={color} onChangeText={setColor} editable={!color} />
+                                <FormInput label="Engine Number" value={engineNumber} onChangeText={setEngineNumber} editable={!engineNumber} />
+                                <FormInput label="Chassis Number" value={chassisNumber} onChangeText={setChassisNumber} editable={!chassisNumber} />
+                                <FormInput label="Seating Capacity" value={seatingCapacity} onChangeText={setSeatingCapacity} keyboardType="numeric" editable={!seatingCapacity} />
+                                <FormInput label="Standing Capacity" value={standingCapacity} onChangeText={setStandingCapacity} keyboardType="numeric" editable={!standingCapacity} />
+                                <FormInput label="Cubic Capacity (cc)" value={cubicCapacity} onChangeText={setCubicCapacity} keyboardType="numeric" editable={!cubicCapacity} />
+                                <FormInput label="Body Type" value={bodyType} onChangeText={setBodyType} editable={!bodyType} />
+                                <FormInput label="Gross Vehicle Weight (kg)" value={grossVehicleWeight} onChangeText={setGrossVehicleWeight} keyboardType="numeric" editable={!grossVehicleWeight} />
+                                <FormInput label="Unladen Weight (kg)" value={unladenWeight} onChangeText={setUnladenWeight} keyboardType="numeric" editable={!unladenWeight} />
                             </View>
 
                             {/* ═══════════════════════════════════════════ */}
@@ -868,8 +936,8 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                             {/* ═══════════════════════════════════════════ */}
                             <View style={styles.section}>
                                 <SectionHeader title="Location Information" number={5} />
-                                <FormInput label="Vehicle Location State" value={locationState} onChangeText={setLocationState} />
-                                <FormInput label="Vehicle Location District" value={locationDistrict} onChangeText={setLocationDistrict} />
+                                <FormInput label="Vehicle Location State" value={locationState} onChangeText={setLocationState} editable={!locationState} />
+                                <FormInput label="Vehicle Location District" value={locationDistrict} onChangeText={setLocationDistrict} editable={!locationDistrict} />
                             </View>
 
                             {/* ═══════════════════════════════════════════ */}
@@ -877,12 +945,12 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                             {/* ═══════════════════════════════════════════ */}
                             <View style={styles.section}>
                                 <SectionHeader title="Validity & Insurance" number={6} />
-                                <FormDateField label="Fitness Valid Upto" value={fitnessValidUpto} onChange={setFitnessValidUpto} />
-                                <FormInput label="Insurance Company" value={insuranceCompany} onChangeText={setInsuranceCompany} />
-                                <FormInput label="Insurance Policy Number" value={insurancePolicyNumber} onChangeText={setInsurancePolicyNumber} />
-                                <FormDateField label="Insurance Validity" value={insuranceValidity} onChange={setInsuranceValidity} />
-                                <FormDateField label="Pollution Valid Upto (PUC)" value={pollutionValidUpto} onChange={setPollutionValidUpto} />
-                                <FormDateField label="Road Tax Paid Upto" value={roadTaxPaidUpto} onChange={setRoadTaxPaidUpto} />
+                                <FormInput label="Fitness Valid Upto" value={fitnessValidUpto} onChangeText={setFitnessValidUpto} editable={!fitnessValidUpto} />
+                                <FormInput label="Insurance Company" value={insuranceCompany} onChangeText={setInsuranceCompany} editable={!insuranceCompany} />
+                                <FormInput label="Insurance Policy Number" value={insurancePolicyNumber} onChangeText={setInsurancePolicyNumber} editable={!insurancePolicyNumber} />
+                                <FormInput label="Insurance Validity" value={insuranceValidity} onChangeText={setInsuranceValidity} editable={!insuranceValidity} />
+                                <FormInput label="Pollution Valid Upto (PUC)" value={pollutionValidUpto} onChangeText={setPollutionValidUpto} editable={!pollutionValidUpto} />
+                                <FormInput label="Road Tax Paid Upto" value={roadTaxPaidUpto} onChangeText={setRoadTaxPaidUpto} editable={!roadTaxPaidUpto} />
                             </View>
 
                             {/* ═══════════════════════════════════════════ */}
@@ -890,10 +958,10 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                             {/* ═══════════════════════════════════════════ */}
                             <View style={styles.section}>
                                 <SectionHeader title="Permit Information" number={7} />
-                                <FormInput label="National Permit Number" value={nationalPermitNumber} onChangeText={setNationalPermitNumber} />
-                                <FormDateField label="National Permit Validity" value={nationalPermitValidity} onChange={setNationalPermitValidity} />
-                                <FormInput label="State Permit Number" value={statePermitNumber} onChangeText={setStatePermitNumber} />
-                                <FormDateField label="State Permit Validity" value={statePermitValidity} onChange={setStatePermitValidity} />
+                                <FormInput label="National Permit Number" value={nationalPermitNumber} onChangeText={setNationalPermitNumber} editable={!nationalPermitNumber} />
+                                <FormInput label="National Permit Validity" value={nationalPermitValidity} onChangeText={setNationalPermitValidity} editable={!nationalPermitValidity} />
+                                <FormInput label="State Permit Number" value={statePermitNumber} onChangeText={setStatePermitNumber} editable={!statePermitNumber} />
+                                <FormInput label="State Permit Validity" value={statePermitValidity} onChangeText={setStatePermitValidity} editable={!statePermitValidity} />
                             </View>
 
                             {/* ═══════════════════════════════════════════ */}
@@ -901,15 +969,15 @@ const AddTruckScreen: React.FC<AddTruckScreenProps> = ({ onBack, onSaveSuccess }
                             {/* ═══════════════════════════════════════════ */}
                             <View style={styles.section}>
                                 <SectionHeader title="Additional Information" number={8} />
-                                <FormInput label="Hypothecation" value={hypothecation} onChangeText={setHypothecation} />
-                                <FormInput label="NOC Details" value={nocDetails} onChangeText={setNocDetails} />
-                                <FormInput label="Blacklist Status" value={blacklistStatus} onChangeText={setBlacklistStatus} />
-                                <FormInput label="Tax Status" value={taxStatus} onChangeText={setTaxStatus} />
-                                <FormInput label="RC Status" value={rcStatus} onChangeText={setRcStatus} />
-                                <FormInput label="Smart Card Issued" value={smartCardIssued} onChangeText={setSmartCardIssued} />
-                                <FormDateField label="Registration Valid Upto" value={registrationValidUpto} onChange={setRegistrationValidUpto} />
-                                <FormInput label="Previous Registration Number" value={previousRegNumber} onChangeText={setPreviousRegNumber} />
-                                <FormInput label="Maker Model Description" value={makerModelDesc} onChangeText={setMakerModelDesc} />
+                                <FormInput label="Hypothecation" value={hypothecation} onChangeText={setHypothecation} editable={!hypothecation} />
+                                <FormInput label="NOC Details" value={nocDetails} onChangeText={setNocDetails} editable={!nocDetails} />
+                                <FormInput label="Blacklist Status" value={blacklistStatus} onChangeText={setBlacklistStatus} editable={!blacklistStatus} />
+                                <FormInput label="Tax Status" value={taxStatus} onChangeText={setTaxStatus} editable={!taxStatus} />
+                                <FormInput label="RC Status" value={rcStatus} onChangeText={setRcStatus} editable={!rcStatus} />
+                                <FormInput label="Smart Card Issued" value={smartCardIssued} onChangeText={setSmartCardIssued} editable={!smartCardIssued} />
+                                <FormInput label="Registration Valid Upto" value={registrationValidUpto} onChangeText={setRegistrationValidUpto} editable={!registrationValidUpto} />
+                                <FormInput label="Previous Registration Number" value={previousRegNumber} onChangeText={setPreviousRegNumber} editable={!previousRegNumber} />
+                                <FormInput label="Maker Model Description" value={makerModelDesc} onChangeText={setMakerModelDesc} editable={!makerModelDesc} />
                             </View>
 
                             {/* ═══════════════════════════════════════════ */}

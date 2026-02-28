@@ -150,8 +150,7 @@ const StatusAlert: React.FC<{ alerts: { vehicle_number?: string; code: string; l
 // Main component
 // ──────────────────────────────────────────────────────────────────────────────
 const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
-    const { loadId, selectedRoutePolyline } = route?.params || {};
-    const endpoint = END_POINTS.TRUCKER_TRACKING_DASHBOARD(loadId);
+    const endpoint = END_POINTS.TRUCKER_TRACKING_DASHBOARD_ALL;
     const mapRef = useRef<MapView>(null);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const animRef = useRef<Record<string, ReturnType<typeof setInterval>>>({});
@@ -199,7 +198,9 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
 
         const latestByVehicle = new Map<string, VehicleTrackingItem>();
         vehicles.forEach((v, idx) => {
-            const idKey = String(v.vehicle_id ?? `${v.vehicle_number || 'vehicle'}-${idx}`);
+            const baseId = v.vehicle_id !== undefined && v.vehicle_id !== null ? String(v.vehicle_id) : `${v.vehicle_number || 'vehicle'}-${idx}`;
+            // Use driver_name to differentiate same vehicles doing different trips/loads
+            const idKey = `${baseId}-${v.driver_name || ''}`;
             const prev = latestByVehicle.get(idKey);
             if (!prev || parseTime(v.updated_at) >= parseTime(prev.updated_at)) {
                 latestByVehicle.set(idKey, v);
@@ -209,7 +210,7 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
         return Array.from(latestByVehicle.values())
             .map(v => ({
                 ...v,
-                _uniqueKey: String(v.vehicle_id),
+                _uniqueKey: `${v.vehicle_id}-${v.driver_name || ''}`,
                 latitudeNum: Number(v.latitude),
                 longitudeNum: Number(v.longitude),
             }))
@@ -278,14 +279,6 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
     const routeOverlays = useMemo(() => {
         const overlays: { key: string; color: string; points: LatLng[] }[] = [];
 
-        // Selected route from Google Directions (source → destination)
-        if (selectedRoutePolyline) {
-            const pts = decodePolylineToCoords(selectedRoutePolyline);
-            if (pts.length > 1) {
-                overlays.push({ key: 'selected-route', color: '#2874F0', points: pts });
-            }
-        }
-
         // Per-vehicle polylines from API (when available)
         vehiclesWithParsedCoords.forEach(v => {
             const pts = decodePolylineToCoords(v.encoded_polyline);
@@ -295,7 +288,7 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
         });
 
         return overlays;
-    }, [vehiclesWithParsedCoords, selectedRoutePolyline]);
+    }, [vehiclesWithParsedCoords]);
 
     // ── Trail overlays (actual traveled path) ────────────────────────────────
     const trailOverlays = useMemo(() => {
@@ -414,6 +407,23 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
                         />
                     ) : null,
                 )}
+
+                {/* Destination pins */}
+                {routeOverlays.map((route, idx) => {
+                    const dest = route.points[route.points.length - 1];
+                    if (!dest) return null;
+                    return (
+                        <Marker
+                            key={`dest-${route.key}`}
+                            coordinate={dest}
+                            zIndex={100 + idx}
+                            title="Destination"
+                            anchor={{ x: 0.5, y: 1 }}
+                        >
+                            <MaterialCommunityIcons name="map-marker" size={40} color={route.color} />
+                        </Marker>
+                    );
+                })}
 
                 {/* Truck markers — 3D PNG, flat on map, rotates by heading */}
                 {vehiclesForMap.map((vehicle, idx) => {

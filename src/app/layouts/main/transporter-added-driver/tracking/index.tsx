@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { fetchDirections } from 'src/utils/maps/google.apis';
 import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
 import ColorTrackingMap from './ColorTrackingMap';
+import TextRecognition from '@react-native-ml-kit/text-recognition';
 // import pusherService, { LocationUpdate } from 'src/services/pusherService';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -1665,7 +1666,58 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
 
         try {
             setUploadingBility(true);
-            console.log('📤 [BUILTY] Uploading builty document...');
+            console.log('📤 [BUILTY] Verifying and Uploading builty document...');
+
+            // --- EWB OCR Verification Block ---
+            try {
+                const uri = builtyFile.fileCopyUri || builtyFile.uri;
+                if (!uri) throw new Error('No URI found');
+
+                console.log('🔍 [BUILTY OCR] Starting OCR on URI:', uri);
+                showToast('Scanning Document for EWB No...');
+
+                // Step 1: Scan QR / Extract text
+                const result = await TextRecognition.recognize(uri);
+                console.log('🔍 [BUILTY OCR] Raw OCR Result:', JSON.stringify(result, null, 2));
+
+                const extractedText = result?.text || '';
+                console.log('🔍 [BUILTY OCR] Extracted Text:', extractedText);
+
+                // Step 2 & 3: Extract EWB No and Basic Format Validation (12 Digits)
+                const ewbMatch = extractedText.match(/\b\d{12}\b/);
+                if (!ewbMatch) {
+                    console.log('⚠️ [BUILTY OCR] No 12-digit EWB numeric match found in extracted text.');
+                    showToast('EWB Number not found or invalid format. Please upload a valid Bility.');
+                    setUploadingBility(false);
+                    return;
+                }
+                const ewbNo = ewbMatch[0];
+                console.log('✅ [BUILTY OCR] Found EWB Match:', ewbNo);
+                showToast(`Found EWB: ${ewbNo}. Verifying...`);
+
+                // Step 4, 5, 6: Send EWB No to backend to check expiry/validity via NIC API
+                const verifyPayload = {
+                    ewb_no: ewbNo,
+                    load_id: trip.id || trip.load_id
+                };
+
+                const verifyResponse = await axiosInstance.post(END_POINTS.TRUCKER_VERIFY_EWB, verifyPayload);
+                if (verifyResponse.data?.status === 'success' || verifyResponse.data?.status === true) {
+                    // Step 7: Show status to user
+                    showToast('E-Way Bill Verified Successfully. Uploading...');
+                } else {
+                    showToast(verifyResponse.data?.message || 'E-Way Bill Verification Failed! Invalid/Fake Bility.');
+                    setUploadingBility(false);
+                    return; // Stop upload if fake
+                }
+            } catch (ocrError) {
+                console.warn('❌ [BUILTY OCR] Error:', ocrError);
+                showToast('Failed to scan document. Please try a clearer image or valid EWB.');
+                setUploadingBility(false);
+                return;
+            }
+            // --- End EWB OCR Verification Block ---
+
             console.log('📤 [BUILTY] Trip data:', {
                 id: trip.id,
                 load_id: trip.load_id,
@@ -1929,26 +1981,28 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 {/* Vehicle Information */}
                 <View style={styles.card}>
                     <Text style={styles.sectionHeader}>{t('vehicle_information')}</Text>
-                    {currentStatus > 0 ? (
-                        <>
-                            <View style={{ marginBottom: 12 }}>
-                                <Text style={{ fontSize: 13, color: C.textSec }}>{t('vehicle_number_label')}</Text>
-                                <Text style={{ fontSize: 15, fontWeight: '500', color: C.text, marginTop: 2 }}>{trip.vehicle}</Text>
-                            </View>
-                            <View style={styles.divider} />
-                            <TouchableOpacity style={styles.contactRow} onPress={callDriver}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.contactName}>{t('driver_label')} {trip.driver?.name || 'Unknown'}</Text>
-                                    <Text style={styles.contactPhone}>{trip.driver?.phone || 'No Phone'}</Text>
-                                </View>
-                                <PhoneIcon />
-                            </TouchableOpacity>
-                        </>
-                    ) : (
-                        <View style={{ paddingVertical: 10, alignItems: 'center' }}>
-                            <Text style={{ color: C.textSec, fontSize: 13 }}>{t('vehicle_not_assigned')}</Text>
+                    <View style={{ marginBottom: 12 }}>
+                        <Text style={{ fontSize: 13, color: C.textSec }}>{t('vehicle_number_label')}</Text>
+                        <Text style={{ fontSize: 15, fontWeight: '500', color: C.text, marginTop: 2 }}>{trip.vehicle}</Text>
+                    </View>
+                    <View style={styles.divider} />
+                    <TouchableOpacity style={styles.contactRow} onPress={callDriver}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.contactName}>Driver Name: {trip.driver?.name || 'Unknown'}</Text>
+                            <Text style={styles.contactPhone}>{trip.driver?.phone || 'No Phone'}</Text>
                         </View>
-                    )}
+                        <PhoneIcon />
+                    </TouchableOpacity>
+
+                    {trip.driver?.dl ? (
+                        <>
+                            <View style={styles.divider} />
+                            <View style={{ marginTop: 4 }}>
+                                <Text style={{ fontSize: 13, color: C.textSec }}>Driving License</Text>
+                                <Text style={{ fontSize: 15, fontWeight: '500', color: C.text, marginTop: 2 }}>{trip.driver.dl}</Text>
+                            </View>
+                        </>
+                    ) : null}
                 </View>
 
                 {/* Shipping Details */}

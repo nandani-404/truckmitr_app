@@ -101,26 +101,31 @@ const ListViewIcon = ({ active }: { active?: boolean }) => (
 );
 
 // Custom Marker wrapper to prevent Android clipping bug
-const CustomLoadMarker = ({ coordinate, onPress }: any) => {
-    // tracksViewChanges must be true initially to render the image, then set to false for performance once loaded.
-    const [tracksViewChanges, setTracksViewChanges] = useState(true);
+const CustomLoadMarker = ({ coordinate, onPress, load }: any) => {
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [trackChanges, setTrackChanges] = useState(true);
 
     return (
         <Marker
             coordinate={coordinate}
             onPress={onPress}
-            tracksViewChanges={tracksViewChanges}
-            anchor={{ x: 0.5, y: 1 }}
+            tracksViewChanges={trackChanges}
+            anchor={{ x: 0.5, y: 0.5 }}
+            zIndex={trackChanges ? 2 : 1}
         >
             <View style={markerStyles.markerContainer}>
+                {!isLoaded && (
+                    <ActivityIndicator size="small" color={C.accent} style={{ position: 'absolute' }} />
+                )}
                 <Image
                     source={require('src/assets/tracking_color_truck/logo2.0.png')}
-                    style={markerStyles.markerImage}
+                    style={[markerStyles.markerImage, { opacity: isLoaded ? 1 : 0 }]}
                     resizeMode="contain"
-                    fadeDuration={0} // Important to prevent Android MapView from snapping mid-fade
+                    fadeDuration={0}
                     onLoad={() => {
-                        // Allow layout to fully measure before locking the view capture
-                        setTimeout(() => setTracksViewChanges(false), 250);
+                        setIsLoaded(true);
+                        // Prevent MapView from snapshotting too early and giving an invisible marker
+                        setTimeout(() => setTrackChanges(false), 2500);
                     }}
                 />
             </View>
@@ -130,14 +135,15 @@ const CustomLoadMarker = ({ coordinate, onPress }: any) => {
 
 const markerStyles = StyleSheet.create({
     markerContainer: {
-        width: 100,
+        width: 120, // Adjusted to exactly match 1.5 aspect ratio of the 1280x853 image
         height: 80,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'visible',
+        backgroundColor: 'transparent',
     },
     markerImage: {
-        width: 100,
+        width: 120,
         height: 80,
     }
 });
@@ -609,6 +615,7 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
                                 <CustomLoadMarker
                                     key={load.id || index}
                                     coordinate={{ latitude: lat, longitude: lon }}
+                                    load={load}
                                     onPress={() => setSelectedMapLoad(load)}
                                 />
                             );
