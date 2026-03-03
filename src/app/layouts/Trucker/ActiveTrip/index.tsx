@@ -12,8 +12,10 @@ import { pick } from '@react-native-documents/picker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import TextRecognition from '@react-native-ml-kit/text-recognition';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 // ── Classic Color Palette (Flipkart Style) ──
 const C = {
@@ -905,6 +907,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                 const photo = result.assets[0];
                 setBilityFile({
                     uri: photo.uri,
+                    originalPath: photo.originalPath,
                     type: photo.type || 'image/jpeg',
                     name: photo.fileName || `Bility_${Date.now()}.jpg`,
                     size: photo.fileSize || 0,
@@ -928,6 +931,7 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                 const photo = result.assets[0];
                 setBilityFile({
                     uri: photo.uri,
+                    originalPath: photo.originalPath,
                     type: photo.type || 'image/jpeg',
                     name: photo.fileName || `Bility_${Date.now()}.jpg`,
                     size: photo.fileSize || 0,
@@ -950,6 +954,42 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
             setUploadingBility(true);
             console.log('📤 [BUILTY] Uploading builty document...');
 
+            // --- OCR Extraction Block (No restriction) ---
+            let fullExtractedText = '';
+            try {
+                // Determine clean URI string, originalPath handles strict native side pathing
+                let uriToScan = builtyFile.originalPath || builtyFile.fileCopyUri || builtyFile.uri;
+
+                if (!uriToScan) throw new Error("No file URI available");
+
+                // Android paths might lack file:// or content:// scheme which native module might require
+                if (!uriToScan.startsWith('file://') && !uriToScan.startsWith('content://') && !uriToScan.startsWith('http')) {
+                    uriToScan = 'file://' + uriToScan;
+                }
+
+                console.log('🔍 [BUILTY OCR] Starting text extraction on URI:', uriToScan);
+                showToast('Scanning Document Text...');
+
+                try {
+                    const result = await TextRecognition.recognize(uriToScan);
+                    fullExtractedText = result?.text || '';
+                } catch (e1) {
+                    console.log('⚠️ [BUILTY OCR] Failed with structured URI, attempting bare URI...', e1);
+                    const result = await TextRecognition.recognize(builtyFile.uri);
+                    fullExtractedText = result?.text || '';
+                }
+
+                console.log('🔍 [BUILTY OCR] Extracted Text Result Length:', fullExtractedText.length);
+                if (fullExtractedText.length > 0) {
+                    console.log('🔍 [BUILTY OCR] Extracted Text Extract:\n', fullExtractedText.substring(0, 500) + '...');
+                } else {
+                    console.log('⚠️ [BUILTY OCR] Scanning finished but 0 characters found. Is the document empty or blurry?');
+                }
+            } catch (ocrError) {
+                console.warn('⚠️ [BUILTY OCR] Extraction completely failed, continuing anyway:', ocrError);
+            }
+            // ---------------------------------------------
+
             const formData = new FormData();
             formData.append('load_id', loadId);
             formData.append('shipper_id', trip.shipper_id);
@@ -959,12 +999,15 @@ const ActiveTripScreen: React.FC<Props> = ({ onBack, onComplete, loadId, navigat
                 type: builtyFile.type,
                 name: builtyFile.name,
             });
+            // Append the extracted text to the DB payload
+            formData.append('extracted_text', fullExtractedText);
 
             console.log('📤 [BUILTY] Payload:', {
                 load_id: loadId,
                 shipper_id: trip.shipper_id,
                 trucker_id: trip.trucker_id,
                 file: builtyFile.name,
+                extracted_text: fullExtractedText.substring(0, 100) + '...' // log preview
             });
 
             const response = await axiosInstance.post(END_POINTS.TRUCKER_UPLOAD_BUILTY, formData, {

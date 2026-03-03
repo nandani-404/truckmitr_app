@@ -13,30 +13,101 @@ import {
     Modal,
     TouchableWithoutFeedback,
     Pressable,
+    Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useColor, useResponsiveScale, useShadow } from '@truckmitr/src/app/hooks';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { useSelector } from 'react-redux';
 import { RootState } from '@truckmitr/redux/store';
 import axiosInstance from '@truckmitr/utils/config/axiosInstance';
 import { END_POINTS } from '@truckmitr/utils/config/index';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 
+const { width } = Dimensions.get('window');
+
+// ─────────────────────────────────────────────
+// Design Tokens
+// ─────────────────────────────────────────────
+const COLORS = {
+    primary: '#6467f2',
+    primaryLight: 'rgba(100, 103, 242, 0.08)',
+    primaryShadow: 'rgba(100, 103, 242, 0.3)',
+    bg: '#f6f6f8',
+    surface: '#FFFFFF',
+    inputBg: '#f8f8fa',
+    border: '#E8E8EF',
+    borderLight: '#F0F0F5',
+    textPrimary: '#0f172a',
+    textSecondary: '#64748b',
+    textTertiary: '#94a3b8',
+    textPlaceholder: '#b0b5c3',
+    success: '#059669',
+    successBg: '#ECFDF5',
+    successBorder: '#A7F3D0',
+    white: '#FFFFFF',
+    danger: '#ef4444',
+};
+
+// ─────────────────────────────────────────────
+// Icons (SVG inline for consistency)
+// ─────────────────────────────────────────────
+const BackArrowIcon = ({ color = COLORS.textPrimary }: { color?: string }) => (
+    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M19 12H5M12 19l-7-7 7-7" />
+    </Svg>
+);
+
+const ChevronDownIcon = ({ color = COLORS.textTertiary }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M7 10l5 5 5-5" />
+    </Svg>
+);
+
+const ChevronUpDownIcon = ({ color = COLORS.textTertiary }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
+    </Svg>
+);
+
+const ShieldCheckIcon = ({ color = COLORS.textTertiary }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <Path d="M9 12l2 2 4-4" />
+    </Svg>
+);
+
+const ChevronRightIcon = ({ color = COLORS.white }: { color?: string }) => (
+    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M9 18l6-6-6-6" />
+    </Svg>
+);
+
+const CheckIcon = ({ color = COLORS.primary }: { color?: string }) => (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M20 6L9 17l-5-5" />
+    </Svg>
+);
+
+const CloseIcon = ({ color = COLORS.textPrimary }: { color?: string }) => (
+    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M18 6L6 18M6 6l12 12" />
+    </Svg>
+);
+
+// ─────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────
 const TruckerBankDetails = () => {
     const navigation = useNavigation();
     const safeAreaInsets = useSafeAreaInsets();
-    const colors = useColor();
-    const { shadow } = useShadow();
-    const { responsiveFontSize } = useResponsiveScale();
     const user = useSelector((state: RootState) => state.user?.user);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
-    
+
     const [bankData, setBankData] = useState({
         account_number: '',
         account_holder_name: '',
@@ -122,70 +193,98 @@ const TruckerBankDetails = () => {
         }
     };
 
+    // ─────────────────────────────────────────────
+    // Render Input Field
+    // ─────────────────────────────────────────────
     const renderInput = (
         label: string,
         value: string,
         key: keyof typeof bankData,
+        placeholder: string,
         keyboardType: any = 'default',
-        autoCapitalize: any = 'words'
+        autoCapitalize: any = 'words',
+        secureTextEntry: boolean = false,
     ) => (
         <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.blackOpacity(0.5), fontSize: responsiveFontSize(1.4) }]}>
-                {label.toUpperCase()}
-            </Text>
+            <Text style={styles.label}>{label.toUpperCase()}</Text>
             {isEditing ? (
                 key === 'account_type' ? (
                     <Pressable
-                        style={[
-                            styles.input,
-                            {
-                                backgroundColor: colors.blackOpacity(0.04),
-                                paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-                                flexDirection: 'row',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                            }
-                        ]}
+                        style={styles.input}
                         onPress={() => setShowAccountTypeModal(true)}
                     >
-                        <Text style={{
-                            color: value ? colors.black : colors.blackOpacity(0.3),
-                            fontSize: responsiveFontSize(1.8),
-                            fontWeight: '500',
-                        }}>
+                        <Text style={[
+                            styles.inputText,
+                            !value && styles.placeholderText,
+                        ]}>
                             {value || `Select ${label}`}
                         </Text>
-                        <Ionicons name="chevron-down" size={20} color={colors.blackOpacity(0.4)} />
+                        <ChevronUpDownIcon color={COLORS.textTertiary} />
                     </Pressable>
                 ) : (
                     <TextInput
-                        style={[
-                            styles.input,
-                            {
-                                backgroundColor: colors.blackOpacity(0.04),
-                                color: colors.black,
-                                fontSize: responsiveFontSize(1.8),
-                                paddingVertical: Platform.OS === 'ios' ? 12 : 8,
-                            }
-                        ]}
+                        style={[styles.input, styles.inputText]}
                         value={value}
                         onChangeText={(text) => setBankData({ ...bankData, [key]: text })}
                         keyboardType={keyboardType}
                         autoCapitalize={autoCapitalize}
-                        placeholder={`Enter ${label}`}
-                        placeholderTextColor={colors.blackOpacity(0.3)}
+                        placeholder={placeholder}
+                        placeholderTextColor={COLORS.textPlaceholder}
+                        secureTextEntry={secureTextEntry}
                     />
                 )
             ) : (
                 <View style={styles.valueContainer}>
-                    <Text style={[styles.value, { color: colors.black, fontSize: responsiveFontSize(1.9) }]}>
-                        {value || '-'}
-                    </Text>
+                    <Text style={styles.value}>{value || '-'}</Text>
                 </View>
             )}
         </View>
     );
 
+    // ─────────────────────────────────────────────
+    // Render Two-Column Row
+    // ─────────────────────────────────────────────
+    const renderTwoColumnRow = () => (
+        <View style={styles.twoColumnRow}>
+            <View style={styles.halfColumn}>
+                <Text style={styles.label}>{'BRANCH NAME'}</Text>
+                {isEditing ? (
+                    <TextInput
+                        style={[styles.input, styles.inputText]}
+                        value={bankData.branch_name}
+                        onChangeText={(text) => setBankData({ ...bankData, branch_name: text })}
+                        placeholder="City center"
+                        placeholderTextColor={COLORS.textPlaceholder}
+                    />
+                ) : (
+                    <View style={styles.valueContainer}>
+                        <Text style={styles.value}>{bankData.branch_name || '-'}</Text>
+                    </View>
+                )}
+            </View>
+            <View style={styles.halfColumn}>
+                <Text style={styles.label}>{'IFSC CODE'}</Text>
+                {isEditing ? (
+                    <TextInput
+                        style={[styles.input, styles.inputText]}
+                        value={bankData.ifsc_code}
+                        onChangeText={(text) => setBankData({ ...bankData, ifsc_code: text })}
+                        placeholder="SBIN000123"
+                        placeholderTextColor={COLORS.textPlaceholder}
+                        autoCapitalize="characters"
+                    />
+                ) : (
+                    <View style={styles.valueContainer}>
+                        <Text style={styles.value}>{bankData.ifsc_code || '-'}</Text>
+                    </View>
+                )}
+            </View>
+        </View>
+    );
+
+    // ─────────────────────────────────────────────
+    // Account Type Modal
+    // ─────────────────────────────────────────────
     const renderAccountTypeModal = () => (
         <Modal
             visible={showAccountTypeModal}
@@ -196,33 +295,37 @@ const TruckerBankDetails = () => {
             <TouchableWithoutFeedback onPress={() => setShowAccountTypeModal(false)}>
                 <View style={styles.modalOverlay}>
                     <TouchableWithoutFeedback>
-                        <View style={[styles.modalContent, { backgroundColor: colors.white }]}>
+                        <View style={styles.modalContent}>
                             <View style={styles.modalHeader}>
-                                <Text style={[styles.modalTitle, { color: colors.black }]}>Select Account Type</Text>
-                                <TouchableOpacity onPress={() => setShowAccountTypeModal(false)}>
-                                    <Ionicons name="close" size={24} color={colors.black} />
+                                <Text style={styles.modalTitle}>Select Account Type</Text>
+                                <TouchableOpacity
+                                    onPress={() => setShowAccountTypeModal(false)}
+                                    style={styles.modalCloseBtn}
+                                >
+                                    <CloseIcon color={COLORS.textSecondary} />
                                 </TouchableOpacity>
                             </View>
-                            {['Savings', 'Current'].map((type) => (
+                            {['Savings Account', 'Current Account', 'Salary Account'].map((type) => (
                                 <TouchableOpacity
                                     key={type}
                                     style={[
                                         styles.optionItem,
-                                        bankData.account_type === type && { backgroundColor: colors.royalBlue + '10' }
+                                        bankData.account_type === type && styles.optionItemActive,
                                     ]}
                                     onPress={() => {
                                         setBankData({ ...bankData, account_type: type });
                                         setShowAccountTypeModal(false);
                                     }}
+                                    activeOpacity={0.7}
                                 >
                                     <Text style={[
                                         styles.optionText,
-                                        { color: bankData.account_type === type ? colors.royalBlue : colors.black }
+                                        bankData.account_type === type && styles.optionTextActive,
                                     ]}>
                                         {type}
                                     </Text>
                                     {bankData.account_type === type && (
-                                        <Ionicons name="checkmark" size={20} color={colors.royalBlue} />
+                                        <CheckIcon color={COLORS.primary} />
                                     )}
                                 </TouchableOpacity>
                             ))}
@@ -233,42 +336,53 @@ const TruckerBankDetails = () => {
         </Modal>
     );
 
-
+    // ─────────────────────────────────────────────
+    // Loading State
+    // ─────────────────────────────────────────────
     if (loading) {
         return (
-            <View style={[styles.container, styles.centerContent, { backgroundColor: colors.white }]}>
-                <StatusBar barStyle="dark-content" />
-                <ActivityIndicator size="large" color={colors.royalBlue} />
-                <Text style={[styles.loadingText, { color: colors.blackOpacity(0.5) }]}>
-                    Loading bank details...
-                </Text>
+            <View style={[styles.container, styles.centerContent]}>
+                <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={styles.loadingText}>Loading bank details...</Text>
             </View>
         );
     }
 
+    // ─────────────────────────────────────────────
+    // Main Render
+    // ─────────────────────────────────────────────
     return (
-        <View style={[styles.container, { backgroundColor: colors.white }]}>
-            <StatusBar barStyle="dark-content" />
-            <View style={[styles.header, { paddingTop: safeAreaInsets.top, backgroundColor: colors.white }]}>
+        <View style={styles.container}>
+            <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+
+            {/* ── Top App Bar ── */}
+            <View style={[styles.header, { paddingTop: safeAreaInsets.top }]}>
                 <View style={styles.headerContent}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={28} color={colors.black} />
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={styles.backButton}
+                        activeOpacity={0.7}
+                    >
+                        <BackArrowIcon color={COLORS.textPrimary} />
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: colors.black, fontSize: responsiveFontSize(2.2) }]}>
-                        Bank Details
-                    </Text>
+
+                    <Text style={styles.headerTitle}>Bank Details</Text>
+
                     <TouchableOpacity
                         onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
-                        style={styles.editButton}
+                        style={styles.saveButton}
                         disabled={saving}
+                        activeOpacity={0.7}
                     >
-                        <Text style={[styles.editButtonText, { color: colors.royalBlue, fontSize: responsiveFontSize(1.7) }]}>
-                            {saving ? 'Saving...' : isEditing ? 'Save' : 'Edit'}
+                        <Text style={styles.saveButtonText}>
+                            {saving ? 'SAVING...' : isEditing ? 'SAVE' : 'EDIT'}
                         </Text>
                     </TouchableOpacity>
                 </View>
             </View>
 
+            {/* ── Form Content ── */}
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={{ flex: 1 }}
@@ -278,65 +392,99 @@ const TruckerBankDetails = () => {
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
                 >
-                    <View style={styles.flatContainer}>
-                        {renderInput('Account Holder Name', bankData.account_holder_name, 'account_holder_name')}
-                        <View style={styles.divider} />
-                        {renderInput('Account Number', bankData.account_number, 'account_number', 'numeric')}
-                        <View style={styles.divider} />
-                        {renderInput('Bank Name', bankData.bank_name, 'bank_name')}
-                        <View style={styles.divider} />
-                        {renderInput('Branch Name', bankData.branch_name, 'branch_name')}
-                        <View style={styles.divider} />
-                        {renderInput('IFSC Code', bankData.ifsc_code, 'ifsc_code', 'default', 'characters')}
-                        <View style={styles.divider} />
-                        {renderInput('Account Type', bankData.account_type, 'account_type')}
+                    {/* Form Fields */}
+                    <View style={styles.formContainer}>
+                        {renderInput(
+                            'Account Holder Name',
+                            bankData.account_holder_name,
+                            'account_holder_name',
+                            'Enter full name as per bank records',
+                        )}
+                        {renderInput(
+                            'Account Number',
+                            bankData.account_number,
+                            'account_number',
+                            'Enter account number',
+                            'numeric',
+                            'none',
+                            true,
+                        )}
+                        {renderInput(
+                            'Account Type',
+                            bankData.account_type,
+                            'account_type',
+                            'Select account type',
+                        )}
+                        {renderInput(
+                            'Bank Name',
+                            bankData.bank_name,
+                            'bank_name',
+                            'e.g. JPMorgan Chase',
+                        )}
+                        {renderTwoColumnRow()}
                     </View>
 
+                    {/* ── Save Button ── */}
                     {isEditing && (
                         <TouchableOpacity
                             onPress={handleSave}
-                            activeOpacity={0.8}
-                            style={[styles.saveButton, { backgroundColor: colors.royalBlue, ...shadow }]}
+                            activeOpacity={0.85}
+                            style={styles.ctaButton}
                             disabled={saving}
                         >
                             {saving ? (
-                                <ActivityIndicator color={colors.white} />
+                                <ActivityIndicator color={COLORS.white} />
                             ) : (
-                                <Text style={[styles.saveButtonText, { color: colors.white, fontSize: responsiveFontSize(2) }]}>
-                                    Save Bank Account
-                                </Text>
+                                <View style={styles.ctaContent}>
+                                    <Text style={styles.ctaText}>Save Bank Account</Text>
+                                    <ChevronRightIcon color={COLORS.white} />
+                                </View>
                             )}
                         </TouchableOpacity>
                     )}
 
-                    <View style={styles.noticeBox}>
-                        <Ionicons name="shield-checkmark" size={18} color="#059669" />
-                        <Text style={styles.noticeText}>
-                            Your bank details are encrypted and stored securely for payout purposes only.
+                    {/* ── Secure Storage Notice ── */}
+                    <View style={styles.secureNotice}>
+                        <View style={styles.secureIconRow}>
+                            <ShieldCheckIcon color={COLORS.textTertiary} />
+                            <Text style={styles.secureTitle}>SECURE 256-BIT ENCRYPTION</Text>
+                        </View>
+                        <Text style={styles.secureDescription}>
+                            Your bank details are encrypted and stored securely. We never share your sensitive information with third parties.
                         </Text>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+
             {renderAccountTypeModal()}
         </View>
     );
 };
 
+// ─────────────────────────────────────────────
+// Styles
+// ─────────────────────────────────────────────
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: COLORS.white,
     },
     centerContent: {
         justifyContent: 'center',
         alignItems: 'center',
     },
     loadingText: {
-        marginTop: 12,
+        marginTop: 16,
         fontSize: 14,
+        color: COLORS.textSecondary,
+        fontWeight: '500',
     },
+
+    // ── Header ──
     header: {
+        backgroundColor: COLORS.white,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
+        borderBottomColor: COLORS.borderLight,
     },
     headerContent: {
         flexDirection: 'row',
@@ -345,97 +493,164 @@ const styles = StyleSheet.create({
         height: 60,
         paddingHorizontal: 16,
     },
-    headerTitle: {
-        fontWeight: '700',
-    },
     backButton: {
         width: 40,
         height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
-        alignItems: 'flex-start',
+        alignItems: 'center',
     },
-    editButton: {
-        width: 70,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'flex-end',
-    },
-    editButtonText: {
-        fontWeight: '600',
-    },
-    scrollContent: {
-        paddingVertical: 10,
-        paddingBottom: 40,
-    },
-    flatContainer: {
-        backgroundColor: 'transparent',
-        marginBottom: 24,
-    },
-    inputGroup: {
-        paddingHorizontal: 20,
-        paddingVertical: 14,
-    },
-    label: {
-        fontWeight: '600',
-        marginBottom: 6,
-        letterSpacing: 0.5,
-    },
-    input: {
-        borderRadius: 10,
-        paddingHorizontal: 14,
-        fontWeight: '500',
-    },
-    valueContainer: {
-        minHeight: 30,
-        justifyContent: 'center',
-    },
-    value: {
-        fontWeight: '600',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: 'rgba(0,0,0,0.05)',
-        marginHorizontal: 20,
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: COLORS.textPrimary,
+        letterSpacing: -0.3,
     },
     saveButton: {
-        height: 56,
-        borderRadius: 14,
-        marginHorizontal: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 24,
+        paddingHorizontal: 4,
+        paddingVertical: 8,
     },
     saveButtonText: {
+        fontSize: 13,
         fontWeight: '700',
+        color: COLORS.primary,
+        letterSpacing: 0.8,
     },
-    noticeBox: {
-        flexDirection: 'row',
-        backgroundColor: '#ECFDF5',
-        padding: 16,
-        borderRadius: 12,
-        alignItems: 'flex-start',
+
+    // ── Scroll & Form ──
+    scrollContent: {
+        paddingTop: 8,
+        paddingBottom: 40,
+    },
+    formContainer: {
+        paddingHorizontal: 24,
+        paddingTop: 16,
+    },
+
+    // ── Input Group ──
+    inputGroup: {
+        marginBottom: 20,
+    },
+    label: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: COLORS.textSecondary,
+        letterSpacing: 1.5,
+        marginBottom: 8,
+        paddingLeft: 4,
+    },
+    input: {
+        backgroundColor: COLORS.inputBg,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: '#A7F3D0',
-        marginHorizontal: 20,
+        borderColor: COLORS.border,
+        paddingHorizontal: 16,
+        paddingVertical: Platform.OS === 'ios' ? 16 : 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
-    noticeText: {
+    inputText: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: COLORS.textPrimary,
         flex: 1,
-        marginLeft: 10,
-        fontSize: 12,
-        color: '#065F46',
-        lineHeight: 18,
     },
+    placeholderText: {
+        color: COLORS.textPlaceholder,
+    },
+    valueContainer: {
+        backgroundColor: COLORS.inputBg,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        paddingHorizontal: 16,
+        paddingVertical: Platform.OS === 'ios' ? 16 : 14,
+    },
+    value: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: COLORS.textPrimary,
+    },
+
+    // ── Two Column ──
+    twoColumnRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 20,
+    },
+    halfColumn: {
+        flex: 1,
+    },
+
+    // ── CTA Button ──
+    ctaButton: {
+        marginHorizontal: 24,
+        marginTop: 12,
+        marginBottom: 32,
+        backgroundColor: COLORS.primary,
+        borderRadius: 14,
+        paddingVertical: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    ctaContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    ctaText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: COLORS.white,
+    },
+
+    // ── Secure Notice ──
+    secureNotice: {
+        paddingHorizontal: 24,
+        paddingTop: 24,
+        paddingBottom: 32,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
+        alignItems: 'center',
+    },
+    secureIconRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 8,
+    },
+    secureTitle: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: COLORS.textTertiary,
+        letterSpacing: 1.2,
+    },
+    secureDescription: {
+        fontSize: 11,
+        lineHeight: 17,
+        color: COLORS.textTertiary,
+        textAlign: 'center',
+        maxWidth: 280,
+    },
+
+    // ── Modal ──
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.45)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: 24,
     },
     modalContent: {
         width: '100%',
-        borderRadius: 16,
-        paddingTop: 16,
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
         overflow: 'hidden',
     },
     modalHeader: {
@@ -443,26 +658,42 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingBottom: 16,
+        paddingVertical: 18,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
+        borderBottomColor: COLORS.borderLight,
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: '700',
+        color: COLORS.textPrimary,
+    },
+    modalCloseBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: COLORS.inputBg,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     optionItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingVertical: 18,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.03)',
+        borderBottomColor: COLORS.borderLight,
+    },
+    optionItemActive: {
+        backgroundColor: COLORS.primaryLight,
     },
     optionText: {
         fontSize: 16,
         fontWeight: '600',
+        color: COLORS.textPrimary,
+    },
+    optionTextActive: {
+        color: COLORS.primary,
     },
 });
 

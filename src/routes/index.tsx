@@ -837,7 +837,7 @@ export default function Routes() {
       {/* <ForemanMain /> */}
       {!isAuthenticated ? (
         <Auth />
-      ) : profileRequiredFieldsStatus === false ? (
+      ) : profileRequiredFieldsStatus === false && !isRestrictedDriver ? (
         // Module-specific profile completion
         user?.data?.role?.toLowerCase() === 'foreman' || user?.role?.toLowerCase() === 'foreman' ? (
           <ForemanProfileCompletionStack />
@@ -870,7 +870,7 @@ export default function Routes() {
         <Main />
       )}
       {subscriptionModal && <Subscription />}
-      <InAppUpdatePopup />
+      {/* <InAppUpdatePopup /> */}
     </NavigationContainer>
   );
 }

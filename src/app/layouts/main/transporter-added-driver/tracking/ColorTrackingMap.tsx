@@ -42,7 +42,10 @@ type VehicleTrackingItem = {
     driver_name?: string;
     latitude: number | string;
     longitude: number | string;
+    load_id?: string;
+    trip_id?: number;
     color_code?: 'GREEN' | 'RED' | 'YELLOW' | 'BROWN' | 'BLUE' | 'BLACK' | string;
+    color_reason?: string;
     encoded_polyline?: string;
     traveled_polyline?: string;
     off_route_km?: number;
@@ -51,12 +54,20 @@ type VehicleTrackingItem = {
     updated_at?: string;
 };
 
+export type VehicleColorData = {
+    color_code?: string;
+    color_reason?: string;
+    off_route_km?: number;
+};
+
 type Props = {
     visible: boolean;
     onClose: () => void;
     endpoint: string;
     /** Selected route polyline (encoded) from Google Directions — source to destination */
     selectedRoutePolyline?: string;
+    /** Callback to pass the latest vehicle color tracking data to the parent */
+    onVehicleDataUpdate?: (data: VehicleColorData) => void;
 };
 
 const COLOR_BY_CODE: Record<string, string> = {
@@ -150,7 +161,7 @@ const StatusAlert: React.FC<{ alerts: { vehicle_number?: string; code: string; l
 // ──────────────────────────────────────────────────────────────────────────────
 // Main component
 // ──────────────────────────────────────────────────────────────────────────────
-const ColorTrackingMap: React.FC<Props> = ({ visible, onClose, endpoint, selectedRoutePolyline }) => {
+const ColorTrackingMap: React.FC<Props> = ({ visible, onClose, endpoint, selectedRoutePolyline, onVehicleDataUpdate }) => {
     const mapRef = useRef<MapView>(null);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const animRef = useRef<Record<string, ReturnType<typeof setInterval>>>({});
@@ -168,15 +179,26 @@ const ColorTrackingMap: React.FC<Props> = ({ visible, onClose, endpoint, selecte
             setLoading(true);
             const response = await axiosInstance.get(endpoint);
             const list = response?.data?.data?.vehicles || response?.data?.data?.tracking || [];
-            setVehicles(Array.isArray(list) ? list : []);
+            const vehicleList = Array.isArray(list) ? list : [];
+            setVehicles(vehicleList);
             setLastFetchedAt(new Date().toLocaleTimeString());
+
+            // Pass color tracking data to parent for use in location update API
+            if (onVehicleDataUpdate && vehicleList.length > 0) {
+                const firstVehicle = vehicleList[0];
+                const colorData: VehicleColorData = {};
+                if (firstVehicle.color_code) colorData.color_code = firstVehicle.color_code;
+                if (firstVehicle.color_reason) colorData.color_reason = firstVehicle.color_reason;
+                if (firstVehicle.off_route_km != null) colorData.off_route_km = firstVehicle.off_route_km;
+                onVehicleDataUpdate(colorData);
+            }
         } catch (error) {
             console.error('Tracking fetch failed:', error);
             showToast('Failed to fetch tracking data');
         } finally {
             setLoading(false);
         }
-    }, [endpoint]);
+    }, [endpoint, onVehicleDataUpdate]);
 
     useEffect(() => {
         if (!visible) {

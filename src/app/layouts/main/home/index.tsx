@@ -886,6 +886,8 @@ const Home = React.forwardRef((props, ref) => {
 
     useFocusEffect(
         useCallback(() => {
+            let subscriptionTimer: ReturnType<typeof setTimeout> | null = null;
+
             const _fetchUser = async () => {
                 const profile: any = await axiosInstance.get(END_POINTS?.GET_PROFILE);
                 const res: any = await axiosInstance.get(END_POINTS.PAYMENT_DETAIL);
@@ -908,8 +910,11 @@ const Home = React.forwardRef((props, ref) => {
                     }
 
                     if (subsClosedCount !== '1' && !hasActiveSub) {
-                        dispatch(subscriptionModalAction(true))
-                        await AsyncStorage.setItem('subscription_modal_closed_count', '1');
+                        // Delay the payment popup by 40 seconds
+                        subscriptionTimer = setTimeout(async () => {
+                            dispatch(subscriptionModalAction(true))
+                            await AsyncStorage.setItem('subscription_modal_closed_count', '1');
+                        }, 40000);
                     }
                 }
             }
@@ -918,6 +923,13 @@ const Home = React.forwardRef((props, ref) => {
             fetchPopupMessage()
             fetchVideoUrl()
             fetchBanners()
+
+            // Cleanup: clear the subscription timer when screen loses focus
+            return () => {
+                if (subscriptionTimer) {
+                    clearTimeout(subscriptionTimer);
+                }
+            };
         }, [])
     );
 

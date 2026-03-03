@@ -50,6 +50,15 @@ const InfoItem = ({ icon, label, value, colors, responsiveFontSize }: any) => (
     </View>
 );
 
+// Helper: check if a job's deadline has passed
+const isJobClosed = (item: any): boolean => {
+    const deadline = item?.job?.Application_Deadline;
+    if (!deadline) return false;
+    const deadlineDate = moment(deadline, ['YYYY-MM-DD', 'DD-MM-YYYY', 'DD MMM YYYY', 'YYYY-MM-DD HH:mm:ss'], true);
+    if (!deadlineDate.isValid()) return false;
+    return deadlineDate.endOf('day').isBefore(moment());
+};
+
 // Animated Job Card Component
 const AppliedJobCard = ({
     item,
@@ -119,6 +128,9 @@ const AppliedJobCard = ({
     };
 
     const statusColor = getStatusColor(item?.accept_reject_status);
+    const closed = isJobClosed(item);
+    const jobStatusColor = closed ? '#EF4444' : '#10B981';
+    const jobStatusLabel = closed ? (t('closed', 'Closed')) : (t('open', 'Open'));
 
     return (
         <Animated.View
@@ -173,6 +185,38 @@ const AppliedJobCard = ({
                                     : item?.accept_reject_status}
                         </Text>
                     </View>
+                    {/* Job Open/Closed Badge */}
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: jobStatusColor + '18',
+                        paddingHorizontal: responsiveFontSize(0.9),
+                        paddingVertical: responsiveFontSize(0.3),
+                        borderRadius: responsiveFontSize(0.8),
+                    }}>
+                        <View style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: jobStatusColor,
+                            marginRight: responsiveFontSize(0.4),
+                        }} />
+                        <Text style={{
+                            fontSize: responsiveFontSize(1.25),
+                            fontWeight: '700',
+                            color: jobStatusColor,
+                        }}>
+                            {jobStatusLabel}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Applied date row */}
+                <View style={{
+                    paddingHorizontal: responsiveFontSize(1.5),
+                    paddingTop: responsiveFontSize(0.5),
+                    alignItems: 'flex-end',
+                }}>
                     <Text style={{
                         fontSize: responsiveFontSize(1.35),
                         fontWeight: '500',
@@ -389,6 +433,7 @@ export default function AppliedJob() {
     const { profileCompletion, isDriver, isTransporter } = useSelector((state: any) => state?.user) || { profileCompletion: 0, isDriver: false, isTransporter: false };
 
     const headerOpacity = useRef(new Animated.Value(0)).current;
+    const tabIndicatorAnim = useRef(new Animated.Value(0)).current;
 
     const _goback = () => {
         navigation.goBack()
@@ -401,6 +446,22 @@ export default function AppliedJob() {
     const [expandedJobs, setExpandedJobs] = useState<{ [key: number]: boolean }>({});
     const [appliedJobsList, setappliedJobsList] = useState<any[]>([])
     const [loading, setloading] = useState(true)
+    const [activeTab, setActiveTab] = useState<'open' | 'closed'>('open');
+
+    // Filter jobs into open and closed based on Application_Deadline
+    const openJobs = appliedJobsList.filter(item => !isJobClosed(item));
+    const closedJobs = appliedJobsList.filter(item => isJobClosed(item));
+    const displayedJobs = activeTab === 'open' ? openJobs : closedJobs;
+
+    const switchTab = (tab: 'open' | 'closed') => {
+        setActiveTab(tab);
+        Animated.spring(tabIndicatorAnim, {
+            toValue: tab === 'open' ? 0 : 1,
+            tension: 60,
+            friction: 10,
+            useNativeDriver: true,
+        }).start();
+    };
 
     useEffect(() => {
         Animated.timing(headerOpacity, {
@@ -456,12 +517,135 @@ export default function AppliedJob() {
         }
     }
 
+    // Tab indicator translateX
+    const tabWidth = responsiveWidth(44);
+    const indicatorTranslateX = tabIndicatorAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, tabWidth],
+    });
+
     return (
         <View style={{ flex: 1, backgroundColor: colors.white }}>
             <ScreenHeader
                 title={t('appliedJobs', 'Applied Jobs')}
                 titleCount={appliedJobsList?.length || 0}
             />
+
+            {/* Open / Closed Tab Bar */}
+            <View style={{
+                flexDirection: 'row',
+                marginHorizontal: responsiveWidth(4),
+                marginTop: responsiveHeight(1),
+                marginBottom: responsiveHeight(0.5),
+                backgroundColor: colors.blackOpacity(0.05),
+                borderRadius: responsiveFontSize(1.4),
+                padding: responsiveFontSize(0.4),
+            }}>
+                {/* Animated Indicator */}
+                <Animated.View style={{
+                    position: 'absolute',
+                    top: responsiveFontSize(0.4),
+                    left: responsiveFontSize(0.4),
+                    width: tabWidth,
+                    height: '100%',
+                    borderRadius: responsiveFontSize(1.1),
+                    backgroundColor: colors.white,
+                    shadowColor: colors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3,
+                    transform: [{ translateX: indicatorTranslateX }],
+                }} />
+
+                {/* Open Tab */}
+                <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => switchTab('open')}
+                    style={{
+                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: responsiveFontSize(1.2),
+                        borderRadius: responsiveFontSize(1.1),
+                    }}
+                >
+                    <View style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: activeTab === 'open' ? '#10B981' : colors.blackOpacity(0.3),
+                        marginRight: responsiveFontSize(0.6),
+                    }} />
+                    <Text style={{
+                        fontSize: responsiveFontSize(1.7),
+                        fontWeight: activeTab === 'open' ? '700' : '500',
+                        color: activeTab === 'open' ? colors.black : colors.blackOpacity(0.45),
+                    }}>
+                        {t('open', 'Open')}
+                    </Text>
+                    <View style={{
+                        backgroundColor: activeTab === 'open' ? '#10B981' + '20' : colors.blackOpacity(0.08),
+                        paddingHorizontal: responsiveFontSize(0.7),
+                        paddingVertical: responsiveFontSize(0.15),
+                        borderRadius: responsiveFontSize(0.6),
+                        marginLeft: responsiveFontSize(0.5),
+                    }}>
+                        <Text style={{
+                            fontSize: responsiveFontSize(1.2),
+                            fontWeight: '700',
+                            color: activeTab === 'open' ? '#10B981' : colors.blackOpacity(0.4),
+                        }}>
+                            {openJobs.length}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+
+                {/* Closed Tab */}
+                <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => switchTab('closed')}
+                    style={{
+                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: responsiveFontSize(1.2),
+                        borderRadius: responsiveFontSize(1.1),
+                    }}
+                >
+                    <View style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: activeTab === 'closed' ? '#EF4444' : colors.blackOpacity(0.3),
+                        marginRight: responsiveFontSize(0.6),
+                    }} />
+                    <Text style={{
+                        fontSize: responsiveFontSize(1.7),
+                        fontWeight: activeTab === 'closed' ? '700' : '500',
+                        color: activeTab === 'closed' ? colors.black : colors.blackOpacity(0.45),
+                    }}>
+                        {t('closed', 'Closed')}
+                    </Text>
+                    <View style={{
+                        backgroundColor: activeTab === 'closed' ? '#EF4444' + '20' : colors.blackOpacity(0.08),
+                        paddingHorizontal: responsiveFontSize(0.7),
+                        paddingVertical: responsiveFontSize(0.15),
+                        borderRadius: responsiveFontSize(0.6),
+                        marginLeft: responsiveFontSize(0.5),
+                    }}>
+                        <Text style={{
+                            fontSize: responsiveFontSize(1.2),
+                            fontWeight: '700',
+                            color: activeTab === 'closed' ? '#EF4444' : colors.blackOpacity(0.4),
+                        }}>
+                            {closedJobs.length}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
 
             {/* Content */}
             {loading ? (
@@ -475,11 +659,11 @@ export default function AppliedJob() {
                         {t('loading')}...
                     </Text>
                 </View>
-            ) : appliedJobsList?.length ? (
+            ) : displayedJobs?.length ? (
                 <FlatList
                     showsHorizontalScrollIndicator={false}
                     showsVerticalScrollIndicator={false}
-                    data={appliedJobsList}
+                    data={displayedJobs}
                     renderItem={({ item, index }: any) => (
                         <AppliedJobCard
                             item={item}
@@ -519,12 +703,16 @@ export default function AppliedJob() {
                             width: responsiveFontSize(10),
                             height: responsiveFontSize(10),
                             borderRadius: responsiveFontSize(5),
-                            backgroundColor: colors.royalBlue + '10',
+                            backgroundColor: (activeTab === 'open' ? '#10B981' : '#EF4444') + '10',
                             alignItems: 'center',
                             justifyContent: 'center',
                             marginBottom: responsiveHeight(2)
                         }}>
-                            <Ionicons name="briefcase-outline" size={responsiveFontSize(4)} color={colors.royalBlue} />
+                            <Ionicons
+                                name={activeTab === 'open' ? "briefcase-outline" : "close-circle-outline"}
+                                size={responsiveFontSize(4)}
+                                color={activeTab === 'open' ? '#10B981' : '#EF4444'}
+                            />
                         </View>
                         <Text style={{
                             color: colors.black,
@@ -533,7 +721,9 @@ export default function AppliedJob() {
                             textAlign: 'center',
                             marginBottom: responsiveFontSize(1)
                         }}>
-                            {t('noJobsYet') || 'No Applications Yet'}
+                            {activeTab === 'open'
+                                ? (t('noOpenJobs', 'No Open Jobs'))
+                                : (t('noClosedJobs', 'No Closed Jobs'))}
                         </Text>
                         <Text style={{
                             color: colors.blackOpacity(0.5),
@@ -542,7 +732,9 @@ export default function AppliedJob() {
                             textAlign: 'center',
                             lineHeight: responsiveFontSize(2.4)
                         }}>
-                            {t(`youHaventAppliedAnyJobs`)}
+                            {activeTab === 'open'
+                                ? (t('noOpenJobsDesc', 'You don\'t have any open job applications right now'))
+                                : (t('noClosedJobsDesc', 'No job applications have passed their deadline yet'))}
                         </Text>
                     </View>
                 </View>
