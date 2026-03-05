@@ -30,7 +30,7 @@ class MyFirebaseMessagingService : ReactNativeFirebaseMessagingService() {
             Log.d(TAG, "✅ Handling Video Call natively...")
             
             val callerName = data["callerName"] ?: "Unknown"
-            val callId = data["callId"] ?: ""
+            val callId = data["call_id"] ?: data["callId"] ?: ""
             val channelName = data["channelName"] ?: ""
             val agoraToken = data["agoraToken"] ?: ""
 
@@ -43,6 +43,11 @@ class MyFirebaseMessagingService : ReactNativeFirebaseMessagingService() {
             )
             // DO NOT call super.onMessageReceived(remoteMessage) here.
             // This prevents the RN Firebase library from trying to start the Headless JS service.
+        } else if (data.containsKey("type") && data["type"] == "CALL_ENDED") {
+            Log.d(TAG, "🤙 CALL_ENDED received. Dismissing native call UI...")
+            IncomingCallModule.stopCallService(this.applicationContext)
+            IncomingCallModule.dismissIncomingCallActivity(this.applicationContext)
+            // No need to forward CALL_ENDED to standard RN handler if native dismisses it
         } else {
             Log.d(TAG, "Forwarding to standard RN handler...")
             super.onMessageReceived(remoteMessage)

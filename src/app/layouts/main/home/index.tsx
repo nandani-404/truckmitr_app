@@ -1,4 +1,4 @@
-import { ActivityIndicator, Animated, FlatList, ScrollView, Text, TouchableOpacity, View, Modal, Linking, PanResponder, Pressable, TouchableWithoutFeedback, LayoutAnimation, Platform, UIManager, RefreshControl, Alert, Dimensions } from 'react-native';
+import { ActivityIndicator, Animated, FlatList, ScrollView, Text, TouchableOpacity, View, Modal, Linking, PanResponder, Pressable, TouchableWithoutFeedback, LayoutAnimation, Platform, UIManager, RefreshControl, Alert, Dimensions, NativeModules } from 'react-native';
 import Reanimated, { useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate, runOnJS } from 'react-native-reanimated';
 
 import TruckerHomeScreen from '../../Trucker/TruckerHome';
@@ -543,6 +543,25 @@ const Home = React.forwardRef((props, ref) => {
 
     const { user, isDriver, isTransporter, whatsapp_link, profileCompletion, subscriptionDetails, subscriptionModal, rank, star_rating, consent_check } = useSelector((state: any) => { return state?.user }) || {};
 
+    // Full Screen Intent Permission Check (Android 14+, drivers only)
+    const [showFullScreenPermissionModal, setShowFullScreenPermissionModal] = useState(false);
+    const IncomingCallModule = NativeModules.IncomingCallModule;
+
+    useEffect(() => {
+        if (Platform.OS !== 'android' || !isDriver) return;
+        const checkPermission = async () => {
+            try {
+                const allowed = await IncomingCallModule.canUseFullScreenIntent();
+                if (!allowed) {
+                    setShowFullScreenPermissionModal(true);
+                }
+            } catch (e) {
+                console.log('Full screen intent check failed:', e);
+            }
+        };
+        checkPermission();
+    }, [isDriver]);
+
     useFocusEffect(
         useCallback(() => {
             if (consent_check === false) {
@@ -678,6 +697,10 @@ const Home = React.forwardRef((props, ref) => {
                 break;
             case 'driverkiawaz':
                 _navigateDriverKiAwazInfo();
+                break;
+            case 'driverkiawazcreatepost':
+                // @ts-ignore
+                navigation.navigate(STACKS.DRIVER_KI_AWAZ_CREATE_POST);
                 break;
             case 'calljobmanagerlist':
                 _navigateCallJobManagerList();
@@ -1434,6 +1457,110 @@ const Home = React.forwardRef((props, ref) => {
                             onClose={() => closeWelcomePopup(popupData.id)}
                             welcomeMessage={popupData.message}
                         />
+
+                        {/* Full Screen Intent Permission Modal (Android 14+, Drivers only) */}
+                        <Modal
+                            transparent={true}
+                            visible={showFullScreenPermissionModal}
+                            animationType="fade"
+                            onRequestClose={() => setShowFullScreenPermissionModal(false)}
+                        >
+                            <View style={{
+                                flex: 1,
+                                backgroundColor: 'rgba(0,0,0,0.5)',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                padding: responsiveWidth(5),
+                            }}>
+                                <View style={{
+                                    backgroundColor: 'white',
+                                    width: '100%',
+                                    maxWidth: 340,
+                                    borderRadius: 24,
+                                    padding: 24,
+                                    alignItems: 'center',
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.25,
+                                    shadowRadius: 10,
+                                    elevation: 10,
+                                }}>
+                                    <View style={{
+                                        width: 70,
+                                        height: 70,
+                                        borderRadius: 35,
+                                        backgroundColor: '#FEF3C7',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginBottom: 16,
+                                    }}>
+                                        <Ionicons name="call" size={32} color="#F59E0B" />
+                                    </View>
+
+                                    <Text style={{
+                                        fontSize: responsiveFontSize(2.2),
+                                        fontWeight: 'bold',
+                                        color: '#1F2937',
+                                        marginBottom: 8,
+                                        textAlign: 'center',
+                                    }}>
+                                        {t('enableCallScreen', 'Enable Call Screen')}
+                                    </Text>
+
+                                    <Text style={{
+                                        fontSize: responsiveFontSize(1.5),
+                                        color: '#6B7280',
+                                        textAlign: 'center',
+                                        marginBottom: 24,
+                                        lineHeight: 22,
+                                    }}>
+                                        {t('fullScreenPermissionMsg', 'To receive incoming video calls even when your phone is locked, please allow "Full Screen Notifications" for TruckMitr.')}
+                                    </Text>
+
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setShowFullScreenPermissionModal(false);
+                                            IncomingCallModule.openFullScreenIntentSettings();
+                                        }}
+                                        style={{
+                                            backgroundColor: '#1E40AF',
+                                            width: '100%',
+                                            paddingVertical: 14,
+                                            borderRadius: 12,
+                                            alignItems: 'center',
+                                            marginBottom: 12,
+                                            shadowColor: '#1E40AF',
+                                            shadowOffset: { width: 0, height: 4 },
+                                            shadowOpacity: 0.2,
+                                            shadowRadius: 8,
+                                            elevation: 4,
+                                        }}
+                                    >
+                                        <Text style={{
+                                            color: 'white',
+                                            fontSize: responsiveFontSize(1.8),
+                                            fontWeight: '600',
+                                        }}>
+                                            {t('openSettings', 'Open Settings')}
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        onPress={() => setShowFullScreenPermissionModal(false)}
+                                        style={{ paddingVertical: 10, paddingHorizontal: 20 }}
+                                    >
+                                        <Text style={{
+                                            color: '#6B7280',
+                                            fontSize: responsiveFontSize(1.7),
+                                            fontWeight: '500',
+                                        }}>
+                                            {t('later', 'Later')}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </Modal>
+
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: responsiveWidth(3), marginTop: 0 }}>
                             <View style={{}}>
                                 <Text style={{ color: colors.royalBlue, fontSize: responsiveFontSize(2.2), fontFamily: 'Inter-Bold', fontWeight: 'bold', letterSpacing: 0.5 }}>{`${t(`hi`)}, ${user?.name || ''} 👋`}</Text>
@@ -2007,7 +2134,7 @@ const Home = React.forwardRef((props, ref) => {
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 🚛 TRUCKER MODE TOGGLE CARD                    */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <TruckerModeToggle onToggle={handleStartTransition} />
+                        {/* <TruckerModeToggle onToggle={handleStartTransition} /> */}
 
                         {/* Jobs Management Section */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>

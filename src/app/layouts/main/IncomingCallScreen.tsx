@@ -3,13 +3,13 @@ import {
     NativeModules,
     PermissionsAndroid,
     Platform,
-    SafeAreaView,
     StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -39,6 +39,7 @@ const requestCallPermissions = async (): Promise<boolean> => {
 const IncomingCallScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
+    const insets = useSafeAreaInsets();
     const { IncomingCallModule } = NativeModules;
     const { user } = useSelector((state: any) => state?.user);
 
@@ -57,6 +58,8 @@ const IncomingCallScreen = () => {
     const [remoteUids, setRemoteUids] = useState<number[]>([]);
     const [joined, setJoined] = useState(false);
     const [statusText, setStatusText] = useState('Connecting...');
+    const [mutedVideoUids, setMutedVideoUids] = useState<number[]>([]);
+    const [mutedAudioUids, setMutedAudioUids] = useState<number[]>([]);
     const eventHandlerRef = useRef<IRtcEngineEventHandler | null>(null);
     const participantCount = remoteUids.length + 1;
 
@@ -112,7 +115,23 @@ const IncomingCallScreen = () => {
                 onUserOffline: (_connection, uid, reason) => {
                     console.log('[Agora][Call] onUserOffline:', uid, reason);
                     setRemoteUids(prev => prev.filter(item => item !== uid));
+                    setMutedVideoUids(prev => prev.filter(item => item !== uid));
+                    setMutedAudioUids(prev => prev.filter(item => item !== uid));
                     setStatusText('Participant left');
+                },
+                onUserMuteVideo: (_connection, uid, muted) => {
+                    console.log('[Agora][Call] onUserMuteVideo:', uid, muted);
+                    setMutedVideoUids(prev => {
+                        if (muted) return prev.includes(uid) ? prev : [...prev, uid];
+                        return prev.filter(id => id !== uid);
+                    });
+                },
+                onUserMuteAudio: (_connection, uid, muted) => {
+                    console.log('[Agora][Call] onUserMuteAudio:', uid, muted);
+                    setMutedAudioUids(prev => {
+                        if (muted) return prev.includes(uid) ? prev : [...prev, uid];
+                        return prev.filter(id => id !== uid);
+                    });
                 },
                 onError: (err, msg) => {
                     console.error('[Agora][Call] onError:', err, msg);
@@ -189,6 +208,12 @@ const IncomingCallScreen = () => {
         setRemoteUids([]);
         agoraService.stopPreview(VideoSourceType.VideoSourceCameraPrimary);
         agoraService.leaveVideoCall();
+
+        // Notify server that call ended
+        if (callId) {
+            IncomingCallModule.endCall(String(callId));
+        }
+
         IncomingCallModule.dismissIncomingCallActivity();
         IncomingCallModule.clearCallData();
         navigation.goBack();
@@ -221,13 +246,25 @@ const IncomingCallScreen = () => {
                                         : styles.remoteTileMulti,
                             ]}
                         >
-                            <RtcSurfaceView
-                                style={styles.remoteVideo}
-                                canvas={{
-                                    uid,
-                                    renderMode: RenderModeType.RenderModeHidden,
-                                }}
-                            />
+                            {mutedVideoUids.includes(uid) ? (
+                                <View style={styles.mutePlaceholder}>
+                                    <Ionicons name="videocam-off" size={40} color="#666" />
+                                    <Text style={styles.muteText}>User has turned off camera</Text>
+                                </View>
+                            ) : (
+                                <RtcSurfaceView
+                                    style={styles.remoteVideo}
+                                    canvas={{
+                                        uid,
+                                        renderMode: RenderModeType.RenderModeHidden,
+                                    }}
+                                />
+                            )}
+                            {mutedAudioUids.includes(uid) && (
+                                <View style={styles.remoteAudioMuteIcon}>
+                                    <Ionicons name="mic-off" size={18} color="#fff" />
+                                </View>
+                            )}
                         </View>
                     ))}
                 </View>
@@ -241,17 +278,30 @@ const IncomingCallScreen = () => {
                 </View>
             )}
 
-            <RtcSurfaceView
-                style={styles.localVideo}
-                zOrderMediaOverlay
-                canvas={{
-                    uid: 0,
-                    sourceType: VideoSourceType.VideoSourceCameraPrimary,
-                    renderMode: RenderModeType.RenderModeHidden,
-                }}
-            />
+            {isVideoMuted ? (
+                <View style={[styles.localVideo, styles.localMutePlaceholder, { top: insets.top + 16 }]}>
+                    <Ionicons name="videocam-off" size={24} color="#666" />
+                    <Text style={styles.localMuteText}>Camera off</Text>
+                </View>
+            ) : (
+                <RtcSurfaceView
+                    style={[styles.localVideo, { top: insets.top + 16 }]}
+                    zOrderMediaOverlay
+                    canvas={{
+                        uid: 0,
+                        sourceType: VideoSourceType.VideoSourceCameraPrimary,
+                        renderMode: RenderModeType.RenderModeHidden,
+                    }}
+                />
+            )}
 
-            <SafeAreaView style={styles.overlay}>
+            {isMuted && (
+                <View style={[styles.localAudioMuteIcon, { top: insets.top + 16 + 8, right: 16 + 8 }]}>
+                    <Ionicons name="mic-off" size={18} color="#fff" />
+                </View>
+            )}
+
+            <View style={[styles.overlay, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
                 <View style={styles.header}>
                     <Text style={styles.callerText}>{callerName || 'Video Call'}</Text>
                     <Text style={styles.statusText}>
@@ -276,7 +326,7 @@ const IncomingCallScreen = () => {
                         <Ionicons name="camera-reverse" size={24} color="#fff" />
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
+            </View>
         </View>
     );
 };
@@ -317,21 +367,19 @@ const styles = StyleSheet.create({
     localVideo: {
         position: 'absolute',
         right: 16,
-        top: 90,
         width: 120,
         height: 180,
         borderRadius: 12,
         overflow: 'hidden',
         backgroundColor: '#111',
+        zIndex: 10,
     },
     overlay: {
-        flex: 1,
+        ...StyleSheet.absoluteFillObject,
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingBottom: 24,
     },
     header: {
-        marginTop: 14,
         alignItems: 'center',
     },
     callerText: {
@@ -380,6 +428,45 @@ const styles = StyleSheet.create({
     },
     disabledButton: {
         backgroundColor: 'rgba(75,85,99,0.9)',
+    },
+    mutePlaceholder: {
+        flex: 1,
+        backgroundColor: '#111',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    muteText: {
+        color: '#666',
+        marginTop: 8,
+        fontSize: 14,
+    },
+    localMutePlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#1a1a1a',
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    localMuteText: {
+        color: '#666',
+        fontSize: 10,
+        marginTop: 4,
+    },
+    remoteAudioMuteIcon: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 6,
+        borderRadius: 15,
+        zIndex: 5,
+    },
+    localAudioMuteIcon: {
+        position: 'absolute',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 4,
+        borderRadius: 12,
+        zIndex: 15,
     },
 });
 

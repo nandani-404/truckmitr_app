@@ -35,6 +35,8 @@ export default function InAppUpdatePopup() {
                 provider: 'playStore',
                 packageName: 'com.truckmitr',
             });
+            // console.log(`currentVersion----------------`, currentVersion);
+            // console.log(`fetchedLatestVersion----------------`, fetchedLatestVersion);
 
             if (currentVersion < fetchedLatestVersion) {
                 setLatestVersion(fetchedLatestVersion);

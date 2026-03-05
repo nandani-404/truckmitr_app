@@ -2,44 +2,93 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/call_background"
-    android:padding="24dp">
+    android:background="@drawable/call_screen_bg">
 
-    <!-- Header: Caller Info -->
+    <!-- Top: App branding -->
+    <LinearLayout
+        android:id="@+id/brandingContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_videocam"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TruckMitr Video Call"
+            android:textColor="#94A3B8"
+            android:textSize="14sp"
+            android:letterSpacing="0.05"
+            android:textAllCaps="true" />
+    </LinearLayout>
+
+    <!-- Center: Caller info -->
     <LinearLayout
         android:id="@+id/callerInfoContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="60dp"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="80dp"
         android:gravity="center"
         android:orientation="vertical">
+
+        <!-- Avatar circle with initials -->
+        <FrameLayout
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginBottom="24dp">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/caller_avatar_bg" />
+
+            <TextView
+                android:id="@+id/tvCallerInitial"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="?"
+                android:textColor="#FFFFFF"
+                android:textSize="40sp"
+                android:textStyle="bold" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tvCallerName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Incoming Call"
-            android:textColor="@color/white"
-            android:textSize="32sp"
-            android:textStyle="bold" />
+            android:textColor="#F8FAFC"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
 
         <TextView
             android:id="@+id/tvCallStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="TruckMitr Video Call"
-            android:textColor="#AAAAAA"
-            android:textSize="18sp" />
+            android:text="Incoming video call..."
+            android:textColor="#64748B"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/tvTimer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:text="00:00"
-            android:textColor="@color/white"
-            android:textSize="20sp"
+            android:textColor="#94A3B8"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-medium"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -49,11 +98,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="60dp"
+        android:layout_marginBottom="64dp"
         android:gravity="center"
         android:orientation="horizontal"
-        android:weightSum="2">
+        android:paddingHorizontal="48dp">
 
+        <!-- Decline Button -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -63,20 +113,30 @@
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnDecline"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
+                android:layout_width="68dp"
+                android:layout_height="68dp"
                 android:background="@drawable/circle_button_red"
-                android:drawableTop="@android:drawable/ic_menu_close_clear_cancel"
-                android:padding="16dp" />
+                android:elevation="8dp"
+                android:stateListAnimator="@null" />
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_call_decline"
+                android:layout_marginTop="-48dp"
+                android:importantForAccessibility="no"
+                android:elevation="12dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="24dp"
                 android:text="Decline"
-                android:textColor="@color/white" />
+                android:textColor="#94A3B8"
+                android:textSize="13sp" />
         </LinearLayout>
 
+        <!-- Accept Button -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -86,18 +146,27 @@
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnAccept"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
+                android:layout_width="68dp"
+                android:layout_height="68dp"
                 android:background="@drawable/circle_button_green"
-                android:drawableTop="@android:drawable/ic_menu_call"
-                android:padding="16dp" />
+                android:elevation="8dp"
+                android:stateListAnimator="@null" />
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_call_accept"
+                android:layout_marginTop="-48dp"
+                android:importantForAccessibility="no"
+                android:elevation="12dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="24dp"
                 android:text="Accept"
-                android:textColor="@color/white" />
+                android:textColor="#94A3B8"
+                android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 
@@ -107,25 +176,34 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="60dp"
+        android:layout_marginBottom="64dp"
         android:gravity="center"
         android:orientation="vertical"
         android:visibility="gone">
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnEndCall"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
+            android:layout_width="68dp"
+            android:layout_height="68dp"
             android:background="@drawable/circle_button_red"
-            android:drawableTop="@android:drawable/ic_menu_close_clear_cancel"
-            android:padding="16dp" />
+            android:elevation="8dp"
+            android:stateListAnimator="@null" />
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_call_decline"
+            android:layout_marginTop="-48dp"
+            android:importantForAccessibility="no"
+            android:elevation="12dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="24dp"
             android:text="End Call"
-            android:textColor="@color/white" />
+            android:textColor="#94A3B8"
+            android:textSize="13sp" />
     </LinearLayout>
 
 </RelativeLayout>

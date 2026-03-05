@@ -16,9 +16,45 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.truckmitr.utils.ApiUtils
 
 class IncomingCallModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
+
+    @ReactMethod
+    fun endCall(callId: String) {
+        Log.d(TAG, "endCall called from JS: callId=$callId")
+        ApiUtils.endCall(reactContext, callId)
+    }
+
+    @ReactMethod
+    fun canUseFullScreenIntent(promise: Promise) {
+        if (Build.VERSION.SDK_INT < 34) {
+            promise.resolve(true)
+            return
+        }
+        val notificationManager = reactContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        promise.resolve(notificationManager.canUseFullScreenIntent())
+    }
+
+    @ReactMethod
+    fun openFullScreenIntentSettings() {
+        if (Build.VERSION.SDK_INT >= 34) {
+            try {
+                val intent = Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
+                intent.data = android.net.Uri.parse("package:${reactContext.packageName}")
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                reactContext.startActivity(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to open Full Screen Intent settings", e)
+                // Fallback to app details
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                intent.data = android.net.Uri.parse("package:${reactContext.packageName}")
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                reactContext.startActivity(intent)
+            }
+        }
+    }
 
     companion object {
         const val TAG = "IncomingCallModule"
@@ -38,6 +74,14 @@ class IncomingCallModule(private val reactContext: ReactApplicationContext) :
             agoraToken: String
         ) {
             Log.d(TAG, "🔔 showIncomingCallNotification starting for: $callerName (callId: $callId)")
+
+            // Store call data globally so RN can retrieve it via getCallData()
+            activeCallData = Bundle().apply {
+                putString("caller_name", callerName)
+                putString("call_id", callId)
+                putString("channel_name", channelName)
+                putString("agora_token", agoraToken)
+            }
 
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             createNotificationChannel(notificationManager)
@@ -81,56 +125,36 @@ class IncomingCallModule(private val reactContext: ReactApplicationContext) :
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            // Start the foreground service and pass call data via Intent extras.
-            // The service builds the notification internally and calls startForeground() immediately.
-            /*
+            // Start the non-dismissable foreground service instead of just posting a notification
             try {
                 val serviceIntent = Intent(context, IncomingCallService::class.java).apply {
-                    action = IncomingCallService.ACTION_START
+                    action = "START"
                     putExtra("callerName", callerName)
                     putExtra("callId", callId)
                     putExtra("channelName", channelName)
                     putExtra("agoraToken", agoraToken)
                 }
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(serviceIntent)
                 } else {
                     context.startService(serviceIntent)
                 }
-                Log.d(TAG, "✅ Foreground service started with call notification")
+                Log.d(TAG, "✅ IncomingCallService started successfully")
             } catch (e: Exception) {
-                Log.e(TAG, "⚠️ Foreground service failed, falling back: ${e.message}")
-                // Fallback: post notification directly (will be swipeable but at least it shows)
-                val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_notification)
-                    .setContentTitle("Incoming Video Call")
-                    .setContentText("$callerName is calling...")
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setCategory(NotificationCompat.CATEGORY_CALL)
-                    .setOngoing(true)
-                    .setAutoCancel(false)
-                    .setSound(ringtoneUri)
-                    .setFullScreenIntent(fullScreenPending, true)
-                    .addAction(android.R.drawable.ic_menu_call, "✅ Accept", acceptPending)
-                    .addAction(android.R.drawable.ic_menu_close_clear_cancel, "❌ Decline", declinePending)
-                    .setTimeoutAfter(30000)
-                    .build()
-                notificationManager.notify(NOTIFICATION_ID, notification)
+                Log.e(TAG, "❌ Failed to start IncomingCallService: ${e.message}")
             }
-            */
         }
 
         /**
          * Stops the foreground service and removes the notification.
          */
         fun stopCallService(context: Context) {
-            /*
             val serviceIntent = Intent(context, IncomingCallService::class.java).apply {
                 action = "STOP"
             }
             context.startService(serviceIntent)
-            */
+            Log.d(TAG, "🛑 Stop signal sent to IncomingCallService")
         }
 
         private fun createNotificationChannel(notificationManager: NotificationManager) {
@@ -158,6 +182,15 @@ class IncomingCallModule(private val reactContext: ReactApplicationContext) :
                 }
                 notificationManager.createNotificationChannel(channel)
             }
+        }
+
+        /**
+         * Sends a broadcast to dismiss the IncomingCallActivity.
+         */
+        fun dismissIncomingCallActivity(context: Context) {
+            val intent = Intent("com.truckmitr.DISMISS_CALL_ACTIVITY")
+            context.sendBroadcast(intent)
+            Log.d(TAG, "Dismiss broadcast sent from static helper")
         }
     }
 

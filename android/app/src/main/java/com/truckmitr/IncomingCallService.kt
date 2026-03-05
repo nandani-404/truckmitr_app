@@ -28,11 +28,23 @@ class IncomingCallService : Service() {
         const val ACTION_START = "START"
     }
 
+    private var callId: String? = null
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val timeoutRunnable = Runnable {
+        Log.d(TAG, "Call timed out after 30s, sending rejection for: $callId")
+        callId?.let { id ->
+            com.truckmitr.utils.ApiUtils.rejectCall(this, id)
+        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
 
         if (action == ACTION_STOP) {
             Log.d(TAG, "Stopping foreground service")
+            handler.removeCallbacks(timeoutRunnable)
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
@@ -40,15 +52,19 @@ class IncomingCallService : Service() {
 
         // Action is START or default
         val callerName = intent?.getStringExtra("callerName") ?: "Unknown"
-        val callId = intent?.getStringExtra("callId") ?: ""
+        val currentCallId = intent?.getStringExtra("callId") ?: ""
         val channelName = intent?.getStringExtra("channelName") ?: ""
         val agoraToken = intent?.getStringExtra("agoraToken") ?: ""
 
-        Log.d(TAG, "Starting foreground service for call: $callId")
+        this.callId = currentCallId
+        Log.d(TAG, "Starting foreground service for call: $currentCallId")
         
-        val notification = buildCallNotification(callerName, callId, channelName, agoraToken)
+        val notification = buildCallNotification(callerName, currentCallId, channelName, agoraToken)
 
-        /*
+        // Set timeout to reject if user doesn't interact
+        handler.removeCallbacks(timeoutRunnable)
+        handler.postDelayed(timeoutRunnable, 30000)
+
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startForeground(IncomingCallModule.NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE)
@@ -60,10 +76,8 @@ class IncomingCallService : Service() {
             Log.d(TAG, "✅ startForeground called successfully")
         } catch (e: Exception) {
             Log.e(TAG, "❌ Failed to startForeground: ${e.message}")
-            // Even if startForeground fails, we must try to stop self or it might hang
             stopSelf()
         }
-        */
 
         return START_NOT_STICKY
     }
@@ -137,6 +151,7 @@ class IncomingCallService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacks(timeoutRunnable)
         Log.d(TAG, "Service destroyed")
     }
 }

@@ -4075,5 +4075,10 @@
     "consent_pending": "Consent Pending",
     "tap_to_check_status": "Tap to check status",
     "select_route_first": "Please select a route first",
-    "live_color_tracking": "Live Color Tracking"
+    "live_color_tracking": "Live Color Tracking",
+    "reel_live_title": "Congratulations! 🎉",
+    "reel_live_status": "The reel posted by you is now live!",
+    "reel_live_benefit": "You have earned 2 jobs credits to apply for jobs based on your subscription.",
+    "reel_live_condition": "Note: These credits must be used within a 7-day period.",
+    "reel_live_button": "Apply Now"
 }

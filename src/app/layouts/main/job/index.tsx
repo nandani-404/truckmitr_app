@@ -30,7 +30,7 @@ import LinearGradient from 'react-native-linear-gradient';
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 // Premium Success Overlay Component
-const SuccessOverlay = ({ colors, responsiveHeight, responsiveWidth, responsiveFontSize, t }: any) => {
+const SuccessOverlay = ({ colors, responsiveHeight, responsiveWidth, responsiveFontSize, t, message }: any) => {
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const checkScale = useRef(new Animated.Value(0)).current;
   const checkOpacity = useRef(new Animated.Value(0)).current;
@@ -261,7 +261,7 @@ const SuccessOverlay = ({ colors, responsiveHeight, responsiveWidth, responsiveF
             marginBottom: responsiveFontSize(0.8),
           }}
         >
-          {t('applicationSubmitted') || 'Application Submitted!'}
+          {t('statusSuccess', 'Success!')}
         </Text>
         <Text
           style={{
@@ -272,10 +272,216 @@ const SuccessOverlay = ({ colors, responsiveHeight, responsiveWidth, responsiveF
             paddingHorizontal: responsiveFontSize(4),
           }}
         >
-          {t('applicationSuccessMessage') || 'Your job application has been sent successfully'}
+          {message || t('applicationSuccessMessage') || 'Your job application has been sent successfully'}
         </Text>
       </Animated.View>
     </Animated.View>
+  );
+};
+
+// Free Credits Info Modal Component
+const FreeCreditsInfoModal = ({ visible, onClose, creditData, colors, responsiveFontSize, responsiveHeight, responsiveWidth, t }: any) => {
+  if (!visible || !creditData) return null;
+
+  const applied = creditData.jobs_applied_in_7_days || 0;
+  const allowed = creditData.jobs_allowed_in_7_days || 0;
+  const remaining = allowed - applied;
+  const expiryDate = creditData.campaign_expiry_date
+    ? moment(creditData.campaign_expiry_date).format('DD MMM YYYY')
+    : '';
+
+  return (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={visible}
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.55)',
+      }}>
+        <View style={{
+          width: responsiveWidth(88),
+          backgroundColor: colors.white,
+          borderRadius: responsiveFontSize(2.5),
+          overflow: 'hidden',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.25,
+          shadowRadius: 20,
+          elevation: 15,
+        }}>
+          {/* Header Gradient */}
+          <LinearGradient
+            colors={[colors.royalBlue, '#4f46e5']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              paddingVertical: responsiveFontSize(3),
+              paddingHorizontal: responsiveFontSize(2.5),
+              alignItems: 'center',
+            }}
+          >
+            <View style={{
+              width: responsiveFontSize(8),
+              height: responsiveFontSize(8),
+              borderRadius: responsiveFontSize(4),
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: responsiveFontSize(1.5),
+            }}>
+              <MaterialCommunityIcons name="gift-outline" size={responsiveFontSize(4)} color="#fff" />
+            </View>
+            <Text style={{
+              fontSize: responsiveFontSize(2.4),
+              fontWeight: '700',
+              color: '#fff',
+              textAlign: 'center',
+              letterSpacing: -0.3,
+            }}>
+              {t('freeCredits', 'Free Job Credits!')}
+            </Text>
+            <Text style={{
+              fontSize: responsiveFontSize(1.5),
+              fontWeight: '500',
+              color: 'rgba(255,255,255,0.85)',
+              textAlign: 'center',
+              marginTop: responsiveFontSize(0.5),
+            }}>
+              {t('earnedByPosting', 'Earned by posting your reel')}
+            </Text>
+          </LinearGradient>
+
+          {/* Body */}
+          <View style={{ padding: responsiveFontSize(2.5) }}>
+            {/* Credit Stats */}
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+              marginBottom: responsiveFontSize(2.5),
+            }}>
+              {/* Used */}
+              <View style={{ alignItems: 'center' }}>
+                <View style={{
+                  width: responsiveFontSize(6),
+                  height: responsiveFontSize(6),
+                  borderRadius: responsiveFontSize(3),
+                  backgroundColor: colors.royalBlue + '15',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: responsiveFontSize(0.8),
+                }}>
+                  <Text style={{
+                    fontSize: responsiveFontSize(2.8),
+                    fontWeight: '800',
+                    color: colors.royalBlue,
+                  }}>{applied}</Text>
+                </View>
+                <Text style={{
+                  fontSize: responsiveFontSize(1.4),
+                  fontWeight: '600',
+                  color: colors.blackOpacity(0.5),
+                }}>{t('used', 'Used')}</Text>
+              </View>
+
+              {/* Remaining */}
+              <View style={{ alignItems: 'center' }}>
+                <View style={{
+                  width: responsiveFontSize(6),
+                  height: responsiveFontSize(6),
+                  borderRadius: responsiveFontSize(3),
+                  backgroundColor: '#10b981' + '15',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: responsiveFontSize(0.8),
+                }}>
+                  <Text style={{
+                    fontSize: responsiveFontSize(2.8),
+                    fontWeight: '800',
+                    color: '#10b981',
+                  }}>{remaining >= 0 ? remaining : 0}</Text>
+                </View>
+                <Text style={{
+                  fontSize: responsiveFontSize(1.4),
+                  fontWeight: '600',
+                  color: colors.blackOpacity(0.5),
+                }}>{t('remaining', 'Remaining')}</Text>
+              </View>
+
+              {/* Total */}
+              <View style={{ alignItems: 'center' }}>
+                <View style={{
+                  width: responsiveFontSize(6),
+                  height: responsiveFontSize(6),
+                  borderRadius: responsiveFontSize(3),
+                  backgroundColor: '#f59e0b' + '15',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: responsiveFontSize(0.8),
+                }}>
+                  <Text style={{
+                    fontSize: responsiveFontSize(2.8),
+                    fontWeight: '800',
+                    color: '#f59e0b',
+                  }}>{allowed}</Text>
+                </View>
+                <Text style={{
+                  fontSize: responsiveFontSize(1.4),
+                  fontWeight: '600',
+                  color: colors.blackOpacity(0.5),
+                }}>{t('total', 'Total')}</Text>
+              </View>
+            </View>
+
+            {/* Expiry Info */}
+            {expiryDate ? (
+              <View style={{
+                backgroundColor: colors.blackOpacity(0.04),
+                borderRadius: responsiveFontSize(1.2),
+                padding: responsiveFontSize(1.5),
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: responsiveFontSize(2),
+              }}>
+                <FontAwesome name="calendar" size={14} color={colors.royalBlue} style={{ marginRight: responsiveFontSize(1) }} />
+                <Text style={{
+                  fontSize: responsiveFontSize(1.5),
+                  color: colors.blackOpacity(0.6),
+                  fontWeight: '500',
+                  flex: 1,
+                }}>
+                  {t('creditsValidTill', 'Credits valid till')} {expiryDate}
+                </Text>
+              </View>
+            ) : null}
+
+            {/* Close Button */}
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => [{
+                backgroundColor: colors.royalBlue,
+                paddingVertical: responsiveFontSize(1.6),
+                borderRadius: responsiveFontSize(1.2),
+                alignItems: 'center',
+                opacity: pressed ? 0.85 : 1,
+              }]}
+            >
+              <Text style={{
+                color: '#fff',
+                fontSize: responsiveFontSize(1.8),
+                fontWeight: '700',
+              }}>{t('gotIt', 'Got It!')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 };
 
@@ -918,6 +1124,9 @@ export default function AvailableJob() {
 
   const { isDriver, subscriptionDetails, subscriptionModal } = useSelector((state: any) => { return state?.user })
 
+  const [resultMessage, setResultMessage] = useState('')
+  const [showFreeCreditsModal, setShowFreeCreditsModal] = useState(false)
+  const [freeCreditData, setFreeCreditData] = useState<any>(null)
   const [availableJobsList, setavailableJobsList] = useState<any>()
   const [filterModel, setfilterModel] = useState(false)
   const [loading, setloading] = useState(true)
@@ -998,40 +1207,92 @@ export default function AvailableJob() {
     navigation.navigate(STACKS.APPLIED_JOB)
   }
 
-  const _applyJob = async (id: any) => {
-    if (!validate(id)) return;
-    if (subscriptionDetails?.showSubscriptionModel && isDriver) {
-      !subscriptionModal && dispatch(subscriptionModalAction(true))
-    } else {
-      try {
-        setloadingApplyJob(id)
-        const FormData = require('form-data');
-        let data = new FormData();
-        data.append('consent_visible_transporter', checkBoxSelect[id] ? 1 : 0);
+  // const _applyJob = async (id: any) => {
+  //   if (!validate(id)) return;
+  //   if (subscriptionDetails?.showSubscriptionModel && isDriver) {
+  //     !subscriptionModal && dispatch(subscriptionModalAction(true))
+  //   } else {
+  //     try {
+  //       setloadingApplyJob(id)
+  //       const FormData = require('form-data');
+  //       let data = new FormData();
+  //       data.append('consent_visible_transporter', checkBoxSelect[id] ? 1 : 0);
 
-        const response: any = await axiosInstance.post(END_POINTS?.APPLY_JOB(id), data);
-        if (response?.data?.status) {
-          setshowLottie(true)
-          setTimeout(() => {
-            setshowLottie(false)
-          }, 2000);
-        } else {
-          if (response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
-            dispatch(subscriptionModalAction(true));
+  //       const response: any = await axiosInstance.post(END_POINTS?.APPLY_JOB(id), data);
+  //       if (response?.data?.status) {
+  //         setshowLottie(true)
+  //         setTimeout(() => {
+  //           setshowLottie(false)
+  //         }, 2000);
+  //       } else {
+  //         if (response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
+  //           dispatch(subscriptionModalAction(true));
+  //         }
+  //         showToast(response?.data?.message)
+  //       }
+  //       _fetchAllAvailableJobs()
+  //     } catch (error: any) {
+  //       console.error("Error searching jobs:", error);
+  //       if (error?.response?.status === 403 || error?.response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
+  //         dispatch(subscriptionModalAction(true));
+  //       }
+  //     } finally {
+  //       setloadingApplyJob(-1)
+  //     }
+  //   }
+  // }
+
+
+  const _applyJob = async (id: any) => {
+    try {
+      setloadingApplyJob(id)
+      const FormData = require('form-data');
+      let data = new FormData();
+      data.append('consent_visible_transporter', checkBoxSelect[id] ? 1 : 0);
+
+      const response: any = await axiosInstance.post(END_POINTS?.APPLY_JOB(id), data);
+
+      if (response?.data?.status) {
+        const resData = response.data.data;
+        const hasCampaignCredits = resData?.campaign_expiry_date && resData?.jobs_allowed_in_7_days;
+
+        setResultMessage(response.data.message);
+        setshowLottie(true)
+        setTimeout(() => {
+          setshowLottie(false)
+          setResultMessage('');
+          if (hasCampaignCredits) {
+            setFreeCreditData(resData);
+            setShowFreeCreditsModal(true);
           }
-          showToast(response?.data?.message)
-        }
-        _fetchAllAvailableJobs()
-      } catch (error: any) {
-        console.error("Error searching jobs:", error);
-        if (error?.response?.status === 403 || error?.response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
+        }, 4000);
+      } else {
+        const msg = response?.data?.message;
+        if (
+          msg === "You have no subscription." ||
+          msg?.includes("reached your") ||
+          response?.status === 403
+        ) {
           dispatch(subscriptionModalAction(true));
         }
-      } finally {
-        setloadingApplyJob(-1)
+        showToast(msg)
       }
+      _fetchAllAvailableJobs()
+    } catch (error: any) {
+      console.error("Error searching jobs:", error);
+      const errorMsg = error?.response?.data?.message || error?.message;
+
+      if (error?.response?.status === 403 || errorMsg?.includes("reached your job application limit") || errorMsg === "You have no subscription.") {
+        // showToast(errorMsg);
+        dispatch(subscriptionModalAction(true));
+      } else {
+        showToast(errorMsg);
+      }
+    } finally {
+      setloadingApplyJob(-1)
     }
   }
+
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.white }}>
@@ -1172,6 +1433,7 @@ export default function AvailableJob() {
           responsiveWidth={responsiveWidth}
           responsiveFontSize={responsiveFontSize}
           t={t}
+          message={resultMessage}
         />
       )}
 
@@ -1234,6 +1496,21 @@ export default function AvailableJob() {
           </View>
         </View>
       </Modal>
+
+      {/* Free Credits Info Modal */}
+      <FreeCreditsInfoModal
+        visible={showFreeCreditsModal}
+        onClose={() => {
+          setShowFreeCreditsModal(false);
+          setFreeCreditData(null);
+        }}
+        creditData={freeCreditData}
+        colors={colors}
+        responsiveFontSize={responsiveFontSize}
+        responsiveHeight={responsiveHeight}
+        responsiveWidth={responsiveWidth}
+        t={t}
+      />
 
       <Subscription />
     </View>

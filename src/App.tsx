@@ -12,6 +12,7 @@ import { initAnalyticsWithDeviceInfo } from './app/functions/init.analytics';
 import { AppEventsLogger, Settings } from 'react-native-fbsdk-next';
 import { LogBox } from 'react-native';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { initPusher, connectPusher } from './services/pusher';
 
 export default function App() {
 
@@ -24,6 +25,18 @@ export default function App() {
         Settings.setDataProcessingOptions([]);
         Settings.initializeSDK();
         initAnalyticsWithDeviceInfo();
+
+        // Initialize Pusher at root level
+        const setupPusher = async () => {
+            try {
+                await initPusher();
+                await connectPusher();
+                console.log('✅ Global Pusher connected');
+            } catch (error) {
+                console.error('❌ Global Pusher init error:', error);
+            }
+        };
+        setupPusher();
     }, []);
 
 

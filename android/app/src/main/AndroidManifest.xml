@@ -6,13 +6,18 @@
         android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" /> -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
     <!-- Forcibly remove Foreground Service permissions to satisfy Play Console -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" tools:node="remove" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
+    <!-- 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
@@ -143,18 +148,16 @@
         </service>
 
         <!-- ✅ Foreground service for non-dismissable call notification -->
-        <!-- <service
+        <service
             android:name=".IncomingCallService"
             android:foregroundServiceType="shortService"
-            android:exported="false" /> -->
+            android:exported="false" />
 
-        <!-- Forcibly remove Agora screen sharing services that require MEDIA_PROJECTION -->
+        <!-- Restore Agora screen sharing services -->
         <service
-            android:name="io.agora.rtc2.extensions.MediaProjectionMgr$LocalScreenSharingService"
-            tools:node="remove" />
+            android:name="io.agora.rtc2.extensions.MediaProjectionMgr$LocalScreenSharingService" />
         <activity
-            android:name="io.agora.rtc2.extensions.MediaProjectionMgr$LocalScreenCaptureAssistantActivity"
-            tools:node="remove" />
+            android:name="io.agora.rtc2.extensions.MediaProjectionMgr$LocalScreenCaptureAssistantActivity" />
 
         <!--  Google Map  -->
         <meta-data

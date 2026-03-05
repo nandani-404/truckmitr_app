@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { STACKS } from '@truckmitr/stacks/stacks';
 import Bottom from './tabs/bottom';
-import { AddDriver, AddJob, AddLoad, AppliedJob, AvailableJob, ContactUs, Dashboard, DriverDrivingDetailsByTransporter, DriverList, DriverProfileEditByTransporter, DriverUploadDocumentsByTransporter, DrivingDetails, DrivingDetailsTransporter, ExcelImport, HealthHygiene, JobStep2, JobStep3, LanguageMain, LocationSearch, LocationMap, Modules, Notification, PaymentSuccess, Player, PreferredColor, Privacy, Terms, ProfileEdit, ProfileEditNew, ProfileEditTransporter, Quiz, QuizResult, Rating, Search, Settings, SuitsJob, TransporterAppliedJob, TransporterVerificationScreen, UploadDocuments, UploadDocumentsTransporter, ViewJobs, DLVerification, DriverKiAwazInfo, CallJobManagerList, CallJobManagerInfo, ChallanCheckInfo, ChallanCheckResult, CourtCheckInfo, DigitalAddressCheckInfo, DriverInvites, RcCheckInfo, IdCheckInfo, Convoy, Training } from '@truckmitr/layouts/index';
+import { AddDriver, AddJob, AddLoad, AppliedJob, AvailableJob, ContactUs, Dashboard, DriverDrivingDetailsByTransporter, DriverList, DriverProfileEditByTransporter, DriverUploadDocumentsByTransporter, DrivingDetails, DrivingDetailsTransporter, ExcelImport, HealthHygiene, JobStep2, JobStep3, LanguageMain, LocationSearch, LocationMap, Modules, Notification, PaymentSuccess, Player, PreferredColor, Privacy, Terms, ProfileEdit, ProfileEditNew, ProfileEditTransporter, Quiz, QuizResult, Rating, Search, Settings, SuitsJob, TransporterAppliedJob, TransporterVerificationScreen, UploadDocuments, UploadDocumentsTransporter, ViewJobs, DLVerification, DriverKiAwazInfo, CallJobManagerList, CallJobManagerInfo, ChallanCheckInfo, ChallanCheckResult, CourtCheckInfo, DigitalAddressCheckInfo, DriverInvites, RcCheckInfo, IdCheckInfo, Convoy, Training, CreatePostScreen } from '@truckmitr/layouts/index';
 import { setupFirebaseNotifications, initializeNotificationChannel } from '@truckmitr/src/utils/notification';
 import { DocumentUploadScreen, JobSummary, VerificationStatusScreen, } from '../app/layouts/main';
 import EditJob from '../app/layouts/main/edit-job';
@@ -236,6 +236,7 @@ export default function Main() {
       <Stack.Screen name={STACKS.EDIT_JOB} component={EditJob} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.PROFILE_OVERVIEW} component={ProfileOverview} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.INCOMING_CALL} component={IncomingCallScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+      <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_CREATE_POST} component={CreatePostScreen} options={{ animation: 'slide_from_bottom' }} />
 
 
       {/* DriverInvites usually mapped to STACKS.DRIVERINVITES, but checking stacks definition: invites */}

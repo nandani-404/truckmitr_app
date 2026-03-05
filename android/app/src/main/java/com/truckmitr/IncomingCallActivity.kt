@@ -20,6 +20,7 @@ import android.media.RingtoneManager
 import android.os.Vibrator
 import android.os.VibrationEffect
 import java.util.*
+import com.truckmitr.utils.ApiUtils
 
 class IncomingCallActivity : Activity() {
 
@@ -76,6 +77,10 @@ class IncomingCallActivity : Activity() {
         val callerName = intent.getStringExtra("caller_name") ?: "Unknown"
         val tvCallerName = findViewById<TextView>(R.id.tvCallerName)
         tvCallerName.text = callerName
+
+        // Set caller initial in avatar
+        val tvCallerInitial = findViewById<TextView>(R.id.tvCallerInitial)
+        tvCallerInitial.text = if (callerName.isNotEmpty()) callerName.first().uppercase() else "?"
 
         // Cancel the notification and stop the foreground service
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -150,12 +155,17 @@ class IncomingCallActivity : Activity() {
         val agoraToken = intent.getStringExtra("agora_token") ?: ""
 
         Log.d(TAG, "Call accepted: caller=$callerName, callId=$callId")
+        
+        // Notify server that call was accepted
+        if (callId.isNotEmpty()) {
+            ApiUtils.acceptCall(this, callId)
+        }
 
         // Switch UI to Active State
         findViewById<LinearLayout>(R.id.layoutIncoming).visibility = View.GONE
         findViewById<LinearLayout>(R.id.layoutActive).visibility = View.VISIBLE
         findViewById<TextView>(R.id.tvTimer).visibility = View.VISIBLE
-        findViewById<TextView>(R.id.tvCallStatus).text = "In Call"
+        findViewById<TextView>(R.id.tvCallStatus).text = "Connected"
         
         startTimer()
 
@@ -228,7 +238,20 @@ class IncomingCallActivity : Activity() {
     private fun handleDecline() {
         stopRingtone()
         val callId = intent.getStringExtra("call_id") ?: ""
-        Log.d(TAG, "Call declined/ended: callId=$callId")
+        
+        val layoutIncoming = findViewById<LinearLayout>(R.id.layoutIncoming)
+        val isIncoming = layoutIncoming.visibility == View.VISIBLE
+
+        Log.d(TAG, "Call declined/ended: callId=$callId, isIncoming=$isIncoming")
+        
+        if (callId.isNotEmpty()) {
+            if (isIncoming) {
+                ApiUtils.rejectCall(this, callId)
+            } else {
+                ApiUtils.endCall(this, callId)
+            }
+        }
+        
         timer?.cancel()
         IncomingCallModule.activeCallData = null
         finish()

@@ -1,6 +1,10 @@
-import { StatusBar, useColorScheme, View, Image, AppState, Linking, TouchableOpacity, Text, NativeModules } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { StatusBar, useColorScheme, View, Image, AppState, Linking, TouchableOpacity, Text, NativeModules, DeviceEventEmitter, Modal, ActivityIndicator } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import React, { useEffect, useRef, useState, createRef } from 'react';
+import moment from 'moment';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { darkTheme, lightTheme } from '@truckmitr/res/colors';
 import { Auth, Main, TruckerMain, ForemanMain, AssociateMain, DhabhaMain, ProfileCompletionStack, ForemanProfileCompletionStack, AssociateProfileCompletionStack, DhabhaProfileCompletionStack, PunctureMain, ShipperMain, ShipperProfileCompletionStack } from '@truckmitr/stacks/index';
 import AnimatedLayoutSwitcher from '../components/AnimatedLayoutSwitcher';
@@ -40,14 +44,213 @@ export const setNavigationReady = (ready: boolean) => {
   isNavigationReady = ready;
 };
 
+const routeNameRef: any = createRef();
+
+interface ReelLivePopupProps {
+  visible: boolean;
+  onAcknowledge: () => void;
+  t: (key: string) => string;
+  loading?: boolean;
+}
+
+const ReelLivePopup = ({ visible, onAcknowledge, t, loading = false }: ReelLivePopupProps) => {
+  if (!visible) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      statusBarTranslucent
+    >
+      <View style={{
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20
+      }}>
+        {/* Main Card */}
+        <View style={{
+          backgroundColor: '#fff',
+          borderRadius: 24,
+          width: '100%',
+          overflow: 'visible',
+          elevation: 10,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.3,
+          shadowRadius: 10,
+          paddingTop: 40,
+          paddingBottom: 30,
+          paddingHorizontal: 25,
+          alignItems: 'center',
+        }}>
+          {/* Top Logo - Fixed Position */}
+          <Image
+            source={require('../res/images/truckmitr_horizontal.png')}
+            style={{
+              width: 100,
+              height: 40,
+              position: 'absolute',
+              top: 10,
+              right: 15,
+              opacity: 0.15,
+            }}
+            resizeMode="contain"
+          />
+
+          {/* Icon Container with Radiant Glow */}
+          <LinearGradient
+            colors={['#056CE2', '#084489']}
+            style={{
+              width: 100,
+              height: 100,
+              borderRadius: 50,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 25,
+              shadowColor: '#084489',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.5,
+              shadowRadius: 15,
+              elevation: 12,
+            }}
+          >
+            <View style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+              <Ionicons
+                name="play-circle"
+                size={60}
+                color="#fff"
+              />
+            </View>
+          </LinearGradient>
+
+          {/* Message Content */}
+          <View style={{ alignItems: 'center', marginBottom: 25, width: '100%' }}>
+            <Text style={{
+              fontSize: 24,
+              fontWeight: 'bold',
+              color: '#1a1a1a',
+              marginBottom: 5,
+              textAlign: 'center',
+            }}>
+              {t('reel_live_title')}
+            </Text>
+
+            <Text style={{
+              fontSize: 16,
+              color: '#333',
+              textAlign: 'center',
+              marginBottom: 15,
+              fontWeight: '600',
+            }}>
+              {t('reel_live_status')}
+            </Text>
+
+            <View style={{
+              backgroundColor: '#E3F2FD',
+              paddingHorizontal: 20,
+              paddingVertical: 15,
+              borderRadius: 15,
+              borderWidth: 1,
+              borderColor: '#BBDEFB',
+              width: '100%',
+              marginBottom: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}>
+              <Ionicons name="gift-outline" size={24} color="#084489" style={{ marginRight: 12 }} />
+              <Text style={{
+                fontSize: 14,
+                color: '#084489',
+                flex: 1,
+                fontWeight: 'bold',
+                lineHeight: 18,
+              }}>
+                {t('reel_live_benefit')}
+              </Text>
+            </View>
+
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 10,
+            }}>
+              <Ionicons name="time-outline" size={14} color="#666" style={{ marginRight: 6 }} />
+              <Text style={{
+                fontSize: 12,
+                color: '#666',
+                textAlign: 'left',
+                fontStyle: 'italic',
+              }}>
+                {t('reel_live_condition')}
+              </Text>
+            </View>
+          </View>
+
+          {/* Action Button */}
+          <TouchableOpacity
+            onPress={onAcknowledge}
+            activeOpacity={0.8}
+            style={{ width: '100%' }}
+            disabled={loading}
+          >
+            <LinearGradient
+              colors={['#056CE2', '#084489']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                paddingVertical: 16,
+                borderRadius: 14,
+                alignItems: 'center',
+                shadowColor: '#084489',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 5,
+              }}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={{
+                  color: '#fff',
+                  fontSize: 18,
+                  fontWeight: 'bold',
+                  letterSpacing: 0.5,
+                }}>
+                  {t('reel_live_button')}
+                </Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 export default function Routes() {
   // Start Global Location Tracking
   useDriverLocationTracking();
 
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const colorScheme = useColorScheme();
   const { responsiveWidth, responsiveHeight } = useResponsiveScale();
+
+  const [showReelPopup, setShowReelPopup] = useState(false);
+  const [isAcknowledging, setIsAcknowledging] = useState(false);
+  const [reelPostData, setReelPostData] = useState<any>(null);
+
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
   const { isAuthenticated, subscriptionModal, user, profileRequiredFieldsStatus } = useSelector((state: any) => state?.user);
   const { selectedModule } = useSelector((state: any) => state?.app);
@@ -286,6 +489,49 @@ export default function Routes() {
     };
   }, []);
 
+  // -------------------------------
+  // 🔹 Fetch Pending Popup for Drivers
+  // -------------------------------
+  useEffect(() => {
+    const currentRole = String(user?.role || user?.data?.role || '').toLowerCase();
+    if (isAuthenticated && currentRole === 'driver') {
+      const fetchPendingPopup = async () => {
+        try {
+          const response: any = await axiosInstance.get('api/jobs/posts/pending-popup');
+          console.log('📋 Pending Popup API Response 2:', response?.data);
+          if (response?.data?.success && response?.data?.data) {
+            setReelPostData(response.data.data);
+            setShowReelPopup(true);
+          }
+        } catch (error: any) {
+          console.error('❌ Pending Popup API Error:', error?.response?.data || error?.message);
+        }
+      };
+      fetchPendingPopup();
+    }
+  }, [isAuthenticated, user?.role, user?.data?.role]);
+
+  const handleReelAcknowledge = async () => {
+    try {
+      if (reelPostData?.id) {
+        setIsAcknowledging(true);
+        console.log('🚀 Acknowledging reel post:', reelPostData?.id);
+        await axiosInstance.post(`api/jobs/posts/${reelPostData.id}/acknowledge`, {
+          acknowledged_at: moment().format('YYYY-MM-DD HH:mm:ss')
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error acknowledging reel:', error);
+    } finally {
+      setIsAcknowledging(false);
+      setShowReelPopup(false);
+      // Redirect to Jobs screen after acknowledgment
+      if (navigationRef.current?.isReady()) {
+        navigationRef.current?.navigate(STACKS.JOB as never);
+      }
+    }
+  };
+
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       // Track when app goes to background
@@ -488,30 +734,49 @@ export default function Routes() {
   // 🔹 Handle Incoming Call Navigation (from Native Bridge)
   // -------------------------------
   useEffect(() => {
-    if (isAuthenticated && navReady) {
-      const checkCallData = async () => {
-        try {
-          const { IncomingCallModule } = NativeModules;
-          if (!IncomingCallModule) return;
+    if (!isAuthenticated || !navReady) return;
 
-          const callData = await IncomingCallModule.getCallData();
+    const checkCallData = async () => {
+      try {
+        const { IncomingCallModule } = NativeModules;
+        if (!IncomingCallModule) return;
 
-          if (callData) {
-            console.log('📞 Accepted Call Data found:', callData);
-            // Navigate to IncomingCallScreen
-            if (navigationRef.current) {
-              (navigationRef.current as any)?.navigate(STACKS.INCOMING_CALL, callData);
-            }
+        const callData = await IncomingCallModule.getCallData();
+
+        if (callData) {
+          console.log('📞 Accepted Call Data found:', callData);
+          // Navigate to IncomingCallScreen
+          if (navigationRef.current) {
+            (navigationRef.current as any)?.navigate(STACKS.INCOMING_CALL, callData);
           }
-        } catch (error) {
-          console.error('❌ Error checking call data:', error);
         }
-      };
+      } catch (error) {
+        console.error('❌ Error checking call data:', error);
+      }
+    };
 
-      // Small delay to ensure the UI is rendered
-      const timer = setTimeout(checkCallData, 500);
-      return () => clearTimeout(timer);
-    }
+    // Check on initial mount
+    const timer = setTimeout(checkCallData, 500);
+
+    // Also check when app comes back to foreground (e.g. after accepting call from native activity)
+    const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log('📞 App became active, checking for pending call data...');
+        setTimeout(checkCallData, 300);
+      }
+    });
+
+    // Listen for explicit accept event from native side (when app is already in foreground)
+    const callAcceptedSubscription = DeviceEventEmitter.addListener('onCallAccepted', () => {
+      console.log('📞 onCallAccepted event received from native, navigating to call screen...');
+      setTimeout(checkCallData, 300);
+    });
+
+    return () => {
+      clearTimeout(timer);
+      appStateSubscription.remove();
+      callAcceptedSubscription.remove();
+    };
   }, [isAuthenticated, navReady]);
 
   // -------------------------------
@@ -968,6 +1233,12 @@ export default function Routes() {
       )}
       {subscriptionModal && <Subscription />}
       <InAppUpdatePopup />
+      <ReelLivePopup
+        visible={showReelPopup}
+        onAcknowledge={handleReelAcknowledge}
+        t={t}
+        loading={isAcknowledging}
+      />
     </NavigationContainer>
   );
 }
