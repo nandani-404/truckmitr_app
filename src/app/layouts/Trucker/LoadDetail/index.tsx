@@ -140,8 +140,18 @@ const LoadDetailScreen: React.FC<Props> = ({ onBack, loadData }) => {
                 showToast(response?.data?.message || 'Your bid has been sent.');
             }
         } catch (error: any) {
+            const status = error?.response?.status;
             const msg = error?.response?.data?.message || 'Failed to submit bid. Please try again.';
-            Alert.alert('Error', msg);
+
+            if (status === 429) {
+                // Daily bid limit reached – close modal & show toast
+                setShowBidModal(false);
+                setBidAmount('');
+                setRemarks('');
+                showToast(msg);
+            } else {
+                showToast(msg);
+            }
         } finally {
             setIsSubmitting(false);
         }

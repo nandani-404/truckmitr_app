@@ -1686,91 +1686,91 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
             setUploadingBility(true);
             console.log('📤 [BUILTY] Verifying and Uploading builty document...');
 
-            // --- EWB OCR Verification Block ---
-            let tempOcrFilePath: string | null = null;
-            try {
-                let uri = builtyFile.fileCopyUri || builtyFile.uri;
-                if (!uri) throw new Error('No URI found');
-
-                console.log('🔍 [BUILTY OCR] Original URI:', uri);
-
-                // ML Kit TextRecognition requires a file:// URI.
-                // On Android, camera/gallery/document-picker may return content:// URIs
-                // which ML Kit cannot read. We need to copy the file to a local path first.
-                if (Platform.OS === 'android' && uri.startsWith('content://')) {
-                    console.log('🔍 [BUILTY OCR] content:// URI detected, copying to temp file...');
-                    const destPath = `${RNFS.CachesDirectoryPath}/builty_ocr_temp_${Date.now()}.jpg`;
-                    await RNFS.copyFile(uri, destPath);
-                    uri = `file://${destPath}`;
-                    tempOcrFilePath = destPath;
-                    console.log('🔍 [BUILTY OCR] Copied to file:// URI:', uri);
-                } else if (!uri.startsWith('file://') && !uri.startsWith('/')) {
-                    // If it's some other scheme, try copying
-                    console.log('🔍 [BUILTY OCR] Non-file URI detected, copying to temp file...');
-                    const destPath = `${RNFS.CachesDirectoryPath}/builty_ocr_temp_${Date.now()}.jpg`;
-                    await RNFS.copyFile(uri, destPath);
-                    uri = `file://${destPath}`;
-                    tempOcrFilePath = destPath;
-                    console.log('🔍 [BUILTY OCR] Copied to file:// URI:', uri);
-                } else if (uri.startsWith('/')) {
-                    // Absolute path without file:// prefix — add it
-                    uri = `file://${uri}`;
-                    console.log('🔍 [BUILTY OCR] Added file:// prefix:', uri);
-                }
-
-                console.log('🔍 [BUILTY OCR] Final OCR URI:', uri);
-                showToast('Scanning Document for EWB No...');
-
-                // Step 1: Scan QR / Extract text
-                const result = await TextRecognition.recognize(uri);
-                console.log('🔍 [BUILTY OCR] Raw OCR Result:', JSON.stringify(result, null, 2));
-
-                const extractedText = result?.text || '';
-                console.log('🔍 [BUILTY OCR] Extracted Text:', extractedText);
-
-                // Step 2 & 3: Extract EWB No and Basic Format Validation (12 Digits)
-                const ewbMatch = extractedText.match(/\b\d{12}\b/);
-                if (!ewbMatch) {
-                    console.log('⚠️ [BUILTY OCR] No 12-digit EWB numeric match found in extracted text.');
-                    showToast('EWB Number not found or invalid format. Please upload a valid Bility.');
-                    setUploadingBility(false);
-                    return;
-                }
-                const ewbNo = ewbMatch[0];
-                console.log('✅ [BUILTY OCR] Found EWB Match:', ewbNo);
-                showToast(`Found EWB: ${ewbNo}. Verifying...`);
-
-                // Step 4, 5, 6: Send EWB No to backend to check expiry/validity via NIC API
-                const verifyPayload = {
-                    ewb_no: ewbNo,
-                    load_id: trip.id || trip.load_id
-                };
-
-                const verifyResponse = await axiosInstance.post(END_POINTS.TRUCKER_VERIFY_EWB, verifyPayload);
-                if (verifyResponse.data?.status === 'success' || verifyResponse.data?.status === true) {
-                    // Step 7: Show status to user
-                    showToast('E-Way Bill Verified Successfully. Uploading...');
-                } else {
-                    showToast(verifyResponse.data?.message || 'E-Way Bill Verification Failed! Invalid/Fake Bility.');
-                    setUploadingBility(false);
-                    return; // Stop upload if fake
-                }
-            } catch (ocrError) {
-                console.warn('❌ [BUILTY OCR] Error:', ocrError);
-                showToast('Failed to scan document. Please try a clearer image or valid EWB.');
-                setUploadingBility(false);
-                return;
-            } finally {
-                // Clean up temp OCR file
-                if (tempOcrFilePath) {
-                    try {
-                        await RNFS.unlink(tempOcrFilePath);
-                        console.log('🧹 [BUILTY OCR] Cleaned up temp file:', tempOcrFilePath);
-                    } catch (cleanupErr) {
-                        console.warn('⚠️ [BUILTY OCR] Failed to clean up temp file:', cleanupErr);
-                    }
-                }
-            }
+            // --- EWB OCR Verification Block (COMMENTED OUT - allowing direct image upload) ---
+            // let tempOcrFilePath: string | null = null;
+            // try {
+            //     let uri = builtyFile.fileCopyUri || builtyFile.uri;
+            //     if (!uri) throw new Error('No URI found');
+            //
+            //     console.log('🔍 [BUILTY OCR] Original URI:', uri);
+            //
+            //     // ML Kit TextRecognition requires a file:// URI.
+            //     // On Android, camera/gallery/document-picker may return content:// URIs
+            //     // which ML Kit cannot read. We need to copy the file to a local path first.
+            //     if (Platform.OS === 'android' && uri.startsWith('content://')) {
+            //         console.log('🔍 [BUILTY OCR] content:// URI detected, copying to temp file...');
+            //         const destPath = `${RNFS.CachesDirectoryPath}/builty_ocr_temp_${Date.now()}.jpg`;
+            //         await RNFS.copyFile(uri, destPath);
+            //         uri = `file://${destPath}`;
+            //         tempOcrFilePath = destPath;
+            //         console.log('🔍 [BUILTY OCR] Copied to file:// URI:', uri);
+            //     } else if (!uri.startsWith('file://') && !uri.startsWith('/')) {
+            //         // If it's some other scheme, try copying
+            //         console.log('🔍 [BUILTY OCR] Non-file URI detected, copying to temp file...');
+            //         const destPath = `${RNFS.CachesDirectoryPath}/builty_ocr_temp_${Date.now()}.jpg`;
+            //         await RNFS.copyFile(uri, destPath);
+            //         uri = `file://${destPath}`;
+            //         tempOcrFilePath = destPath;
+            //         console.log('🔍 [BUILTY OCR] Copied to file:// URI:', uri);
+            //     } else if (uri.startsWith('/')) {
+            //         // Absolute path without file:// prefix — add it
+            //         uri = `file://${uri}`;
+            //         console.log('🔍 [BUILTY OCR] Added file:// prefix:', uri);
+            //     }
+            //
+            //     console.log('🔍 [BUILTY OCR] Final OCR URI:', uri);
+            //     showToast('Scanning Document for EWB No...');
+            //
+            //     // Step 1: Scan QR / Extract text
+            //     const result = await TextRecognition.recognize(uri);
+            //     console.log('🔍 [BUILTY OCR] Raw OCR Result:', JSON.stringify(result, null, 2));
+            //
+            //     const extractedText = result?.text || '';
+            //     console.log('🔍 [BUILTY OCR] Extracted Text:', extractedText);
+            //
+            //     // Step 2 & 3: Extract EWB No and Basic Format Validation (12 Digits)
+            //     const ewbMatch = extractedText.match(/\b\d{12}\b/);
+            //     if (!ewbMatch) {
+            //         console.log('⚠️ [BUILTY OCR] No 12-digit EWB numeric match found in extracted text.');
+            //         showToast('EWB Number not found or invalid format. Please upload a valid Bility.');
+            //         setUploadingBility(false);
+            //         return;
+            //     }
+            //     const ewbNo = ewbMatch[0];
+            //     console.log('✅ [BUILTY OCR] Found EWB Match:', ewbNo);
+            //     showToast(`Found EWB: ${ewbNo}. Verifying...`);
+            //
+            //     // Step 4, 5, 6: Send EWB No to backend to check expiry/validity via NIC API
+            //     const verifyPayload = {
+            //         ewb_no: ewbNo,
+            //         load_id: trip.id || trip.load_id
+            //     };
+            //
+            //     const verifyResponse = await axiosInstance.post(END_POINTS.TRUCKER_VERIFY_EWB, verifyPayload);
+            //     if (verifyResponse.data?.status === 'success' || verifyResponse.data?.status === true) {
+            //         // Step 7: Show status to user
+            //         showToast('E-Way Bill Verified Successfully. Uploading...');
+            //     } else {
+            //         showToast(verifyResponse.data?.message || 'E-Way Bill Verification Failed! Invalid/Fake Bility.');
+            //         setUploadingBility(false);
+            //         return; // Stop upload if fake
+            //     }
+            // } catch (ocrError) {
+            //     console.warn('❌ [BUILTY OCR] Error:', ocrError);
+            //     showToast('Failed to scan document. Please try a clearer image or valid EWB.');
+            //     setUploadingBility(false);
+            //     return;
+            // } finally {
+            //     // Clean up temp OCR file
+            //     if (tempOcrFilePath) {
+            //         try {
+            //             await RNFS.unlink(tempOcrFilePath);
+            //             console.log('🧹 [BUILTY OCR] Cleaned up temp file:', tempOcrFilePath);
+            //         } catch (cleanupErr) {
+            //             console.warn('⚠️ [BUILTY OCR] Failed to clean up temp file:', cleanupErr);
+            //         }
+            //     }
+            // }
             // --- End EWB OCR Verification Block ---
 
             console.log('📤 [BUILTY] Trip data:', {
