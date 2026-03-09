@@ -21,7 +21,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
     const mapRef = useRef<MapView>(null);
     const watchId = useRef<number | null>(null);
     const mounted = useRef(true);
-    
+
     const [loading, setLoading] = useState(true);
     const [currentLocation, setCurrentLocation] = useState<any>(null);
     const [pickupLocation, setPickupLocation] = useState<any>(originCoords);
@@ -36,6 +36,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
     const [navStep, setNavStep] = useState<'pickup' | 'drop'>('pickup');
     const [heading, setHeading] = useState(0); // User's heading/bearing
     const [nextTurn, setNextTurn] = useState<string>(''); // Next turn instruction
+    const [isSheetVisible, setIsSheetVisible] = useState(true);
 
     useEffect(() => {
         mounted.current = true;
@@ -55,7 +56,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
         }
 
         fetchCurrentLocation();
-        
+
         if (!originCoords && origin) geocode(origin, 'pickup');
         if (!destinationCoords && destination) geocode(destination, 'drop');
     };
@@ -82,7 +83,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
             const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&components=country:IN&key=${SECURE_CONFIG.GOOGLE_API_KEY}`;
             const res = await fetch(url);
             const data = await res.json();
-            
+
             if (data.status === 'OK' && data.results[0]) {
                 const coords = {
                     latitude: data.results[0].geometry.location.lat,
@@ -100,28 +101,28 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
 
     const fetchRoute = useCallback(async (from: any, to: any) => {
         if (!from || !to) return;
-        
+
         try {
             // Use more accurate routing parameters with snap to roads
             const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${from.latitude},${from.longitude}&destination=${to.latitude},${to.longitude}&mode=driving&alternatives=false&traffic_model=best_guess&departure_time=now&key=${SECURE_CONFIG.GOOGLE_API_KEY}`;
             const res = await fetch(url);
             const data = await res.json();
-            
+
             console.log('🗺️ Route API response:', data.status);
-            
+
             if (data.status === 'OK' && data.routes[0]) {
                 const route = data.routes[0];
-                
+
                 // Decode polyline - Google uses encoded polyline for efficiency
                 const points = decode(route.overview_polyline.points);
                 console.log('🗺️ Route points decoded:', points.length);
-                
+
                 const leg = route.legs[0];
-                
+
                 // Get first step for turn instruction
                 const firstStep = leg.steps?.[0];
                 const instruction = firstStep?.html_instructions?.replace(/<[^>]*>/g, '') || 'Continue straight';
-                
+
                 if (mounted.current) {
                     setRoute(points);
                     setDistance(leg.distance?.text || '');
@@ -165,20 +166,20 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
 
     const fetchFullRoute = useCallback(async () => {
         if (!currentLocation || !pickupLocation || !dropLocation) return;
-        
+
         try {
             // Fetch route with waypoint: current → pickup → drop
             const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${currentLocation.latitude},${currentLocation.longitude}&destination=${dropLocation.latitude},${dropLocation.longitude}&waypoints=${pickupLocation.latitude},${pickupLocation.longitude}&mode=driving&key=${SECURE_CONFIG.GOOGLE_API_KEY}`;
             const res = await fetch(url);
             const data = await res.json();
-            
+
             if (data.status === 'OK' && data.routes[0]) {
                 const points = decode(data.routes[0].overview_polyline.points);
-                
+
                 // Calculate total distance and duration
                 let totalDist = 0;
                 let totalDur = 0;
-                
+
                 if (data.routes[0].legs) {
                     data.routes[0].legs.forEach((leg: any) => {
                         totalDist += leg.distance?.value || 0;
@@ -188,7 +189,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
                     const distKm = (totalDist / 1000).toFixed(1);
                     const hours = Math.floor(totalDur / 3600);
                     const minutes = Math.floor((totalDur % 3600) / 60);
-                    
+
                     if (mounted.current) {
                         setFullRoute(points);
                         setTotalDistance(`${distKm} km`);
@@ -278,11 +279,11 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
             (pos) => {
                 const loc = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
                 const newHeading = pos.coords.heading || 0; // Get user's direction
-                
+
                 if (mounted.current) {
                     setCurrentLocation(loc);
                     setHeading(newHeading);
-                    
+
                     // Update route and camera as user moves
                     if (isNavigating) {
                         // Update camera to follow user with rotation
@@ -293,7 +294,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
                             altitude: 300,
                             zoom: 18,
                         }, { duration: 500 });
-                        
+
                         // Recalculate rouet
                         if (navStep === 'pickup' && pickupLocation) {
                             fetchRoute(loc, pickupLocation);
@@ -306,7 +307,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
             (error) => {
                 console.log('Watch position error:', error);
             },
-            { 
+            {
                 enableHighAccuracy: true, // High accuracy for better heading
                 distanceFilter: 5, // Update every 5 meters for smoother tracking
                 interval: 2000, // Update every 2 seconds
@@ -327,17 +328,17 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
             return;
         }
 
-        const origin = currentLocation 
+        const origin = currentLocation
             ? `${currentLocation.latitude},${currentLocation.longitude}`
             : `${pickupLocation.latitude},${pickupLocation.longitude}`;
         const destination = `${dropLocation.latitude},${dropLocation.longitude}`;
-        const waypoint = currentLocation 
+        const waypoint = currentLocation
             ? `${pickupLocation.latitude},${pickupLocation.longitude}`
             : '';
 
         // Google Maps URL with waypoints for full route
         const url = Platform.select({
-            ios: waypoint 
+            ios: waypoint
                 ? `comgooglemaps://?saddr=${origin}&daddr=${destination}&waypoints=${waypoint}&directionsmode=driving`
                 : `comgooglemaps://?saddr=${origin}&daddr=${destination}&directionsmode=driving`,
             android: waypoint
@@ -387,7 +388,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
     return (
         <View style={s.container}>
             <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-            
+
             <MapView
                 ref={mapRef}
                 provider={PROVIDER_GOOGLE}
@@ -462,7 +463,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
                 <TouchableOpacity onPress={onBack} style={s.backButton}>
                     <Ionicons name="chevron-back" size={24} color="#000" />
                 </TouchableOpacity>
-                
+
                 {isNavigating && nextTurn && (
                     <View style={s.turnBanner}>
                         <View style={s.turnIcon}>
@@ -474,7 +475,7 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
                         </View>
                     </View>
                 )}
-                
+
                 {isNavigating && !nextTurn && (
                     <View style={s.navBadge}>
                         <MaterialIcons name="navigation" size={20} color="#FFF" />
@@ -484,103 +485,115 @@ const MapNavigationScreen: React.FC<Props> = ({ onBack, origin = '', destination
             </SafeAreaView>
 
             {!loading && currentLocation && (
-                <TouchableOpacity style={s.locationBtn} onPress={centerLocation}>
+                <TouchableOpacity style={[s.locationBtn, { bottom: isSheetVisible ? 380 : 100 }]} onPress={centerLocation}>
                     <MaterialIcons name="my-location" size={24} color="#276EF1" />
                 </TouchableOpacity>
             )}
 
             {!loading && (
-                <View style={s.bottomSheet}>
-                    {/* Open in Google Maps Button */}
-                    <TouchableOpacity style={s.googleMapsBtn} onPress={openGoogleMaps}>
-                        <MaterialIcons name="map" size={20} color="#276EF1" />
-                        <Text style={s.googleMapsBtnText}>Open in Google Maps</Text>
+                <View style={[s.bottomSheet, !isSheetVisible && { paddingBottom: Platform.OS === 'ios' ? 20 : 10 }]}>
+                    <TouchableOpacity
+                        style={s.dragHandleContainer}
+                        onPress={() => setIsSheetVisible(!isSheetVisible)}
+                        activeOpacity={0.7}
+                    >
+                        <View style={s.dragHandle} />
                     </TouchableOpacity>
 
-                    {/* Show total distance/duration before navigation, current segment during */}
-                    {!isNavigating && (totalDistance || totalDuration) ? (
-                        <View style={s.routeInfo}>
-                            <View style={s.routeInfoItem}>
-                                <Text style={s.routeInfoValue}>{totalDuration || '--'}</Text>
-                                <Text style={s.routeInfoLabel}>Total Time</Text>
-                            </View>
-                            <View style={s.divider} />
-                            <View style={s.routeInfoItem}>
-                                <Text style={s.routeInfoValue}>{totalDistance || '--'}</Text>
-                                <Text style={s.routeInfoLabel}>Total Distance</Text>
-                            </View>
-                        </View>
-                    ) : (distance || duration) ? (
-                        <View style={s.routeInfo}>
-                            <View style={s.routeInfoItem}>
-                                <Text style={s.routeInfoValue}>{duration || '--'}</Text>
-                                <Text style={s.routeInfoLabel}>{navStep === 'pickup' ? 'To Pickup' : 'To Drop'}</Text>
-                            </View>
-                            <View style={s.divider} />
-                            <View style={s.routeInfoItem}>
-                                <Text style={s.routeInfoValue}>{distance || '--'}</Text>
-                                <Text style={s.routeInfoLabel}>Distance</Text>
-                            </View>
-                        </View>
-                    ) : null}
+                    {isSheetVisible && (
+                        <View>
+                            {/* Open in Google Maps Button */}
+                            <TouchableOpacity style={s.googleMapsBtn} onPress={openGoogleMaps}>
+                                <MaterialIcons name="map" size={20} color="#276EF1" />
+                                <Text style={s.googleMapsBtnText}>Open in Google Maps</Text>
+                            </TouchableOpacity>
 
-                    <View style={s.locations}>
-                        {/* Show current location when navigating */}
-                        {isNavigating && (
-                            <>
-                                <View style={s.locationRow}>
-                                    <View style={[s.dot, { backgroundColor: '#276EF1' }]} />
-                                    <View style={s.locationContent}>
-                                        <Text style={s.locationLabel}>YOUR LOCATION</Text>
-                                        <Text style={s.locationText}>Current Position</Text>
+                            {/* Show total distance/duration before navigation, current segment during */}
+                            {!isNavigating && (totalDistance || totalDuration) ? (
+                                <View style={s.routeInfo}>
+                                    <View style={s.routeInfoItem}>
+                                        <Text style={s.routeInfoValue}>{totalDuration || '--'}</Text>
+                                        <Text style={s.routeInfoLabel}>Total Time</Text>
+                                    </View>
+                                    <View style={s.divider} />
+                                    <View style={s.routeInfoItem}>
+                                        <Text style={s.routeInfoValue}>{totalDistance || '--'}</Text>
+                                        <Text style={s.routeInfoLabel}>Total Distance</Text>
                                     </View>
                                 </View>
+                            ) : (distance || duration) ? (
+                                <View style={s.routeInfo}>
+                                    <View style={s.routeInfoItem}>
+                                        <Text style={s.routeInfoValue}>{duration || '--'}</Text>
+                                        <Text style={s.routeInfoLabel}>{navStep === 'pickup' ? 'To Pickup' : 'To Drop'}</Text>
+                                    </View>
+                                    <View style={s.divider} />
+                                    <View style={s.routeInfoItem}>
+                                        <Text style={s.routeInfoValue}>{distance || '--'}</Text>
+                                        <Text style={s.routeInfoLabel}>Distance</Text>
+                                    </View>
+                                </View>
+                            ) : null}
+
+                            <View style={s.locations}>
+                                {/* Show current location when navigating */}
+                                {isNavigating && (
+                                    <>
+                                        <View style={s.locationRow}>
+                                            <View style={[s.dot, { backgroundColor: '#276EF1' }]} />
+                                            <View style={s.locationContent}>
+                                                <Text style={s.locationLabel}>YOUR LOCATION</Text>
+                                                <Text style={s.locationText}>Current Position</Text>
+                                            </View>
+                                        </View>
+                                        <View style={s.connector} />
+                                    </>
+                                )}
+
+                                <View style={s.locationRow}>
+                                    <View style={[s.dot, { backgroundColor: '#00D856' }]} />
+                                    <View style={s.locationContent}>
+                                        <Text style={s.locationLabel}>PICKUP</Text>
+                                        <Text style={s.locationText} numberOfLines={2}>{origin || 'Pickup Location'}</Text>
+                                    </View>
+                                    {isNavigating && navStep === 'pickup' && (
+                                        <View style={s.activeBadge}>
+                                            <Text style={s.activeBadgeText}>ACTIVE</Text>
+                                        </View>
+                                    )}
+                                </View>
+
                                 <View style={s.connector} />
-                            </>
-                        )}
 
-                        <View style={s.locationRow}>
-                            <View style={[s.dot, { backgroundColor: '#00D856' }]} />
-                            <View style={s.locationContent}>
-                                <Text style={s.locationLabel}>PICKUP</Text>
-                                <Text style={s.locationText} numberOfLines={2}>{origin || 'Pickup Location'}</Text>
+                                <View style={s.locationRow}>
+                                    <View style={[s.dot, { backgroundColor: '#000' }]} />
+                                    <View style={s.locationContent}>
+                                        <Text style={s.locationLabel}>DROP</Text>
+                                        <Text style={s.locationText} numberOfLines={2}>{destination || 'Drop Location'}</Text>
+                                    </View>
+                                    {isNavigating && navStep === 'drop' && (
+                                        <View style={s.activeBadge}>
+                                            <Text style={s.activeBadgeText}>ACTIVE</Text>
+                                        </View>
+                                    )}
+                                </View>
                             </View>
-                            {isNavigating && navStep === 'pickup' && (
-                                <View style={s.activeBadge}>
-                                    <Text style={s.activeBadgeText}>ACTIVE</Text>
+
+                            {!isNavigating ? (
+                                <TouchableOpacity style={s.startBtn} onPress={startNavigation}>
+                                    <MaterialIcons name="navigation" size={24} color="#FFF" />
+                                    <Text style={s.startBtnText}>Start Navigation</Text>
+                                </TouchableOpacity>
+                            ) : navStep === 'pickup' ? (
+                                <TouchableOpacity style={s.reachedBtn} onPress={reachedPickup}>
+                                    <Text style={s.reachedBtnText}>Reached Pickup</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <View style={s.navStatus}>
+                                    <MaterialIcons name="local-shipping" size={24} color="#000" />
+                                    <Text style={s.navStatusText}>Navigating to drop location...</Text>
                                 </View>
                             )}
-                        </View>
-
-                        <View style={s.connector} />
-
-                        <View style={s.locationRow}>
-                            <View style={[s.dot, { backgroundColor: '#000' }]} />
-                            <View style={s.locationContent}>
-                                <Text style={s.locationLabel}>DROP</Text>
-                                <Text style={s.locationText} numberOfLines={2}>{destination || 'Drop Location'}</Text>
-                            </View>
-                            {isNavigating && navStep === 'drop' && (
-                                <View style={s.activeBadge}>
-                                    <Text style={s.activeBadgeText}>ACTIVE</Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-
-                    {!isNavigating ? (
-                        <TouchableOpacity style={s.startBtn} onPress={startNavigation}>
-                            <MaterialIcons name="navigation" size={24} color="#FFF" />
-                            <Text style={s.startBtnText}>Start Navigation</Text>
-                        </TouchableOpacity>
-                    ) : navStep === 'pickup' ? (
-                        <TouchableOpacity style={s.reachedBtn} onPress={reachedPickup}>
-                            <Text style={s.reachedBtnText}>Reached Pickup</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <View style={s.navStatus}>
-                            <MaterialIcons name="local-shipping" size={24} color="#000" />
-                            <Text style={s.navStatusText}>Navigating to drop location...</Text>
                         </View>
                     )}
                 </View>
@@ -603,8 +616,10 @@ const s = StyleSheet.create({
     turnInfo: { flex: 1 },
     turnText: { fontSize: 16, fontWeight: '600', color: '#FFF', marginBottom: 4 },
     turnDistance: { fontSize: 14, color: 'rgba(255,255,255,0.9)' },
-    locationBtn: { position: 'absolute', right: 16, bottom: 380, width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', elevation: 4 },
-    bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 20, paddingBottom: Platform.OS === 'ios' ? 34 : 20, paddingHorizontal: 20, elevation: 16 },
+    locationBtn: { position: 'absolute', right: 16, width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', elevation: 4 },
+    bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: Platform.OS === 'ios' ? 34 : 20, paddingHorizontal: 20, elevation: 16 },
+    dragHandleContainer: { width: '100%', alignItems: 'center', paddingVertical: 16 },
+    dragHandle: { width: 40, height: 5, backgroundColor: '#E5E7EB', borderRadius: 3 },
     googleMapsBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F4FF', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#276EF1' },
     googleMapsBtnText: { marginLeft: 8, fontSize: 15, fontWeight: '600', color: '#276EF1' },
     routeInfo: { flexDirection: 'row', backgroundColor: '#F9FAFB', borderRadius: 16, padding: 16, marginBottom: 20 },

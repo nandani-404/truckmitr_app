@@ -110,6 +110,60 @@ const bearingBetween = (from: LatLng, to: LatLng): number => {
     return (toDeg(Math.atan2(y, x)) + 360) % 360;
 };
 
+// ── Haversine distance in meters ─────────────────────────────────────────────
+const haversineDistance = (a: LatLng, b: LatLng): number => {
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    const R = 6371e3;
+    const dLat = toRad(b.latitude - a.latitude);
+    const dLon = toRad(b.longitude - a.longitude);
+    const sinLat = Math.sin(dLat / 2);
+    const sinLon = Math.sin(dLon / 2);
+    const h = sinLat * sinLat + Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * sinLon * sinLon;
+    return 2 * R * Math.asin(Math.sqrt(h));
+};
+
+// ── Project a point onto a line segment, return closest point on segment ─────
+const closestPointOnSegment = (p: LatLng, a: LatLng, b: LatLng): LatLng => {
+    const dx = b.latitude - a.latitude;
+    const dy = b.longitude - a.longitude;
+    if (dx === 0 && dy === 0) return a; // segment is a single point
+    let t = ((p.latitude - a.latitude) * dx + (p.longitude - a.longitude) * dy) / (dx * dx + dy * dy);
+    t = Math.max(0, Math.min(1, t)); // clamp to [0, 1]
+    return {
+        latitude: a.latitude + t * dx,
+        longitude: a.longitude + t * dy,
+    };
+};
+
+// ── Snap a GPS point to the nearest point on a polyline ──────────────────────
+const snapToPolyline = (
+    point: LatLng,
+    polylinePoints: LatLng[],
+): { snapped: LatLng; bearing: number; segmentIndex: number } | null => {
+    if (polylinePoints.length < 2) return null;
+
+    let bestDist = Infinity;
+    let bestPoint: LatLng = point;
+    let bestSegIdx = 0;
+
+    for (let i = 0; i < polylinePoints.length - 1; i++) {
+        const proj = closestPointOnSegment(point, polylinePoints[i], polylinePoints[i + 1]);
+        const dist = haversineDistance(point, proj);
+        if (dist < bestDist) {
+            bestDist = dist;
+            bestPoint = proj;
+            bestSegIdx = i;
+        }
+    }
+
+    // Calculate bearing along the road at the snapped segment
+    const segStart = polylinePoints[bestSegIdx];
+    const segEnd = polylinePoints[bestSegIdx + 1];
+    const bearing = bearingBetween(segStart, segEnd);
+
+    return { snapped: bestPoint, bearing, segmentIndex: bestSegIdx };
+};
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Off-route alert banner
 // ──────────────────────────────────────────────────────────────────────────────
@@ -216,28 +270,68 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
             .filter(v => !Number.isNaN(v.latitudeNum) && !Number.isNaN(v.longitudeNum));
     }, [vehicles]);
 
-    // ── Animate truck movement ───────────────────────────────────────────────
+    // ── Build a map of vehicleKey → polyline points for snapping ─────────────
+    const vehiclePolylineMap = useMemo(() => {
+        const map: Record<string, LatLng[]> = {};
+
+        // If there's a selected route polyline, use it as fallback for all vehicles
+        let selectedRoutePts: LatLng[] = [];
+        if (selectedRoutePolyline) {
+            selectedRoutePts = decodePolylineToCoords(selectedRoutePolyline);
+        }
+
+        vehiclesWithParsedCoords.forEach(v => {
+            const pts = decodePolylineToCoords(v.encoded_polyline);
+            if (pts.length > 1) {
+                map[v._uniqueKey] = pts;
+            } else if (selectedRoutePts.length > 1) {
+                map[v._uniqueKey] = selectedRoutePts;
+            }
+        });
+
+        return map;
+    }, [vehiclesWithParsedCoords, selectedRoutePolyline]);
+
+    // ── Animate truck movement (snapped to polyline) ─────────────────────────
     useEffect(() => {
         const stepMs = TRUCK_ANIMATION_DURATION_MS / TRUCK_ANIMATION_STEPS;
         vehiclesWithParsedCoords.forEach(v => {
             const key = v._uniqueKey;
-            const target: LatLng = { latitude: v.latitudeNum, longitude: v.longitudeNum };
+            const rawTarget: LatLng = { latitude: v.latitudeNum, longitude: v.longitudeNum };
             const apiHeading = parseHeading((v as { vehicle_head?: unknown }).vehicle_head ?? v.heading);
+            const polylinePts = vehiclePolylineMap[key];
+
+            // Snap target to polyline if available
+            let target = rawTarget;
+            let polyBearing: number | undefined;
+            if (polylinePts && polylinePts.length > 1) {
+                const snap = snapToPolyline(rawTarget, polylinePts);
+                if (snap) {
+                    target = snap.snapped;
+                    polyBearing = snap.bearing;
+                }
+            }
+
             const start = displayCoords[key];
 
             if (!start) {
                 setDisplayCoords(prev => ({ ...prev, [key]: target }));
-                if (apiHeading !== undefined) {
-                    setHeadings(prev => ({ ...prev, [key]: apiHeading }));
+                const heading = apiHeading ?? polyBearing;
+                if (heading !== undefined) {
+                    setHeadings(prev => ({ ...prev, [key]: heading }));
                 }
                 return;
             }
 
             if (Math.abs(start.latitude - target.latitude) < 1e-6 && Math.abs(start.longitude - target.longitude) < 1e-6) {
+                // Even if position hasn't changed, update heading if polyline bearing available
+                if (polyBearing !== undefined) {
+                    setHeadings(prev => ({ ...prev, [key]: polyBearing! }));
+                }
                 return;
             }
 
-            const bearing = apiHeading ?? bearingBetween(start, target);
+            const bearing = apiHeading ?? polyBearing ?? bearingBetween(start, target);
             setHeadings(prev => ({ ...prev, [key]: bearing }));
 
             if (animRef.current[key]) clearInterval(animRef.current[key]);
@@ -246,12 +340,25 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
                 step += 1;
                 const t = step >= TRUCK_ANIMATION_STEPS ? 1 : step / TRUCK_ANIMATION_STEPS;
                 const eased = t * (2 - t);
+                const interpolated: LatLng = {
+                    latitude: lerp(start.latitude, target.latitude, eased),
+                    longitude: lerp(start.longitude, target.longitude, eased),
+                };
+
+                // Snap each animation frame to polyline for smooth on-road movement
+                let finalPos = interpolated;
+                if (polylinePts && polylinePts.length > 1) {
+                    const frameSnap = snapToPolyline(interpolated, polylinePts);
+                    if (frameSnap) {
+                        finalPos = frameSnap.snapped;
+                        // Update heading along the road segment during animation
+                        setHeadings(prev => ({ ...prev, [key]: frameSnap.bearing }));
+                    }
+                }
+
                 setDisplayCoords(prev => ({
                     ...prev,
-                    [key]: {
-                        latitude: lerp(start.latitude, target.latitude, eased),
-                        longitude: lerp(start.longitude, target.longitude, eased),
-                    },
+                    [key]: finalPos,
                 }));
                 if (step >= TRUCK_ANIMATION_STEPS) {
                     if (animRef.current[key]) clearInterval(animRef.current[key]);
@@ -259,7 +366,7 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
                 }
             }, stepMs);
         });
-    }, [vehiclesWithParsedCoords]);
+    }, [vehiclesWithParsedCoords, vehiclePolylineMap]);
 
     // ── In-app notification for YELLOW / RED (toast once per vehicle per poll) ─
     useEffect(() => {
@@ -307,16 +414,15 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
             }));
     }, [vehiclesWithParsedCoords]);
 
-    // ── Display coordinates for markers ──────────────────────────────────────
+    // ── Display coordinates for markers (snapped) ────────────────────────────
     const vehiclesForMap = useMemo(() => {
         return vehiclesWithParsedCoords.map(v => {
             const disp = displayCoords[v._uniqueKey];
-            const apiHeading = parseHeading((v as { vehicle_head?: unknown }).vehicle_head ?? v.heading);
             return {
                 ...v,
                 displayLat: disp?.latitude ?? v.latitudeNum,
                 displayLng: disp?.longitude ?? v.longitudeNum,
-                displayHeading: apiHeading ?? headings[v._uniqueKey] ?? 0,
+                displayHeading: headings[v._uniqueKey] ?? 0,
             };
         });
     }, [vehiclesWithParsedCoords, displayCoords, headings]);
@@ -415,7 +521,34 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
                     ) : null,
                 )}
 
-                {/* Truck markers — 3D PNG, flat on map, rotates by heading */}
+                {/* Origin & Destination markers for each route */}
+                {routeOverlays.map((route, idx) => {
+                    if (route.points.length < 2) return null;
+                    const origin = route.points[0];
+                    const dest = route.points[route.points.length - 1];
+                    return (
+                        <React.Fragment key={`pins-${route.key}`}>
+                            <Marker
+                                coordinate={origin}
+                                anchor={{ x: 0.5, y: 1 }}
+                                zIndex={100 + idx}
+                                title="Origin"
+                            >
+                                <MaterialCommunityIcons name="map-marker" size={36} color="#26A541" />
+                            </Marker>
+                            <Marker
+                                coordinate={dest}
+                                anchor={{ x: 0.5, y: 1 }}
+                                zIndex={100 + idx}
+                                title="Destination"
+                            >
+                                <MaterialCommunityIcons name="map-marker" size={36} color="#e74c3c" />
+                            </Marker>
+                        </React.Fragment>
+                    );
+                })}
+
+                {/* Truck markers — 3D PNG, flat on map, rotates by road bearing */}
                 {vehiclesForMap.map((vehicle, idx) => {
                     const code = (vehicle.color_code || '').toUpperCase();
                     const statusLabel = COLOR_LABELS[code] || code;

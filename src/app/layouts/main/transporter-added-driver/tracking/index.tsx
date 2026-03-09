@@ -8,7 +8,8 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import axiosInstance from 'src/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from 'src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
-import Geolocation from '@react-native-community/geolocation';
+import BackgroundGeolocation from 'react-native-background-geolocation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector } from 'react-redux';
 import { pick } from '@react-native-documents/picker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
@@ -16,8 +17,9 @@ import { requestCameraPermission, requestPhotoLibraryPermission } from '@truckmi
 import { useTranslation } from 'react-i18next';
 import { fetchDirections } from 'src/utils/maps/google.apis';
 import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
-import ColorTrackingMap from './ColorTrackingMap';
+import ColorTrackingMap, { VehicleColorData } from './ColorTrackingMap';
 import TextRecognition from '@react-native-ml-kit/text-recognition';
+import RNFS from 'react-native-fs';
 // import pusherService, { LocationUpdate } from 'src/services/pusherService';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -185,13 +187,15 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
     const { user } = useSelector((state: any) => state.user) || {};
 
     // Refs for location tracking
-    const watchIdRef = useRef<number | null>(null);
+    const bgGeoLocationSubscriptionRef = useRef<any>(null);
     const lastLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
     const lastUpdateTimeRef = useRef<number>(Date.now());
     const fallbackIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const lastHeadingRef = useRef<number>(0);
     // Track every GPS position for bearing calculation (separate from lastLocationRef which only updates on 30m+ moves)
     const prevGpsPositionRef = useRef<{ latitude: number; longitude: number } | null>(null);
+    // Store latest color tracking data from tracking dashboard for location update API
+    const vehicleColorDataRef = useRef<VehicleColorData>({});
 
     // Trip Data
     const [trip, setTrip] = useState<any>({
@@ -336,13 +340,19 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 return;
             }
 
-            const payload = {
+            const payload: Record<string, any> = {
                 trip_id: trip.trip_id,
                 driver_id: user.id,
                 latitude,
                 longitude,
                 vehicle_head: vehicleHead,
             };
+
+            // Conditionally include color tracking fields if available
+            const colorData = vehicleColorDataRef.current;
+            if (colorData.color_code) payload.color_code = colorData.color_code;
+            if (colorData.color_reason) payload.color_reason = colorData.color_reason;
+            if (colorData.off_route_km != null) payload.off_route_km = colorData.off_route_km;
 
             console.log('═══════════════════════════════════════════════════════════');
             console.log('📤 [LOCATION UPDATE] Sending location update to server');
@@ -382,16 +392,18 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
     };
 
     // Start location tracking
-    const startLocationTracking = () => {
+    const startLocationTracking = async () => {
         console.log('🎯 [LOCATION TRACKING] Initializing...');
 
         // Stop any existing tracking
         stopLocationTracking();
 
+        const token = await AsyncStorage.getItem('@user_token');
+
         // Watch position changes
-        watchIdRef.current = Geolocation.watchPosition(
-            (position) => {
-                const { latitude, longitude, heading } = position.coords;
+        bgGeoLocationSubscriptionRef.current = BackgroundGeolocation.onLocation(
+            (location) => {
+                const { latitude, longitude, heading } = location.coords;
                 const vehicleHead = getVehicleHead(latitude, longitude, heading);
                 console.log('═══════════════════════════════════════════════════════════');
                 console.log('📍 [LOCATION TRACKING] New position received from GPS');
@@ -399,8 +411,6 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 console.log('📍 [LOCATION TRACKING] Longitude:', longitude.toFixed(6));
                 console.log('📍 [LOCATION TRACKING] GPS Heading (raw):', heading);
                 console.log('📍 [LOCATION TRACKING] Vehicle Head (final):', vehicleHead, 'degrees');
-                console.log('📍 [LOCATION TRACKING] Accuracy:', position.coords.accuracy?.toFixed(2), 'meters');
-                console.log('📍 [LOCATION TRACKING] Timestamp:', new Date(position.timestamp).toISOString());
                 console.log('═══════════════════════════════════════════════════════════');
 
                 setCurrentLocation({ latitude, longitude });
@@ -418,8 +428,6 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                     );
 
                     console.log(`📏 [LOCATION TRACKING] Distance from last update: ${distance.toFixed(2)}m`);
-                    console.log(`📏 [LOCATION TRACKING] Last position: ${lastLocationRef.current.latitude.toFixed(6)}, ${lastLocationRef.current.longitude.toFixed(6)}`);
-                    console.log(`📏 [LOCATION TRACKING] Current position: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
 
                     if (distance >= 30) {
                         console.log('✅ [LOCATION TRACKING] Moved 30m+, updating server');
@@ -437,74 +445,86 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
             },
             (error) => {
                 console.error('═══════════════════════════════════════════════════════════');
-                console.error('❌ [LOCATION TRACKING] GPS Error');
-                console.error('❌ [LOCATION TRACKING] Error code:', error.code);
-                console.error('❌ [LOCATION TRACKING] Error message:', error.message);
+                console.error('❌ [LOCATION TRACKING] GPS Error', error);
                 console.error('═══════════════════════════════════════════════════════════');
-
-                if (error.code === 1) { // PERMISSION_DENIED
-                    showToast(t('location_permission_denied'));
-                } else if (error.code === 2) { // POSITION_UNAVAILABLE
-                    showToast(t('location_disabled'));
-                    Alert.alert(
-                        t('location_disabled'),
-                        t('enable_location'),
-                        [{ text: 'OK' }]
-                    );
-                }
-            },
-            {
-                enableHighAccuracy: true,
-                distanceFilter: 10, // Update every 10 meters of movement
-                interval: 5000, // Check every 5 seconds (Android)
-                fastestInterval: 2000, // Fastest update rate (Android)
-                timeout: 30000, // 30 seconds timeout
-                maximumAge: 5000, // Accept cached location up to 5 seconds old
             }
         );
+
+        BackgroundGeolocation.ready({
+            geolocation: {
+                desiredAccuracy: BackgroundGeolocation.DesiredAccuracy.High,
+                distanceFilter: 30,
+                stopTimeout: 5,
+            },
+            logger: {
+                debug: false,
+                logLevel: BackgroundGeolocation.LogLevel.Verbose,
+            },
+            app: {
+                stopOnTerminate: false,
+                startOnBoot: true,
+                enableHeadless: true,
+            },
+            http: {
+                url: BASE_URL.replace(/\/$/, "") + "/" + END_POINTS.TRIP_UPDATE_LOCATION.replace(/^\//, ""),
+                batchSync: false,
+                autoSync: true,
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                params: {
+                    trip_id: trip.trip_id,
+                    driver_id: user?.id
+                }
+            },
+            persistence: {
+                locationTemplate: "{\"trip_id\": \"<%= @trip_id %>\", \"driver_id\": <%= @driver_id %>, \"latitude\": <%= location.coords.latitude %>, \"longitude\": <%= location.coords.longitude %>, \"vehicle_head\": <%= location.coords.heading %>}"
+            }
+        }).then((state) => {
+            if (!state.enabled) {
+                BackgroundGeolocation.start();
+            } else {
+                BackgroundGeolocation.setConfig({
+                    http: {
+                        headers: {
+                            "Authorization": `Bearer ${token}`
+                        },
+                        params: {
+                            trip_id: trip.trip_id,
+                            driver_id: user?.id
+                        }
+                    }
+                });
+            }
+        });
 
         // Set up 30-second fallback timer (for testing - change to 10 minutes in production)
         fallbackIntervalRef.current = setInterval(() => {
             const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
             const thirtySeconds = 30 * 1000; // 30 seconds for testing
-            // const tenMinutes = 10 * 60 * 1000; // 10 minutes for production
-
-            console.log(`⏰ [LOCATION TRACKING] Fallback check - Time since last update: ${(timeSinceLastUpdate / 1000).toFixed(1)} seconds`);
 
             if (timeSinceLastUpdate >= thirtySeconds) {
-                console.log('═══════════════════════════════════════════════════════════');
                 console.log('⏰ [LOCATION TRACKING] 30 SECONDS PASSED - FORCING LOCATION UPDATE');
-                console.log('📊 [LOCATION TRACKING] Last update was:', new Date(lastUpdateTimeRef.current).toISOString());
-                console.log('📊 [LOCATION TRACKING] Current time:', new Date().toISOString());
-                console.log('📊 [LOCATION TRACKING] Time elapsed:', (timeSinceLastUpdate / 1000).toFixed(1), 'seconds');
-                console.log('═══════════════════════════════════════════════════════════');
 
                 // Try to get current position with relaxed settings
-                Geolocation.getCurrentPosition(
-                    (position) => {
-                        const { latitude, longitude, heading } = position.coords;
-                        const vehicleHead = getVehicleHead(latitude, longitude, heading);
-                        console.log('✅ [LOCATION TRACKING] Fallback position obtained:', { latitude, longitude, vehicleHead });
-                        updateLocationToServer(latitude, longitude, vehicleHead);
-                        lastLocationRef.current = { latitude, longitude };
-                        prevGpsPositionRef.current = { latitude, longitude };
-                        setCurrentLocation({ latitude, longitude });
-                    },
-                    (error) => {
-                        console.error('═══════════════════════════════════════════════════════════');
-                        console.error('❌ [LOCATION TRACKING] Fallback error:', error.message);
-                        console.error('❌ [LOCATION TRACKING] Error code:', error.code);
-                        console.warn('⚠️ [LOCATION TRACKING] GPS unavailable - skipping update (no stale data sent)');
-                        console.error('═══════════════════════════════════════════════════════════');
-                    },
-                    {
-                        enableHighAccuracy: false, // Use network location for faster response
-                        timeout: 30000, // 30 seconds timeout
-                        maximumAge: 60000 // Accept cached location up to 1 minute old
-                    }
-                );
+                BackgroundGeolocation.getCurrentPosition({
+                    samples: 1,
+                    persist: false,
+                    timeout: 30,
+                    maximumAge: 60000
+                }).then((location) => {
+                    const { latitude, longitude, heading } = location.coords;
+                    const vehicleHead = getVehicleHead(latitude, longitude, heading);
+                    console.log('✅ [LOCATION TRACKING] Fallback position obtained:', { latitude, longitude, vehicleHead });
+                    updateLocationToServer(latitude, longitude, vehicleHead);
+                    lastLocationRef.current = { latitude, longitude };
+                    prevGpsPositionRef.current = { latitude, longitude };
+                    setCurrentLocation({ latitude, longitude });
+                }).catch((error) => {
+                    console.error('❌ [LOCATION TRACKING] Fallback error:', error);
+                });
             }
-        }, 10000); // Check every 10 seconds for testing (change to 60000 for production)
+        }, 10000); // Check every 10 seconds for testing
 
         console.log('✅ [LOCATION TRACKING] Started successfully');
         console.log('⏰ [LOCATION TRACKING] Fallback timer: Updates every 30 seconds if no movement');
@@ -512,9 +532,10 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
 
     // Stop location tracking
     const stopLocationTracking = () => {
-        if (watchIdRef.current !== null) {
-            Geolocation.clearWatch(watchIdRef.current);
-            watchIdRef.current = null;
+        BackgroundGeolocation.stop();
+        if (bgGeoLocationSubscriptionRef.current) {
+            bgGeoLocationSubscriptionRef.current.remove();
+            bgGeoLocationSubscriptionRef.current = null;
             console.log('🛑 [LOCATION TRACKING] Watch cleared');
         }
 
@@ -1254,23 +1275,20 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
     // Get current coordinates helper
     const getCurrentCoordinates = async (): Promise<{ latitude: number; longitude: number }> => {
         return new Promise((resolve, reject) => {
-            Geolocation.getCurrentPosition(
-                (position) => {
-                    resolve({
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                    });
-                },
-                (error) => {
-                    console.error('Error getting location:', error);
-                    reject(error);
-                },
-                {
-                    enableHighAccuracy: false, // Use network location for faster response
-                    timeout: 30000, // 30 seconds timeout
-                    maximumAge: 60000 // Accept cached location up to 1 minute old
-                }
-            );
+            BackgroundGeolocation.getCurrentPosition({
+                samples: 1,
+                persist: false,
+                timeout: 30,
+                maximumAge: 60000
+            }).then((location) => {
+                resolve({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                });
+            }).catch((error) => {
+                console.error('Error getting location:', error);
+                reject(error);
+            });
         });
     };
 
@@ -1581,7 +1599,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
     const handleBilityPick = async () => {
         try {
             const [file] = await pick({
-                type: ['*/*'],
+                type: ['image/*'],
                 copyTo: 'cachesDirectory',
             });
 
@@ -1668,54 +1686,91 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
             setUploadingBility(true);
             console.log('📤 [BUILTY] Verifying and Uploading builty document...');
 
-            // --- EWB OCR Verification Block ---
-            try {
-                const uri = builtyFile.fileCopyUri || builtyFile.uri;
-                if (!uri) throw new Error('No URI found');
-
-                console.log('🔍 [BUILTY OCR] Starting OCR on URI:', uri);
-                showToast('Scanning Document for EWB No...');
-
-                // Step 1: Scan QR / Extract text
-                const result = await TextRecognition.recognize(uri);
-                console.log('🔍 [BUILTY OCR] Raw OCR Result:', JSON.stringify(result, null, 2));
-
-                const extractedText = result?.text || '';
-                console.log('🔍 [BUILTY OCR] Extracted Text:', extractedText);
-
-                // Step 2 & 3: Extract EWB No and Basic Format Validation (12 Digits)
-                const ewbMatch = extractedText.match(/\b\d{12}\b/);
-                if (!ewbMatch) {
-                    console.log('⚠️ [BUILTY OCR] No 12-digit EWB numeric match found in extracted text.');
-                    showToast('EWB Number not found or invalid format. Please upload a valid Bility.');
-                    setUploadingBility(false);
-                    return;
-                }
-                const ewbNo = ewbMatch[0];
-                console.log('✅ [BUILTY OCR] Found EWB Match:', ewbNo);
-                showToast(`Found EWB: ${ewbNo}. Verifying...`);
-
-                // Step 4, 5, 6: Send EWB No to backend to check expiry/validity via NIC API
-                const verifyPayload = {
-                    ewb_no: ewbNo,
-                    load_id: trip.id || trip.load_id
-                };
-
-                const verifyResponse = await axiosInstance.post(END_POINTS.TRUCKER_VERIFY_EWB, verifyPayload);
-                if (verifyResponse.data?.status === 'success' || verifyResponse.data?.status === true) {
-                    // Step 7: Show status to user
-                    showToast('E-Way Bill Verified Successfully. Uploading...');
-                } else {
-                    showToast(verifyResponse.data?.message || 'E-Way Bill Verification Failed! Invalid/Fake Bility.');
-                    setUploadingBility(false);
-                    return; // Stop upload if fake
-                }
-            } catch (ocrError) {
-                console.warn('❌ [BUILTY OCR] Error:', ocrError);
-                showToast('Failed to scan document. Please try a clearer image or valid EWB.');
-                setUploadingBility(false);
-                return;
-            }
+            // --- EWB OCR Verification Block (COMMENTED OUT - allowing direct image upload) ---
+            // let tempOcrFilePath: string | null = null;
+            // try {
+            //     let uri = builtyFile.fileCopyUri || builtyFile.uri;
+            //     if (!uri) throw new Error('No URI found');
+            //
+            //     console.log('🔍 [BUILTY OCR] Original URI:', uri);
+            //
+            //     // ML Kit TextRecognition requires a file:// URI.
+            //     // On Android, camera/gallery/document-picker may return content:// URIs
+            //     // which ML Kit cannot read. We need to copy the file to a local path first.
+            //     if (Platform.OS === 'android' && uri.startsWith('content://')) {
+            //         console.log('🔍 [BUILTY OCR] content:// URI detected, copying to temp file...');
+            //         const destPath = `${RNFS.CachesDirectoryPath}/builty_ocr_temp_${Date.now()}.jpg`;
+            //         await RNFS.copyFile(uri, destPath);
+            //         uri = `file://${destPath}`;
+            //         tempOcrFilePath = destPath;
+            //         console.log('🔍 [BUILTY OCR] Copied to file:// URI:', uri);
+            //     } else if (!uri.startsWith('file://') && !uri.startsWith('/')) {
+            //         // If it's some other scheme, try copying
+            //         console.log('🔍 [BUILTY OCR] Non-file URI detected, copying to temp file...');
+            //         const destPath = `${RNFS.CachesDirectoryPath}/builty_ocr_temp_${Date.now()}.jpg`;
+            //         await RNFS.copyFile(uri, destPath);
+            //         uri = `file://${destPath}`;
+            //         tempOcrFilePath = destPath;
+            //         console.log('🔍 [BUILTY OCR] Copied to file:// URI:', uri);
+            //     } else if (uri.startsWith('/')) {
+            //         // Absolute path without file:// prefix — add it
+            //         uri = `file://${uri}`;
+            //         console.log('🔍 [BUILTY OCR] Added file:// prefix:', uri);
+            //     }
+            //
+            //     console.log('🔍 [BUILTY OCR] Final OCR URI:', uri);
+            //     showToast('Scanning Document for EWB No...');
+            //
+            //     // Step 1: Scan QR / Extract text
+            //     const result = await TextRecognition.recognize(uri);
+            //     console.log('🔍 [BUILTY OCR] Raw OCR Result:', JSON.stringify(result, null, 2));
+            //
+            //     const extractedText = result?.text || '';
+            //     console.log('🔍 [BUILTY OCR] Extracted Text:', extractedText);
+            //
+            //     // Step 2 & 3: Extract EWB No and Basic Format Validation (12 Digits)
+            //     const ewbMatch = extractedText.match(/\b\d{12}\b/);
+            //     if (!ewbMatch) {
+            //         console.log('⚠️ [BUILTY OCR] No 12-digit EWB numeric match found in extracted text.');
+            //         showToast('EWB Number not found or invalid format. Please upload a valid Bility.');
+            //         setUploadingBility(false);
+            //         return;
+            //     }
+            //     const ewbNo = ewbMatch[0];
+            //     console.log('✅ [BUILTY OCR] Found EWB Match:', ewbNo);
+            //     showToast(`Found EWB: ${ewbNo}. Verifying...`);
+            //
+            //     // Step 4, 5, 6: Send EWB No to backend to check expiry/validity via NIC API
+            //     const verifyPayload = {
+            //         ewb_no: ewbNo,
+            //         load_id: trip.id || trip.load_id
+            //     };
+            //
+            //     const verifyResponse = await axiosInstance.post(END_POINTS.TRUCKER_VERIFY_EWB, verifyPayload);
+            //     if (verifyResponse.data?.status === 'success' || verifyResponse.data?.status === true) {
+            //         // Step 7: Show status to user
+            //         showToast('E-Way Bill Verified Successfully. Uploading...');
+            //     } else {
+            //         showToast(verifyResponse.data?.message || 'E-Way Bill Verification Failed! Invalid/Fake Bility.');
+            //         setUploadingBility(false);
+            //         return; // Stop upload if fake
+            //     }
+            // } catch (ocrError) {
+            //     console.warn('❌ [BUILTY OCR] Error:', ocrError);
+            //     showToast('Failed to scan document. Please try a clearer image or valid EWB.');
+            //     setUploadingBility(false);
+            //     return;
+            // } finally {
+            //     // Clean up temp OCR file
+            //     if (tempOcrFilePath) {
+            //         try {
+            //             await RNFS.unlink(tempOcrFilePath);
+            //             console.log('🧹 [BUILTY OCR] Cleaned up temp file:', tempOcrFilePath);
+            //         } catch (cleanupErr) {
+            //             console.warn('⚠️ [BUILTY OCR] Failed to clean up temp file:', cleanupErr);
+            //         }
+            //     }
+            // }
             // --- End EWB OCR Verification Block ---
 
             console.log('📤 [BUILTY] Trip data:', {
@@ -2516,6 +2571,7 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
                 onClose={() => setShowColorTrackingMap(false)}
                 endpoint={END_POINTS.TRUCKER_TRACKING_DASHBOARD(trip.id)}
                 selectedRoutePolyline={selectedTripRoute?.overview_polyline?.points}
+                onVehicleDataUpdate={(data) => { vehicleColorDataRef.current = data; }}
             />
         </SafeAreaView>
     );

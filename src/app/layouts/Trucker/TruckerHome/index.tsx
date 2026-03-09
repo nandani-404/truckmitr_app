@@ -19,6 +19,7 @@ const { width } = Dimensions.get('window');
 // ─────────────────────────────────────────────
 // Design Tokens
 // ─────────────────────────────────────────────
+
 const COLORS = {
     primary: '#6467f2',
     bg: '#f6f6f8',
@@ -390,6 +391,10 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
     const [refreshing, setRefreshing] = useState(false);
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(16)).current;
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+    const floatAnim = useRef(new Animated.Value(0)).current;
+    const findLoadScaleAnim = useRef(new Animated.Value(1)).current;
+    const findLoadGlowAnim = useRef(new Animated.Value(0)).current;
     const { user } = useSelector((state: any) => state.user) || {};
 
     // Dynamic Data State
@@ -501,6 +506,34 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
             Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
             Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
         ]).start();
+
+        Animated.loop(
+            Animated.parallel([
+                Animated.sequence([
+                    Animated.timing(pulseAnim, { toValue: 1.06, duration: 1200, useNativeDriver: true }),
+                    Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+                ]),
+                Animated.sequence([
+                    Animated.timing(floatAnim, { toValue: -6, duration: 1200, useNativeDriver: true }),
+                    Animated.timing(floatAnim, { toValue: 0, duration: 1200, useNativeDriver: true }),
+                ])
+            ])
+        ).start();
+
+        // Find Load CTA pulse animation
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(findLoadScaleAnim, { toValue: 1.03, duration: 1500, useNativeDriver: true }),
+                Animated.timing(findLoadScaleAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+            ])
+        ).start();
+
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(findLoadGlowAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+                Animated.timing(findLoadGlowAnim, { toValue: 0, duration: 1500, useNativeDriver: true }),
+            ])
+        ).start();
     }, []);
 
     const onRefresh = () => {
@@ -523,7 +556,6 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
 
     // ── Quick Actions Data ──
     const quickActions = [
-        { label: 'Find Loads', sub: `${dashboardData.availableLoads} available`, icon: <SearchIcon color={COLORS.primary} />, iconBg: 'rgba(100, 103, 242, 0.1)', onPress: props.onNavigateToFindLoads },
         { label: 'My Loads', sub: `${dashboardData.myLoads} loads`, icon: <GavelIcon color="#2563eb" />, iconBg: '#eff6ff', onPress: props.onNavigateToMyTrips },
         { label: 'Payments', sub: `${Number(dashboardData.pendingEarnings) > 0 ? '2' : '0'} pending`, icon: <WalletIcon color="#10b981" />, iconBg: '#ecfdf5', onPress: props.onNavigateToPayments },
         { label: 'My Vehicles', sub: `${dashboardData.vehicleCount} vehicles`, icon: <CarIcon color="#8b5cf6" />, iconBg: '#f5f3ff', onPress: props.onNavigateToMyVehicles },
@@ -578,6 +610,30 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
                         thumbColor={COLORS.white}
                         ios_backgroundColor="#e2e8f0"
                     />
+                </Animated.View>
+
+                {/* ── Find Load CTA ── */}
+                <Animated.View style={[styles.findLoadCta, { opacity: fadeAnim, transform: [{ scale: findLoadScaleAnim }] }]}>
+                    <TouchableOpacity
+                        style={styles.findLoadCtaButton}
+                        onPress={props.onNavigateToFindLoads}
+                        activeOpacity={0.85}
+                    >
+                        <View style={styles.findLoadCtaIconContainer}>
+                            <SearchIcon color={COLORS.white} />
+                        </View>
+                        <View style={styles.findLoadCtaContent}>
+                            <Text style={styles.findLoadCtaTitle}>Find Loads</Text>
+                            <Text style={styles.findLoadCtaSub}>
+                                {dashboardData.availableLoads > 0
+                                    ? `${dashboardData.availableLoads} loads available near you`
+                                    : 'Search for available loads'}
+                            </Text>
+                        </View>
+                        <View style={styles.findLoadCtaArrow}>
+                            <ChevronRightIcon color={COLORS.white} />
+                        </View>
+                    </TouchableOpacity>
                 </Animated.View>
 
                 {/* ── Active Trip Card (Only if active) ── */}
@@ -705,13 +761,15 @@ const TruckerHomeScreen: React.FC<Props> = (props) => {
             </ScrollView>
 
             {/* ── Tracking Map FAB ── */}
-            <TouchableOpacity
-                style={styles.trackingFab}
-                onPress={props.onNavigateToAllLiveTracking}
-                activeOpacity={0.8}
-            >
-                <MapTrackingIcon color={COLORS.white} />
-            </TouchableOpacity>
+            <Animated.View style={[styles.trackingFabWrapper, { transform: [{ scale: pulseAnim }, { translateY: floatAnim }] }]}>
+                <TouchableOpacity
+                    style={styles.trackingFab}
+                    onPress={props.onNavigateToAllLiveTracking}
+                    activeOpacity={0.8}
+                >
+                    <MapTrackingIcon color={COLORS.white} />
+                </TouchableOpacity>
+            </Animated.View>
         </SafeAreaView>
     );
 };
@@ -727,10 +785,13 @@ const styles = StyleSheet.create({
     avatarContainer: { width: 50, height: 50, marginRight: 12 },
     avatar: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: COLORS.primary },
     onlineDot: { position: 'absolute', bottom: -1, right: -1, width: 14, height: 14, borderRadius: 7, backgroundColor: '#22c55e', borderWidth: 2, borderColor: COLORS.white },
-    trackingFab: {
+    trackingFabWrapper: {
         position: 'absolute',
-        bottom: Platform.OS === 'ios' ? 100 : 80,
+        bottom: Platform.OS === 'ios' ? 85 : 65,
         right: 20,
+        zIndex: 1000,
+    },
+    trackingFab: {
         width: 60,
         height: 60,
         borderRadius: 30,
@@ -742,7 +803,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        zIndex: 1000,
     },
     profileInfo: { flex: 1 },
     nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -751,11 +811,61 @@ const styles = StyleSheet.create({
     notifBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(100, 103, 242, 0.1)' },
     notifDot: { position: 'absolute', top: 12, right: 12, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.danger, borderWidth: 1.5, borderColor: COLORS.white },
 
-    availCardNew: { backgroundColor: COLORS.white, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
+    availCardNew: { backgroundColor: COLORS.white, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
     availCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     availIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(100, 103, 242, 0.1)', alignItems: 'center', justifyContent: 'center' },
     availTitleNew: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
     availSubNew: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+
+    // Find Load CTA
+    findLoadCta: {
+        marginBottom: 24,
+    },
+    findLoadCtaButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.primary,
+        borderRadius: 20,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    findLoadCtaIconContainer: {
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    findLoadCtaContent: {
+        flex: 1,
+    },
+    findLoadCtaTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: COLORS.white,
+        letterSpacing: 0.3,
+    },
+    findLoadCtaSub: {
+        fontSize: 13,
+        color: 'rgba(255, 255, 255, 0.85)',
+        marginTop: 3,
+        fontWeight: '500',
+    },
+    findLoadCtaArrow: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 
     earningsGridNew: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
     earningsCard: { width: (width - 52) / 2, backgroundColor: COLORS.white, borderRadius: 16, padding: 16, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },

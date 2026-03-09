@@ -104,6 +104,13 @@ const LoadDetailScreen: React.FC<Props> = ({ onBack, loadData }) => {
 
     const load = loadData || {};
 
+    // Determine if bidding should be disabled
+    const loadStatus = (load.status || '').toLowerCase().replace(/[\s_-]+/g, '');
+    const isBooked = loadStatus === 'booked';
+    const isExpired = load.expiring_at === 'closed' || load.exact_expiring_at === '0';
+    const isBidDisabled = isBooked || isExpired;
+    const disabledLabel = isBooked ? 'Already Booked' : 'Load Expired';
+
     useEffect(() => {
         Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
     }, []);
@@ -133,8 +140,18 @@ const LoadDetailScreen: React.FC<Props> = ({ onBack, loadData }) => {
                 showToast(response?.data?.message || 'Your bid has been sent.');
             }
         } catch (error: any) {
+            const status = error?.response?.status;
             const msg = error?.response?.data?.message || 'Failed to submit bid. Please try again.';
-            Alert.alert('Error', msg);
+
+            if (status === 429) {
+                // Daily bid limit reached – close modal & show toast
+                setShowBidModal(false);
+                setBidAmount('');
+                setRemarks('');
+                showToast(msg);
+            } else {
+                showToast(msg);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -275,8 +292,14 @@ const LoadDetailScreen: React.FC<Props> = ({ onBack, loadData }) => {
 
             {/* ── Bottom: Single Place Bid Button ── */}
             <View style={s.bottomBar}>
-                <TouchableOpacity style={s.placeBidBtn} onPress={() => setShowBidModal(true)} activeOpacity={0.8}>
-                    <Text style={s.placeBidBtnText}>Place Bid</Text>
+                <TouchableOpacity
+                    style={[s.placeBidBtn, isBidDisabled && s.placeBidBtnDisabled]}
+                    onPress={() => { if (!isBidDisabled) setShowBidModal(true); }}
+                    activeOpacity={isBidDisabled ? 1 : 0.8}
+                >
+                    <Text style={[s.placeBidBtnText, isBidDisabled && s.placeBidBtnTextDisabled]}>
+                        {isBidDisabled ? disabledLabel : 'Place Bid'}
+                    </Text>
                 </TouchableOpacity>
             </View>
 
@@ -424,6 +447,10 @@ const s = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     placeBidBtnText: { fontSize: 16, fontWeight: '700', color: C.white },
+    placeBidBtnDisabled: {
+        backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border,
+    },
+    placeBidBtnTextDisabled: { color: C.textMuted },
 
     // Modal
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },

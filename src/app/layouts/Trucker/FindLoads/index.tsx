@@ -27,11 +27,18 @@ const C = {
     accent: '#2C5282',
     accentLight: '#EBF0F7',
     success: '#059669',
-    successLight: '#ffffffff',
+    successLight: '#ECFDF5',
     warning: '#D97706',
     warningLight: '#FEF3C7',
     danger: '#DC2626',
+    dangerLight: '#FEF2F2',
     white: '#FFFFFF',
+    bookedBg: '#ECFDF5',
+    bookedText: '#059669',
+    openBg: '#FFF7ED',
+    openText: '#EA580C',
+    closedBg: '#F3F4F6',
+    closedText: '#6B7280',
 };
 
 // ═══════════════════════════════════════════════════
@@ -68,6 +75,12 @@ const PackageIcon = () => (
         <Path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
     </Svg>
 );
+const ClockIcon = ({ color }: { color?: string }) => (
+    <Svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color || C.textMuted} strokeWidth="2" strokeLinecap="round">
+        <Circle cx="12" cy="12" r="10" /><Polyline points="12 6 12 12 16 14" />
+    </Svg>
+);
+
 const ArrowRightIcon = () => (
     <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="1.5" strokeLinecap="round">
         <Path d="M5 12h14M12 5l7 7-7 7" />
@@ -100,54 +113,32 @@ const ListViewIcon = ({ active }: { active?: boolean }) => (
     </Svg>
 );
 
-// Custom Marker wrapper to prevent Android clipping bug
 const CustomLoadMarker = ({ coordinate, onPress, load }: any) => {
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [trackChanges, setTrackChanges] = useState(true);
-
     return (
         <Marker
             coordinate={coordinate}
             onPress={onPress}
-            tracksViewChanges={trackChanges}
-            anchor={{ x: 0.5, y: 0.5 }}
-            zIndex={trackChanges ? 2 : 1}
-        >
-            <View style={markerStyles.markerContainer}>
-                {!isLoaded && (
-                    <ActivityIndicator size="small" color={C.accent} style={{ position: 'absolute' }} />
-                )}
-                <Image
-                    source={require('src/assets/tracking_color_truck/logo2.0.png')}
-                    style={[markerStyles.markerImage, { opacity: isLoaded ? 1 : 0 }]}
-                    resizeMode="contain"
-                    fadeDuration={0}
-                    onLoad={() => {
-                        setIsLoaded(true);
-                        // Prevent MapView from snapshotting too early and giving an invisible marker
-                        setTimeout(() => setTrackChanges(false), 2500);
-                    }}
-                />
-            </View>
-        </Marker>
+            image={require('src/assets/loadmandal/load.png')}
+            anchor={{ x: 0.5, y: 0.5 }} // try center first
+            tracksViewChanges={false}
+            zIndex={10}
+        />
     );
 };
 
 const markerStyles = StyleSheet.create({
     markerContainer: {
-        width: 120, // Adjusted to exactly match 1.5 aspect ratio of the 1280x853 image
-        height: 80,
+        width: 40,
+        height: 40,
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'visible',
         backgroundColor: 'transparent',
     },
     markerImage: {
-        width: 120,
-        height: 80,
+        width: 40,
+        height: 40,
     }
 });
-
 // India region default for the map and its boundaries
 const INDIA_REGION: Region = {
     latitude: 22.5937,
@@ -288,6 +279,29 @@ const getTimeAgo = (dateStr: string) => {
     return `${diffDays}d ago`;
 };
 
+const getStatusConfig = (status: string) => {
+    const s = (status || '').toLowerCase().replace(/[\s_-]+/g, '');
+    if (s === 'booked') return { label: 'Booked', bg: C.bookedBg, color: C.bookedText, icon: '✓' };
+    if (s === 'openload') return { label: 'Open Load', bg: C.openBg, color: C.openText, icon: '●' };
+    if (s === 'closed') return { label: 'Closed', bg: C.closedBg, color: C.closedText, icon: '—' };
+    return { label: status || 'Unknown', bg: C.closedBg, color: C.closedText, icon: '?' };
+};
+
+const getExpiryDisplay = (expiringAt: string, exactExpiringAt: string) => {
+    if (!expiringAt || expiringAt === 'closed' || exactExpiringAt === '0') {
+        return { text: 'Expired', color: C.danger, isExpired: true };
+    }
+    const lower = expiringAt.toLowerCase();
+    if (lower.includes('hour') || lower.includes('min')) {
+        // Urgent — less than a day
+        return { text: expiringAt, color: C.warning, isExpired: false };
+    }
+    if (lower.includes('day')) {
+        return { text: expiringAt, color: C.success, isExpired: false };
+    }
+    return { text: expiringAt, color: C.textSec, isExpired: false };
+};
+
 // ═══════════════════════════════════════════════════
 // Component
 // ═══════════════════════════════════════════════════
@@ -419,6 +433,8 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
         const vehicleInfo = safeString(load.vehicle_body) || safeString(load.vehicle_length) || safeString(load.vechicle_body) || safeString(load.vechicle_type);
         const qty = safeString(load.load_qty) || safeString(load.meterial_quantity);
         const material = safeString(load.meterial);
+        const statusCfg = getStatusConfig(load.status);
+        const expiry = getExpiryDisplay(load.expiring_at, load.exact_expiring_at);
 
         return (
             <Animated.View style={{
@@ -430,12 +446,14 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
                     activeOpacity={0.7}
                     onPress={() => onLoadSelect?.(load.load_id, load)}
                 >
-                    {/* Top Row: ID + Posted */}
+                    {/* Top Row: ID + Status Badge */}
                     <View style={s.cardTop}>
                         <View style={s.cardIdRow}>
                             <Text style={s.cardId} numberOfLines={1}>{load.load_id}</Text>
                         </View>
-                        <Text style={s.cardPosted} numberOfLines={1}>{getTimeAgo(load.created_at)}</Text>
+                        <View style={[s.statusBadge, { backgroundColor: statusCfg.bg }]}>
+                            <Text style={[s.statusBadgeText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
+                        </View>
                     </View>
 
                     {/* Route */}
@@ -496,6 +514,17 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
                                 </View>
                             ) : null}
                         </View>
+                    </View>
+
+                    {/* Expiry Timer Row */}
+                    <View style={s.expiryRow}>
+                        <View style={s.expiryLeft}>
+                            <ClockIcon color={expiry.color} />
+                            <Text style={[s.expiryText, { color: expiry.color }]} numberOfLines={1}>
+                                {expiry.isExpired ? 'Expired / Closed' : expiry.text}
+                            </Text>
+                        </View>
+                        <Text style={s.cardPosted} numberOfLines={1}>{getTimeAgo(load.created_at)}</Text>
                     </View>
                 </TouchableOpacity>
             </Animated.View>
@@ -635,7 +664,17 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
 
                                 {/* Modal Header */}
                                 <Text style={s.bottomSheetModalTitle}>Load #{selectedMapLoad?.load_id}</Text>
-                                <Text style={s.bottomSheetModalSubtitle}>Posted {selectedMapLoad ? getTimeAgo(selectedMapLoad.created_at) : ''}</Text>
+                                <View style={s.bottomSheetHeaderMeta}>
+                                    <Text style={s.bottomSheetModalSubtitle}>Posted {selectedMapLoad ? getTimeAgo(selectedMapLoad.created_at) : ''}</Text>
+                                    {selectedMapLoad?.status && (() => {
+                                        const cfg = getStatusConfig(selectedMapLoad.status);
+                                        return (
+                                            <View style={[s.statusBadge, { backgroundColor: cfg.bg }]}>
+                                                <Text style={[s.statusBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+                                            </View>
+                                        );
+                                    })()}
+                                </View>
 
                                 <ScrollView style={{ flex: 1, marginTop: 16 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
 
@@ -703,20 +742,64 @@ const FindLoadsScreen: React.FC<Props> = ({ onBack, onLoadSelect }) => {
                                         <MapDetailRow label="Load Time" value={selectedMapLoad?.load_time || 'Not specified'} isLast />
                                     </View>
 
+                                    {/* Status & Availability Card */}
+                                    {selectedMapLoad && (() => {
+                                        const sCfg = getStatusConfig(selectedMapLoad.status);
+                                        const exp = getExpiryDisplay(selectedMapLoad.expiring_at, selectedMapLoad.exact_expiring_at);
+                                        return (
+                                            <View style={[s.detailCard, { borderColor: sCfg.color, borderWidth: 1.5 }]}>
+                                                <Text style={s.detailSectionTitle}>Status & Availability</Text>
+                                                <View style={s.statusDetailRow}>
+                                                    <Text style={{ fontSize: 13, color: C.textSec, flex: 1 }}>Booking Status</Text>
+                                                    <View style={[s.statusBadgeLg, { backgroundColor: sCfg.bg }]}>
+                                                        <Text style={[s.statusBadgeLgText, { color: sCfg.color }]}>{sCfg.label}</Text>
+                                                    </View>
+                                                </View>
+                                                <View style={[s.statusDetailRow, { borderBottomWidth: 0 }]}>
+                                                    <Text style={{ fontSize: 13, color: C.textSec, flex: 1 }}>Availability</Text>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1.2, justifyContent: 'flex-end' }}>
+                                                        <ClockIcon color={exp.color} />
+                                                        <Text style={{ fontSize: 13, fontWeight: '600', color: exp.color }} numberOfLines={1}>
+                                                            {exp.isExpired ? 'Expired' : exp.text}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                                {selectedMapLoad.exact_expiring_at && selectedMapLoad.exact_expiring_at !== '0' && (
+                                                    <Text style={{ fontSize: 11, color: C.textMuted, textAlign: 'right', marginTop: 4 }}>
+                                                        Expires: {selectedMapLoad.exact_expiring_at}
+                                                    </Text>
+                                                )}
+                                            </View>
+                                        );
+                                    })()}
+
                                 </ScrollView>
 
                                 <View style={{ paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border }}>
-                                    <TouchableOpacity
-                                        style={s.bidButton}
-                                        activeOpacity={0.8}
-                                        onPress={() => {
-                                            const load = selectedMapLoad;
-                                            setSelectedMapLoad(null);
-                                            onLoadSelect?.(load.load_id, load);
-                                        }}
-                                    >
-                                        <Text style={s.bidButtonText}>Proceed to Place Bid</Text>
-                                    </TouchableOpacity>
+                                    {(() => {
+                                        const loadStatus = (selectedMapLoad?.status || '').toLowerCase().replace(/[\s_-]+/g, '');
+                                        const isBooked = loadStatus === 'booked';
+                                        const isExpired = selectedMapLoad?.expiring_at === 'closed' || selectedMapLoad?.exact_expiring_at === '0';
+                                        const isBidDisabled = isBooked || isExpired;
+                                        const disabledLabel = isBooked ? 'Already Booked' : 'Load Expired';
+
+                                        return (
+                                            <TouchableOpacity
+                                                style={[s.bidButton, isBidDisabled && s.bidButtonDisabled]}
+                                                activeOpacity={isBidDisabled ? 1 : 0.8}
+                                                onPress={() => {
+                                                    if (isBidDisabled) return;
+                                                    const load = selectedMapLoad;
+                                                    setSelectedMapLoad(null);
+                                                    onLoadSelect?.(load.load_id, load);
+                                                }}
+                                            >
+                                                <Text style={[s.bidButtonText, isBidDisabled && s.bidButtonTextDisabled]}>
+                                                    {isBidDisabled ? disabledLabel : 'Proceed to Place Bid'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })()}
                                 </View>
                             </View>
                         </View>
@@ -874,6 +957,26 @@ const s = StyleSheet.create({
     metaTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.surfaceAlt, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 6, gap: 4, maxWidth: '48%' },
     metaTagText: { fontSize: 11, color: C.textSec, fontWeight: '500', flexShrink: 1 },
 
+    // Status badge
+    statusBadge: {
+        paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
+    },
+    statusBadgeText: {
+        fontSize: 11, fontWeight: '700', letterSpacing: 0.3, textTransform: 'capitalize',
+    },
+
+    // Expiry row on card
+    expiryRow: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.borderLight,
+    },
+    expiryLeft: {
+        flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1,
+    },
+    expiryText: {
+        fontSize: 11, fontWeight: '600',
+    },
+
     // Map View styles
     mapContainer: { flex: 1, position: 'relative' },
     map: { flex: 1 },
@@ -929,7 +1032,10 @@ const s = StyleSheet.create({
         justifyContent: 'center', alignItems: 'center', zIndex: 10,
     },
     bottomSheetModalTitle: { fontSize: 18, fontWeight: '700', color: C.text, textAlign: 'center', marginTop: 4 },
-    bottomSheetModalSubtitle: { fontSize: 13, color: C.textMuted, textAlign: 'center', marginTop: 2 },
+    bottomSheetModalSubtitle: { fontSize: 13, color: C.textMuted, marginTop: 2 },
+    bottomSheetHeaderMeta: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4,
+    },
 
     // Modern Cards for Detail View
     detailCard: {
@@ -938,12 +1044,29 @@ const s = StyleSheet.create({
     },
     detailSectionTitle: { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 12, letterSpacing: -0.1 },
 
+    // Status in bottom sheet detail
+    statusDetailRow: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.borderLight,
+    },
+    statusBadgeLg: {
+        paddingHorizontal: 14, paddingVertical: 5, borderRadius: 14,
+    },
+    statusBadgeLgText: {
+        fontSize: 13, fontWeight: '700', textTransform: 'capitalize',
+    },
+
     bidButton: {
         backgroundColor: C.accent, paddingVertical: 16, borderRadius: 14,
         alignItems: 'center', justifyContent: 'center',
         shadowColor: C.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
     },
     bidButtonText: { color: C.white, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+    bidButtonDisabled: {
+        backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border,
+        shadowOpacity: 0, elevation: 0,
+    },
+    bidButtonTextDisabled: { color: C.textMuted },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
     modalSheet: { height: '80%', backgroundColor: C.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },

@@ -4080,5 +4080,14 @@
     "reel_live_status": "The reel posted by you is now live!",
     "reel_live_benefit": "You have earned 2 jobs credits to apply for jobs based on your subscription.",
     "reel_live_condition": "Note: These credits must be used within a 7-day period.",
-    "reel_live_button": "Apply Now"
+    "reel_live_button": "Apply Now",
+    "safeAndSecure": "Safe & Secure",
+    "neverMissInterviewCall": "Never Miss an Interview Call!",
+    "fullScreenPermissionMsg": "Transporters can call you for job interviews through TruckMitr. To make sure you never miss an important interview call — even when your phone is locked — please enable this setting.",
+    "benefitReceiveCalls": "Receive interview calls anytime",
+    "benefitLockScreen": "Works even on lock screen",
+    "benefitGetHired": "Get hired faster by transporters",
+    "enableNow": "Enable Now",
+    "illDoItLater": "I'll do it later",
+    "noDataShared": "Your data is safe. No information is shared."
 }

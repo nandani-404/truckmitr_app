@@ -909,6 +909,8 @@ const Home = React.forwardRef((props, ref) => {
 
     useFocusEffect(
         useCallback(() => {
+            let subscriptionTimer: ReturnType<typeof setTimeout> | null = null;
+
             const _fetchUser = async () => {
                 const profile: any = await axiosInstance.get(END_POINTS?.GET_PROFILE);
                 const res: any = await axiosInstance.get(END_POINTS.PAYMENT_DETAIL);
@@ -931,8 +933,11 @@ const Home = React.forwardRef((props, ref) => {
                     }
 
                     if (subsClosedCount !== '1' && !hasActiveSub) {
-                        dispatch(subscriptionModalAction(true))
-                        await AsyncStorage.setItem('subscription_modal_closed_count', '1');
+                        // Delay the payment popup by 40 seconds
+                        subscriptionTimer = setTimeout(async () => {
+                            dispatch(subscriptionModalAction(true))
+                            await AsyncStorage.setItem('subscription_modal_closed_count', '1');
+                        }, 40000);
                     }
                 }
             }
@@ -941,6 +946,13 @@ const Home = React.forwardRef((props, ref) => {
             fetchPopupMessage()
             fetchVideoUrl()
             fetchBanners()
+
+            // Cleanup: clear the subscription timer when screen loses focus
+            return () => {
+                if (subscriptionTimer) {
+                    clearTimeout(subscriptionTimer);
+                }
+            };
         }, [])
     );
 
@@ -1467,7 +1479,7 @@ const Home = React.forwardRef((props, ref) => {
                         >
                             <View style={{
                                 flex: 1,
-                                backgroundColor: 'rgba(0,0,0,0.5)',
+                                backgroundColor: 'rgba(0,0,0,0.55)',
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 padding: responsiveWidth(5),
@@ -1480,83 +1492,175 @@ const Home = React.forwardRef((props, ref) => {
                                     padding: 24,
                                     alignItems: 'center',
                                     shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 4 },
-                                    shadowOpacity: 0.25,
-                                    shadowRadius: 10,
-                                    elevation: 10,
+                                    shadowOffset: { width: 0, height: 8 },
+                                    shadowOpacity: 0.15,
+                                    shadowRadius: 16,
+                                    elevation: 12,
                                 }}>
+                                    {/* Trusted badge at top */}
                                     <View style={{
-                                        width: 70,
-                                        height: 70,
-                                        borderRadius: 35,
-                                        backgroundColor: '#FEF3C7',
+                                        flexDirection: 'row',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
+                                        backgroundColor: '#ECFDF5',
+                                        paddingHorizontal: 12,
+                                        paddingVertical: 5,
+                                        borderRadius: 20,
                                         marginBottom: 16,
                                     }}>
-                                        <Ionicons name="call" size={32} color="#F59E0B" />
+                                        <Ionicons name="shield-checkmark" size={14} color="#059669" />
+                                        <Text style={{ marginLeft: 5, fontSize: 12, color: '#059669', fontWeight: '600' }}>
+                                            {t('safeAndSecure', 'Safe & Secure')}
+                                        </Text>
                                     </View>
 
+                                    {/* Icon — green video call icon with shield feel */}
+                                    <View style={{
+                                        width: 76,
+                                        height: 76,
+                                        borderRadius: 38,
+                                        backgroundColor: '#ECFDF5',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginBottom: 6,
+                                        borderWidth: 2,
+                                        borderColor: '#A7F3D0',
+                                    }}>
+                                        <Ionicons name="videocam" size={34} color="#059669" />
+                                    </View>
+
+                                    {/* Small shield badge on icon */}
+                                    <View style={{
+                                        position: 'absolute',
+                                        top: 110,
+                                        right: 125,
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: 14,
+                                        backgroundColor: '#fff',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 1 },
+                                        shadowOpacity: 0.1,
+                                        shadowRadius: 3,
+                                        elevation: 3,
+                                    }}>
+                                        <Ionicons name="shield-checkmark" size={16} color="#059669" />
+                                    </View>
+
+                                    {/* Title */}
                                     <Text style={{
-                                        fontSize: responsiveFontSize(2.2),
+                                        fontSize: responsiveFontSize(2.1),
                                         fontWeight: 'bold',
-                                        color: '#1F2937',
-                                        marginBottom: 8,
+                                        color: '#111827',
+                                        marginBottom: 6,
+                                        marginTop: 10,
                                         textAlign: 'center',
                                     }}>
-                                        {t('enableCallScreen', 'Enable Call Screen')}
+                                        {t('neverMissInterviewCall', 'Never Miss an Interview Call!')}
                                     </Text>
 
+                                    {/* Subtitle */}
                                     <Text style={{
                                         fontSize: responsiveFontSize(1.5),
-                                        color: '#6B7280',
+                                        color: '#4B5563',
                                         textAlign: 'center',
-                                        marginBottom: 24,
-                                        lineHeight: 22,
+                                        marginBottom: 16,
+                                        lineHeight: 21,
+                                        paddingHorizontal: 4,
                                     }}>
-                                        {t('fullScreenPermissionMsg', 'To receive incoming video calls even when your phone is locked, please allow "Full Screen Notifications" for TruckMitr.')}
+                                        {t('fullScreenPermissionMsg', 'Transporters can call you for job interviews through TruckMitr. To make sure you never miss an important interview call — even when your phone is locked — please enable this setting.')}
                                     </Text>
 
+                                    {/* Benefits list */}
+                                    <View style={{
+                                        width: '100%',
+                                        backgroundColor: '#F0FDF4',
+                                        borderRadius: 12,
+                                        padding: 14,
+                                        marginBottom: 18,
+                                    }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                            <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+                                            <Text style={{ marginLeft: 8, fontSize: responsiveFontSize(1.35), color: '#15803D', fontWeight: '500' }}>
+                                                {t('benefitReceiveCalls', 'Receive interview calls anytime')}
+                                            </Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                            <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+                                            <Text style={{ marginLeft: 8, fontSize: responsiveFontSize(1.35), color: '#15803D', fontWeight: '500' }}>
+                                                {t('benefitLockScreen', 'Works even on lock screen')}
+                                            </Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+                                            <Text style={{ marginLeft: 8, fontSize: responsiveFontSize(1.35), color: '#15803D', fontWeight: '500' }}>
+                                                {t('benefitGetHired', 'Get hired faster by transporters')}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    {/* CTA Button — green and positive */}
                                     <TouchableOpacity
                                         onPress={() => {
                                             setShowFullScreenPermissionModal(false);
                                             IncomingCallModule.openFullScreenIntentSettings();
                                         }}
                                         style={{
-                                            backgroundColor: '#1E40AF',
+                                            backgroundColor: '#16A34A',
                                             width: '100%',
-                                            paddingVertical: 14,
-                                            borderRadius: 12,
+                                            paddingVertical: 15,
+                                            borderRadius: 14,
                                             alignItems: 'center',
-                                            marginBottom: 12,
-                                            shadowColor: '#1E40AF',
+                                            justifyContent: 'center',
+                                            flexDirection: 'row',
+                                            marginBottom: 10,
+                                            shadowColor: '#16A34A',
                                             shadowOffset: { width: 0, height: 4 },
-                                            shadowOpacity: 0.2,
+                                            shadowOpacity: 0.25,
                                             shadowRadius: 8,
-                                            elevation: 4,
+                                            elevation: 5,
                                         }}
                                     >
+                                        <Ionicons name="settings-outline" size={18} color="white" style={{ marginRight: 8 }} />
                                         <Text style={{
                                             color: 'white',
                                             fontSize: responsiveFontSize(1.8),
-                                            fontWeight: '600',
+                                            fontWeight: '700',
                                         }}>
-                                            {t('openSettings', 'Open Settings')}
+                                            {t('enableNow', 'Enable Now')}
                                         </Text>
                                     </TouchableOpacity>
 
+                                    {/* Later option */}
                                     <TouchableOpacity
                                         onPress={() => setShowFullScreenPermissionModal(false)}
-                                        style={{ paddingVertical: 10, paddingHorizontal: 20 }}
+                                        style={{ paddingVertical: 8, paddingHorizontal: 20 }}
                                     >
                                         <Text style={{
-                                            color: '#6B7280',
-                                            fontSize: responsiveFontSize(1.7),
+                                            color: '#9CA3AF',
+                                            fontSize: responsiveFontSize(1.55),
                                             fontWeight: '500',
                                         }}>
-                                            {t('later', 'Later')}
+                                            {t('illDoItLater', "I'll do it later")}
                                         </Text>
                                     </TouchableOpacity>
+
+                                    {/* Safety reassurance */}
+                                    <View style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        marginTop: 10,
+                                    }}>
+                                        <Ionicons name="lock-closed" size={12} color="#9CA3AF" />
+                                        <Text style={{
+                                            marginLeft: 4,
+                                            fontSize: responsiveFontSize(1.15),
+                                            color: '#9CA3AF',
+                                        }}>
+                                            {t('noDataShared', 'Your data is safe. No information is shared.')}
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
                         </Modal>
@@ -2134,7 +2238,7 @@ const Home = React.forwardRef((props, ref) => {
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 🚛 TRUCKER MODE TOGGLE CARD                    */}
                         {/* ═══════════════════════════════════════════════ */}
-                        {/* <TruckerModeToggle onToggle={handleStartTransition} /> */}
+                        <TruckerModeToggle onToggle={handleStartTransition} />
 
                         {/* Jobs Management Section */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>
