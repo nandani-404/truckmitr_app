@@ -53,6 +53,8 @@ export default function AvailableJob() {
                     const response: any = await axiosInstance.get(END_POINTS?.ALL_JOBS_AND_SEARCH(search));
                     if (response?.data?.status) {
                         setsearchJobsList(search.length === 0 ? [] : response?.data?.data);
+                    } else {
+                        setsearchJobsList(search.length === 0 ? undefined : []);
                     }
                 } catch (error) {
                     console.error("Error searching jobs:", error);

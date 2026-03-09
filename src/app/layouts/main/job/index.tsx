@@ -967,9 +967,12 @@ export default function AvailableJob() {
       console.log("allAvailableJobs", allAvailableJobs);
       if (allAvailableJobs?.data?.status) {
         setavailableJobsList(allAvailableJobs?.data?.data);
+      } else {
+        setavailableJobsList([]);
       }
     } catch (error) {
       console.error("Error fetching available jobs:", error);
+      setavailableJobsList([]);
     } finally {
       setloading(false)
     }
