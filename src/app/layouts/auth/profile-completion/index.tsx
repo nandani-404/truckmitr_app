@@ -1092,6 +1092,14 @@ export default function ProfileCompletion() {
             // Driving Experience - API expects CamelCase matching the missing field list
             formDataPayload.append('driving_experience', formData?.Driving_Experience || '0');
 
+            // Truck ownership - API expects varchar, same payload for EN/HI
+            const truckOwnershipPayload = formData?.truck_ownership === 'own' ? "I drive my own truck"
+                : formData?.truck_ownership === 'transporter' ? "I drive someone else's (owner's) truck"
+                : formData?.truck_ownership || '';
+            if (truckOwnershipPayload) {
+                formDataPayload.append('truck_ownership', truckOwnershipPayload);
+            }
+
             // Aadhar Number - removed for drivers
             // formDataPayload.append('Aadhar_Number', formData?.Aadhar_Number || '');
 
@@ -1807,7 +1815,7 @@ export default function ProfileCompletion() {
                 return (
                     <View style={styles.stepContainer}>
                         <Text style={styles.classicLabel}>
-                            {t('truckOwnershipQuery') || "May we kindly ask if you drive your own truck or a transporter's truck?"}
+                            {t('truckOwnershipQuery') || "May we kindly ask if you drive your own truck or a transporter's truck?"}<Text style={{ color: 'red' }}> *</Text>
                         </Text>
                         <Text style={[styles.helperText, { marginBottom: 16 }]}>
                             {t('truckOwnershipSub') || "This helps us tailor your experience."}

@@ -4085,6 +4085,7 @@
     "truckOwnershipSub": "This helps us tailor your experience.",
     "ownTruck": "I drive my own truck",
     "transporterTruck": "I drive someone else's (owner's) truck",
+    "truckOwnershipRequired": "Please select truck ownership",
     "live_color_tracking": "Live Color Tracking",
     "reel_live_title": "Congratulations! 🎉",
     "reel_live_status": "The reel posted by you is now live!",
