@@ -60,5 +60,12 @@ import IdCheckInfo from "./id-check-info"
 import Convoy from "./convoy"
 import JobSummary from "./job-summary"
 
+import KhatamitrActiveTrip from './khata-mitr/active-trip';
+import KhatamitrAddExpense from './khata-mitr/add-expense';
+import KhatamitrExpenseSummary from './khata-mitr/expense-summary';
+import KhatamitrProfitCalculation from './khata-mitr/profit-calculation';
+import KhatamitrJourneyTracking from './khata-mitr/journey-tracking';
+import KhatamitrTripCompletion from './khata-mitr/trip-completion';
 
-export { Home, Training, Job, HealthHygiene, Profile, Modules, Quiz, Player, AvailableJob, AppliedJob, Search, Settings, LanguageMain, Notification, Rating, ContactUs, Privacy, Terms, ProfileEdit, ProfileEditNew, DrivingDetails, UploadDocuments, Dashboard, SuitsJob, QuizResult, AddJob, ViewJobs, AddDriver, TransporterAppliedJob, DriverList, ProfileEditTransporter, DrivingDetailsTransporter, UploadDocumentsTransporter, JobStep2, JobStep3, DriverProfileEditByTransporter, DriverDrivingDetailsByTransporter, DriverUploadDocumentsByTransporter, PreferredColor, PaymentSuccess, ExcelImport, AddLoad, LocationSearch, LocationMap, DocumentUploadScreen, VerificationStatusScreen, TransporterVerificationScreen, DLVerification, DriverKiAwazInfo, CallJobManagerList, CallJobManagerInfo, ChallanCheckInfo, ChallanCheckResult, CourtCheckInfo, DigitalAddressCheckInfo, DriverInvites, RcCheckInfo, IdCheckInfo, Convoy ,JobSummary}
+
+export { Home, Training, Job, HealthHygiene, Profile, Modules, Quiz, Player, AvailableJob, AppliedJob, Search, Settings, LanguageMain, Notification, Rating, ContactUs, Privacy, Terms, ProfileEdit, ProfileEditNew, DrivingDetails, UploadDocuments, Dashboard, SuitsJob, QuizResult, AddJob, ViewJobs, AddDriver, TransporterAppliedJob, DriverList, ProfileEditTransporter, DrivingDetailsTransporter, UploadDocumentsTransporter, JobStep2, JobStep3, DriverProfileEditByTransporter, DriverDrivingDetailsByTransporter, DriverUploadDocumentsByTransporter, PreferredColor, PaymentSuccess, ExcelImport, AddLoad, LocationSearch, LocationMap, DocumentUploadScreen, VerificationStatusScreen, TransporterVerificationScreen, DLVerification, DriverKiAwazInfo, CallJobManagerList, CallJobManagerInfo, ChallanCheckInfo, ChallanCheckResult, CourtCheckInfo, DigitalAddressCheckInfo, DriverInvites, RcCheckInfo, IdCheckInfo, Convoy, JobSummary, KhatamitrActiveTrip, KhatamitrAddExpense, KhatamitrExpenseSummary, KhatamitrProfitCalculation, KhatamitrJourneyTracking, KhatamitrTripCompletion }

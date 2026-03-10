@@ -2013,6 +2013,69 @@ const Home = React.forwardRef((props, ref) => {
                         {/* ═══════════════════════════════════════════════ */}
                         <TruckerModeToggle onToggle={handleStartTransition} />
 
+                        {/* ═══════════════════════════════════════════════ */}
+                        {/* 📊 KHATAMITR BUTTON                            */}
+                        {/* ═══════════════════════════════════════════════ */}
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate(STACKS.KHATAMITR_ACTIVE_TRIP)}
+                            activeOpacity={0.85}
+                            style={{
+                                marginHorizontal: responsiveWidth(4),
+                                marginTop: 15,
+                                marginBottom: 5,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                backgroundColor: colors.white,
+                                borderRadius: 16,
+                                paddingVertical: 14,
+                                paddingHorizontal: 16,
+                                borderWidth: 1.5,
+                                borderColor: '#E5E7EB',
+                                ...shadow,
+                                shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3),
+                            }}
+                        >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                <View style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 12,
+                                    backgroundColor: '#EFF6FF',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginRight: 12,
+                                }}>
+                                    <Image style={{ height: 24, width: 24 }} resizeMode="contain" source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3135/3135679.png' }} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={{
+                                            fontSize: responsiveFontSize(1.7),
+                                            fontWeight: '700',
+                                            color: '#1F2937',
+                                            fontFamily: 'Inter-Bold',
+                                        }}>
+                                            {t('khataMitr', 'KhataMitr')}
+                                        </Text>
+                                        <View style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, marginLeft: 8 }}>
+                                            <Text style={{ fontSize: responsiveFontSize(1), color: '#1E40AF', fontWeight: 'bold' }}>EXPENSES</Text>
+                                        </View>
+                                    </View>
+                                    <Text style={{
+                                        fontSize: responsiveFontSize(1.2),
+                                        color: '#6B7280',
+                                        marginTop: 2,
+                                    }}>
+                                        {t('manageExpensesAndTrips', 'Manage expenses and track your trips')}
+                                    </Text>
+                                </View>
+                            </View>
+                            <View>
+                                <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
+                            </View>
+                        </TouchableOpacity>
+
                         {/* Jobs Management Section */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>
                             <Ionicons name="briefcase-outline" size={20} color={colors.royalBlue} />

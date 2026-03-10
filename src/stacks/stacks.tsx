@@ -217,6 +217,14 @@ export type NavigatorParams = {
     shipperTrackDetail: { load?: any } | undefined;
     shipperNotifications: undefined;
     shipperEditLoad: { editData: any };
+
+    // KHATAMITR MODULE
+    khatamitrActiveTrip: undefined;
+    khatamitrAddExpense: undefined;
+    khatamitrExpenseSummary: undefined;
+    khatamitrProfitCalculation: undefined;
+    khatamitrJourneyTracking: undefined;
+    khatamitrTripCompletion: undefined;
 };
 
 export const STACKS = {
@@ -476,6 +484,14 @@ export const STACKS = {
     SHIPPER_NOTIFICATIONS: 'shipperNotifications',
     SHIPPER_EDIT_LOAD: 'shipperEditLoad',
     TRANSPORTER_DRIVER_TRACKING: 'transporterDriverTracking',
+
+    // KHATAMITR MODULE
+    KHATAMITR_ACTIVE_TRIP: 'khatamitrActiveTrip',
+    KHATAMITR_ADD_EXPENSE: 'khatamitrAddExpense',
+    KHATAMITR_EXPENSE_SUMMARY: 'khatamitrExpenseSummary',
+    KHATAMITR_PROFIT_CALCULATION: 'khatamitrProfitCalculation',
+    KHATAMITR_JOURNEY_TRACKING: 'khatamitrJourneyTracking',
+    KHATAMITR_TRIP_COMPLETION: 'khatamitrTripCompletion',
 
 } as const;
 
