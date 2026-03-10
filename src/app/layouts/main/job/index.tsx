@@ -394,7 +394,8 @@ const JobCard = ({
   responsiveHeight,
   responsiveWidth,
   t,
-  navigation
+  navigation,
+  isExpiredJob
 }: any) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -447,6 +448,8 @@ const JobCard = ({
     skills = [item?.Preferred_Skills];
   }
 
+  const isExpired = isExpiredJob;
+
   return (
     <Animated.View
       style={{
@@ -458,13 +461,34 @@ const JobCard = ({
       }}
     >
 
+      {/* Expired Overlay Badge */}
+      {isExpired && (
+        <View style={{
+          position: 'absolute',
+          top: responsiveFontSize(1.5),
+          left: responsiveFontSize(1.5),
+          zIndex: 10,
+          backgroundColor: '#EF4444',
+          paddingHorizontal: responsiveFontSize(1.2),
+          paddingVertical: responsiveFontSize(0.4),
+          borderRadius: responsiveFontSize(0.6),
+          flexDirection: 'row',
+          alignItems: 'center',
+        }}>
+          <Ionicons name="time-outline" size={12} color="#fff" style={{ marginRight: 4 }} />
+          <Text style={{ color: '#fff', fontSize: responsiveFontSize(1.3), fontWeight: '700' }}>
+            {t('expired') || 'Expired'}
+          </Text>
+        </View>
+      )}
+
       {/* Gradient Accent */}
       <LinearGradient
-        colors={[colors.royalBlue + '12', colors.royalBlue + '04', 'transparent']}
+        colors={isExpired ? ['#00000008', '#00000004', 'transparent'] : [colors.royalBlue + '12', colors.royalBlue + '04', 'transparent']}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: responsiveHeight(12) }}
       />
 
-      <View style={{ padding: responsiveFontSize(2.2) }}>
+      <View style={{ padding: responsiveFontSize(2.2), opacity: isExpired ? 0.5 : 1 }}>
         {/* Subscription Badge */}
         {item?.subscription_plan_name === 'super_premium_job' ? (
           <View style={{
@@ -516,7 +540,7 @@ const JobCard = ({
                 textShadowOffset: { width: 0, height: 1 },
                 textShadowRadius: 2,
               }}>
-                SUPER PREMIUM JOB
+                URGENT HIRING
               </Text>
             </LinearGradient>
           </View>
@@ -567,7 +591,7 @@ const JobCard = ({
                 color: '#fff',
                 letterSpacing: 0.5,
               }}>
-                PREMIUM JOB
+                FAST HIRING
               </Text>
             </LinearGradient>
           </View>
@@ -774,54 +798,56 @@ const JobCard = ({
             </View>
           </View>
 
-          {/* Consent Checkbox - Premium Style */}
-          <Pressable
-            onPress={() => _onpressCheckBox(item.id)}
-            style={({ pressed }) => [{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              backgroundColor: checkBoxSelect[item.id]
-                ? colors.royalBlue + '08'
-                : colors.blackOpacity(0.02),
-              borderRadius: responsiveFontSize(1.2),
-              padding: responsiveFontSize(1.5),
-              borderWidth: 1.5,
-              borderColor: checkBoxSelect[item.id]
-                ? colors.royalBlue + '25'
-                : colors.blackOpacity(0.06),
-              opacity: pressed ? 0.7 : 1,
-              marginBottom: responsiveFontSize(1.5),
-            }]}
-          >
-            <MaterialCommunityIcons
-              name={checkBoxSelect[item.id] ? 'checkbox-marked' : 'checkbox-blank-outline'}
-              size={22}
-              color={colors.royalBlue}
-              style={{ marginRight: responsiveFontSize(1), marginTop: 2 }}
-            />
-            <Text style={{
-              color: colors.blackOpacity(0.7),
-              fontSize: responsiveFontSize(1.55),
-              flex: 1,
-              lineHeight: responsiveFontSize(2.2),
-            }}>
-              {t(`iAgreeToTruckMitr`)}
-              <Text
-                onPress={() => navigation.navigate(STACKS?.DRIVER_CONSENT)}
-                style={{
-                  color: colors.royalBlue,
-                  fontWeight: '600',
-                  textDecorationLine: 'underline'
-                }}
-              >
-                {' '}{t(`driverConsent`)}
+          {/* Consent Checkbox - Premium Style (hidden for expired jobs) */}
+          {!isExpired && (
+            <Pressable
+              onPress={() => _onpressCheckBox(item.id)}
+              style={({ pressed }) => [{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                backgroundColor: checkBoxSelect[item.id]
+                  ? colors.royalBlue + '08'
+                  : colors.blackOpacity(0.02),
+                borderRadius: responsiveFontSize(1.2),
+                padding: responsiveFontSize(1.5),
+                borderWidth: 1.5,
+                borderColor: checkBoxSelect[item.id]
+                  ? colors.royalBlue + '25'
+                  : colors.blackOpacity(0.06),
+                opacity: pressed ? 0.7 : 1,
+                marginBottom: responsiveFontSize(1.5),
+              }]}
+            >
+              <MaterialCommunityIcons
+                name={checkBoxSelect[item.id] ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                size={22}
+                color={colors.royalBlue}
+                style={{ marginRight: responsiveFontSize(1), marginTop: 2 }}
+              />
+              <Text style={{
+                color: colors.blackOpacity(0.7),
+                fontSize: responsiveFontSize(1.55),
+                flex: 1,
+                lineHeight: responsiveFontSize(2.2),
+              }}>
+                {t(`iAgreeToTruckMitr`)}
+                <Text
+                  onPress={() => navigation.navigate(STACKS?.DRIVER_CONSENT)}
+                  style={{
+                    color: colors.royalBlue,
+                    fontWeight: '600',
+                    textDecorationLine: 'underline'
+                  }}
+                >
+                  {' '}{t(`driverConsent`)}
+                </Text>
+                {t(`applyJobPolicy`)}
               </Text>
-              {t(`applyJobPolicy`)}
-            </Text>
-          </Pressable>
+            </Pressable>
+          )}
 
           {/* Error Message */}
-          {errors[item.id]?.checkBox && (
+          {!isExpired && errors[item.id]?.checkBox && (
             <View style={{
               backgroundColor: colors.error + '12',
               padding: responsiveFontSize(1.2),
@@ -841,50 +867,70 @@ const JobCard = ({
           )}
         </View>
 
-        {/* Apply Button - Full Width at Bottom */}
-        <Pressable
-          onPress={() => _applyJob(item?.id)}
-          disabled={loadingApplyJob === item?.id}
-          style={({ pressed }) => [{
-            height: responsiveFontSize(6),
+        {/* Apply Button - Full Width at Bottom (hidden for expired jobs) */}
+        {isExpired ? (
+          <View style={{
+            height: responsiveFontSize(5),
             width: '100%',
-            opacity: pressed ? 0.9 : 1,
-            transform: [{ scale: pressed ? 0.995 : 1 }],
-          }]}
-        >
-          <LinearGradient
-            colors={[colors.royalBlue, colors.royalBlue + 'E8']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{
-              flex: 1,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            backgroundColor: '#F1F5F9',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+          }}>
+            <Ionicons name="time-outline" size={16} color="#94A3B8" style={{ marginRight: 6 }} />
+            <Text style={{
+              color: '#94A3B8',
+              fontSize: responsiveFontSize(1.7),
+              fontWeight: '600',
+            }}>
+              {t('applicationClosed') || 'Application Closed'}
+            </Text>
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => _applyJob(item?.id)}
+            disabled={loadingApplyJob === item?.id}
+            style={({ pressed }) => [{
+              height: responsiveFontSize(6),
+              width: '100%',
+              opacity: pressed ? 0.9 : 1,
+              transform: [{ scale: pressed ? 0.995 : 1 }],
+            }]}
           >
-            {loadingApplyJob === item?.id ? (
-              <ActivityIndicator color={colors.white} size="small" />
-            ) : (
-              <>
-                <Text style={{
-                  color: colors.white,
-                  fontSize: responsiveFontSize(2),
-                  fontWeight: '600',
-                  letterSpacing: 0.3
-                }}>
-                  {t(`apply`)}
-                </Text>
-                <Ionicons
-                  name='send'
-                  size={16}
-                  color={colors.white}
-                  style={{ marginLeft: responsiveFontSize(1) }}
-                />
-              </>
-            )}
-          </LinearGradient>
-        </Pressable>
+            <LinearGradient
+              colors={[colors.royalBlue, colors.royalBlue + 'E8']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                flex: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {loadingApplyJob === item?.id ? (
+                <ActivityIndicator color={colors.white} size="small" />
+              ) : (
+                <>
+                  <Text style={{
+                    color: colors.white,
+                    fontSize: responsiveFontSize(2),
+                    fontWeight: '600',
+                    letterSpacing: 0.3
+                  }}>
+                    {t(`apply`)}
+                  </Text>
+                  <Ionicons
+                    name='send'
+                    size={16}
+                    color={colors.white}
+                    style={{ marginLeft: responsiveFontSize(1) }}
+                  />
+                </>
+              )}
+            </LinearGradient>
+          </Pressable>
+        )}
       </View>
     </Animated.View>
   );
@@ -961,12 +1007,31 @@ export default function AvailableJob() {
     setErrors(prev => ({ ...prev, [jobId]: { checkBox: undefined } }));
   };
 
+  const _isJobExpired = (deadline: string): boolean => {
+    if (!deadline) return false;
+    const today = moment().startOf('day');
+    // Try parsing DD-MM-YYYY format first, then fallback
+    let deadlineDate = moment(deadline, 'DD-MM-YYYY', true);
+    if (!deadlineDate.isValid()) {
+      deadlineDate = moment(deadline);
+    }
+    return deadlineDate.isValid() && deadlineDate.isBefore(today);
+  };
+
   const _fetchAllAvailableJobs = async () => {
     try {
       const allAvailableJobs: any = await axiosInstance.get(END_POINTS?.ALL_JOBS_AND_SEARCH(''));
       console.log("allAvailableJobs", allAvailableJobs);
       if (allAvailableJobs?.data?.status) {
-        setavailableJobsList(allAvailableJobs?.data?.data);
+        const jobs = allAvailableJobs?.data?.data || [];
+        // Sort: active jobs first, expired jobs at bottom
+        const sortedJobs = [...jobs].sort((a: any, b: any) => {
+          const aExpired = _isJobExpired(a?.Application_Deadline);
+          const bExpired = _isJobExpired(b?.Application_Deadline);
+          if (aExpired === bExpired) return 0;
+          return aExpired ? 1 : -1;
+        });
+        setavailableJobsList(sortedJobs);
       } else {
         setavailableJobsList([]);
       }
@@ -1122,6 +1187,7 @@ export default function AvailableJob() {
                 responsiveWidth={responsiveWidth}
                 t={t}
                 navigation={navigation}
+                isExpiredJob={_isJobExpired(item?.Application_Deadline)}
               />
             )}
             contentContainerStyle={{

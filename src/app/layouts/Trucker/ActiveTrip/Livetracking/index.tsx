@@ -243,7 +243,7 @@ const LiveTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
         };
     }, [fetchTrackingData]);
 
-    // ── Parse ────────────────────────────────────────────────────────────────
+    // ── Parse ────────────────────────────────────────────────────────────────────────────────────────
     const vehiclesWithParsedCoords = useMemo(() => {
         const parseTime = (value?: string) => {
             if (!value || value === '0000-00-00 00:00:00') return 0;
