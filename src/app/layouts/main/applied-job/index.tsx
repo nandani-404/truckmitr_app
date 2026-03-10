@@ -18,6 +18,7 @@ import moment from 'moment';
 import { useTranslation } from 'react-i18next';
 import LinearGradient from 'react-native-linear-gradient';
 import GreenlinePipelineModal from './GreenlinePipelineModal';
+import CallHistoryModal from './CallHistoryModal';
 import { useSelector } from 'react-redux';
 import ProfileIncompleteModal from '@truckmitr/src/app/components/profile-completion-modal';
 
@@ -68,6 +69,7 @@ const AppliedJobCard = ({
     responsiveHeight,
     responsiveWidth,
     onShowStatus,
+    onCallHistory,
     t,
     isClosed,
 }: any) => {
@@ -424,7 +426,7 @@ const AppliedJobCard = ({
                             {/* Call History - For greenline and null */}
                             {(_item?.sub_id === 'greenline' || _item?.sub_id === null) && (
                                 <Pressable
-                                    onPress={() => console.log('Call History tapped for job:', _item?.id)}
+                                    onPress={() => onCallHistory(item)}
                                     style={({ pressed }) => [{
                                         height: responsiveFontSize(5.2),
                                         width: '100%',
@@ -498,6 +500,12 @@ export default function AppliedJob() {
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [statusData, setStatusData] = useState<any>(null);
     const [fetchingStatus, setFetchingStatus] = useState(false);
+
+    // Call History States
+    const [showCallHistoryModal, setShowCallHistoryModal] = useState(false);
+    const [fetchingCallHistory, setFetchingCallHistory] = useState(false);
+    const [callHistoryData, setCallHistoryData] = useState<any[]>([]);
+    const [selectedJobTitle, setSelectedJobTitle] = useState('');
 
     // Sort jobs: open jobs first, then closed jobs
     const openJobs = appliedJobsList.filter(item => !isJobClosed(item));
@@ -584,6 +592,32 @@ export default function AppliedJob() {
         }
     };
 
+    const handleCallHistory = async (item: any) => {
+        try {
+            const jobId = item?.job?.job_id;
+            const jobTitle = item?.job?.job_title;
+
+            setSelectedJobTitle(jobTitle);
+            setShowCallHistoryModal(true);
+            setFetchingCallHistory(true);
+            setCallHistoryData([]);
+
+            const userId = user?.id;
+            console.log('Fetching Call History for jobId:', jobId, 'userId:', userId);
+
+            const response: any = await axiosInstance.get(END_POINTS.CALL_HISTORY(jobId, userId));
+            if (response?.data?.status) {
+                setCallHistoryData(response.data.data || []);
+            } else {
+                console.error("Failed to fetch call history:", response?.data?.message);
+            }
+        } catch (error) {
+            console.error("Error fetching call history:", error);
+        } finally {
+            setFetchingCallHistory(false);
+        }
+    };
+
 
     // Build a combined list with a section header for closed jobs
     const listData: any[] = [];
@@ -633,6 +667,7 @@ export default function AppliedJob() {
                 toggleExpand={toggleExpand}
                 callToTransporter={callToTransporter}
                 onShowStatus={() => handleShowStatus(item)}
+                onCallHistory={() => handleCallHistory(item)}
                 colors={colors}
                 responsiveFontSize={responsiveFontSize}
                 responsiveHeight={responsiveHeight}
@@ -737,6 +772,13 @@ export default function AppliedJob() {
                 data={statusData}
                 loading={fetchingStatus}
                 onRefresh={() => handleShowStatus({ job: { job_id: statusData?.job_info?.job_id } })}
+            />
+            <CallHistoryModal
+                visible={showCallHistoryModal}
+                onClose={() => setShowCallHistoryModal(false)}
+                data={callHistoryData}
+                loading={fetchingCallHistory}
+                jobTitle={selectedJobTitle}
             />
         </View>
     )

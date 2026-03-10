@@ -17,6 +17,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import axiosInstance from '../../../../utils/config/axiosInstance';
 import { useColor, useResponsiveScale } from '@truckmitr/src/app/hooks';
 import { useTranslation } from 'react-i18next';
+import moment from 'moment';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -454,23 +455,43 @@ const GreenlinePipelineModal: React.FC<GreenlinePipelineModalProps> = ({
                                             } else if (physicalAction === 'accepted') {
                                                 description = t('physicalInterviewReady', 'Be ready for the walk-in interview.');
                                                 descriptionColor = '#10B981';
-                                                if (hasTime) {
-                                                    actions = (
-                                                        <View style={styles.timingCard}>
-                                                            <View style={styles.timingIconWrap}>
-                                                                <Ionicons name="location" size={responsiveFontSize(2.2)} color={colors.royalBlue} />
+
+                                                const showLocation = isObject && interview.physical_interview_location;
+
+                                                actions = (
+                                                    <View style={{ gap: 10 }}>
+                                                        {hasTime && (
+                                                            <View style={styles.timingCard}>
+                                                                <View style={styles.timingIconWrap}>
+                                                                    <Ionicons name="calendar-outline" size={responsiveFontSize(2.2)} color={colors.royalBlue} />
+                                                                </View>
+                                                                <View style={{ flex: 1 }}>
+                                                                    <Text style={[styles.timingLabel, { fontSize: responsiveFontSize(1.3), color: colors.blackOpacity(0.5) }]}>
+                                                                        {t('visitBetween', 'Visit Between')}
+                                                                    </Text>
+                                                                    <Text style={[styles.timingValue, { fontSize: responsiveFontSize(1.8), color: colors.black }]}>
+                                                                        {timingText}
+                                                                    </Text>
+                                                                </View>
                                                             </View>
-                                                            <View style={{ flex: 1 }}>
-                                                                <Text style={[styles.timingLabel, { fontSize: responsiveFontSize(1.3), color: colors.blackOpacity(0.5) }]}>
-                                                                    {t('visitBetween', 'Visit Between')}
-                                                                </Text>
-                                                                <Text style={[styles.timingValue, { fontSize: responsiveFontSize(1.8), color: colors.black }]}>
-                                                                    {timingText}
-                                                                </Text>
+                                                        )}
+                                                        {showLocation && (
+                                                            <View style={styles.timingCard}>
+                                                                <View style={styles.timingIconWrap}>
+                                                                    <Ionicons name="location" size={responsiveFontSize(2.2)} color={colors.royalBlue} />
+                                                                </View>
+                                                                <View style={{ flex: 1 }}>
+                                                                    <Text style={[styles.timingLabel, { fontSize: responsiveFontSize(1.3), color: colors.blackOpacity(0.5) }]}>
+                                                                        {t('location', 'Location')}
+                                                                    </Text>
+                                                                    <Text style={[styles.timingValue, { fontSize: responsiveFontSize(1.4), color: colors.black }]}>
+                                                                        {interview.physical_interview_location}
+                                                                    </Text>
+                                                                </View>
                                                             </View>
-                                                        </View>
-                                                    );
-                                                }
+                                                        )}
+                                                    </View>
+                                                );
                                             }
                                         }
 

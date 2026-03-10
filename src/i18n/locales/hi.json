@@ -4055,5 +4055,13 @@
     "showLess": "कम दिखाएं",
     "showMore": "अधिक दिखाएं",
     "closed": "बंद",
-    "open": "खुला"
+    "callHistory": "कॉल हिस्ट्री",
+    "telecaller": "टेलीकॉलर",
+    "connected": "जुड़ा हुआ",
+    "not_connected": "नहीं जुड़ा",
+    "callback_later": "बाद में कॉल करें",
+    "feedback": "फीडबैक",
+    "noCallHistory": "कोई कॉल हिस्ट्री नहीं मिली",
+    "reached": "पहुंच गए",
+    "location": "स्थान"
 }

@@ -164,6 +164,9 @@ export const END_POINTS = {
     // Greenline Status
     GREENLINE_JOB_STATUS: (job_id: any) => `api/transporter/greenline-job-driver-data?job_id=${job_id}`,
 
+    // Call History
+    CALL_HISTORY: (job_id: any, user_id: any) => `api/call-history?job_id=${job_id}&user_id=${user_id}`,
+
 
     // Face Match Verification
     FACE_MATCH_VERIFY: `api/kyc/face-match/verify`,
