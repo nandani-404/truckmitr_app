@@ -211,7 +211,6 @@ const ForemanJobsList = () => {
             if (response?.data?.status) {
                 setJobs(response.data.data || []);
             } else {
-                setError(response?.data?.message || t('errorFetchingData'));
                 setJobs([]);
             }
         } catch (err: any) {
