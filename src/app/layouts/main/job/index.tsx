@@ -801,7 +801,7 @@ const JobCard = ({
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <FontAwesome name="calendar" size={14} color={colors.royalBlue} />
                     <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                      {t('postedOn') || 'Posted On'}
+                      {t('postedOn') || 'Job Posted Date'}
                     </Text>
                   </View>
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
@@ -816,7 +816,7 @@ const JobCard = ({
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <FontAwesome6 name="location-dot" size={14} color={colors.royalBlue} />
                     <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                      {t('location') || 'Location'}
+                      {t('jobLocation') || 'Job Location'}
                     </Text>
                   </View>
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
@@ -827,7 +827,7 @@ const JobCard = ({
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <FontAwesome6 name="users" size={14} color={colors.royalBlue} />
                     <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                      {t('openPositions') || 'Open Positions'}
+                      {t('openPositions') || 'No. of Drivers'}
                     </Text>
                   </View>
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
@@ -842,7 +842,7 @@ const JobCard = ({
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <FontAwesome name="star" size={14} color={colors.royalBlue} />
                     <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.royalBlue, fontWeight: '600', marginLeft: responsiveFontSize(0.5) }}>
-                      {t('experienceRequired') || 'Experience Required'}
+                      {t('experience') || 'Experience'}
                     </Text>
                   </View>
                   <Text style={{ fontSize: responsiveFontSize(1.6), color: colors.black, fontWeight: '500', marginLeft: responsiveFontSize(2.5), marginTop: responsiveFontSize(0.3) }}>
