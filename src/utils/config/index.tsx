@@ -161,6 +161,9 @@ export const END_POINTS = {
     RC_VERIFY: `api/kyc/rc`,
     RC_HISTORY: `api/kyc/rcs`,
 
+    // Greenline Status
+    GREENLINE_JOB_STATUS: (job_id: any) => `api/transporter/greenline-job-driver-data?job_id=${job_id}`,
+
 
     // Face Match Verification
     FACE_MATCH_VERIFY: `api/kyc/face-match/verify`,

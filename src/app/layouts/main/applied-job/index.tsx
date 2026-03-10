@@ -17,6 +17,7 @@ import { END_POINTS } from '@truckmitr/src/utils/config';
 import moment from 'moment';
 import { useTranslation } from 'react-i18next';
 import LinearGradient from 'react-native-linear-gradient';
+import GreenlinePipelineModal from './GreenlinePipelineModal';
 import { useSelector } from 'react-redux';
 import ProfileIncompleteModal from '@truckmitr/src/app/components/profile-completion-modal';
 
@@ -70,6 +71,7 @@ const AppliedJobCard = ({
     responsiveFontSize,
     responsiveHeight,
     responsiveWidth,
+    onShowStatus,
     t,
 }: any) => {
     const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -376,47 +378,94 @@ const AppliedJobCard = ({
                         </View>
                     </View>
 
-                    {/* Call Transporter Button - Only for accepted */}
-                    {/* {_item?.transporter_mobile && item?.accept_reject_status === 'accepted' && (
-                        // <Pressable
-                        //     onPress={() => callToTransporter(_item)}
-                        //     style={({ pressed }) => [{
-                        //         height: responsiveFontSize(5.5),
-                        //         width: '100%',
-                        //         opacity: pressed ? 0.9 : 1,
-                        //         transform: [{ scale: pressed ? 0.98 : 1 }],
-                        //         marginBottom: responsiveFontSize(1),
-                        //     }]}
-                        // >
-                        //     <LinearGradient
-                        //         colors={['#10B981', '#059669']}
-                        //         start={{ x: 0, y: 0 }}
-                        //         end={{ x: 1, y: 0 }}
-                        //         style={{
-                        //             flex: 1,
-                        //             flexDirection: 'row',
-                        //             alignItems: 'center',
-                        //             justifyContent: 'center',
-                        //             borderRadius: responsiveFontSize(1.2),
-                        //         }}
-                        //     >
-                        //         <Ionicons
-                        //             name='call'
-                        //             size={18}
-                        //             color={colors.white}
-                        //             style={{ marginRight: responsiveFontSize(0.8) }}
-                        //         />
-                        //         <Text style={{
-                        //             color: colors.white,
-                        //             fontSize: responsiveFontSize(1.8),
-                        //             fontWeight: '600',
-                        //             letterSpacing: 0.3
-                        //         }}>
-                        //             {t(`callToTransporter`)}
-                        //         </Text>
-                        //     </LinearGradient>
-                        // </Pressable>
-                    )} */}
+                    {/* Conditional Buttons based on sub_id (Only for Open jobs) */}
+                    {!closed && (
+                        <View style={{ marginTop: responsiveFontSize(0.5) }}>
+                            {/* Show Status - Only for greenline */}
+                            {_item?.sub_id === 'greenline' && (
+                                <Pressable
+                                    onPress={onShowStatus}
+                                    style={({ pressed }) => [{
+                                        height: responsiveFontSize(5.2),
+                                        width: '100%',
+                                        opacity: pressed ? 0.9 : 1,
+                                        transform: [{ scale: pressed ? 0.98 : 1 }],
+                                        marginBottom: responsiveFontSize(1),
+                                    }]}
+                                >
+                                    <LinearGradient
+                                        colors={['#10B981', '#059669']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={{
+                                            flex: 1,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: responsiveFontSize(1.2),
+                                        }}
+                                    >
+                                        <Feather
+                                            name='activity'
+                                            size={16}
+                                            color={colors.white}
+                                            style={{ marginRight: responsiveFontSize(0.8) }}
+                                        />
+                                        <Text style={{
+                                            color: colors.white,
+                                            fontSize: responsiveFontSize(1.7),
+                                            fontWeight: '700',
+                                            letterSpacing: 0.2
+                                        }}>
+                                            {t(`showStatus`, 'Show Status')}
+                                        </Text>
+                                    </LinearGradient>
+                                </Pressable>
+                            )}
+
+                            {/* Call History - For greenline and null */}
+                            {(_item?.sub_id === 'greenline' || _item?.sub_id === null) && (
+                                <Pressable
+                                    onPress={() => console.log('Call History tapped for job:', _item?.id)}
+                                    style={({ pressed }) => [{
+                                        height: responsiveFontSize(5.2),
+                                        width: '100%',
+                                        opacity: pressed ? 0.9 : 1,
+                                        transform: [{ scale: pressed ? 0.98 : 1 }],
+                                        marginBottom: responsiveFontSize(1),
+                                    }]}
+                                >
+                                    <LinearGradient
+                                        colors={[colors.royalBlue, colors.royalBlue + 'DD']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={{
+                                            flex: 1,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: responsiveFontSize(1.2),
+                                        }}
+                                    >
+                                        <MaterialCommunityIcons
+                                            name='history'
+                                            size={18}
+                                            color={colors.white}
+                                            style={{ marginRight: responsiveFontSize(0.8) }}
+                                        />
+                                        <Text style={{
+                                            color: colors.white,
+                                            fontSize: responsiveFontSize(1.7),
+                                            fontWeight: '700',
+                                            letterSpacing: 0.2
+                                        }}>
+                                            {t(`callHistory`, 'Call History')}
+                                        </Text>
+                                    </LinearGradient>
+                                </Pressable>
+                            )}
+                        </View>
+                    )}
                 </View>
             </View>
         </Animated.View>
@@ -430,7 +479,7 @@ export default function AppliedJob() {
     const { shadow } = useShadow()
     const { responsiveHeight, responsiveWidth, responsiveFontSize } = useResponsiveScale();
     const navigation = useNavigation<NavigatorProp>();
-    const { profileCompletion, isDriver, isTransporter } = useSelector((state: any) => state?.user) || { profileCompletion: 0, isDriver: false, isTransporter: false };
+    const { user, profileCompletion, isDriver, isTransporter } = useSelector((state: any) => state?.user) || { user: null, profileCompletion: 0, isDriver: false, isTransporter: false };
 
     const headerOpacity = useRef(new Animated.Value(0)).current;
     const tabIndicatorAnim = useRef(new Animated.Value(0)).current;
@@ -447,6 +496,11 @@ export default function AppliedJob() {
     const [appliedJobsList, setappliedJobsList] = useState<any[]>([])
     const [loading, setloading] = useState(true)
     const [activeTab, setActiveTab] = useState<'open' | 'closed'>('open');
+
+    // Greenline Status Modal States
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [statusData, setStatusData] = useState<any>(null);
+    const [fetchingStatus, setFetchingStatus] = useState(false);
 
     // Filter jobs into open and closed based on Application_Deadline
     const openJobs = appliedJobsList.filter(item => !isJobClosed(item));
@@ -479,6 +533,8 @@ export default function AppliedJob() {
                     if (appliedJobs?.data?.status) {
                         setappliedJobsList(appliedJobs?.data?.data);
                     }
+                    console.log('appliedJobs List ------------->>>', appliedJobs);
+
                     isJobAccepted()
                 } catch (error) {
                     console.error("Error fetching applied jobs:", error);
@@ -516,6 +572,28 @@ export default function AppliedJob() {
             console.log(error)
         }
     }
+
+    const handleShowStatus = async (item: any) => {
+        try {
+            setShowStatusModal(true);
+            setFetchingStatus(true);
+            setStatusData(null);
+
+            const jobId = item?.job?.job_id;
+            console.log('Fetching Greenline status for jobId:', jobId);
+
+            const response: any = await axiosInstance.get(END_POINTS.GREENLINE_JOB_STATUS(jobId));
+            if (response?.data?.status) {
+                setStatusData(response.data);
+            } else {
+                console.error("Failed to fetch greenline status:", response?.data?.message);
+            }
+        } catch (error) {
+            console.error("Error fetching greenline status:", error);
+        } finally {
+            setFetchingStatus(false);
+        }
+    };
 
     // Tab indicator translateX
     const tabWidth = responsiveWidth(44);
@@ -671,6 +749,7 @@ export default function AppliedJob() {
                             expandedJobs={expandedJobs}
                             toggleExpand={toggleExpand}
                             callToTransporter={callToTransporter}
+                            onShowStatus={() => handleShowStatus(item)}
                             colors={colors}
                             responsiveFontSize={responsiveFontSize}
                             responsiveHeight={responsiveHeight}
@@ -745,6 +824,13 @@ export default function AppliedJob() {
                 onClose={_goback}
                 onCompleteProfile={_navigateProfileEdit}
             /> */}
+            <GreenlinePipelineModal
+                visible={showStatusModal}
+                onClose={() => setShowStatusModal(false)}
+                data={statusData}
+                loading={fetchingStatus}
+                onRefresh={() => handleShowStatus({ job: { job_id: statusData?.job_info?.job_id } })}
+            />
         </View>
     )
 }

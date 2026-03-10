@@ -36,6 +36,7 @@ import messaging from '@react-native-firebase/messaging';
 import * as TYPES from '@truckmitr/redux/actions/types';
 import PunctureProfileCompletionStack from '../stacks/punctureProfileCompletion';
 import { agoraService } from '../services/agora';
+import InterviewPopupModal, { InterviewData } from '../utils/interview-popup';
 // import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
 
 export let isNavigationReady = false;
@@ -250,6 +251,10 @@ export default function Routes() {
   const [showReelPopup, setShowReelPopup] = useState(false);
   const [isAcknowledging, setIsAcknowledging] = useState(false);
   const [reelPostData, setReelPostData] = useState<any>(null);
+
+  // Interview Popup State
+  const [showInterviewPopup, setShowInterviewPopup] = useState(false);
+  const [interviewPopupData, setInterviewPopupData] = useState<InterviewData[]>([]);
 
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
   const { isAuthenticated, subscriptionModal, user, profileRequiredFieldsStatus } = useSelector((state: any) => state?.user);
@@ -510,6 +515,61 @@ export default function Routes() {
       fetchPendingPopup();
     }
   }, [isAuthenticated, user?.role, user?.data?.role]);
+
+  // -------------------------------
+  // 🔹 Fetch Interview Popup for Drivers
+  // -------------------------------
+  useEffect(() => {
+    const currentRole = String(user?.role || user?.data?.role || '').toLowerCase();
+    const userId = user?.id || user?.data?.id;
+    if (isAuthenticated && currentRole === 'driver' && userId) {
+      const fetchInterviewPopup = async () => {
+        try {
+          const response: any = await axiosInstance.get(
+            `api/transporter/interview/popup/${userId}`
+          );
+          console.log('🎤 Interview Popup API Response:', response?.data);
+          if (response?.data?.status && Array.isArray(response?.data?.data) && response?.data?.data?.length > 0) {
+            const mappedData: InterviewData[] = response.data.data.map((item: any) => {
+              const interview = item.interview || {};
+              if (item.type === 'online') {
+                return {
+                  type: 'online',
+                  interview_id: interview.id || item.interview_id || item.id,
+                  job_id: item.job_id,
+                  timing: interview.online_interview_timing || item.online_interview_timing || item.timing,
+                };
+              } else {
+                return {
+                  type: 'physical',
+                  interview_id: interview.id || item.interview_id || item.id,
+                  start_date: interview.physical_interview_start || item.physical_interview_start || item.start_date,
+                  end_date: interview.physical_interview_end || item.physical_interview_end || item.end_date,
+                  location: interview.physical_interview_location || item.physical_interview_location || item.location,
+                  current_action: interview.physical_current_action || item.physical_current_action || item.current_action,
+                };
+              }
+            });
+            setInterviewPopupData(mappedData);
+            setShowInterviewPopup(true);
+          } else {
+            setShowInterviewPopup(false);
+            setInterviewPopupData([]);
+          }
+        } catch (error: any) {
+          console.log('Interview Popup API Error:', error?.response?.data || error?.message);
+          setShowInterviewPopup(false);
+          setInterviewPopupData([]);
+        }
+      };
+      fetchInterviewPopup();
+    }
+  }, [isAuthenticated, user?.role, user?.data?.role, user?.id, user?.data?.id]);
+
+  const handleInterviewPopupDismiss = () => {
+    setShowInterviewPopup(false);
+    setInterviewPopupData([]);
+  };
 
   const handleReelAcknowledge = async () => {
     try {
@@ -1231,13 +1291,19 @@ export default function Routes() {
       ) : (
         <Main />
       )}
-      {subscriptionModal && <Subscription />}
       <InAppUpdatePopup />
+      {subscriptionModal && <Subscription />}
       <ReelLivePopup
         visible={showReelPopup}
         onAcknowledge={handleReelAcknowledge}
         t={t}
         loading={isAcknowledging}
+      />
+      <InterviewPopupModal
+        visible={showInterviewPopup}
+        data={interviewPopupData}
+        onDismiss={handleInterviewPopupDismiss}
+        t={t}
       />
     </NavigationContainer>
   );
