@@ -4082,5 +4082,6 @@
     "truckOwnershipQuery": "Do you drive your own truck or someone else's (owner's) truck?",
     "truckOwnershipSub": "This helps us tailor your experience.",
     "ownTruck": "I drive my own truck",
-    "transporterTruck": "I drive someone else's (owner's) truck"
+    "transporterTruck": "I drive someone else's (owner's) truck",
+    "truckOwnershipRequired": "Please select truck ownership"
 }

@@ -39,6 +39,10 @@ const TruckImages = {
     pickUp: require('@truckmitr/src/assets/trucks/pickup_truck.png'),
 };
 
+// Truck ownership payload values (same for EN/HI - API expects varchar)
+const TRUCK_OWNERSHIP_OWN = "I drive my own truck";
+const TRUCK_OWNERSHIP_ELSE = "I drive someone else's (owner's) truck";
+
 // Driver Steps - Profile photo first
 const DRIVER_STEPS = [
     { id: 'avatar', title: 'profilePhotoStep', subtitle: 'profilePhotoStepDesc' },
@@ -50,6 +54,7 @@ const DRIVER_STEPS = [
     { id: 'vehicle', title: 'vehicleTypeStep', subtitle: 'vehicleTypeStepDesc' },
     { id: 'experience', title: 'experienceStep', subtitle: 'experienceStepDesc' },
     { id: 'license_type', title: 'licenseTypeStep', subtitle: 'licenseTypeStepDesc' },
+    { id: 'truck_ownership', title: 'truckOwnership', subtitle: 'tellUsAboutTruck' },
     { id: 'endorsement', title: 'licenseEndorsement', subtitle: 'selectLicenseEndorsementsDesc' },
     { id: 'salary', title: 'salaryStep', subtitle: 'salaryStepDesc' },
     { id: 'preferences', title: 'preferencesStep', subtitle: 'preferencesStepDesc' },
@@ -591,6 +596,18 @@ export default function ProfileEditNew() {
                 }
             }
 
+            // Normalize truck_ownership - API may return varchar or legacy own/transporter
+            const rawTruckOwnership = user.truck_ownership || user.Truck_Ownership;
+            if (rawTruckOwnership && !userEdit?.truck_ownership) {
+                const normTruck = String(rawTruckOwnership).trim();
+                // Keep as-is if already payload format, else map legacy
+                const value = normTruck === 'own' ? TRUCK_OWNERSHIP_OWN
+                    : normTruck === 'transporter' ? TRUCK_OWNERSHIP_ELSE
+                    : normTruck;
+                updates.truck_ownership = value;
+                shouldUpdate = true;
+            }
+
             if (shouldUpdate) {
                 console.log('Normalizing driver data:', updates);
                 // DO NOT touch image paths - they are managed separately now
@@ -701,6 +718,13 @@ export default function ProfileEditNew() {
             case 'license_type':
                 if (!userEdit?.Type_of_License) {
                     showToast(t('licenseTypeRequired') || 'License type is required');
+                    return false;
+                }
+                break;
+
+            case 'truck_ownership':
+                if (!userEdit?.truck_ownership) {
+                    showToast(t('truckOwnershipRequired') || 'Please select truck ownership');
                     return false;
                 }
                 break;
@@ -938,6 +962,14 @@ export default function ProfileEditNew() {
             formData.append('current_monthly_income', userEdit?.Current_Monthly_Income || '');
             formData.append('expected_monthly_income', userEdit?.Expected_Monthly_Income || '');
             formData.append('type_of_license', userEdit?.Type_of_License || '');
+
+            // Truck ownership - API expects varchar, same payload for EN/HI
+            const truckOwnershipPayload = userEdit?.truck_ownership === 'own' ? TRUCK_OWNERSHIP_OWN
+                : userEdit?.truck_ownership === 'transporter' ? TRUCK_OWNERSHIP_ELSE
+                : userEdit?.truck_ownership || '';
+            if (truckOwnershipPayload) {
+                formData.append('truck_ownership', truckOwnershipPayload);
+            }
 
             // License Endorsements - API expects array
             const endorsements = userEdit?.endorsement?.split(',').filter(Boolean) || [];
@@ -1519,6 +1551,36 @@ export default function ProfileEditNew() {
                 return (
                     <View style={styles.stepContent}>
                         {licenseTypes.map(l => (<TouchableOpacity key={l} style={[styles.radioBox, userEdit?.Type_of_License === l && styles.radioBoxSelected, { marginBottom: 10 }]} onPress={() => dispatch(userEditAction({ ...userEdit, Type_of_License: l }))}><View style={[styles.radioCircle, userEdit?.Type_of_License === l && styles.radioCircleSelected]}>{userEdit?.Type_of_License === l && <View style={styles.radioDot} />}</View><Text style={[styles.radioText, userEdit?.Type_of_License === l && { color: colors.royalBlue }]}>{l}</Text></TouchableOpacity>))}
+                    </View>
+                );
+
+            case 'truck_ownership':
+                return (
+                    <View style={styles.stepContent}>
+                        <Text style={styles.inputLabel}>{t('truckOwnershipQuery') || "Do you drive your own truck or someone else's (owner's) truck?"}</Text>
+                        <Text style={[styles.helperText, { marginBottom: 16 }]}>{t('truckOwnershipSub') || "This helps us tailor your experience."}</Text>
+                        <TouchableOpacity
+                            style={[styles.radioBox, (userEdit?.truck_ownership === TRUCK_OWNERSHIP_OWN || userEdit?.truck_ownership === 'own') && styles.radioBoxSelected, { marginBottom: 12 }]}
+                            onPress={() => dispatch(userEditAction({ ...userEdit, truck_ownership: TRUCK_OWNERSHIP_OWN }))}
+                        >
+                            <View style={[styles.radioCircle, (userEdit?.truck_ownership === TRUCK_OWNERSHIP_OWN || userEdit?.truck_ownership === 'own') && styles.radioCircleSelected]}>
+                                {(userEdit?.truck_ownership === TRUCK_OWNERSHIP_OWN || userEdit?.truck_ownership === 'own') && <View style={styles.radioDot} />}
+                            </View>
+                            <Text style={[styles.radioText, (userEdit?.truck_ownership === TRUCK_OWNERSHIP_OWN || userEdit?.truck_ownership === 'own') && { color: colors.royalBlue }]}>
+                                {t('ownTruck') || TRUCK_OWNERSHIP_OWN}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.radioBox, (userEdit?.truck_ownership === TRUCK_OWNERSHIP_ELSE || userEdit?.truck_ownership === 'transporter') && styles.radioBoxSelected]}
+                            onPress={() => dispatch(userEditAction({ ...userEdit, truck_ownership: TRUCK_OWNERSHIP_ELSE }))}
+                        >
+                            <View style={[styles.radioCircle, (userEdit?.truck_ownership === TRUCK_OWNERSHIP_ELSE || userEdit?.truck_ownership === 'transporter') && styles.radioCircleSelected]}>
+                                {(userEdit?.truck_ownership === TRUCK_OWNERSHIP_ELSE || userEdit?.truck_ownership === 'transporter') && <View style={styles.radioDot} />}
+                            </View>
+                            <Text style={[styles.radioText, (userEdit?.truck_ownership === TRUCK_OWNERSHIP_ELSE || userEdit?.truck_ownership === 'transporter') && { color: colors.royalBlue }]}>
+                                {t('transporterTruck') || TRUCK_OWNERSHIP_ELSE}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 );
 

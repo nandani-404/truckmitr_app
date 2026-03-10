@@ -116,6 +116,19 @@ const LICENSE_ENDORSEMENT_MAP: Record<string, string> = {
   'tractor': 'Tractor-Trailer (Commercial)',
 }
 
+// Truck ownership payload values (same for EN/HI - API expects varchar)
+const TRUCK_OWNERSHIP_OWN = "I drive my own truck";
+const TRUCK_OWNERSHIP_ELSE = "I drive someone else's (owner's) truck";
+
+// Truck ownership display helper - maps API value to display label (use translatedLabel for UI)
+const getTruckOwnershipLabel = (value: string | undefined, translatedLabel?: (key: string) => string): string => {
+  if (!value) return 'Not Provided';
+  const str = String(value).trim();
+  if (str === TRUCK_OWNERSHIP_OWN || str === 'own') return translatedLabel ? translatedLabel('ownTruck') : TRUCK_OWNERSHIP_OWN;
+  if (str === TRUCK_OWNERSHIP_ELSE || str === 'transporter') return translatedLabel ? translatedLabel('transporterTruck') : TRUCK_OWNERSHIP_ELSE;
+  return str;
+};
+
 // Driving Experience Mapping
 // Driving Experience Mapping
 const getDrivingExperienceLabel = (value: string | undefined): string => {
@@ -622,6 +635,10 @@ export default function ProfileOverview() {
     return getLicenseEndorsementNames(endorsements)
   }
 
+  const formatTruckOwnership = (value: any): string => {
+    return getTruckOwnershipLabel(value, t)
+  }
+
   const formatDate = (date: any): string => {
     if (!date) return 'Not Provided'
     return moment(date).format('DD MMMM YYYY')
@@ -902,6 +919,23 @@ export default function ProfileOverview() {
           ]}
           onEdit={navigateToEdit}
         />
+
+        {/* Truck Ownership Section - Driver only */}
+        {isDriver && (
+          <FieldGroupCard
+            title={t('truckOwnership') || 'Truck Ownership'}
+            icon="car"
+            iconLibrary="MaterialCommunityIcons"
+            stepId="truck_ownership"
+            fields={[
+              {
+                label: t('truckOwnership') || 'Truck Ownership',
+                value: formatTruckOwnership(user?.truck_ownership),
+              },
+            ]}
+            onEdit={navigateToEdit}
+          />
+        )}
 
         {/* Driver Specific Fields */}
         {isDriver && (
