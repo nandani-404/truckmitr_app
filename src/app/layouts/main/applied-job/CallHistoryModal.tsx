@@ -43,9 +43,9 @@ const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
             case 'not_connected':
                 return { color: '#EF4444', icon: 'phone-missed', label: t('not_connected', 'Not Connected') };
             case 'callback_later':
-                return { color: '#F59E0B', icon: 'phone-clock', label: t('callback_later', 'Callback Later') };
+                return { color: '#F59E0B', icon: 'phone-in-talk', label: t('callback_later', 'Callback Later') };
             default:
-                return { color: colors.blackOpacity(0.5), icon: 'phone-outline', label: status || t('unknown', 'Unknown') };
+                return { color: colors.blackOpacity(0.5), icon: 'phone', label: status || t('unknown', 'Unknown') };
         }
     };
 

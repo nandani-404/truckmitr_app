@@ -9,6 +9,7 @@ import EditJob from '../app/layouts/main/edit-job';
 import ProfileOverview from '../app/layouts/main/profile-overview';
 // import DriverInvites from '@truckmitr/src/app/layouts/main/driver-invites/driver-invites';
 import InviteDriver from '@truckmitr/src/app/layouts/main/all-driver-list/all-drivers-invitation-tab';
+import { KhatamitrActiveTrip, KhatamitrAddExpense, KhatamitrExpenseSummary, KhatamitrProfitCalculation, KhatamitrJourneyTracking, KhatamitrTripCompletion } from '../app/layouts/main';
 import { Referral } from '../app/layouts/main/home/referral-driver';
 import TransporterConsent from '../app/layouts/main/add-job/transporter-consent';
 import ConsentScreen from '../app/layouts/main/consent-screen';
@@ -238,6 +239,14 @@ export default function Main() {
       <Stack.Screen name={STACKS.INCOMING_CALL} component={IncomingCallScreen} options={{ animation: 'fade', gestureEnabled: false }} />
       <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_CREATE_POST} component={CreatePostScreen} options={{ animation: 'slide_from_bottom' }} />
 
+
+      {/* KHATAMITR SCREENS */}
+      <Stack.Screen name={STACKS.KHATAMITR_ACTIVE_TRIP} component={KhatamitrActiveTrip} options={{ animation: 'fade_from_bottom' }} />
+      <Stack.Screen name={STACKS.KHATAMITR_ADD_EXPENSE} component={KhatamitrAddExpense} options={{ animation: 'fade' }} />
+      <Stack.Screen name={STACKS.KHATAMITR_EXPENSE_SUMMARY} component={KhatamitrExpenseSummary} options={{ animation: 'fade' }} />
+      <Stack.Screen name={STACKS.KHATAMITR_PROFIT_CALCULATION} component={KhatamitrProfitCalculation} options={{ animation: 'fade' }} />
+      <Stack.Screen name={STACKS.KHATAMITR_JOURNEY_TRACKING} component={KhatamitrJourneyTracking} options={{ animation: 'fade' }} />
+      <Stack.Screen name={STACKS.KHATAMITR_TRIP_COMPLETION} component={KhatamitrTripCompletion} options={{ animation: 'fade_from_bottom' }} />
 
       {/* DriverInvites usually mapped to STACKS.DRIVERINVITES, but checking stacks definition: invites */}
       {/* already there at line 165 as invites? No line 165 is DriverInvites component from local import. */}
