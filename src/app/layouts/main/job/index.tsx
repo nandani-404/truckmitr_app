@@ -280,103 +280,103 @@ const SuccessOverlay = ({ colors, responsiveHeight, responsiveWidth, responsiveF
 };
 
 // Animated Floating Button Component
-const AnimatedFloatingButton = ({ colors, responsiveFontSize, responsiveWidth, t, onPress, isExtended }: any) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+// const AnimatedFloatingButton = ({ colors, responsiveFontSize, responsiveWidth, t, onPress, isExtended }: any) => {
+//   const scaleAnim = useRef(new Animated.Value(0)).current;
+//   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    // Entrance bounce animation
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      tension: 50,
-      friction: 6,
-      delay: 300,
-      useNativeDriver: true,
-    }).start();
+//   useEffect(() => {
+//     // Entrance bounce animation
+//     Animated.spring(scaleAnim, {
+//       toValue: 1,
+//       tension: 50,
+//       friction: 6,
+//       delay: 300,
+//       useNativeDriver: true,
+//     }).start();
 
-    // Continuous subtle pulse animation
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.03,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulseAnimation.start();
+//     // Continuous subtle pulse animation
+//     const pulseAnimation = Animated.loop(
+//       Animated.sequence([
+//         Animated.timing(pulseAnim, {
+//           toValue: 1.03,
+//           duration: 1200,
+//           useNativeDriver: true,
+//         }),
+//         Animated.timing(pulseAnim, {
+//           toValue: 1,
+//           duration: 1200,
+//           useNativeDriver: true,
+//         }),
+//       ])
+//     );
+//     pulseAnimation.start();
 
-    return () => {
-      pulseAnimation.stop();
-    };
-  }, []);
+//     return () => {
+//       pulseAnimation.stop();
+//     };
+//   }, []);
 
-  return (
-    <Animated.View
-      style={{
-        position: 'absolute',
-        bottom: responsiveWidth(6),
-        right: responsiveWidth(4),
-        transform: [{ scale: scaleAnim }],
-      }}
-    >
-      {/* Main Button */}
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [{
-          opacity: pressed ? 0.9 : 1,
-          transform: [{ scale: pressed ? 0.95 : 1 }],
-        }]}
-      >
-        <Animated.View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: responsiveFontSize(6),
-            paddingHorizontal: isExtended ? responsiveFontSize(2) : responsiveFontSize(1.5),
-            backgroundColor: colors.royalBlue,
-            borderRadius: responsiveFontSize(3),
-            shadowColor: colors.royalBlue,
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.4,
-            shadowRadius: 12,
-            elevation: 10,
-            transform: [{ scale: pulseAnim }],
-          }}
-        >
-          <Image
-            style={{
-              height: responsiveFontSize(2.5),
-              width: responsiveFontSize(2.5),
-              tintColor: colors.white,
-            }}
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4121/4121106.png' }}
-          />
-          {isExtended && (
-            <Text
-              style={{
-                color: colors.white,
-                fontSize: responsiveFontSize(1.7),
-                fontWeight: '600',
-                marginLeft: responsiveFontSize(1),
-                letterSpacing: 0.3,
-              }}
-              numberOfLines={1}
-            >
-              {t('appliedJobs')}
-            </Text>
-          )}
-        </Animated.View>
-      </Pressable>
-    </Animated.View>
-  );
-};
+//   return (
+//     // <Animated.View
+//     //   style={{
+//     //     position: 'absolute',
+//     //     bottom: responsiveWidth(6),
+//     //     right: responsiveWidth(4),
+//     //     transform: [{ scale: scaleAnim }],
+//     //   }}
+//     // >
+//     //   {/* Main Button */}
+//     //   <Pressable
+//     //     onPress={onPress}
+//     //     style={({ pressed }) => [{
+//     //       opacity: pressed ? 0.9 : 1,
+//     //       transform: [{ scale: pressed ? 0.95 : 1 }],
+//     //     }]}
+//     //   >
+//     //     <Animated.View
+//     //       style={{
+//     //         flexDirection: 'row',
+//     //         alignItems: 'center',
+//     //         justifyContent: 'center',
+//     //         height: responsiveFontSize(6),
+//     //         paddingHorizontal: isExtended ? responsiveFontSize(2) : responsiveFontSize(1.5),
+//     //         backgroundColor: colors.royalBlue,
+//     //         borderRadius: responsiveFontSize(3),
+//     //         shadowColor: colors.royalBlue,
+//     //         shadowOffset: { width: 0, height: 6 },
+//     //         shadowOpacity: 0.4,
+//     //         shadowRadius: 12,
+//     //         elevation: 10,
+//     //         transform: [{ scale: pulseAnim }],
+//     //       }}
+//     //     >
+//     //       <Image
+//     //         style={{
+//     //           height: responsiveFontSize(2.5),
+//     //           width: responsiveFontSize(2.5),
+//     //           tintColor: colors.white,
+//     //         }}
+//     //         source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4121/4121106.png' }}
+//     //       />
+//     //       {/* {isExtended && (
+//     //         <Text
+//     //           style={{
+//     //             color: colors.white,
+//     //             fontSize: responsiveFontSize(1.7),
+//     //             fontWeight: '600',
+//     //             marginLeft: responsiveFontSize(1),
+//     //             letterSpacing: 0.3,
+//     //           }}
+//     //           numberOfLines={1}
+//     //         >
+//     //           {t('appliedJobs')}
+//     //         </Text>
+//     //       )} */}
+//     //     </Animated.View>
+//       </Pressable>
+//     </Animated.View>
+//   );
+// };
 
 // Premium Job Card Component with animations
 const JobCard = ({
@@ -1327,14 +1327,14 @@ export default function AvailableJob() {
       )}
 
       {/* Animated Floating Action Button */}
-      <AnimatedFloatingButton
+      {/* <AnimatedFloatingButton
         colors={colors}
         responsiveFontSize={responsiveFontSize}
         responsiveWidth={responsiveWidth}
         t={t}
         onPress={_navigateAppliedJob}
         isExtended={isExtended}
-      />
+      /> */}
 
       {/* Filter Modal */}
       <Modal
