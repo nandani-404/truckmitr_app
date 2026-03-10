@@ -2238,12 +2238,12 @@ const Home = React.forwardRef((props, ref) => {
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 🚛 TRUCKER MODE TOGGLE CARD                    */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <TruckerModeToggle onToggle={handleStartTransition} />
+                        {/* <TruckerModeToggle onToggle={handleStartTransition} /> */}
 
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 📊 KHATAMITR BUTTON                            */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <TouchableOpacity
+                        {/* <TouchableOpacity
                             onPress={() => navigation.navigate(STACKS.KHATAMITR_ACTIVE_TRIP)}
                             activeOpacity={0.85}
                             style={{
@@ -2301,7 +2301,7 @@ const Home = React.forwardRef((props, ref) => {
                             <View>
                                 <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
                             </View>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
 
                         {/* Jobs Management Section */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: responsiveWidth(4), marginBottom: 5, marginTop: 15 }}>

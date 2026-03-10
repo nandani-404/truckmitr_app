@@ -9,7 +9,7 @@ import java.io.IOException
 
 object ApiUtils {
     private const val TAG = "ApiUtils"
-    private const val BASE_URL = "https://devtruckmitr.in/"
+    private const val BASE_URL = "https://truckmitr.com/"
     private val client = OkHttpClient()
 
     /**
