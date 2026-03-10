@@ -4076,5 +4076,11 @@
     "consent_pending": "Consent Pending",
     "tap_to_check_status": "Tap to check status",
     "select_route_first": "Please select a route first",
-    "live_color_tracking": "Live Color Tracking"
+    "live_color_tracking": "Live Color Tracking",
+    "truckOwnership": "Truck Ownership",
+    "tellUsAboutTruck": "Tell us about your truck",
+    "truckOwnershipQuery": "Do you drive your own truck or someone else's (owner's) truck?",
+    "truckOwnershipSub": "This helps us tailor your experience.",
+    "ownTruck": "I drive my own truck",
+    "transporterTruck": "I drive someone else's (owner's) truck"
 }

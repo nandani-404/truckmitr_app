@@ -437,9 +437,9 @@ const JobCard = ({
   }, []);
 
   const isExpanded = expandedJobs[item.id] || false;
-  const shortDescription = item?.Job_Description?.length > 150
-    ? item?.Job_Description.slice(0, 150) + "..."
-    : item?.Job_Description;
+  // const shortDescription = item?.Job_Description?.length > 150
+  //   ? item?.Job_Description.slice(0, 150) + "..."
+  //   : item?.Job_Description;
 
   let skills: string[] = [];
   try {
@@ -451,6 +451,7 @@ const JobCard = ({
 
   const isExpired = isExpiredJob;
   const isClosed = isClosedJob;
+  const isGreenLineTheme = item?.sub_id === 'greenline';
 
   return (
     <Animated.View
@@ -460,6 +461,17 @@ const JobCard = ({
           { translateY: slideAnim }
         ],
         opacity: fadeAnim,
+        backgroundColor: colors.white,
+        borderRadius: responsiveFontSize(2),
+        marginBottom: responsiveHeight(2),
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: colors.blackOpacity(0.06),
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
       }}
     >
       <View style={{ opacity: isClosed ? 0.55 : 1 }}>
@@ -487,10 +499,32 @@ const JobCard = ({
 
         {/* Gradient Accent */}
         <LinearGradient
-          colors={isExpired ? ['#00000008', '#00000004', 'transparent'] : [colors.royalBlue + '12', colors.royalBlue + '04', 'transparent']}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: responsiveHeight(12) }}
+          colors={
+            isExpired
+              ? ['#00000008', '#00000004', 'transparent']
+              : isGreenLineTheme
+                ? ['#dcfce7', '#f0fdf4', 'transparent']
+                : [colors.royalBlue + '12', colors.royalBlue + '04', 'transparent']
+          }
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: responsiveHeight(14) }}
         />
 
+        {/* {isGreenLineTheme && (
+          // <Image
+          //   source={require('@truckmitr/src/assets/trucks/greenline_bg.png')}
+          //   style={{
+          //     position: 'absolute',
+          //     top: 0,
+          //     right: 0,
+          //     width: '100%',
+          //     height: responsiveFontSize(22.03),
+          //     opacity: 0.23 ,
+          //     borderTopRightRadius: responsiveFontSize(1.5),
+          //     borderTopLeftRadius: responsiveFontSize(1.5),
+          //     resizeMode: 'cover'
+          //   }}
+          // />
+        )} */}
         <View style={{ padding: responsiveFontSize(2.2), opacity: isExpired ? 0.5 : 1 }}>
           {/* Closed Job Badge */}
           {isClosed && (
@@ -521,8 +555,31 @@ const JobCard = ({
             </View>
           )}
 
-          {/* Subscription Badge - hidden for closed jobs */}
-          {!isClosed && (item?.subscription_plan_name === 'super_premium_job' ? (
+          {/* Subscription and Theme Badges - hidden for closed jobs */}
+          {!isClosed && (isGreenLineTheme ? (
+            <View style={{
+              alignSelf: 'flex-start',
+              marginBottom: responsiveFontSize(1.5),
+            }}>
+              <View style={{
+                backgroundColor: '#dcfce7',
+                paddingHorizontal: responsiveFontSize(1.5),
+                paddingVertical: responsiveFontSize(0.8),
+                borderRadius: responsiveFontSize(0.8),
+                borderWidth: 0.5,
+                borderColor: '#22c55e'
+              }}>
+                <Text style={{
+                  fontSize: responsiveFontSize(1.6),
+                  fontWeight: '700',
+                  color: '#16a34a',
+                  letterSpacing: 0.2,
+                }}>
+                  LNG Trailer with 3+ Years experience Only
+                </Text>
+              </View>
+            </View>
+          ) : item?.subscription_plan_name === 'super_premium_job' ? (
             <View style={{
               alignSelf: 'flex-end',
               marginBottom: responsiveFontSize(1.5),
@@ -662,19 +719,21 @@ const JobCard = ({
               {item?.job_title}
             </Text>
 
-
             {/* Description */}
-            <View style={{ marginBottom: responsiveFontSize(2) }}>
-              <Text style={{
-                fontSize: responsiveFontSize(1.75),
-                color: colors.blackOpacity(0.6),
-                fontWeight: '400',
-                lineHeight: responsiveFontSize(2.6),
-                letterSpacing: 0.1
-              }}>
-                {isExpanded ? item?.Job_Description : shortDescription}
+            <View style={{ minHeight: responsiveFontSize(10) }}>
+              <Text
+                numberOfLines={isExpanded ? undefined : 3}
+                style={{
+                  fontSize: responsiveFontSize(1.75),
+                  color: colors.blackOpacity(0.6),
+                  fontWeight: '400',
+                  lineHeight: responsiveFontSize(2.6),
+                  letterSpacing: 0.1
+                }}
+              >
+                {item?.Job_Description}
               </Text>
-              {item?.Job_Description?.length > 150 && (
+              {item?.Job_Description?.length > 200 && (
                 <Pressable
                   onPress={() => toggleExpand(item.id)}
                   style={({ pressed }) => [{
@@ -1052,7 +1111,7 @@ export default function AvailableJob() {
   };
 
   const _isJobClosed = (item: any): boolean => {
-    return item?.closed_job?.toLowerCase() === 'yes';
+    return String(item?.closed_job || '').toLowerCase() === 'yes';
   };
 
   const _fetchAllAvailableJobs = async () => {
@@ -1061,8 +1120,11 @@ export default function AvailableJob() {
       console.log("allAvailableJobs", allAvailableJobs);
       if (allAvailableJobs?.data?.status) {
         const jobs = allAvailableJobs?.data?.data || [];
-        // Sort: open jobs first, closed jobs at bottom
+        // Sort: greenline jobs first, then open jobs before closed jobs
         const sortedJobs = [...jobs].sort((a: any, b: any) => {
+          const aGreenLine = a?.sub_id === 'greenline';
+          const bGreenLine = b?.sub_id === 'greenline';
+          if (aGreenLine !== bGreenLine) return aGreenLine ? -1 : 1;
           const aClosed = _isJobClosed(a);
           const bClosed = _isJobClosed(b);
           if (aClosed === bClosed) return 0;

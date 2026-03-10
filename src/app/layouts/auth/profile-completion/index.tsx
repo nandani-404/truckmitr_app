@@ -252,6 +252,7 @@ const DRIVER_STEPS = [
     { id: 'expected_salary', title: 'expectedSalary', subtitle: 'selectExpectedMonthlySalary', field: 'expected_salary', required: true },
     { id: 'avatar', title: 'profilePhoto', subtitle: 'addYourProfilePhoto', field: 'profilePath', required: true },
     { id: 'id_numbers', title: 'idDetails', subtitle: 'enterIdDetails', field: 'License_Number', required: true },
+    { id: 'truck_ownership', title: 'truckOwnership', subtitle: 'tellUsAboutTruck', field: 'truck_ownership', required: true },
 ];
 
 // Transporter Steps
@@ -345,6 +346,7 @@ export default function ProfileCompletion() {
         panImagePath: null as any,
         gstCertificatePath: null as any,
         Driving_Experience: '',
+        truck_ownership: '',
 
         // Transporter fields
         year_of_exp: '',
@@ -1801,6 +1803,48 @@ export default function ProfileCompletion() {
                         </Modal>
                     </View>
                 );
+            case 'truck_ownership':
+                return (
+                    <View style={styles.stepContainer}>
+                        <Text style={styles.classicLabel}>
+                            {t('truckOwnershipQuery') || "May we kindly ask if you drive your own truck or a transporter's truck?"}
+                        </Text>
+                        <Text style={[styles.helperText, { marginBottom: 16 }]}>
+                            {t('truckOwnershipSub') || "This helps us tailor your experience."}
+                        </Text>
+
+                        <TouchableOpacity
+                            style={[
+                                styles.radioBox,
+                                formData?.truck_ownership === 'own' && styles.radioBoxSelected,
+                                { marginBottom: 12 }
+                            ]}
+                            onPress={() => updateFormData({ truck_ownership: 'own' })}
+                        >
+                            <View style={[styles.radioCircle, formData?.truck_ownership === 'own' && styles.radioCircleSelected]}>
+                                {formData?.truck_ownership === 'own' && <View style={styles.radioDot} />}
+                            </View>
+                            <Text style={[styles.radioText, formData?.truck_ownership === 'own' && { color: '#246BFD' }]}>
+                                {t('ownTruck') || "I drive my own truck"}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[
+                                styles.radioBox,
+                                formData?.truck_ownership === 'transporter' && styles.radioBoxSelected
+                            ]}
+                            onPress={() => updateFormData({ truck_ownership: 'transporter' })}
+                        >
+                            <View style={[styles.radioCircle, formData?.truck_ownership === 'transporter' && styles.radioCircleSelected]}>
+                                {formData?.truck_ownership === 'transporter' && <View style={styles.radioDot} />}
+                            </View>
+                            <Text style={[styles.radioText, formData?.truck_ownership === 'transporter' && { color: '#246BFD' }]}>
+                                {t('transporterTruck') || "I drive a transporter's truck"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                );
             // === TRANSPORTER-SPECIFIC STEPS ===
             case 'year_of_exp':
                 return (
@@ -2319,7 +2363,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#495057',
         marginBottom: 8,
-        textTransform: 'uppercase',
+        // textTransform: 'uppercase',
     },
     classicBox: {
         flexDirection: 'row',
