@@ -641,7 +641,7 @@ export default function Dashboard() {
                         {/* Row 1: Jobs Section - 3 Items */}
                         <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 14 }}>
                             <DashboardCard
-                                title={t('allAvailableJobs')}
+                                title={t('allJobs')}
                                 subtitle=""
                                 count={dashboard?.total_availablejobs}
                                 icon="https://cdn-icons-png.flaticon.com/512/3281/3281289.png"

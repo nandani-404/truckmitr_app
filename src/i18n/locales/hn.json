@@ -146,6 +146,7 @@
   "searchJobs": "Naukri dhoondo",
   "dashboard": "Dashboard",
   "availableJobs": "Available Naukriyaan",
+  "allJobs": "All Naukriyaan",
   "jobsThatSuitsYou": "Jo Naukri aapke liye best hai",
   "quizResult": "Quiz Result",
   "addJobs": "Naukri jodo",
@@ -809,5 +810,8 @@
   "pleaseEnterTripIncentiveAmount": "Kripaya trip incentive amount enter karein",
   "accommodationFacility": "Rehne ki Suvidha",
   "selectAccommodationHint": "Select karein ki rehne ki suvidha provide ki jayegi ya nahi",
-  "accommodationHintDetail": "Kya aap driver ko rehne ki suvidha provide karenge?"
+  "accommodationHintDetail": "Kya aap driver ko rehne ki suvidha provide karenge?",
+  "neverMissInterviewCall": "Koi bhi video call interview miss na karein!",
+  "fullScreenPermissionMsg": "Transporters aapko TruckMitr ke jariye video call interview ke liye call kar sakte hain. Ye ensure karne ke liye ki aap koi bhi important video call interview miss na karein — chahe aapka phone lock hi kyon na ho — please ye setting enable karein.",
+  "benefitReceiveCalls": "Kabhi bhi video call interview receive karein"
 }

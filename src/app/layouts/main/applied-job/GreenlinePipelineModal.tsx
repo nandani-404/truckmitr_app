@@ -276,13 +276,14 @@ const GreenlinePipelineModal: React.FC<GreenlinePipelineModalProps> = ({
                                         const isStepCompleted = data.pipeline_status?.startsWith('Physical Interview') ||
                                             data.pipeline_status === 'Interview' ||
                                             data.pipeline_status === 'Hired' ||
+                                            data.pipeline_status === 'Selected' ||
                                             (isObject && interview.online_interview_status === 'accepted') ||
                                             (isObject && interview.online_interview_status === 'completed');
 
                                         if (isObject) {
                                             statusText = interview.online_interview_timing || t('scheduled', 'Scheduled');
 
-                                            // First check interview result (transporter's decision after interview)
+                                            // 1. Recruiter Result Description
                                             if (interview.online_interview_status === 'accepted') {
                                                 description = t('onlineInterviewSelected', 'Selected! Transporter has approved your online interview.');
                                                 descriptionColor = '#10B981';
@@ -292,9 +293,16 @@ const GreenlinePipelineModal: React.FC<GreenlinePipelineModalProps> = ({
                                             } else if (interview.online_interview_status === 'shortlisted') {
                                                 description = t('onlineInterviewShortlisted', 'You are in the pipeline. Transporter may reach out to you soon.');
                                                 descriptionColor = colors.royalBlue;
+                                            } else if (currentAction === 'accepted') {
+                                                description = t('interviewReady', 'Be ready for the video call interview.');
+                                                descriptionColor = '#10B981';
+                                            } else if (currentAction === 'schedule_requested') {
+                                                description = t('rescheduleApplied', 'Reschedule applied. Waiting for update.');
+                                                descriptionColor = colors.blackOpacity(0.5);
                                             }
-                                            // Then check driver's action on the schedule (only if no result yet)
-                                            else if (currentAction === 'pending') {
+
+                                            // 2. Actions or Timing Details (Independent of description)
+                                            if (currentAction === 'pending' && !interview.online_interview_status) {
                                                 actions = (
                                                     <>
                                                         <View style={styles.timingCard}>
@@ -332,12 +340,7 @@ const GreenlinePipelineModal: React.FC<GreenlinePipelineModalProps> = ({
                                                         </View>
                                                     </>
                                                 );
-                                            } else if (currentAction === 'schedule_requested') {
-                                                description = t('rescheduleApplied', 'Reschedule applied. Waiting for update.');
-                                                descriptionColor = colors.blackOpacity(0.5);
-                                            } else if (currentAction === 'accepted') {
-                                                description = t('interviewReady', 'Be ready for the video call interview.');
-                                                descriptionColor = '#10B981';
+                                            } else if (currentAction === 'accepted' || interview.online_interview_status === 'accepted') {
                                                 actions = (
                                                     <View style={styles.timingCard}>
                                                         <View style={styles.timingIconWrap}>
@@ -381,10 +384,11 @@ const GreenlinePipelineModal: React.FC<GreenlinePipelineModalProps> = ({
 
                                         const isStepActive = data.pipeline_status?.startsWith('Physical Interview') || data.pipeline_status === 'Interview';
                                         const isStepCompleted = data.pipeline_status === 'Hired' ||
+                                            data.pipeline_status === 'Selected' ||
                                             (isObject && interview.physical_interview_status === 'accepted') ||
                                             (isObject && interview.physical_interview_status === 'completed');
 
-                                        if (isObject && isStepActive) {
+                                        if (isObject && (isStepActive || isStepCompleted)) {
                                             // Build timing text from start/end dates
                                             const hasStart = interview.physical_interview_start;
                                             const hasEnd = interview.physical_interview_end;
@@ -394,7 +398,7 @@ const GreenlinePipelineModal: React.FC<GreenlinePipelineModalProps> = ({
                                                 : hasStart || t('pending', 'Pending');
                                             statusText = hasTime ? timingText : t('pending', 'Pending');
 
-                                            // First check interview result (transporter's decision)
+                                            // 1. Recruiter Result Description
                                             if (interview.physical_interview_status === 'accepted') {
                                                 description = t('physicalInterviewSelected', 'Selected! Transporter has approved your walk-in interview.');
                                                 descriptionColor = '#10B981';
@@ -404,63 +408,61 @@ const GreenlinePipelineModal: React.FC<GreenlinePipelineModalProps> = ({
                                             } else if (interview.physical_interview_status === 'shortlisted') {
                                                 description = t('physicalInterviewShortlisted', 'You are in the pipeline. Transporter may reach out to you soon.');
                                                 descriptionColor = colors.royalBlue;
-                                            }
-                                            // No time scheduled yet — just show waiting message
-                                            else if (!hasTime) {
-                                                description = t('physicalNotScheduled', 'Physical interview not yet scheduled. Transporter will share timing soon.');
-                                                descriptionColor = colors.blackOpacity(0.5);
-                                            }
-                                            // Time is scheduled — show actions based on driver's response
-                                            else if (physicalAction === 'pending') {
-                                                actions = (
-                                                    <>
-                                                        <View style={styles.timingCard}>
-                                                            <View style={styles.timingIconWrap}>
-                                                                <Ionicons name="location" size={responsiveFontSize(2.2)} color={colors.royalBlue} />
-                                                            </View>
-                                                            <View style={{ flex: 1 }}>
-                                                                <Text style={[styles.timingLabel, { fontSize: responsiveFontSize(1.3), color: colors.blackOpacity(0.5) }]}>
-                                                                    {t('visitBetween', 'Visit Between')}
-                                                                </Text>
-                                                                <Text style={[styles.timingValue, { fontSize: responsiveFontSize(1.8), color: colors.black }]}>
-                                                                    {timingText}
-                                                                </Text>
-                                                            </View>
-                                                        </View>
-                                                        <View style={[styles.buttonRow, { marginTop: 12 }]}>
-                                                            <TouchableOpacity
-                                                                style={[styles.smallButton, { backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1 }]}
-                                                                onPress={() => handleInterviewAction('schedule_requested', 'physical')}
-                                                                disabled={isActionLoading}
-                                                            >
-                                                                <Text style={[styles.buttonText, { color: '#DC2626' }]}>
-                                                                    {isActionLoading ? '...' : t('reschedule', 'Reschedule')}
-                                                                </Text>
-                                                            </TouchableOpacity>
-                                                            <TouchableOpacity
-                                                                style={[styles.smallButton, { backgroundColor: '#10B981' }]}
-                                                                onPress={() => handleInterviewAction('accepted', 'physical')}
-                                                                disabled={isActionLoading}
-                                                            >
-                                                                <Text style={[styles.buttonText, { color: '#fff' }]}>
-                                                                    {isActionLoading ? '...' : t('confirm', 'Confirm')}
-                                                                </Text>
-                                                            </TouchableOpacity>
-                                                        </View>
-                                                    </>
-                                                );
-                                            } else if (physicalAction === 'schedule_requested') {
-                                                description = t('rescheduleApplied', 'Reschedule applied. Waiting for update.');
-                                                descriptionColor = colors.blackOpacity(0.5);
                                             } else if (physicalAction === 'accepted') {
                                                 description = t('physicalInterviewReady', 'Be ready for the walk-in interview.');
                                                 descriptionColor = '#10B981';
+                                            } else if (physicalAction === 'schedule_requested') {
+                                                description = t('rescheduleApplied', 'Reschedule applied. Waiting for update.');
+                                                descriptionColor = colors.blackOpacity(0.5);
+                                            } else if (!hasTime) {
+                                                description = t('physicalNotScheduled', 'Physical interview not yet scheduled. Transporter will share timing soon.');
+                                                descriptionColor = colors.blackOpacity(0.5);
+                                            }
 
-                                                const showLocation = isObject && interview.physical_interview_location;
-
-                                                actions = (
-                                                    <View style={{ gap: 10 }}>
-                                                        {hasTime && (
+                                            // 2. Actions or Details Card (Independent of description)
+                                            if (hasTime) {
+                                                if (physicalAction === 'pending' && !interview.physical_interview_status) {
+                                                    actions = (
+                                                        <>
+                                                            <View style={styles.timingCard}>
+                                                                <View style={styles.timingIconWrap}>
+                                                                    <Ionicons name="location" size={responsiveFontSize(2.2)} color={colors.royalBlue} />
+                                                                </View>
+                                                                <View style={{ flex: 1 }}>
+                                                                    <Text style={[styles.timingLabel, { fontSize: responsiveFontSize(1.3), color: colors.blackOpacity(0.5) }]}>
+                                                                        {t('visitBetween', 'Visit Between')}
+                                                                    </Text>
+                                                                    <Text style={[styles.timingValue, { fontSize: responsiveFontSize(1.8), color: colors.black }]}>
+                                                                        {timingText}
+                                                                    </Text>
+                                                                </View>
+                                                            </View>
+                                                            <View style={[styles.buttonRow, { marginTop: 12 }]}>
+                                                                <TouchableOpacity
+                                                                    style={[styles.smallButton, { backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1 }]}
+                                                                    onPress={() => handleInterviewAction('schedule_requested', 'physical')}
+                                                                    disabled={isActionLoading}
+                                                                >
+                                                                    <Text style={[styles.buttonText, { color: '#DC2626' }]}>
+                                                                        {isActionLoading ? '...' : t('reschedule', 'Reschedule')}
+                                                                    </Text>
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity
+                                                                    style={[styles.smallButton, { backgroundColor: '#10B981' }]}
+                                                                    onPress={() => handleInterviewAction('accepted', 'physical')}
+                                                                    disabled={isActionLoading}
+                                                                >
+                                                                    <Text style={[styles.buttonText, { color: '#fff' }]}>
+                                                                        {isActionLoading ? '...' : t('confirm', 'Confirm')}
+                                                                    </Text>
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        </>
+                                                    );
+                                                } else if (physicalAction === 'accepted' || interview.physical_interview_status === 'accepted') {
+                                                    const showLocation = interview.physical_interview_location;
+                                                    actions = (
+                                                        <View style={{ gap: 10 }}>
                                                             <View style={styles.timingCard}>
                                                                 <View style={styles.timingIconWrap}>
                                                                     <Ionicons name="calendar-outline" size={responsiveFontSize(2.2)} color={colors.royalBlue} />
@@ -474,24 +476,24 @@ const GreenlinePipelineModal: React.FC<GreenlinePipelineModalProps> = ({
                                                                     </Text>
                                                                 </View>
                                                             </View>
-                                                        )}
-                                                        {showLocation && (
-                                                            <View style={styles.timingCard}>
-                                                                <View style={styles.timingIconWrap}>
-                                                                    <Ionicons name="location" size={responsiveFontSize(2.2)} color={colors.royalBlue} />
+                                                            {showLocation ? (
+                                                                <View style={styles.timingCard}>
+                                                                    <View style={styles.timingIconWrap}>
+                                                                        <Ionicons name="location" size={responsiveFontSize(2.2)} color={colors.royalBlue} />
+                                                                    </View>
+                                                                    <View style={{ flex: 1 }}>
+                                                                        <Text style={[styles.timingLabel, { fontSize: responsiveFontSize(1.3), color: colors.blackOpacity(0.5) }]}>
+                                                                            {t('location', 'Location')}
+                                                                        </Text>
+                                                                        <Text style={[styles.timingValue, { fontSize: responsiveFontSize(1.4), color: colors.black }]}>
+                                                                            {interview.physical_interview_location}
+                                                                        </Text>
+                                                                    </View>
                                                                 </View>
-                                                                <View style={{ flex: 1 }}>
-                                                                    <Text style={[styles.timingLabel, { fontSize: responsiveFontSize(1.3), color: colors.blackOpacity(0.5) }]}>
-                                                                        {t('location', 'Location')}
-                                                                    </Text>
-                                                                    <Text style={[styles.timingValue, { fontSize: responsiveFontSize(1.4), color: colors.black }]}>
-                                                                        {interview.physical_interview_location}
-                                                                    </Text>
-                                                                </View>
-                                                            </View>
-                                                        )}
-                                                    </View>
-                                                );
+                                                            ) : null}
+                                                        </View>
+                                                    );
+                                                }
                                             }
                                         }
 

@@ -14,6 +14,8 @@ import { STACKS } from '@truckmitr/src/stacks/stacks';
 import { isNavigationReady } from '@truckmitr/src/routes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
+import { resolveTargetScreen } from '../navigation/resolver';
+import store from '@truckmitr/redux/store';
 
 const CHANNEL_ID = 'truckMitr_channel';
 const CHANNEL_NAME = 'TruckMitr Notifications';
@@ -60,8 +62,18 @@ const navigateWithDeepLink = (data?: NotificationData) => {
         return;
     }
 
-    const deepLink = getDeepLinkFromScreen(data.screen);
-    console.log('🔗 Navigating with deep link:', deepLink);
+    // Get current user data from Redux for validation
+    const state = store.getState();
+    const { user } = state.user;
+    const { selectedModule } = state.app;
+    
+    const userRole = user?.role || user?.data?.role || 'driver';
+    
+    // Resolve screen name with role validation
+    const targetScreen = resolveTargetScreen(data.screen, userRole, selectedModule);
+    
+    const deepLink = `truckmitr://${targetScreen}`;
+    console.log('🔗 Navigating with validated deep link:', deepLink);
 
     // Use Linking to trigger deep link - React Navigation's linking config will handle it
     Linking.openURL(deepLink).catch(err => {
@@ -223,13 +235,26 @@ export const handleNotificationNavigation = async (data?: NotificationData) => {
         return;
     }
 
-    console.log('📍 Notification navigation (deep link):', data.screen);
+    console.log('📍 Notification navigation (validated):', data.screen);
+
+    // Get current user data from Redux for validation
+    const state = store.getState();
+    const { user } = state.user;
+    const { selectedModule } = state.app;
+    
+    const userRole = user?.role || user?.data?.role || 'driver';
+    
+    // Resolve screen name with role validation
+    const targetScreen = resolveTargetScreen(data.screen, userRole, selectedModule);
+    
+    // Update data with resolved screen
+    const validatedData = { ...data, screen: targetScreen };
 
     // Clear pending notification
     await AsyncStorage.removeItem(PENDING_NOTIFICATION_KEY);
 
     // Navigate using deep link
-    navigateWithDeepLink(data);
+    navigateWithDeepLink(validatedData);
 };
 
 const requestFCMUserPermission = async () => {

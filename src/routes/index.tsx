@@ -38,6 +38,7 @@ import PunctureProfileCompletionStack from '../stacks/punctureProfileCompletion'
 import { agoraService } from '../services/agora';
 import InterviewPopupModal, { InterviewData } from '../utils/interview-popup';
 // import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
+import { resolveTargetScreen } from '../utils/navigation/resolver';
 
 export let isNavigationReady = false;
 
@@ -535,14 +536,14 @@ export default function Routes() {
               if (item.type === 'online') {
                 return {
                   type: 'online',
-                  interview_id: interview.id || item.interview_id || item.id,
+                  interview_id: String(interview.id || item.interview_id || item.id),
                   job_id: item.job_id,
                   timing: interview.online_interview_timing || item.online_interview_timing || item.timing,
                 };
               } else {
                 return {
                   type: 'physical',
-                  interview_id: interview.id || item.interview_id || item.id,
+                  interview_id: String(interview.id || item.interview_id || item.id),
                   start_date: interview.physical_interview_start || item.physical_interview_start || item.start_date,
                   end_date: interview.physical_interview_end || item.physical_interview_end || item.end_date,
                   location: interview.physical_interview_location || item.physical_interview_location || item.location,
@@ -550,7 +551,11 @@ export default function Routes() {
                 };
               }
             });
-            setInterviewPopupData(mappedData);
+
+            // Deduplicate by interview_id to prevent double actions in the stack
+            const uniqueData = Array.from(new Map(mappedData.map(item => [item.interview_id, item])).values());
+            
+            setInterviewPopupData(uniqueData);
             setShowInterviewPopup(true);
           } else {
             setShowInterviewPopup(false);
@@ -857,23 +862,53 @@ export default function Routes() {
 
           // Navigate based on screen
           if (navigationRef.current) {
-            switch (pendingScreen) {
+            // Resolve the pending screen with role validation
+            const validatedScreen = resolveTargetScreen(pendingScreen, userRoleStr, selectedModule);
+            console.log('🔴 Kill state: Resolved screen:', validatedScreen);
+
+            switch (validatedScreen) {
               case 'profileEdit':
+              case STACKS.PROFILE:
+              case STACKS.FOREMAN_PROFILE:
+              case STACKS.DHABHA_PROFILE:
                 (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
                 break;
               case 'jobs':
+              case STACKS.JOB:
+              case STACKS.VIEW_JOBS:
+              case STACKS.FOREMAN_JOBS_LIST:
                 (navigationRef.current as any)?.navigate('bottomTab', { screen: 'job' });
                 break;
               case 'home':
+              case STACKS.HOME:
+              case STACKS.FOREMAN_BOTTOM_TAB:
+              case STACKS.DHABHA_BOTTOM:
                 (navigationRef.current as any)?.navigate('bottomTab', { screen: 'home' });
                 break;
               case 'training':
+              case STACKS.TRAINING:
                 (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
                 break;
+              case STACKS.FOREMAN_ADD_DRIVER:
+                (navigationRef.current as any)?.navigate(STACKS.FOREMAN_BOTTOM_TAB, { screen: STACKS.FOREMAN_ADD_DRIVER });
+                break;
+              case STACKS.DHABHA_ADD_DRIVER:
+                (navigationRef.current as any)?.navigate(STACKS.DHABHA_BOTTOM, { screen: STACKS.DHABHA_ADD_DRIVER });
+                break;
+              case STACKS.PUNCTURE_ADD_DRIVER:
+                (navigationRef.current as any)?.navigate(STACKS.PUNCTURE_BOTTOM, { screen: STACKS.PUNCTURE_ADD_DRIVER });
+                break;
+              case STACKS.DRIVER_ASSOCIATION_ADD_DRIVER:
+                (navigationRef.current as any)?.navigate(STACKS.ASSOCIATE_BOTTOM_TAB, { screen: STACKS.DRIVER_ASSOCIATION_ADD_DRIVER });
+                break;
+              case STACKS.SHIPPER_POST_LOAD:
+                (navigationRef.current as any)?.navigate(STACKS.SHIPPER_BOTTOM_TAB, { screen: STACKS.SHIPPER_POST_LOAD });
+                break;
               default:
-                console.log('🔴 Unknown pending screen:', pendingScreen);
+                console.log('🔴 Direct navigation for kill state:', validatedScreen);
+                (navigationRef.current as any)?.navigate(validatedScreen);
             }
-            console.log('🔴 Kill state: Navigation completed for screen:', pendingScreen);
+            console.log('🔴 Kill state: Navigation completed for screen:', validatedScreen);
           }
           return;
         }
@@ -990,30 +1025,62 @@ export default function Routes() {
         return;
       }
 
+      // Resolve target screen using the Smart Screen Resolver
+      const validatedTarget = resolveTargetScreen(path, userRoleStr, selectedModule);
+      console.log('🔍 Resolved target screen:', validatedTarget);
+
       // Handle different deep link paths
-      switch (path) {
+      switch (validatedTarget) {
         case 'profile':
+        case STACKS.PROFILE:
+        case STACKS.FOREMAN_PROFILE:
+        case STACKS.DHABHA_PROFILE:
           (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
           break;
         case 'job':
         case 'jobs':
+        case STACKS.JOB:
+        case STACKS.VIEW_JOBS:
+        case STACKS.FOREMAN_JOBS_LIST:
           (navigationRef.current as any)?.navigate('bottomTab', { screen: 'job' });
           break;
         case 'home':
+        case STACKS.HOME:
+        case STACKS.FOREMAN_BOTTOM_TAB:
+        case STACKS.DHABHA_BOTTOM:
           (navigationRef.current as any)?.navigate('bottomTab', { screen: 'home' });
           break;
         case 'training':
+        case STACKS.TRAINING:
           (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
           break;
         case 'driverKiAwazInfo':
         case 'driver-ki-awaz':
+        case STACKS.DRIVER_KI_AWAZ_INFO:
           (navigationRef.current as any)?.navigate('bottomTab', {
             screen: 'driverKiAwazInfo',
             params: reelId ? { reelId } : undefined,
           });
           break;
+        case STACKS.FOREMAN_ADD_DRIVER:
+          (navigationRef.current as any)?.navigate(STACKS.FOREMAN_BOTTOM_TAB, { screen: STACKS.FOREMAN_ADD_DRIVER });
+          break;
+        case STACKS.DHABHA_ADD_DRIVER:
+          (navigationRef.current as any)?.navigate(STACKS.DHABHA_BOTTOM, { screen: STACKS.DHABHA_ADD_DRIVER });
+          break;
+        case STACKS.PUNCTURE_ADD_DRIVER:
+          (navigationRef.current as any)?.navigate(STACKS.PUNCTURE_BOTTOM, { screen: STACKS.PUNCTURE_ADD_DRIVER });
+          break;
+        case STACKS.DRIVER_ASSOCIATION_ADD_DRIVER:
+        case STACKS.ASSOCIATE_DASHBOARD:
+          (navigationRef.current as any)?.navigate(STACKS.ASSOCIATE_BOTTOM_TAB, { screen: validatedTarget });
+          break;
+        case STACKS.SHIPPER_POST_LOAD:
+          (navigationRef.current as any)?.navigate(STACKS.SHIPPER_BOTTOM_TAB, { screen: STACKS.SHIPPER_POST_LOAD });
+          break;
         default:
-          console.log('🔍 Deep link path not recognized:', path);
+          console.log('🔍 Validated target used for direct navigation:', validatedTarget);
+          (navigationRef.current as any)?.navigate(validatedTarget);
       }
     };
 
@@ -1123,23 +1190,53 @@ export default function Routes() {
           // This avoids the "Main" screen not found issue
           setTimeout(() => {
             if (navigationRef.current) {
-              switch (screen) {
+              // Resolve screen name with role validation
+              const validatedScreen = resolveTargetScreen(screen, userRoleStr, selectedModule);
+              console.log('🟡 Background: Resolved screen:', validatedScreen);
+
+              switch (validatedScreen) {
                 case 'profileEdit':
+                case STACKS.PROFILE:
+                case STACKS.FOREMAN_PROFILE:
+                case STACKS.DHABHA_PROFILE:
                   (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
                   break;
                 case 'jobs':
+                case STACKS.JOB:
+                case STACKS.VIEW_JOBS:
+                case STACKS.FOREMAN_JOBS_LIST:
                   (navigationRef.current as any)?.navigate('bottomTab', { screen: 'job' });
                   break;
                 case 'home':
+                case STACKS.HOME:
+                case STACKS.FOREMAN_BOTTOM_TAB:
+                case STACKS.DHABHA_BOTTOM:
                   (navigationRef.current as any)?.navigate('bottomTab', { screen: 'home' });
                   break;
                 case 'training':
+                case STACKS.TRAINING:
                   (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
                   break;
+                case STACKS.FOREMAN_ADD_DRIVER:
+                  (navigationRef.current as any)?.navigate(STACKS.FOREMAN_BOTTOM_TAB, { screen: STACKS.FOREMAN_ADD_DRIVER });
+                  break;
+                case STACKS.DHABHA_ADD_DRIVER:
+                  (navigationRef.current as any)?.navigate(STACKS.DHABHA_BOTTOM, { screen: STACKS.DHABHA_ADD_DRIVER });
+                  break;
+                case STACKS.PUNCTURE_ADD_DRIVER:
+                  (navigationRef.current as any)?.navigate(STACKS.PUNCTURE_BOTTOM, { screen: STACKS.PUNCTURE_ADD_DRIVER });
+                  break;
+                case STACKS.DRIVER_ASSOCIATION_ADD_DRIVER:
+                  (navigationRef.current as any)?.navigate(STACKS.ASSOCIATE_BOTTOM_TAB, { screen: STACKS.DRIVER_ASSOCIATION_ADD_DRIVER });
+                  break;
+                case STACKS.SHIPPER_POST_LOAD:
+                  (navigationRef.current as any)?.navigate(STACKS.SHIPPER_BOTTOM_TAB, { screen: STACKS.SHIPPER_POST_LOAD });
+                  break;
                 default:
-                  console.log('🟡 Unknown screen:', screen);
+                  console.log('🟡 Direct navigation for background:', validatedScreen);
+                  (navigationRef.current as any)?.navigate(validatedScreen);
               }
-              console.log('🟡 Background: Navigation completed for screen:', screen);
+              console.log('🟡 Background: Navigation completed for screen:', validatedScreen);
             } else {
               console.log('🟡 Background: navigationRef not ready');
             }

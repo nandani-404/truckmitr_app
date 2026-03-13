@@ -8,7 +8,8 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import axiosInstance from 'src/utils/config/axiosInstance';
 import { BASE_URL, END_POINTS } from 'src/utils/config';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
-import BackgroundGeolocation from 'react-native-background-geolocation';
+// import BackgroundGeolocation from 'react-native-background-geolocation';
+import Geolocation from '@react-native-community/geolocation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector } from 'react-redux';
 import { pick } from '@react-native-documents/picker';
@@ -22,6 +23,7 @@ import TextRecognition from '@react-native-ml-kit/text-recognition';
 import RNFS from 'react-native-fs';
 // import pusherService, { LocationUpdate } from 'src/services/pusherService';
 
+const USE_PREMIUM_LOCATION = false;
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const ROUTE_COLORS = ['#2874F0', '#F39C12', '#26A541', '#E74C3C', '#9B59B6'];
@@ -400,103 +402,159 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
 
         const token = await AsyncStorage.getItem('@user_token');
 
-        // Watch position changes
-        bgGeoLocationSubscriptionRef.current = BackgroundGeolocation.onLocation(
-            (location) => {
-                const { latitude, longitude, heading } = location.coords;
-                const vehicleHead = getVehicleHead(latitude, longitude, heading);
-                console.log('═══════════════════════════════════════════════════════════');
-                console.log('📍 [LOCATION TRACKING] New position received from GPS');
-                console.log('📍 [LOCATION TRACKING] Latitude:', latitude.toFixed(6));
-                console.log('📍 [LOCATION TRACKING] Longitude:', longitude.toFixed(6));
-                console.log('📍 [LOCATION TRACKING] GPS Heading (raw):', heading);
-                console.log('📍 [LOCATION TRACKING] Vehicle Head (final):', vehicleHead, 'degrees');
-                console.log('═══════════════════════════════════════════════════════════');
+        if (USE_PREMIUM_LOCATION) {
+            /*
+            // @ts-ignore
+            bgGeoLocationSubscriptionRef.current = BackgroundGeolocation.onLocation(
+                (location) => {
+                    const { latitude, longitude, heading } = location.coords;
+                    const vehicleHead = getVehicleHead(latitude, longitude, heading);
+                    console.log('═══════════════════════════════════════════════════════════');
+                    console.log('📍 [LOCATION TRACKING] New position received from GPS');
+                    console.log('📍 [LOCATION TRACKING] Latitude:', latitude.toFixed(6));
+                    console.log('📍 [LOCATION TRACKING] Longitude:', longitude.toFixed(6));
+                    console.log('📍 [LOCATION TRACKING] GPS Heading (raw):', heading);
+                    console.log('📍 [LOCATION TRACKING] Vehicle Head (final):', vehicleHead, 'degrees');
+                    console.log('═══════════════════════════════════════════════════════════');
 
-                setCurrentLocation({ latitude, longitude });
+                    setCurrentLocation({ latitude, longitude });
 
-                // Always update prev GPS position for bearing calculation on next tick
-                prevGpsPositionRef.current = { latitude, longitude };
+                    // Always update prev GPS position for bearing calculation on next tick
+                    prevGpsPositionRef.current = { latitude, longitude };
 
-                // Check if we should update (moved 30m or more)
-                if (lastLocationRef.current) {
-                    const distance = calculateDistance(
-                        lastLocationRef.current.latitude,
-                        lastLocationRef.current.longitude,
-                        latitude,
-                        longitude
-                    );
+                    // Check if we should update (moved 30m or more)
+                    if (lastLocationRef.current) {
+                        const distance = calculateDistance(
+                            lastLocationRef.current.latitude,
+                            lastLocationRef.current.longitude,
+                            latitude,
+                            longitude
+                        );
 
-                    console.log(`📏 [LOCATION TRACKING] Distance from last update: ${distance.toFixed(2)}m`);
+                        console.log(`📏 [LOCATION TRACKING] Distance from last update: ${distance.toFixed(2)}m`);
 
-                    if (distance >= 30) {
-                        console.log('✅ [LOCATION TRACKING] Moved 30m+, updating server');
+                        if (distance >= 30) {
+                            console.log('✅ [LOCATION TRACKING] Moved 30m+, updating server');
+                            updateLocationToServer(latitude, longitude, vehicleHead);
+                            lastLocationRef.current = { latitude, longitude };
+                        } else {
+                            console.log(`⏸️ [LOCATION TRACKING] Distance < 30m, skipping update (${distance.toFixed(2)}m)`);
+                        }
+                    } else {
+                        // First location update
+                        console.log('🎯 [LOCATION TRACKING] First location received, updating server');
                         updateLocationToServer(latitude, longitude, vehicleHead);
                         lastLocationRef.current = { latitude, longitude };
-                    } else {
-                        console.log(`⏸️ [LOCATION TRACKING] Distance < 30m, skipping update (${distance.toFixed(2)}m)`);
                     }
+                }
+            );
+
+            // @ts-ignore
+            BackgroundGeolocation.ready({
+                geolocation: {
+                    desiredAccuracy: BackgroundGeolocation.DesiredAccuracy.High,
+                    distanceFilter: 30,
+                    stopTimeout: 5,
+                },
+                logger: {
+                    debug: false,
+                    logLevel: BackgroundGeolocation.LogLevel.Verbose,
+                },
+                app: {
+                    stopOnTerminate: false,
+                    startOnBoot: true,
+                    enableHeadless: true,
+                },
+                http: {
+                    url: BASE_URL.replace(/\/$/, "") + "/" + END_POINTS.TRIP_UPDATE_LOCATION.replace(/^\//, ""),
+                    batchSync: false,
+                    autoSync: true,
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    },
+                    params: {
+                        trip_id: trip.trip_id,
+                        driver_id: user?.id
+                    }
+                },
+                persistence: {
+                    locationTemplate: "{\"trip_id\": \"<%= @trip_id %>\", \"driver_id\": <%= @driver_id %>, \"latitude\": <%= location.coords.latitude %>, \"longitude\": <%= location.coords.longitude %>, \"vehicle_head\": <%= location.coords.heading %>}"
+                }
+            }).then((state) => {
+                // @ts-ignore
+                if (!state.enabled) {
+                    // @ts-ignore
+                    BackgroundGeolocation.start();
                 } else {
-                    // First location update
-                    console.log('🎯 [LOCATION TRACKING] First location received, updating server');
+                    // @ts-ignore
+                    BackgroundGeolocation.setConfig({
+                        http: {
+                            headers: {
+                                "Authorization": `Bearer ${token}`
+                            },
+                            params: {
+                                trip_id: trip.trip_id,
+                                driver_id: user?.id
+                            }
+                        }
+                    });
+                }
+            });
+            */
+        } else {
+            // Free Fallback: Use @react-native-community/geolocation
+            console.log('🌱 [LOCATION TRACKING] Using free Geolocation fallback');
+
+            // Initial position call
+            Geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude, heading } = position.coords;
+                    const vehicleHead = getVehicleHead(latitude, longitude, heading);
+                    console.log('📍 [LOCATION TRACKING] Initial fallback position:', { latitude, longitude });
                     updateLocationToServer(latitude, longitude, vehicleHead);
                     lastLocationRef.current = { latitude, longitude };
-                }
-            },
-            (error) => {
-                console.error('═══════════════════════════════════════════════════════════');
-                console.error('❌ [LOCATION TRACKING] GPS Error', error);
-                console.error('═══════════════════════════════════════════════════════════');
-            }
-        );
-
-        BackgroundGeolocation.ready({
-            geolocation: {
-                desiredAccuracy: BackgroundGeolocation.DesiredAccuracy.High,
-                distanceFilter: 30,
-                stopTimeout: 5,
-            },
-            logger: {
-                debug: false,
-                logLevel: BackgroundGeolocation.LogLevel.Verbose,
-            },
-            app: {
-                stopOnTerminate: false,
-                startOnBoot: true,
-                enableHeadless: true,
-            },
-            http: {
-                url: BASE_URL.replace(/\/$/, "") + "/" + END_POINTS.TRIP_UPDATE_LOCATION.replace(/^\//, ""),
-                batchSync: false,
-                autoSync: true,
-                headers: {
-                    "Authorization": `Bearer ${token}`
+                    setCurrentLocation({ latitude, longitude });
                 },
-                params: {
-                    trip_id: trip.trip_id,
-                    driver_id: user?.id
-                }
-            },
-            persistence: {
-                locationTemplate: "{\"trip_id\": \"<%= @trip_id %>\", \"driver_id\": <%= @driver_id %>, \"latitude\": <%= location.coords.latitude %>, \"longitude\": <%= location.coords.longitude %>, \"vehicle_head\": <%= location.coords.heading %>}"
-            }
-        }).then((state) => {
-            if (!state.enabled) {
-                BackgroundGeolocation.start();
-            } else {
-                BackgroundGeolocation.setConfig({
-                    http: {
-                        headers: {
-                            "Authorization": `Bearer ${token}`
-                        },
-                        params: {
-                            trip_id: trip.trip_id,
-                            driver_id: user?.id
+                (error) => console.log('❌ [LOCATION TRACKING] Initial pos error:', error),
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+            );
+
+            // Watch position changes
+            bgGeoLocationSubscriptionRef.current = Geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude, heading } = position.coords;
+                    const vehicleHead = getVehicleHead(latitude, longitude, heading);
+
+                    console.log('📍 [LOCATION TRACKING] New fallback position:', latitude.toFixed(6), longitude.toFixed(6));
+                    setCurrentLocation({ latitude, longitude });
+
+                    if (lastLocationRef.current) {
+                        const distance = calculateDistance(
+                            lastLocationRef.current.latitude,
+                            lastLocationRef.current.longitude,
+                            latitude,
+                            longitude
+                        );
+
+                        if (distance >= 30) {
+                            console.log('✅ [LOCATION TRACKING] Fallback moved 30m+, updating server');
+                            updateLocationToServer(latitude, longitude, vehicleHead);
+                            lastLocationRef.current = { latitude, longitude };
                         }
+                    } else {
+                        updateLocationToServer(latitude, longitude, vehicleHead);
+                        lastLocationRef.current = { latitude, longitude };
                     }
-                });
-            }
-        });
+                },
+                (error) => console.log('❌ [LOCATION TRACKING] Watch error:', error),
+                {
+                    enableHighAccuracy: true,
+                    distanceFilter: 30,
+                    interval: 10000,
+                    fastestInterval: 5000
+                }
+            );
+        }
 
         // Set up 30-second fallback timer (for testing - change to 10 minutes in production)
         fallbackIntervalRef.current = setInterval(() => {
@@ -506,23 +564,39 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
             if (timeSinceLastUpdate >= thirtySeconds) {
                 console.log('⏰ [LOCATION TRACKING] 30 SECONDS PASSED - FORCING LOCATION UPDATE');
 
-                // Try to get current position with relaxed settings
-                BackgroundGeolocation.getCurrentPosition({
-                    samples: 1,
-                    persist: false,
-                    timeout: 30,
-                    maximumAge: 60000
-                }).then((location) => {
-                    const { latitude, longitude, heading } = location.coords;
-                    const vehicleHead = getVehicleHead(latitude, longitude, heading);
-                    console.log('✅ [LOCATION TRACKING] Fallback position obtained:', { latitude, longitude, vehicleHead });
-                    updateLocationToServer(latitude, longitude, vehicleHead);
-                    lastLocationRef.current = { latitude, longitude };
-                    prevGpsPositionRef.current = { latitude, longitude };
-                    setCurrentLocation({ latitude, longitude });
-                }).catch((error) => {
-                    console.error('❌ [LOCATION TRACKING] Fallback error:', error);
-                });
+                if (USE_PREMIUM_LOCATION) {
+                    /*
+                    // @ts-ignore
+                    BackgroundGeolocation.getCurrentPosition({
+                        samples: 1,
+                        persist: false,
+                        timeout: 30,
+                        maximumAge: 60000
+                    }).then((location) => {
+                        const { latitude, longitude, heading } = location.coords;
+                        const vehicleHead = getVehicleHead(latitude, longitude, heading);
+                        console.log('✅ [LOCATION TRACKING] Fallback position obtained:', { latitude, longitude, vehicleHead });
+                        updateLocationToServer(latitude, longitude, vehicleHead);
+                        lastLocationRef.current = { latitude, longitude };
+                        prevGpsPositionRef.current = { latitude, longitude };
+                        setCurrentLocation({ latitude, longitude });
+                    }).catch((error) => {
+                        console.error('❌ [LOCATION TRACKING] Fallback error:', error);
+                    });
+                    */
+                } else {
+                    Geolocation.getCurrentPosition(
+                        (position) => {
+                            const { latitude, longitude, heading } = position.coords;
+                            const vehicleHead = getVehicleHead(latitude, longitude, heading);
+                            updateLocationToServer(latitude, longitude, vehicleHead);
+                            lastLocationRef.current = { latitude, longitude };
+                            setCurrentLocation({ latitude, longitude });
+                        },
+                        (error) => console.log('❌ [FALLBACK TIMER] Error:', error),
+                        { enableHighAccuracy: true, timeout: 10000 }
+                    );
+                }
             }
         }, 10000); // Check every 10 seconds for testing
 
@@ -532,9 +606,17 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
 
     // Stop location tracking
     const stopLocationTracking = () => {
-        BackgroundGeolocation.stop();
+        if (USE_PREMIUM_LOCATION) {
+            // @ts-ignore
+            // BackgroundGeolocation.stop();
+        }
+
         if (bgGeoLocationSubscriptionRef.current) {
-            bgGeoLocationSubscriptionRef.current.remove();
+            if (USE_PREMIUM_LOCATION) {
+                bgGeoLocationSubscriptionRef.current.remove();
+            } else {
+                Geolocation.clearWatch(bgGeoLocationSubscriptionRef.current);
+            }
             bgGeoLocationSubscriptionRef.current = null;
             console.log('🛑 [LOCATION TRACKING] Watch cleared');
         }
@@ -1275,20 +1357,39 @@ const TransporterDriverTrackingScreen: React.FC<Props> = ({ onBack, navigation }
     // Get current coordinates helper
     const getCurrentCoordinates = async (): Promise<{ latitude: number; longitude: number }> => {
         return new Promise((resolve, reject) => {
-            BackgroundGeolocation.getCurrentPosition({
-                samples: 1,
-                persist: false,
-                timeout: 30,
-                maximumAge: 60000
-            }).then((location) => {
-                resolve({
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
+            if (USE_PREMIUM_LOCATION) {
+                /*
+                // @ts-ignore
+                BackgroundGeolocation.getCurrentPosition({
+                    samples: 1,
+                    persist: false,
+                    timeout: 30,
+                    maximumAge: 60000
+                }).then((location) => {
+                    resolve({
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                    });
+                }).catch((error) => {
+                    console.error('Error getting location:', error);
+                    reject(error);
                 });
-            }).catch((error) => {
-                console.error('Error getting location:', error);
-                reject(error);
-            });
+                */
+            } else {
+                Geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                        });
+                    },
+                    (error) => {
+                        console.error('Error getting location (fallback):', error);
+                        reject(error);
+                    },
+                    { enableHighAccuracy: true, timeout: 15000 }
+                );
+            }
         });
     };
 

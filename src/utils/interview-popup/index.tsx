@@ -7,6 +7,8 @@ import {
     StyleSheet,
     Dimensions,
     ScrollView,
+    Animated,
+    Easing,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -148,68 +150,79 @@ const PhysicalContent = ({ data, t }: { data: PhysicalInterviewData; t: TFunctio
 
 const InterviewPopupModal = ({ visible, data, onDismiss, t }: InterviewPopupModalProps) => {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [localData, setLocalData] = useState<InterviewData[]>([]);
     const indexRef = useRef(0);
     const animatingRef = useRef(false);
+    const transitionAnim = useRef(new Animated.Value(0)).current;
 
-    // Reset state when modal opens
+    // Initialize session when modal opens
     useEffect(() => {
-        if (visible) {
+        if (visible && data.length > 0) {
+            console.log('🎤 Starting Interview Popup Session:', data.length, 'interviews');
+            setLocalData(data);
             indexRef.current = 0;
             setCurrentIndex(0);
             animatingRef.current = false;
+            transitionAnim.setValue(0);
+        } else if (!visible) {
+            setLocalData([]);
         }
     }, [visible]);
 
     useEffect(() => {
-        if (visible && data.length > 0 && currentIndex >= data.length) {
+        if (visible && localData.length > 0 && currentIndex >= localData.length) {
+            console.log('🎤 Session complete, dismissing modal');
             onDismiss();
         }
-    }, [currentIndex, visible, data.length]);
+    }, [currentIndex, visible, localData.length]);
 
     const handleAction = async (action: 'confirm' | 'reschedule', interview: InterviewData) => {
-        // Prevent multiple actions while processing
-        if (animatingRef.current) {
-            console.log('⚠️ Action locked: already processing');
-            return;
-        }
-        if (!interview) return;
-
-        const apiAction = action === 'confirm' ? 'accepted' : 'schedule_requested';
+        if (animatingRef.current || !interview) return;
+        
         animatingRef.current = true;
+        const apiAction = action === 'confirm' ? 'accepted' : 'schedule_requested';
 
-        // 1. Call API
-        try {
-            await axiosInstance.post('api/transporter/interview/action', {
-                interview_id: interview.interview_id,
-                type: interview.type,
-                action: apiAction,
-            });
-        } catch (error: any) {
-        }
-
-        // 2. Decide Transition
-        const nextIndex = indexRef.current + 1;
-        const totalCards = data.length;
-
-        if (nextIndex >= totalCards) {
-            onDismiss();
-            // Reset for next potential use
-            animatingRef.current = false;
-        } else {
-            // No animation, just switch
-            indexRef.current = nextIndex;
-            setCurrentIndex(nextIndex);
-            animatingRef.current = false;
-        }
+        // 1. Start Slide-out Animation Immediately for better UX
+        Animated.timing(transitionAnim, {
+            toValue: 1,
+            duration: 400,
+            easing: Easing.out(Easing.poly(4)),
+            useNativeDriver: true,
+        }).start(async () => {
+            // 2. Call API while card is sliding/fading
+            try {
+                const payload = {
+                    interview_id: interview.interview_id,
+                    type: interview.type,
+                    action: apiAction,
+                };
+                console.log('🚀 Sending Interview Action Payload:', payload);
+                await axiosInstance.post('api/transporter/interview/action', payload);
+            } catch (error: any) {
+                console.error('❌ Interview Action Error:', error?.message);
+            } finally {
+                // 3. Move to next card or dismiss
+                const nextIndex = indexRef.current + 1;
+                console.log(`🎤 Moving to next card: ${nextIndex + 1}/${localData.length}`);
+                if (nextIndex >= localData.length) {
+                    onDismiss();
+                } else {
+                    indexRef.current = nextIndex;
+                    setCurrentIndex(nextIndex);
+                    transitionAnim.setValue(0);
+                    animatingRef.current = false;
+                }
+            }
+        });
     };
 
-    const remaining = data.length - currentIndex;
-    const currentItem = currentIndex < data.length ? data[currentIndex] : null;
+    const remaining = localData.length - currentIndex;
+    const currentItem = currentIndex < localData.length ? localData[currentIndex] : null;
 
     return (
         <Modal
             key={`interview-modal-${visible}`} // Force refresh modal state when visible changes
-            visible={visible && !!currentItem}
+            visible={visible && currentIndex < localData.length}
             transparent
             animationType="fade"
             statusBarTranslucent
@@ -225,7 +238,7 @@ const InterviewPopupModal = ({ visible, data, onDismiss, t }: InterviewPopupModa
                             .map((_, i) => {
                                 const depth = i + 1;
                                 return (
-                                    <View
+                                    <Animated.View
                                         key={`bg-${currentIndex + depth}`}
                                         pointerEvents="none"
                                         style={[
@@ -233,9 +246,23 @@ const InterviewPopupModal = ({ visible, data, onDismiss, t }: InterviewPopupModa
                                             styles.bgCard,
                                             {
                                                 transform: [
-                                                    { translateX: depth * CARD_OFFSET_X },
-                                                    { scale: 1 - depth * CARD_SCALE_STEP },
+                                                    {
+                                                        translateX: transitionAnim.interpolate({
+                                                            inputRange: [0, 1],
+                                                            outputRange: [depth * CARD_OFFSET_X, (depth - 1) * CARD_OFFSET_X],
+                                                        })
+                                                    },
+                                                    {
+                                                        scale: transitionAnim.interpolate({
+                                                            inputRange: [0, 1],
+                                                            outputRange: [1 - depth * CARD_SCALE_STEP, 1 - (depth - 1) * CARD_SCALE_STEP],
+                                                        })
+                                                    },
                                                 ],
+                                                opacity: transitionAnim.interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: [depth === 1 ? 0.6 : 0.3, depth === 1 ? 1 : 0.6],
+                                                }),
                                                 zIndex: -depth,
                                             },
                                         ]}
@@ -244,19 +271,38 @@ const InterviewPopupModal = ({ visible, data, onDismiss, t }: InterviewPopupModa
                             })}
 
                         {/* Front card */}
-                        <View
+                        <Animated.View
+                            pointerEvents={animatingRef.current ? "none" : "auto"}
                             style={[
                                 styles.card,
                                 {
                                     zIndex: 10,
+                                    opacity: transitionAnim.interpolate({
+                                        inputRange: [0, 0.4, 1],
+                                        outputRange: [1, 0.3, 0],
+                                    }),
+                                    transform: [
+                                        {
+                                            translateX: transitionAnim.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [0, SCREEN_WIDTH],
+                                            })
+                                        },
+                                        {
+                                            rotate: transitionAnim.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: ['0deg', '15deg'],
+                                            })
+                                        },
+                                    ]
                                 },
                             ]}
                         >
                             {/* Card counter */}
-                            {data.length > 1 && (
+                            {localData.length > 1 && (
                                 <View style={styles.cardBadge}>
                                     <Text style={styles.badgeText}>
-                                        {currentIndex + 1} / {data.length}
+                                        {currentIndex + 1} / {localData.length}
                                     </Text>
                                 </View>
                             )}
@@ -314,7 +360,7 @@ const InterviewPopupModal = ({ visible, data, onDismiss, t }: InterviewPopupModa
                                     </LinearGradient>
                                 </TouchableOpacity>
                             </View>
-                        </View>
+                        </Animated.View>
                     </View>
 
                     {/* Close button – below the card stack */}

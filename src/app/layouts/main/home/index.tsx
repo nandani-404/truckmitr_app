@@ -1557,7 +1557,7 @@ const Home = React.forwardRef((props, ref) => {
                                         marginTop: 10,
                                         textAlign: 'center',
                                     }}>
-                                        {t('neverMissInterviewCall', 'Never Miss an Interview Call!')}
+                                        {t('neverMissInterviewCall', 'Never Miss a Video Call Interview!')}
                                     </Text>
 
                                     {/* Subtitle */}
@@ -1569,7 +1569,7 @@ const Home = React.forwardRef((props, ref) => {
                                         lineHeight: 21,
                                         paddingHorizontal: 4,
                                     }}>
-                                        {t('fullScreenPermissionMsg', 'Transporters can call you for job interviews through TruckMitr. To make sure you never miss an important interview call — even when your phone is locked — please enable this setting.')}
+                                        {t('fullScreenPermissionMsg', 'Transporters can call you for Video Call Interviews through TruckMitr. To make sure you never miss an important video call interview — even when your phone is locked — please enable this setting.')}
                                     </Text>
 
                                     {/* Benefits list */}
@@ -1583,7 +1583,7 @@ const Home = React.forwardRef((props, ref) => {
                                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                                             <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
                                             <Text style={{ marginLeft: 8, fontSize: responsiveFontSize(1.35), color: '#15803D', fontWeight: '500' }}>
-                                                {t('benefitReceiveCalls', 'Receive interview calls anytime')}
+                                                {t('benefitReceiveCalls', 'Receive video call interviews anytime')}
                                             </Text>
                                         </View>
                                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -1965,7 +1965,7 @@ const Home = React.forwardRef((props, ref) => {
                                 <TouchableOpacity onPress={_navigateAvailableJobs} activeOpacity={.7} style={{ flex: 1, backgroundColor: colors.white, ...shadow, shadowColor: isIOS() ? colors.blackOpacity(.16) : colors.blackOpacity(.3), borderRadius: 10 }}>
                                     <View style={{ flex: 1, width: '100%', backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', padding: responsiveFontSize(0.5), borderRadius: 10, borderColor: colors.blackOpacity(.1), borderWidth: 1, minHeight: responsiveWidth(28) }}>
                                         <Image style={{ height: responsiveFontSize(5), width: responsiveFontSize(5), marginBottom: 5 }} source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3281/3281289.png' }} />
-                                        <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('allAvailableJob', 'All Available Jobs')}</Text>
+                                        <Text style={{ color: colors.black, fontSize: responsiveFontSize(1.4), fontWeight: '600', textAlign: 'center' }}>{t('allJobs', 'All Jobs')}</Text>
                                     </View>
                                 </TouchableOpacity>
                             </View>

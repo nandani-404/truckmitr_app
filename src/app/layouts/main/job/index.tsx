@@ -1465,7 +1465,7 @@ export default function AvailableJob() {
     <View style={{ flex: 1, backgroundColor: colors.white }}>
       {/* Premium Header */}
       <ScreenHeader
-        title={t('availableJobs', 'Available Jobs')}
+        title={t('allJobs', 'All Jobs')}
         titleCount={availableJobsList?.length || 0}
         showFilterButton
         filterLabel={t('filter')}

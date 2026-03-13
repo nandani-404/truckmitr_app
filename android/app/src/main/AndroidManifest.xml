@@ -10,14 +10,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
     <!-- Forcibly remove Foreground Service permissions to satisfy Play Console -->
-    <!-- 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
 
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
@@ -154,10 +149,10 @@
             android:exported="false" />
 
         <!-- Restore Agora screen sharing services -->
-        <service
+        <!-- <service
             android:name="io.agora.rtc2.extensions.MediaProjectionMgr$LocalScreenSharingService" />
         <activity
-            android:name="io.agora.rtc2.extensions.MediaProjectionMgr$LocalScreenCaptureAssistantActivity" />
+            android:name="io.agora.rtc2.extensions.MediaProjectionMgr$LocalScreenCaptureAssistantActivity" /> -->
 
         <!--  Google Map  -->
         <meta-data
