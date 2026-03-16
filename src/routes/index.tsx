@@ -554,7 +554,7 @@ export default function Routes() {
 
             // Deduplicate by interview_id to prevent double actions in the stack
             const uniqueData = Array.from(new Map(mappedData.map(item => [item.interview_id, item])).values());
-            
+
             setInterviewPopupData(uniqueData);
             setShowInterviewPopup(true);
           } else {
@@ -913,6 +913,19 @@ export default function Routes() {
           return;
         }
 
+        // Check for pending deep link job ID (cold start from shared job link)
+        const pendingJobId = await AsyncStorage.getItem('PENDING_DEEP_LINK_JOB_ID');
+        if (pendingJobId) {
+          console.log('🔗 Cold start: Processing pending job deep link, jobId:', pendingJobId);
+          await AsyncStorage.removeItem('PENDING_DEEP_LINK_JOB_ID');
+
+          if (navigationRef.current) {
+            (navigationRef.current as any)?.navigate(STACKS.AVAILABLE_JOB, { jobId: pendingJobId });
+            console.log('🔗 Cold start: Navigated to job:', pendingJobId);
+          }
+          return;
+        }
+
         // Otherwise check for regular pending notification
         consumePendingNotificationNavigation();
       }, 500);
@@ -1169,6 +1182,18 @@ export default function Routes() {
       // Otherwise, check for regular deep link
       const url = await Linking.getInitialURL();
       console.log('🌐 Regular initial URL:', url);
+
+      // Handle job deep links on cold start: https://truckmitr.com/job/{id}
+      if (url) {
+        const jobMatch = url.match(/truckmitr\.com\/job\/([\d]+)/) || url.match(/truckmitr:\/\/job\/([\d]+)/);
+        if (jobMatch && jobMatch[1]) {
+          // Store the job ID for navigation after auth
+          await AsyncStorage.setItem('PENDING_DEEP_LINK_JOB_ID', jobMatch[1]);
+          console.log('🔗 Cold start: Stored pending job deep link ID:', jobMatch[1]);
+          return null; // Handle manually after auth
+        }
+      }
+
       return url;
     },
 
@@ -1177,6 +1202,20 @@ export default function Routes() {
       // Listen for deep links
       const linkingSubscription = Linking.addEventListener('url', ({ url }) => {
         console.log('🌐 Deep link received:', url);
+
+        // Handle job deep links: https://truckmitr.com/job/{id}
+        const jobMatch = url.match(/truckmitr\.com\/job\/([\d]+)/) || url.match(/truckmitr:\/\/job\/([\d]+)/);
+        if (jobMatch && jobMatch[1]) {
+          const jobId = jobMatch[1];
+          console.log('🔗 Job deep link detected, jobId:', jobId);
+          setTimeout(() => {
+            if (navigationRef.current?.isReady()) {
+              (navigationRef.current as any)?.navigate(STACKS.AVAILABLE_JOB, { jobId });
+            }
+          }, 300);
+          return;
+        }
+
         listener(url);
       });
 
@@ -1273,7 +1312,9 @@ export default function Routes() {
         quiz: 'quiz',
         quizResult: 'quiz-result',
         player: 'player',
-        availableJob: 'available-job',
+        availableJob: {
+          path: 'available-job',
+        },
         suitsJob: 'suits-job',
         appliedJob: 'applied-job',
         search: 'search',
@@ -1388,7 +1429,7 @@ export default function Routes() {
       ) : (
         <Main />
       )}
-      <InAppUpdatePopup />
+      {/* <InAppUpdatePopup /> */}
       {subscriptionModal && <Subscription />}
       <ReelLivePopup
         visible={showReelPopup}

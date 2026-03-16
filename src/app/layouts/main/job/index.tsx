@@ -1,4 +1,4 @@
-import { ActivityIndicator, Modal, Text, TouchableOpacity, View, Animated, Pressable, StyleSheet } from 'react-native'
+import { ActivityIndicator, Modal, Text, TouchableOpacity, View, Animated, Pressable, StyleSheet, Share } from 'react-native'
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useColor, useImage, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -602,7 +602,8 @@ const JobCard = ({
   t,
   navigation,
   isExpiredJob,
-  isClosedJob
+  isClosedJob,
+  onShareJob
 }: any) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -1164,70 +1165,98 @@ const JobCard = ({
             )}
           </View>
 
-          {/* Apply Button - Full Width at Bottom (hidden for expired/closed jobs) */}
-          {(isExpired || isClosed) ? (
-            <View style={{
-              height: responsiveFontSize(5),
-              width: '100%',
-              backgroundColor: '#F1F5F9',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'row',
-            }}>
-              <Ionicons name="time-outline" size={16} color="#94A3B8" style={{ marginRight: 6 }} />
-              <Text style={{
-                color: '#94A3B8',
-                fontSize: responsiveFontSize(1.7),
-                fontWeight: '600',
-              }}>
-                {t('applicationClosed') || 'Application Closed'}
-              </Text>
-            </View>
-          ) : (
+          {/* Bottom Action Buttons Row: Share (30%) + Apply (70%) */}
+          <View style={{ flexDirection: 'row', width: '100%' }}>
+            {/* Share Button - 30% */}
             <Pressable
-              onPress={() => _applyJob(item?.id)}
-              disabled={loadingApplyJob === item?.id}
+              onPress={() => onShareJob(item)}
               style={({ pressed }) => [{
+                width: '30%',
                 height: responsiveFontSize(6),
-                width: '100%',
-                opacity: pressed ? 0.9 : 1,
-                transform: [{ scale: pressed ? 0.995 : 1 }],
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: pressed ? colors.blackOpacity(0.08) : colors.blackOpacity(0.04),
+                borderRightWidth: 1,
+                borderRightColor: colors.blackOpacity(0.1),
               }]}
             >
-              <LinearGradient
-                colors={[colors.royalBlue, colors.royalBlue + 'E8']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  flex: 1,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {loadingApplyJob === item?.id ? (
-                  <ActivityIndicator color={colors.white} size="small" />
-                ) : (
-                  <>
-                    <Text style={{
-                      color: colors.white,
-                      fontSize: responsiveFontSize(2),
-                      fontWeight: '600',
-                      letterSpacing: 0.3
-                    }}>
-                      {t(`apply`)}
-                    </Text>
-                    <Ionicons
-                      name='send'
-                      size={16}
-                      color={colors.white}
-                      style={{ marginLeft: responsiveFontSize(1) }}
-                    />
-                  </>
-                )}
-              </LinearGradient>
+              <Ionicons name="share-social-outline" size={20} color={colors.royalBlue} />
+              <Text style={{
+                color: colors.royalBlue,
+                fontSize: responsiveFontSize(1.5),
+                fontWeight: '600',
+                marginLeft: responsiveFontSize(0.5),
+              }}>
+                {t('share') || 'Share'}
+              </Text>
             </Pressable>
-          )}
+
+            {/* Apply/Closed Button - 70% */}
+            {(isExpired || isClosed) ? (
+              <View style={{
+                width: '70%',
+                height: responsiveFontSize(6),
+                backgroundColor: '#F1F5F9',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'row',
+              }}>
+                <Ionicons name="time-outline" size={16} color="#94A3B8" style={{ marginRight: 6 }} />
+                <Text style={{
+                  color: '#94A3B8',
+                  fontSize: responsiveFontSize(1.7),
+                  fontWeight: '600',
+                }}>
+                  {t('applicationClosed') || 'Application Closed'}
+                </Text>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => _applyJob(item?.id)}
+                disabled={loadingApplyJob === item?.id}
+                style={({ pressed }) => [{
+                  width: '70%',
+                  height: responsiveFontSize(6),
+                  opacity: pressed ? 0.9 : 1,
+                  transform: [{ scale: pressed ? 0.995 : 1 }],
+                }]}
+              >
+                <LinearGradient
+                  colors={[colors.royalBlue, colors.royalBlue + 'E8']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {loadingApplyJob === item?.id ? (
+                    <ActivityIndicator color={colors.white} size="small" />
+                  ) : (
+                    <>
+                      <Text style={{
+                        color: colors.white,
+                        fontSize: responsiveFontSize(2),
+                        fontWeight: '600',
+                        letterSpacing: 0.3
+                      }}>
+                        {t(`apply`)}
+                      </Text>
+                      <Ionicons
+                        name='send'
+                        size={16}
+                        color={colors.white}
+                        style={{ marginLeft: responsiveFontSize(1) }}
+                      />
+                    </>
+                  )}
+                </LinearGradient>
+              </Pressable>
+            )}
+          </View>
         </View>
       </View>
     </Animated.View>
@@ -1373,6 +1402,35 @@ export default function AvailableJob() {
   const _navigateAppliedJob = () => {
     navigation.navigate(STACKS.APPLIED_JOB)
   }
+
+  // Share Job Handler
+  const _shareJob = async (jobItem: any) => {
+    try {
+      const jobTitle = jobItem?.job_title || 'Job Opening';
+      const salary = jobItem?.Salary_Range || '';
+      const location = jobItem?.job_location || '';
+      const vehicleType = jobItem?.vehicle_type || '';
+      const experience = jobItem?.Required_Experience || '';
+
+      const rawJobId = jobItem?.job_id || jobItem?.id;
+
+      // Extract only numbers (removes TMJB and leading zeros)
+      const jobId = rawJobId?.replace(/\D/g, '').replace(/^0+/, '');
+
+      const jobDeepLink = `https://truckmitr.com/job/${jobId}`;
+
+      const shareMessage = `🚚 ${jobTitle}\n\n💰 Salary: ₹${salary}/month${location ? `\n📍 Location: ${location}` : ''}${vehicleType ? `\n🚛 Vehicle: ${vehicleType}` : ''}${experience ? `\n⭐ Experience: ${experience} Years` : ''}\n\n👉 Apply now on TruckMitr:\n${jobDeepLink}\n\n📥 Download TruckMitr: https://play.google.com/store/apps/details?id=com.truckmitr`;
+
+      await Share.share({
+        message: shareMessage,
+        title: `${jobTitle} - TruckMitr Job`,
+      });
+    } catch (error: any) {
+      if (error?.message !== 'User did not share') {
+        console.error('Error sharing job:', error);
+      }
+    }
+  };
 
   // const _applyJob = async (id: any) => {
   //   if (!validate(id)) return;
@@ -1590,6 +1648,7 @@ export default function AvailableJob() {
                       navigation={navigation}
                       isExpiredJob={_isJobExpired(item?.Application_Deadline)}
                       isClosedJob={item._isClosed}
+                      onShareJob={_shareJob}
                     />
                   );
                 }}
