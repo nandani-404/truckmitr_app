@@ -1165,97 +1165,106 @@ const JobCard = ({
             )}
           </View>
 
-          {/* Bottom Action Buttons Row: Share (30%) + Apply (70%) */}
-          <View style={{ flexDirection: 'row', width: '100%' }}>
-            {/* Share Button - 30% */}
-            <Pressable
-              onPress={() => onShareJob(item)}
-              style={({ pressed }) => [{
-                width: '30%',
-                height: responsiveFontSize(6),
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: pressed ? colors.blackOpacity(0.08) : colors.blackOpacity(0.04),
-                borderRightWidth: 1,
-                borderRightColor: colors.blackOpacity(0.1),
-              }]}
-            >
-              <Ionicons name="share-social-outline" size={20} color={colors.royalBlue} />
-              <Text style={{
-                color: colors.royalBlue,
-                fontSize: responsiveFontSize(1.5),
-                fontWeight: '600',
-                marginLeft: responsiveFontSize(0.5),
-              }}>
-                {t('share') || 'Share'}
-              </Text>
-            </Pressable>
-
-            {/* Apply/Closed Button - 70% */}
-            {(isExpired || isClosed) ? (
-              <View style={{
-                width: '70%',
-                height: responsiveFontSize(6),
-                backgroundColor: '#F1F5F9',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
-              }}>
-                <Ionicons name="time-outline" size={16} color="#94A3B8" style={{ marginRight: 6 }} />
-                <Text style={{
-                  color: '#94A3B8',
-                  fontSize: responsiveFontSize(1.7),
-                  fontWeight: '600',
-                }}>
-                  {t('applicationClosed') || 'Application Closed'}
-                </Text>
-              </View>
-            ) : (
+          {/* Bottom Action Buttons */}
+          <View style={{ 
+            padding: responsiveFontSize(1.5),
+            borderTopWidth: 1,
+            borderTopColor: colors.blackOpacity(0.06),
+          }}>
+            <View style={{ flexDirection: 'row', gap: responsiveFontSize(1) }}>
+              {/* Share Button */}
               <Pressable
-                onPress={() => _applyJob(item?.id)}
-                disabled={loadingApplyJob === item?.id}
+                onPress={() => onShareJob(item)}
                 style={({ pressed }) => [{
-                  width: '70%',
+                  flex: 4,
                   height: responsiveFontSize(6),
-                  opacity: pressed ? 0.9 : 1,
-                  transform: [{ scale: pressed ? 0.995 : 1 }],
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: pressed ? colors.royalBlue + '12' : colors.royalBlue + '08',
+                  borderRadius: responsiveFontSize(1.2),
+                  borderWidth: 1.5,
+                  borderColor: colors.royalBlue + '30',
                 }]}
               >
-                <LinearGradient
-                  colors={[colors.royalBlue, colors.royalBlue + 'E8']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={{
-                    flex: 1,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {loadingApplyJob === item?.id ? (
-                    <ActivityIndicator color={colors.white} size="small" />
-                  ) : (
-                    <>
-                      <Text style={{
-                        color: colors.white,
-                        fontSize: responsiveFontSize(2),
-                        fontWeight: '600',
-                        letterSpacing: 0.3
-                      }}>
-                        {t(`apply`)}
-                      </Text>
-                      <Ionicons
-                        name='send'
-                        size={16}
-                        color={colors.white}
-                        style={{ marginLeft: responsiveFontSize(1) }}
-                      />
-                    </>
-                  )}
-                </LinearGradient>
+                <Ionicons name="share-social-outline" size={responsiveFontSize(2.2)} color={colors.royalBlue} />
+                <Text style={{
+                  color: colors.royalBlue,
+                  fontSize: responsiveFontSize(1.8),
+                  fontWeight: '700',
+                  marginLeft: responsiveFontSize(0.8),
+                }}>
+                  {t('share') || 'Share'}
+                </Text>
               </Pressable>
-            )}
+
+              {/* Apply/Closed Button */}
+              {(isExpired || isClosed) ? (
+                <View style={{
+                  flex: 6,
+                  height: responsiveFontSize(6),
+                  backgroundColor: '#F3F4F6',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  borderRadius: responsiveFontSize(1.2),
+                }}>
+                  <Ionicons name="time-outline" size={16} color="#9CA3AF" style={{ marginRight: 6 }} />
+                  <Text style={{
+                    color: '#9CA3AF',
+                    fontSize: responsiveFontSize(1.7),
+                    fontWeight: '600',
+                  }}>
+                    {t('applicationClosed') || 'Application Closed'}
+                  </Text>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={() => _applyJob(item?.id)}
+                  disabled={loadingApplyJob === item?.id}
+                  style={({ pressed }) => [{
+                    flex: 6,
+                    height: responsiveFontSize(6),
+                    borderRadius: responsiveFontSize(1.2),
+                    overflow: 'hidden',
+                    opacity: pressed ? 0.9 : 1,
+                  }]}
+                >
+                  <LinearGradient
+                    colors={[colors.royalBlue, colors.royalBlue + 'DD']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {loadingApplyJob === item?.id ? (
+                      <ActivityIndicator color={colors.white} size="small" />
+                    ) : (
+                      <>
+                        <Text style={{
+                          color: colors.white,
+                          fontSize: responsiveFontSize(2),
+                          fontWeight: '700',
+                          letterSpacing: 0.3
+                        }}>
+                          {t(`apply`)}
+                        </Text>
+                        <Ionicons
+                          name='send'
+                          size={16}
+                          color={colors.white}
+                          style={{ marginLeft: responsiveFontSize(1) }}
+                        />
+                      </>
+                    )}
+                  </LinearGradient>
+                </Pressable>
+              )}
+            </View>
           </View>
         </View>
       </View>
