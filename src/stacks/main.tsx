@@ -14,6 +14,7 @@ import { Referral } from '../app/layouts/main/home/referral-driver';
 import TransporterConsent from '../app/layouts/main/add-job/transporter-consent';
 import ConsentScreen from '../app/layouts/main/consent-screen';
 import DriverConsent from '../app/layouts/main/add-job/driver-consent';
+import { MyPostsScreen, PostDetailScreen, SingleReelScreen } from '../app/layouts/main/driver-ki-awaz-info';
 import SubscriptionConsent from '../app/layouts/main/subscription/subscription-consent';
 import VerificationDriversByTransporter from '../app/layouts/main/transporter-verification/verification-driver';
 import Verification from '../app/layouts/main/verification/verification-screen';
@@ -42,6 +43,7 @@ import AddSingleDriverInfo from '../app/layouts/main/add-single-driver-info';
 import PurchaseInvoices from '../app/layouts/main/purchase-invoices';
 import IncomingCallScreen from '../app/layouts/main/IncomingCallScreen';
 import { AppState } from 'react-native';
+import ReferAndEarn from '../app/layouts/main/profile/ReferAndEarn';
 
 const Stack = createNativeStackNavigator();
 
@@ -238,6 +240,9 @@ export default function Main() {
       <Stack.Screen name={STACKS.PROFILE_OVERVIEW} component={ProfileOverview} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.INCOMING_CALL} component={IncomingCallScreen} options={{ animation: 'fade', gestureEnabled: false }} />
       <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_CREATE_POST} component={CreatePostScreen} options={{ animation: 'slide_from_bottom' }} />
+      <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_MY_POSTS} component={MyPostsScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_POST_DETAIL} component={PostDetailScreen} options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name={STACKS.SINGLE_REEL_SCREEN} component={SingleReelScreen} options={{ animation: 'fade' }} />
 
 
       {/* KHATAMITR SCREENS */}
@@ -247,6 +252,7 @@ export default function Main() {
       <Stack.Screen name={STACKS.KHATAMITR_PROFIT_CALCULATION} component={KhatamitrProfitCalculation} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.KHATAMITR_JOURNEY_TRACKING} component={KhatamitrJourneyTracking} options={{ animation: 'fade' }} />
       <Stack.Screen name={STACKS.KHATAMITR_TRIP_COMPLETION} component={KhatamitrTripCompletion} options={{ animation: 'fade_from_bottom' }} />
+      <Stack.Screen name={STACKS.REFER_AND_EARN} component={ReferAndEarn} options={{ animation: 'slide_from_right' }} />
 
       {/* DriverInvites usually mapped to STACKS.DRIVERINVITES, but checking stacks definition: invites */}
       {/* already there at line 165 as invites? No line 165 is DriverInvites component from local import. */}

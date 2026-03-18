@@ -1420,6 +1420,24 @@ export default function Profile() {
             );
           })()}
         </CardContainer>
+
+        {isDriver && (() => {
+          const isRestrictedDriver = user?.role === 'driver' && user?.sub_id !== null && user?.sub_id !== undefined;
+          if (isRestrictedDriver) return null;
+
+          return (
+            <>
+              <SectionHeader title={t('referAndEarn', 'Refer and Earn')} />
+              <CardContainer>
+                <MenuItem
+                  icon={<Ionicons name="gift-outline" size={20} color={colors.royalBlue} />}
+                  title={t('referAndEarn')}
+                  onPress={() => navigation.navigate(STACKS.REFER_AND_EARN)}
+                />
+              </CardContainer>
+            </>
+          );
+        })()}
         {/* <TouchableOpacity
 onPress={()=>{
   openOverlayPermission()

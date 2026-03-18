@@ -38,6 +38,7 @@ export default function Signup() {
     const [role, setRole] = useState<string>(preSelectedRole || 'driver'); // Default to driver
     const [state, setState] = useState<string>(''); // Selected state
     const [code, setCode] = useState<string>(''); // Selected state
+    const [isReferralLocked, setIsReferralLocked] = useState(false);
     const [checkBoxSelect, setCheckBoxSelect] = useState<boolean>(false);
     const [loading, setLoading] = useState(false);
     const [locations, setLocations] = useState<any[]>([]); // Fetched locations
@@ -52,6 +53,17 @@ export default function Signup() {
             item.name.toLowerCase().includes(stateSearchQuery.toLowerCase())
         );
     }, [locations, stateSearchQuery]);
+
+    // Handle incoming referral code and navigation params
+    useEffect(() => {
+        const referralCode = route.params?.referralCode;
+        if (referralCode) {
+            console.log('🎁 Pre-filling referral code:', referralCode);
+            setCode(referralCode);
+            setRole('driver');
+            setIsReferralLocked(true);
+        }
+    }, [route.params?.referralCode]);
 
     // Get selected state name
     const selectedStateName = useMemo(() => {
@@ -354,6 +366,7 @@ export default function Signup() {
                                     label={t(`referralCode`)}
                                     value={code}
                                     onChangeText={(text) => setCode(text)}
+                                    editable={!isReferralLocked}
                                     theme={{ colors: { primary: colors.royalBlue, background: colors.white, onSurface: colors.black } }}
                                     style={{ backgroundColor: colors.white, height: 48 }}
                                     contentStyle={{ paddingBottom: 11 }}

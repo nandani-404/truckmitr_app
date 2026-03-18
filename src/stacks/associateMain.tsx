@@ -24,7 +24,8 @@ import {
 import DriverAssociationProfileEdit from '../app/layouts/association/driver-association-profile-edit';
 
 import DriverAssociationEarningsInfo from '@truckmitr/src/app/layouts/association/driver-association-earnings-info';
-import DriverKiAwazInfo, { MyPostsScreen } from '@truckmitr/src/app/layouts/main/driver-ki-awaz-info';
+import { CreatePostScreen, DriverKiAwazInfo } from '@truckmitr/layouts/index';
+import { MyPostsScreen, PostDetailScreen, SingleReelScreen } from '../app/layouts/main/driver-ki-awaz-info';
 
 const Stack = createNativeStackNavigator();
 
@@ -101,8 +102,11 @@ export default function AssociateMain() {
             <Stack.Screen name={STACKS.DRIVER_ASSOCIATION_EARNINGS_INFO} component={DriverAssociationEarningsInfo} />
             <Stack.Screen name={STACKS.ASSOCIATION_PROFILE_EDIT} component={DriverAssociationProfileEdit} />
             <Stack.Screen name={STACKS.RATING} component={Rating} options={{ animation: 'fade' }} />
-            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_MY_POSTS} component={MyPostsScreen} />
-
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_INFO} component={DriverKiAwazInfo} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_CREATE_POST} component={CreatePostScreen} options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_MY_POSTS} component={MyPostsScreen} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_POST_DETAIL} component={PostDetailScreen} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.SINGLE_REEL_SCREEN} component={SingleReelScreen} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     )
 }

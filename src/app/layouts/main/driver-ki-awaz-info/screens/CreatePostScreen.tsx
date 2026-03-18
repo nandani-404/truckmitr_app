@@ -1,6 +1,6 @@
 /**
  * Driver Ki Awaz - Create Post Screen
- * Instagram-like dark theme with Create and My Posts tabs
+ * Dedicated screen for creating new posts (Video, Image, Text)
  * @format
  */
 
@@ -17,34 +17,39 @@ import {
     Platform,
     Image,
     Dimensions,
-    FlatList,
-    RefreshControl,
     ActivityIndicator,
     Modal,
     PermissionsAndroid,
     StatusBar,
+    Animated,
+    NativeEventEmitter,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
+import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import ImagePicker from 'react-native-image-crop-picker';
-import { pick, types } from '@react-native-documents/picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import VideoTrim, { showEditor } from 'react-native-video-trim';
 import Video from 'react-native-video';
+import Slider from '@react-native-community/slider';
+import RNFS from 'react-native-fs';
+import { createThumbnail } from 'react-native-create-thumbnail';
 import { useTranslation } from 'react-i18next';
 
-import { DriverKiAwazService } from '../services';
+import { DriverKiAwazService, getUserId } from '../services';
 import { DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
-import { useStatusBarStyle } from '@truckmitr/src/app/hooks';
+import { useStatusBarStyle, useToast } from '@truckmitr/src/app/hooks';
+import UploadManager from '../UploadManager';
+import { startUpload } from '@truckmitr/redux/slices/uploadSlice';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_SIZE = SCREEN_WIDTH / 3 - 2;
 
+
 type PostType = 'VIDEO' | 'TEXT' | 'IMAGE';
 type CategoryType = 'DRIVER_LIFE' | 'GOVT_DEMAND' | 'ROAD_ISSUES' | 'RTO_CHALLAN' | 'WELFARE_RIGHTS';
-type ScreenTab = 'create' | 'myPosts' | 'myComments';
 
 interface RouteParams {
     defaultType?: PostType;
@@ -127,15 +132,15 @@ interface CreatePostProps {
 const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, initialData }) => {
     const { t, i18n } = useTranslation();
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
+    const dispatch = useDispatch();
+    const isFocused = useIsFocused();
     const route = useRoute();
     const insets = useSafeAreaInsets();
     useStatusBarStyle('dark-content')
+    const toast = useToast();
 
     const params = route?.params as RouteParams | undefined;
     const initData = initialData || params?.initialData;
-
-    // Tab State
-    const [activeScreenTab, setActiveScreenTab] = useState<ScreenTab>('create');
 
     // Create Post State
     const [selectedType, setSelectedType] = useState<PostType | null>(
@@ -146,28 +151,133 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
     );
     const [textContent, setTextContent] = useState(initData?.content || '');
     const [selectedMedia, setSelectedMedia] = useState<any>(null); // For video/images
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [totalDuration, setTotalDuration] = useState(0);
+    const [isSeeking, setIsSeeking] = useState(false);
+    const videoRef = useRef<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [compressionProgress, setCompressionProgress] = useState<number | null>(null);
+    const [isPickingMedia, setIsPickingMedia] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [processingMessage, setProcessingMessage] = useState('');
+    const [thumbnail, setThumbnail] = useState<any>(null);
 
-    // My Posts State
-    const [posts, setPosts] = useState<PostData[]>([]);
-    const [myComments, setMyComments] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
-    const [userId, setUserId] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(true);
+    // Thumbnail Extraction Helper
+    const generateThumbnail = async (videoPath: string) => {
+        try {
+            console.log('[DriverKiAwaz] Extracting thumbnail from:', videoPath);
+            const thumb = await createThumbnail({
+                url: videoPath,
+                timeStamp: 1000, // 1 second mark
+            });
+            console.log('[DriverKiAwaz] Thumbnail extracted:', thumb.path);
+            setThumbnail({
+                uri: thumb.path,
+                mime: 'image/jpeg',
+                type: 'image/jpeg',
+                name: `thumb_${Date.now()}.jpg`,
+            });
+        } catch (err) {
+            console.error('[DriverKiAwaz] Thumbnail extraction failed:', err);
+        }
+    };
 
-    // Edit Modal State
-    const [editModalVisible, setEditModalVisible] = useState(false);
-    const [editingPost, setEditingPost] = useState<PostData | null>(null);
-    const [editCaption, setEditCaption] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
+    // Video Trimming Events
+    useEffect(() => {
+        const listeners: any = {};
 
-    // Preview Modal State
-    const [viewingPost, setViewingPost] = useState<PostData | null>(null);
-    const [isPeeking, setIsPeeking] = useState(false);
+        try {
+            // New Architecture Setup (TurboModule Direct Events)
+            listeners.onFinishTrimming = (VideoTrim as any).onFinishTrimming((event: any) => {
+                console.log('Trimming finished:', event.outputPath);
+                const finalUri = Platform.OS === 'android' ? 'file://' + event.outputPath : event.outputPath;
+                setSelectedMedia({
+                    uri: finalUri,
+                    path: event.outputPath,
+                    mime: 'video/mp4',
+                    type: 'video/mp4',
+                });
+                setSelectedType('VIDEO');
+                generateThumbnail(finalUri);
+            });
+
+            listeners.onCancelTrimming = (VideoTrim as any).onCancelTrimming(() => {
+                console.log('Trimming cancelled');
+            });
+
+            listeners.onError = (VideoTrim as any).onError((event: any) => {
+                console.error('Trimming error:', event.message || event.errorCode);
+                Alert.alert('Error', 'Failed to trim video. Please try again.');
+            });
+        } catch (error) {
+            // Fallback for Old Architecture Setup just in case
+            console.log("Falling back to Old Architecture event listener");
+            const eventEmitter = new NativeEventEmitter(VideoTrim);
+
+            listeners.videoTrim = eventEmitter.addListener('VideoTrim', (event) => {
+                switch (event.name) {
+                    case 'onFinishTrimming':
+                        console.log('Trimming finished:', event.outputPath);
+                        const finalUri = Platform.OS === 'android' ? 'file://' + event.outputPath : event.outputPath;
+                        setSelectedMedia({
+                            uri: finalUri,
+                            path: event.outputPath,
+                            mime: 'video/mp4',
+                            type: 'video/mp4',
+                        });
+                        setSelectedType('VIDEO');
+                        generateThumbnail(finalUri);
+                        break;
+                    case 'onCancelTrimming':
+                        console.log('Trimming cancelled');
+                        break;
+                    case 'onError':
+                    case 'onErrorTrimming':
+                        console.error('Trimming error:', event.error || event.message);
+                        Alert.alert('Error', 'Failed to trim video. Please try again.');
+                        break;
+                }
+            });
+        }
+
+        return () => {
+            Object.values(listeners).forEach((listener: any) => {
+                if (listener && typeof listener.remove === 'function') {
+                    listener.remove();
+                }
+            });
+        };
+    }, []);
 
     // Theme & Language State
-    const [isDarkMode, setIsDarkMode] = useState(true);
+    const [isDarkMode, setIsDarkMode] = useState(false);
+    const formAnim = useRef(new Animated.Value(0)).current;
+    const mediaAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (selectedType) {
+            Animated.spring(formAnim, {
+                toValue: 1,
+                tension: 50,
+                friction: 8,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            formAnim.setValue(0);
+        }
+    }, [selectedType]);
+
+    useEffect(() => {
+        if (selectedMedia) {
+            Animated.spring(mediaAnim, {
+                toValue: 1,
+                tension: 50,
+                friction: 8,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [selectedMedia]);
 
     // Custom Dialog State
     const [dialogState, setDialogState] = useState<{
@@ -177,6 +287,39 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
         options: DialogOption[];
     }>({ visible: false, title: '', options: [] });
 
+    // Track submission success to skip cross-exit warning
+    const isSuccessRef = useRef(false);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+            const hasUnsavedContent = selectedMedia || textContent.trim() || selectedCategory;
+
+            if (!hasUnsavedContent || isSuccessRef.current) {
+                // If we're submitting successfully or no content, skip warning
+                return;
+            }
+
+            // Prevent default behavior of leaving the screen
+            e.preventDefault();
+
+            // Prompt the user before leaving the screen
+            showDialog(
+                t('dka_discardTitle'),
+                t('dka_discardMsg'),
+                [
+                    {
+                        text: t('dka_discard') || 'Discard',
+                        style: 'destructive',
+                        onPress: () => navigation.dispatch(e.data.action),
+                    },
+                    { text: t('cancel') || 'Cancel', style: 'cancel' },
+                ]
+            );
+        });
+
+        return unsubscribe;
+    }, [navigation, selectedMedia, textContent, selectedCategory, t]);
+
     const showDialog = (title: string, message: string | undefined, options: DialogOption[]) => {
         setDialogState({ visible: true, title, message, options });
     };
@@ -185,26 +328,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
         setDialogState(prev => ({ ...prev, visible: false }));
     };
 
-
-
     const theme = isDarkMode ? THEME.dark : THEME.light;
-
-    useEffect(() => {
-        loadUserId();
-    }, []);
-
-    useEffect(() => {
-        if ((activeScreenTab === 'myPosts' || activeScreenTab === 'myComments') && userId) {
-            fetchPosts(userId, true);
-        }
-    }, [activeScreenTab, userId]);
-
-    const loadUserId = async () => {
-        const id = await AsyncStorage.getItem('user_id');
-        if (id) {
-            setUserId(id);
-        }
-    };
 
     const handleClose = () => {
         if (onClose) {
@@ -214,194 +338,320 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
         }
     };
 
+    const handleTypeChange = (type: PostType, action?: () => void) => {
+        if (selectedType && selectedType !== type && (selectedMedia || (type === 'TEXT' ? false : textContent.trim()))) {
+            showDialog(
+                t('dka_changeType'),
+                t('dka_changeTypeMsg'),
+                [
+                    {
+                        text: t('dka_confirm'),
+                        style: 'destructive',
+                        onPress: () => {
+                            setSelectedMedia(null);
+                            setTextContent('');
+                            if (action) {
+                                action();
+                            } else {
+                                setSelectedType(type);
+                            }
+                        },
+                    },
+                    { text: t('cancel') || 'Cancel', style: 'cancel' },
+                ]
+            );
+        } else {
+            if (action) {
+                action();
+            } else {
+                setSelectedType(type);
+            }
+        }
+    };
+
     // ======= Create Post Functions =======
     const pickVideo = async () => {
         showDialog(
-            'Select Video',
-            'Choose source',
+            t('dka_selectVideo') || 'Select Video',
+            t('dka_selectSource') || 'Choose source',
             [
                 {
-                    text: 'Camera',
+                    text: t('camera') || 'Camera',
                     onPress: async () => {
+                        setIsPickingMedia(true);
                         try {
                             const video = await ImagePicker.openCamera({
                                 mediaType: 'video',
                                 compressVideoPreset: 'MediumQuality',
                             });
-                            setSelectedMedia(video);
-                            setSelectedType('VIDEO');
+
+                            setProcessingMessage(t('dka_processingVideo') || 'Processing video...');
+                            setIsProcessing(true);
+
+                            // Log video info for debugging
+                            console.log('DKA: Camera Video path:', video.path);
+                            const stats = await RNFS.stat(video.path);
+                            console.log('DKA: Video size (bytes):', stats.size);
+
+                            if (stats.size === 0) {
+                                throw new Error('Recorded video is empty');
+                            }
+
+                            // Copy to cache for stable path
+                            const cacheDir = Platform.OS === 'android' ? (RNFS.ExternalCachesDirectoryPath || RNFS.CachesDirectoryPath) : RNFS.CachesDirectoryPath;
+                            const cachePath = `${cacheDir}/temp_trim_video_${Date.now()}.mp4`;
+                            await RNFS.copyFile(video.path, cachePath);
+
+                            const finalPath = Platform.OS === 'android' ? `file://${cachePath}` : cachePath;
+                            console.log('DKA: Opening Trimmer with final path:', finalPath);
+
+                            showEditor(finalPath, {
+                                maxDuration: 120000,
+                                type: 'video',
+                                cancelButtonText: t('back') || 'Back',
+                                saveButtonText: t('save') || 'Save',
+                                headerText: t('dka_trimVideo') || 'Trim Video',
+                                trimmerColor: '#3B82F6',
+                                headerTextColor: '#000000',
+                                enableSaveDialog: false,
+                                enableCancelDialog: false,
+                            });
                         } catch (error) {
                             console.log('Camera cancelled', error);
+                        } finally {
+                            setIsProcessing(false);
+                            setIsPickingMedia(false);
                         }
                     }
                 },
                 {
-                    text: 'Gallery',
+                    text: t('gallery') || 'Gallery',
                     onPress: async () => {
+                        setIsPickingMedia(true);
                         try {
                             const video = await ImagePicker.openPicker({
                                 mediaType: 'video',
                                 compressVideoPreset: 'MediumQuality',
                             });
-                            setSelectedMedia(video);
-                            setSelectedType('VIDEO');
+
+                            setProcessingMessage(t('dka_processingVideo') || 'Preparing video...');
+                            setIsProcessing(true);
+
+                            console.log('DKA: Picker Video path:', video.path);
+                            const stats = await RNFS.stat(video.path);
+                            console.log('DKA: Video size (bytes):', stats.size);
+
+                            // Copy to cache for stable path
+                            const cacheDir = Platform.OS === 'android' ? (RNFS.ExternalCachesDirectoryPath || RNFS.CachesDirectoryPath) : RNFS.CachesDirectoryPath;
+                            const cachePath = `${cacheDir}/temp_trim_video_${Date.now()}.mp4`;
+                            await RNFS.copyFile(video.path, cachePath);
+
+                            const finalPath = Platform.OS === 'android' ? `file://${cachePath}` : cachePath;
+                            console.log('DKA: Opening Trimmer with final path:', finalPath);
+
+                            showEditor(finalPath, {
+                                maxDuration: 120000,
+                                type: 'video',
+                                cancelButtonText: t('back') || 'Back',
+                                saveButtonText: t('save') || 'Save',
+                                headerText: t('dka_trimVideo') || 'Trim Video',
+                                trimmerColor: '#3B82F6',
+                                headerTextColor: '#000000',
+                                enableSaveDialog: false,
+                                enableCancelDialog: false,
+                            });
                         } catch (error) {
                             console.log('Gallery cancelled', error);
+                        } finally {
+                            setIsProcessing(false);
+                            setIsPickingMedia(false);
                         }
                     }
                 },
-                { text: 'Cancel', style: 'cancel' }
+                { text: t('cancel') || 'Cancel', style: 'cancel' }
             ]
         );
     };
 
+    const handleMediaCleanup = () => {
+        showDialog(
+            t('dka_discardTitle') || 'Discard Media?',
+            t('dka_discardMsg') || 'Are you sure you want to remove this media?',
+            [
+                {
+                    text: t('dka_discard') || 'Remove',
+                    style: 'destructive',
+                    onPress: () => {
+                        // Reset video player states
+                        setIsPlaying(false);
+                        setCurrentTime(0);
+                        setTotalDuration(0);
+                        setIsSeeking(false);
+                        setCompressionProgress(null);
 
+                        // Delete temporary trimmed or compressed video file if it exists
+                        if (selectedMedia && selectedType === 'VIDEO') {
+                            const cachePath = selectedMedia.path || selectedMedia.uri;
+                            if (cachePath && (cachePath.includes('temp_trim_video_') || cachePath.includes('compressor'))) {
+                                RNFS.unlink(cachePath.replace('file://', '')).catch(e => console.log('Failed to delete temp video:', e));
+                            }
+                        }
 
-    const pickImage = async () => {
-        try {
-            const image = await ImagePicker.openCamera({
-                mediaType: 'photo',
-                cropping: true,
-            });
-            setSelectedMedia(image);
-            setSelectedType('IMAGE');
-        } catch (error) {
-            console.log('Camera cancelled', error);
-        }
+                        Animated.spring(mediaAnim, {
+                            toValue: 0,
+                            tension: 60,
+                            friction: 10,
+                            useNativeDriver: true,
+                        }).start(() => {
+                            setSelectedMedia(null);
+                            setThumbnail(null);
+                            setSelectedType(null);
+                        });
+                    },
+                },
+                { text: t('cancel') || 'Cancel', style: 'cancel' },
+            ]
+        );
     };
 
-    // const pickImage = async () => {
-    //     try {
-    //         // ✅ Temporarily override translucent status bar (Android only)
-    //         if (Platform.OS === 'android') {
-    //             StatusBar.setTranslucent(false);
-    //             StatusBar.setBackgroundColor('#000000'); // solid background
-    //         }
-
-    //         const image = await ImagePicker.openCamera({
-    //             mediaType: 'photo',
-    //             cropping: true,
-    //         });
-
-    //         setSelectedMedia(image);
-    //         setSelectedType('IMAGE');
-    //     } catch (error) {
-    //         console.log('Image pick cancelled', error);
-    //     } finally {
-    //         // ✅ Restore your original StatusBar config
-    //         if (Platform.OS === 'android') {
-    //             StatusBar.setTranslucent(true);
-    //             StatusBar.setBackgroundColor('transparent');
-    //         }
-    //     }
-    // };
-
-
-    // const pickImage = async () => {
-    //     try {
-    //         // 1. Hide the status bar entirely before opening
-    //         if (Platform.OS === 'android') {
-    //             StatusBar.setHidden(true, 'fade');
-    //         }
-
-    //         const image = await ImagePicker.openCamera({
-    //             mediaType: 'photo',
-    //             cropping: true,
-    //         });
-
-    //         setSelectedMedia(image);
-    //         setSelectedType('IMAGE');
-    //     } catch (error) {
-    //         console.log('Image pick cancelled', error);
-    //     } finally {
-    //         // 2. Bring it back after the picker closes
-    //         if (Platform.OS === 'android') {
-    //             StatusBar.setHidden(false, 'fade');
-    //         }
-    //     }
-    // };
-
+    const pickImage = async () => {
+        showDialog(
+            t('dka_selectImage') || 'Select Image',
+            t('dka_selectSource') || 'Choose source',
+            [
+                {
+                    text: t('camera') || 'Camera',
+                    onPress: async () => {
+                        setIsPickingMedia(true);
+                        try {
+                            const image = await ImagePicker.openCamera({
+                                mediaType: 'photo',
+                                cropping: true,
+                                width: 1200,
+                                height: 1500,
+                            });
+                            setSelectedMedia(image);
+                            setSelectedType('IMAGE');
+                        } catch (error) {
+                            console.log('Camera cancelled', error);
+                        } finally {
+                            setIsPickingMedia(false);
+                        }
+                    }
+                },
+                {
+                    text: t('gallery') || 'Gallery',
+                    onPress: async () => {
+                        setIsPickingMedia(true);
+                        try {
+                            const image = await ImagePicker.openPicker({
+                                mediaType: 'photo',
+                                cropping: true,
+                                width: 1200,
+                                height: 1500,
+                            });
+                            setSelectedMedia(image);
+                            setSelectedType('IMAGE');
+                        } catch (error) {
+                            console.log('Gallery cancelled', error);
+                        } finally {
+                            setIsPickingMedia(false);
+                        }
+                    }
+                },
+                { text: t('cancel') || 'Cancel', style: 'cancel' }
+            ]
+        );
+    };
 
     const handleSubmit = async () => {
         if (!selectedType) {
-            Alert.alert(t('dka_postTypeReq'), t('dka_postTypeReq'));
+            toast(t('dka_postTypeReq'));
             return;
         }
 
         if (!selectedCategory) {
-            Alert.alert(t('dka_categoryReq'), t('dka_categoryReq'));
+            toast(t('dka_categoryReq'));
             return;
         }
 
         if (selectedType === 'TEXT' && !textContent.trim()) {
-            Alert.alert(t('dka_text'), t('dka_contentReq'));
+            toast(t('dka_contentReq'));
+            return;
+        }
+
+        // Character limit validations...
+        if (selectedType === 'TEXT' && textContent.length > 2000) {
+            toast(t('dka_charLimitExceeded'));
+            return;
+        }
+
+        if (selectedType !== 'TEXT' && textContent.length > 2200) {
+            toast(t('dka_charLimitExceeded_2200'));
             return;
         }
 
         if (selectedType === 'VIDEO' && !selectedMedia && !initData) {
-            Alert.alert(t('dka_video'), t('dka_videoReq'));
+            toast(t('dka_videoReq'));
             return;
         }
 
-
-
-        setIsSubmitting(true);
+        if (selectedType === 'IMAGE' && !selectedMedia && !initData) {
+            toast(t('dka_imageReq') || 'Please select an image');
+            return;
+        }
 
         try {
             if (initData?.id) {
+                // EDIT POST (Fast, keep foreground for now)
+                setIsSubmitting(true);
                 await DriverKiAwazService.editPost(initData.id, textContent);
                 Alert.alert(t('dka_success'), t('dka_updated'));
+                isSuccessRef.current = true;
+                handleClose();
             } else {
-                const formData = new FormData();
+                // NEW POST (Background Upload)
+                const userId = await getUserId();
+                if (!userId) {
+                    toast('Please login to share a post');
+                    return;
+                }
 
-                // Normalize media object
-                let mediaFile = null;
-                if (selectedMedia) {
-                    // ImagePicker (path, mime, filename) vs DocumentPicker (uri, type, name)
-                    mediaFile = {
+                // Gather Metadata for Background Service
+                const uploadMetadata = {
+                    type: selectedType,
+                    category: selectedCategory,
+                    caption: textContent,
+                    mediaFile: selectedMedia ? {
                         uri: selectedMedia.path || selectedMedia.uri,
-                        type: selectedMedia.mime || selectedMedia.type || (selectedType === 'VIDEO' ? 'video/mp4' : 'audio/mpeg'),
-                        name: selectedMedia.filename || selectedMedia.name || `upload_${Date.now()}.${selectedType === 'VIDEO' ? 'mp4' : 'mp3'}`,
-                    };
-                }
+                        type: selectedMedia.mime || selectedMedia.type || (selectedType === 'VIDEO' ? 'video/mp4' : 'image/jpeg'),
+                        name: selectedMedia.filename || selectedMedia.name || `upload_${Date.now()}.${selectedType === 'VIDEO' ? 'mp4' : 'jpg'}`,
+                    } : null,
+                    thumbnail: thumbnail ? {
+                        uri: thumbnail.uri,
+                        type: thumbnail.type,
+                        name: thumbnail.name,
+                    } : null,
+                };
 
-                if (selectedType === 'TEXT') {
-                    formData.append('media_type', 'text');
-                    formData.append('caption', textContent || '');
-                    formData.append('category', (selectedCategory || 'DRIVER_LIFE').toLowerCase());
-                } else if (selectedType === 'VIDEO' && mediaFile) {
-                    formData.append('media_type', 'video');
-                    formData.append('caption', textContent || 'Video Post');
-                    formData.append('media', mediaFile as any);
-                    formData.append('category', (selectedCategory || 'DRIVER_LIFE').toLowerCase());
-                } else if (selectedType === 'IMAGE' && mediaFile) {
-                    formData.append('media_type', 'image');
-                    formData.append('caption', textContent || 'Image Post');
-                    formData.append('media', mediaFile as any);
-                    formData.append('category', (selectedCategory || 'DRIVER_LIFE').toLowerCase());
-                }
+                // Dispatch to Redux to show Global Progress Bar
+                dispatch(startUpload({ 
+                    type: selectedType, 
+                    category: selectedCategory, 
+                    caption: textContent 
+                }));
 
-                console.log('[CreatePost] Calling uploadPost with:', JSON.stringify(formData));
-                await DriverKiAwazService.uploadPost(formData);
-                Alert.alert(t('dka_success'), t('dka_submitted'));
+                // Start Background Process
+                UploadManager.startBackgroundUpload(uploadMetadata, userId);
+
+                // Toast and Immediate Navigate Away
+                toast(t('dka_posting') || 'Starting upload in background...');
+                isSuccessRef.current = true;
+                handleClose();
             }
-
-            // Reset form
-            setSelectedType(null);
-            setSelectedCategory(null);
-            setTextContent('');
-            setSelectedMedia(null);
-
-            // Refresh my posts if switching to that tab
-            if (userId) {
-                fetchPosts(userId, true);
-            }
-
-            handleClose();
         } catch (error: any) {
             console.error('Submit Error', error);
             Alert.alert('Error', error.message || 'Failed to submit. Please try again.');
-        } finally {
             setIsSubmitting(false);
         }
     };
@@ -409,230 +659,20 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
     const canSubmit = () => {
         if (!selectedType) return false;
         if (!selectedCategory) return false;
-        if (selectedType === 'TEXT' && !textContent.trim()) return false;
+        if (selectedType === 'TEXT') {
+            if (!textContent.trim()) return false;
+        }
         if (selectedType === 'VIDEO' && !selectedMedia && !initData) return false;
         if (selectedType === 'IMAGE' && !selectedMedia && !initData) return false;
         return true;
     };
 
-    // ======= My Posts Functions =======
-    const fetchPosts = async (uid: string, refresh = false) => {
-        if (loading && !refresh) return;
-
-        if (refresh) {
-            setLoading(true);
-            setRefreshing(true);
-        }
-
-        try {
-            // Use dashboard API for user's posts
-            const response = await DriverKiAwazService.getUserDashboard(uid);
-            const dashboardData = response.data;
-            const feedData = dashboardData?.posts || dashboardData?.data || (Array.isArray(dashboardData) ? dashboardData : []);
-
-            if (Array.isArray(feedData)) {
-                const mappedPosts: PostData[] = feedData.map((item: any) => {
-                    const rawUrl = item.media_url || '';
-                    const hasHttp = rawUrl.startsWith('http');
-                    const cleanPath = rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
-                    const finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
-
-                    return {
-                        id: item.id.toString(),
-                        mediaType: (item.media_type || 'text').toLowerCase(),
-                        caption: item.caption || '',
-                        thumbnailUrl: finalUrl,
-                        mediaUrl: finalUrl,
-                        likesCount: item.likes_count || 0,
-                        commentsCount: item.comments_count || 0,
-                        createdAt: item.created_at,
-                        status: typeof item.status !== 'undefined' ? item.status : 1, // Default to approved if missing
-                    };
-                });
-
-                // Map Comments
-                const commentsData = dashboardData?.comments || [];
-                const mappedComments = Array.isArray(commentsData) ? commentsData.map((item: any) => {
-                    const rawUrl = item.media_url || '';
-                    const hasHttp = rawUrl.startsWith('http');
-                    const cleanPath = rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
-                    const finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
-
-                    return {
-                        id: item.id?.toString(),
-                        comment: item.comment,
-                        postId: item.post_id,
-                        mediaUrl: finalUrl,
-                        createdAt: item.created_at,
-                    };
-                }) : [];
-
-                if (refresh) {
-                    setPosts(mappedPosts);
-                    setMyComments(mappedComments);
-                } else {
-                    setPosts(mappedPosts);
-                    setMyComments(mappedComments);
-                }
-
-                // Disable infinite scroll for dashboard API as it returns all relevant posts
-                setHasMore(false);
-            } else {
-                setHasMore(false);
-            }
-        } catch (error) {
-            console.error('Error fetching user posts:', error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     };
 
-    const handleRefresh = () => {
-        if (userId) {
-            setHasMore(true);
-            fetchPosts(userId, true);
-        }
-    };
-
-    const loadMore = () => {
-        if (!loading && hasMore && userId) {
-            fetchPosts(userId);
-        }
-    };
-
-    const handleEdit = (post: PostData) => {
-        setEditingPost(post);
-        setEditCaption(post.caption);
-        setEditModalVisible(true);
-    };
-
-    const submitEdit = async () => {
-        if (!editingPost) return;
-
-        setIsEditing(true);
-        try {
-            await DriverKiAwazService.editPost(editingPost.id, editCaption);
-            Alert.alert(t('dka_success'), t('dka_updated'));
-            setEditModalVisible(false);
-            setEditingPost(null);
-            handleRefresh();
-        } catch (error) {
-            console.error('Edit error:', error);
-            Alert.alert(t('dka_success'), t('dka_updated')); // API might return success even on error sometimes, or just generic error
-        } finally {
-            setIsEditing(false);
-        }
-    };
-
-    const handleDelete = (post: PostData) => {
-        showDialog(
-            t('dka_deletePost'),
-            t('dka_deleteConfirm'),
-            [
-                { text: t('dka_cancel'), style: 'cancel' },
-                {
-                    text: t('dka_delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await DriverKiAwazService.deletePost(post.id);
-                            Alert.alert(t('dka_success'), 'Post deleted');
-                            setPosts(prev => prev.filter(p => p.id !== post.id));
-                        } catch (error) {
-                            console.error('Delete error:', error);
-                            Alert.alert('Error', 'Failed to delete post');
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
-    const showPostOptions = (post: PostData) => {
-        showDialog(
-            'Post Options',
-            undefined,
-            [
-                { text: t('dka_editCaption'), onPress: () => handleEdit(post) },
-                { text: t('dka_delete'), onPress: () => handleDelete(post), style: 'destructive' },
-                { text: t('dka_cancel'), style: 'cancel' },
-            ]
-        );
-    };
-
-    const renderPostItem = ({ item }: { item: PostData }) => (
-        <TouchableOpacity
-            style={styles.gridItem}
-            onPress={() => {
-                console.log('Post tapped - Open Sticky', item.id);
-                setViewingPost(item);
-            }}
-            onLongPress={() => {
-                console.log('Post long pressed - Start Peek', item.id);
-                setIsPeeking(true);
-                setViewingPost(item);
-            }}
-            onPressOut={() => {
-                if (isPeeking) {
-                    console.log('Post released - End Peek', item.id);
-                    setViewingPost(null);
-                    setIsPeeking(false);
-                }
-            }}
-            delayLongPress={200}
-            activeOpacity={0.8}
-        >
-            <View style={{ flex: 1 }} pointerEvents="none">
-                {item.mediaType === 'video' ? (
-                    <>
-                        <Video
-                            source={{ uri: item.mediaUrl }}
-                            style={styles.gridImage}
-                            resizeMode="contain"
-                            paused={true}
-                            muted={true}
-                        />
-                        <View style={styles.videoOverlay}>
-                            <Ionicons name="play" size={20} color="#FFFFFF" />
-                        </View>
-                    </>
-                ) : item.mediaType === 'image' ? (
-                    <Image
-                        source={{ uri: item.mediaUrl }}
-                        style={styles.gridImage}
-                        resizeMode="cover"
-                    />
-                ) : (
-                    <View style={[styles.gridImage, styles.textPlaceholder, { backgroundColor: theme.card }]}>
-                        <Text style={styles.textPreview} numberOfLines={4}>
-                            {item.caption}
-                        </Text>
-                    </View>
-                )}
-
-                {/* Pending Status Overlay */}
-                {item.status === 0 && (
-                    <View style={[styles.statusBadge, { backgroundColor: '#F59E0B' }]}>
-                        <Text style={styles.statusText}>{t('dka_pending')}</Text>
-                    </View>
-                )}
-
-                <View style={styles.statsOverlay}>
-                    <View style={styles.statItem}>
-                        <Ionicons name="heart" size={12} color="#FFFFFF" />
-                        <Text style={styles.statText}>{item.likesCount}</Text>
-                    </View>
-                    <View style={styles.statItem}>
-                        <Ionicons name="chatbubble" size={12} color="#FFFFFF" />
-                        <Text style={styles.statText}>{item.commentsCount}</Text>
-                    </View>
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
-
-    // ======= Render =======
     const renderCreateTab = () => (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -643,59 +683,112 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Media Preview / Selection */}
-                {selectedMedia ? (
-                    <View style={styles.mediaPreview}>
-                        {selectedType === 'VIDEO' ? (
-                            <>
-                                <Image
-                                    source={{ uri: selectedMedia.path || selectedMedia.uri }}
-                                    style={styles.previewImage}
-                                    resizeMode="cover"
-                                />
-                                <View style={styles.mediaTypeOverlay}>
-                                    <Ionicons name="videocam" size={20} color="#FFFFFF" />
-                                    <Text style={styles.mediaTypeText}>Video</Text>
-                                </View>
-                            </>
-                        ) : selectedType === 'IMAGE' ? (
-                            <>
-                                <Image
-                                    source={{ uri: selectedMedia.path || selectedMedia.uri }}
-                                    style={styles.previewImage}
-                                    resizeMode="cover"
-                                />
-                                <View style={styles.mediaTypeOverlay}>
-                                    <Ionicons name="image" size={20} color="#FFFFFF" />
-                                    <Text style={styles.mediaTypeText}>{t('image')}</Text>
-                                </View>
-                            </>
-                        ) : null}
-                        <TouchableOpacity
-                            style={styles.removeMedia}
-                            onPress={() => setSelectedMedia(null)}
-                        >
-                            <Ionicons name="close-circle" size={28} color="#FFFFFF" />
-                        </TouchableOpacity>
-                    </View>
-                ) : null}
+                {/* Media Preview (Dynamic at top) */}
+                {selectedMedia && (
+                    <Animated.View style={{
+                        opacity: mediaAnim,
+                        transform: [{
+                            translateY: mediaAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [-20, 0]
+                            })
+                        }],
+                        marginBottom: 24
+                    }}>
+                        <Text style={styles.sectionTitle}>
+                            {selectedType === 'VIDEO' ? 'Video Preview' : 'Image Preview'}
+                        </Text>
+                        <View style={[
+                            styles.mediaPreview,
+                            selectedType === 'VIDEO' && styles.mediaPreviewVideo
+                        ]}>
+                            {selectedType === 'VIDEO' ? (
+                                <View style={styles.videoPlayerContainer}>
+                                    {(!isPickingMedia && isFocused) ? (
+                                        <Video
+                                            ref={videoRef}
+                                            source={{ uri: selectedMedia.path || selectedMedia.uri }}
+                                            style={styles.previewImage}
+                                            resizeMode="cover"
+                                            paused={!isPlaying}
+                                            repeat={true}
+                                            onLoad={(data) => setTotalDuration(data.duration)}
+                                            onProgress={(data) => {
+                                                if (!isSeeking) {
+                                                    setCurrentTime(data.currentTime);
+                                                }
+                                            }}
+                                            onEnd={() => setIsPlaying(false)}
+                                        />
+                                    ) : (
+                                        <View style={[styles.previewImage, { backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }]}>
+                                            <ActivityIndicator color="#FFFFFF" size="large" />
+                                        </View>
+                                    )}
+                                    <TouchableOpacity
+                                        style={styles.playPauseOverlay}
+                                        activeOpacity={1}
+                                        onPress={() => setIsPlaying(!isPlaying)}
+                                    >
+                                        <View style={styles.playPauseButton}>
+                                            <Ionicons
+                                                name={isPlaying ? 'pause' : 'play'}
+                                                size={32}
+                                                color="#FFFFFF"
+                                                style={{ marginLeft: isPlaying ? 0 : 4 }}
+                                            />
+                                        </View>
+                                    </TouchableOpacity>
+                                    <View style={styles.mediaTypeOverlay}>
+                                        <Ionicons name="videocam" size={20} color="#FFFFFF" />
+                                        <Text style={styles.mediaTypeText}>Video</Text>
+                                    </View>
 
-                {/* Caption Input */}
-                <View style={[styles.captionSection, { borderBottomColor: theme.border }]}>
-                    <Image
-                        source={{ uri: 'https://via.placeholder.com/150' }}
-                        style={styles.userAvatar}
-                    />
-                    <TextInput
-                        style={[styles.captionInput, { color: theme.text }]}
-                        value={textContent}
-                        onChangeText={setTextContent}
-                        placeholder={t('dka_writeCaption')}
-                        placeholderTextColor={theme.placeholder}
-                        multiline
-                        maxLength={2200}
-                    />
-                </View>
+                                    <View style={styles.sliderOverlay}>
+                                        <View style={styles.sliderTimeContainer}>
+                                            <Text style={styles.sliderTimeText}>{formatTime(currentTime)}</Text>
+                                            <Text style={styles.sliderTimeText}>{formatTime(totalDuration)}</Text>
+                                        </View>
+                                        <Slider
+                                            style={styles.slider}
+                                            minimumValue={0}
+                                            maximumValue={totalDuration}
+                                            value={currentTime}
+                                            minimumTrackTintColor="#3B82F6"
+                                            maximumTrackTintColor="rgba(255, 255, 255, 0.5)"
+                                            thumbTintColor="#FFFFFF"
+                                            onSlidingStart={() => setIsSeeking(true)}
+                                            onSlidingComplete={(value) => {
+                                                videoRef.current?.seek(value);
+                                                setCurrentTime(value);
+                                                setIsSeeking(false);
+                                            }}
+                                        />
+                                    </View>
+                                </View>
+                            ) : (
+                                <>
+                                    <Image
+                                        source={{ uri: selectedMedia.path || selectedMedia.uri }}
+                                        style={styles.previewImage}
+                                        resizeMode="cover"
+                                    />
+                                    <View style={styles.mediaTypeOverlay}>
+                                        <Ionicons name="image" size={20} color="#FFFFFF" />
+                                        <Text style={styles.mediaTypeText}>{t('image')}</Text>
+                                    </View>
+                                </>
+                            )}
+                            <TouchableOpacity
+                                style={styles.removeMedia}
+                                onPress={handleMediaCleanup}
+                                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                            >
+                                <Ionicons name="close-circle" size={28} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+                )}
 
                 {/* Post Type Selection */}
                 <Text style={styles.sectionTitle}>{t('dka_postType')}</Text>
@@ -706,7 +799,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             { backgroundColor: theme.inputBg, borderColor: theme.border },
                             selectedType === 'VIDEO' && styles.typeButtonActive
                         ]}
-                        onPress={pickVideo}
+                        onPress={() => handleTypeChange('VIDEO', pickVideo)}
                     >
                         <Ionicons name="videocam" size={24} color={selectedType === 'VIDEO' ? '#3B82F6' : theme.subText} />
                         <Text style={[
@@ -722,7 +815,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             { backgroundColor: theme.inputBg, borderColor: theme.border },
                             selectedType === 'IMAGE' && styles.typeButtonActive
                         ]}
-                        onPress={pickImage}
+                        onPress={() => handleTypeChange('IMAGE', pickImage)}
                     >
                         <Ionicons name="image" size={24} color={selectedType === 'IMAGE' ? '#3B82F6' : theme.subText} />
                         <Text style={[
@@ -738,7 +831,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             { backgroundColor: theme.inputBg, borderColor: theme.border },
                             selectedType === 'TEXT' && styles.typeButtonActive
                         ]}
-                        onPress={() => setSelectedType('TEXT')}
+                        onPress={() => handleTypeChange('TEXT')}
                     >
                         <Ionicons name="text" size={24} color={selectedType === 'TEXT' ? '#3B82F6' : theme.subText} />
                         <Text style={[
@@ -749,174 +842,105 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                     </TouchableOpacity>
                 </View>
 
-                {/* Category Selection */}
-                <Text style={styles.sectionTitle}>{t('dka_category')}</Text>
-                <View style={styles.categoryContainer}>
-                    {CATEGORIES.map(cat => (
-                        <TouchableOpacity
-                            key={cat.id}
-                            style={[
-                                styles.categoryChip,
-                                { borderColor: theme.border, backgroundColor: theme.inputBg },
-                                selectedCategory === cat.id && { backgroundColor: cat.color, borderColor: cat.color },
-                            ]}
-                            onPress={() => setSelectedCategory(cat.id as CategoryType)}
-                        >
-                            <Text style={[
-                                styles.categoryText,
-                                { color: theme.text },
-                                selectedCategory === cat.id && { color: '#FFFFFF' },
-                            ]}>
-                                {cat.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                {/* Dynamic Content Sections */}
+                {selectedType && (
+                    <Animated.View style={{
+                        opacity: formAnim,
+                        transform: [{
+                            translateY: formAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [20, 0]
+                            })
+                        }]
+                    }}>
+                        {/* Category Selection */}
+                        <Text style={styles.sectionTitle}>{t('dka_category')}</Text>
+                        <View style={styles.categoryContainer}>
+                            {CATEGORIES.map(cat => (
+                                <TouchableOpacity
+                                    key={cat.id}
+                                    style={[
+                                        styles.categoryChip,
+                                        { borderColor: theme.border, backgroundColor: theme.inputBg },
+                                        selectedCategory === cat.id && { backgroundColor: cat.color, borderColor: cat.color },
+                                    ]}
+                                    onPress={() => setSelectedCategory(cat.id as CategoryType)}
+                                >
+                                    <Text style={[
+                                        styles.categoryText,
+                                        { color: theme.text },
+                                        selectedCategory === cat.id && { color: '#FFFFFF' },
+                                    ]}>
+                                        {cat.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
 
-                {/* Info */}
-                <View style={[styles.infoBox, { backgroundColor: isDarkMode ? '#1E3A8A' : '#EFF6FF' }]}>
-                    <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
-                    <Text style={[styles.infoText, { color: isDarkMode ? '#93C5FD' : '#1D4ED8' }]}>
-                        {t('dka_reviewInfo')}
-                    </Text>
-                </View>
+                        {/* Caption Input */}
+                        {selectedType !== 'TEXT' && (
+                            <Text style={[styles.sectionTitle, { color: theme.text, fontSize: 13 }]}>Caption</Text>
+                        )}
+                        <View style={[styles.captionSection, {
+                            borderColor: isDarkMode ? '#374151' : '#E5E7EB',
+                            backgroundColor: theme.inputBg,
+                            borderWidth: 1,
+                            borderRadius: 12,
+                            paddingHorizontal: 12,
+                            paddingTop: 8,
+                            paddingBottom: selectedType === 'TEXT' ? 0 : 12,
+                            minHeight: selectedType === 'TEXT' ? 300 : 120,
+                            marginBottom: 24,
+                            overflow: 'hidden'
+                        }]}>
+                            <TextInput
+                                style={[styles.captionInput, {
+                                    color: theme.text,
+                                    fontSize: selectedType === 'TEXT' ? 18 : 16,
+                                }]}
+                                value={textContent}
+                                onChangeText={setTextContent}
+                                placeholder={selectedType === 'TEXT'
+                                    ? "Share your experience or issue here...\nDriver ki awaz, sab tak pahochaen."
+                                    : "Tell your story or voice your concern..."
+                                }
+                                placeholderTextColor={theme.placeholder}
+                                multiline
+                                textAlignVertical="top"
+                            />
+
+                            {selectedType === 'TEXT' && (
+                                <View style={styles.textFooter}>
+                                    <View style={{ flex: 1, marginRight: 8 }}>
+                                        {textContent.length > 2000 && (
+                                            <Text style={styles.limitError}>
+                                                {t('dka_charLimitExceeded')}
+                                            </Text>
+                                        )}
+                                    </View>
+                                    <View style={styles.charCountBadge}>
+                                        <Text style={[
+                                            styles.footerText,
+                                            { color: textContent.length > 2000 ? '#EF4444' : theme.subText }
+                                        ]}>
+                                            {textContent.length} / 2000
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Info */}
+                        <View style={[styles.infoBox, { backgroundColor: isDarkMode ? '#1E3A8A' : '#EFF6FF' }]}>
+                            <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
+                            <Text style={[styles.infoText, { color: isDarkMode ? '#93C5FD' : '#1D4ED8' }]}>
+                                {t('dka_reviewInfo')}
+                            </Text>
+                        </View>
+                    </Animated.View>
+                )}
             </ScrollView>
         </KeyboardAvoidingView>
-    );
-
-    const renderMyPostsTab = () => (
-        <View style={styles.flex}>
-            {loading && posts.length === 0 ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#3B82F6" />
-                </View>
-            ) : (
-                <FlatList
-                    key="posts-grid"
-                    data={posts}
-                    renderItem={renderPostItem}
-                    keyExtractor={item => item.id}
-                    numColumns={3}
-                    contentContainerStyle={styles.gridContent}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={handleRefresh}
-                            tintColor="#3B82F6"
-                        />
-                    }
-                    onEndReached={loadMore}
-                    onEndReachedThreshold={0.5}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Ionicons name="camera-outline" size={64} color={theme.subText} />
-                            <Text style={[styles.emptyTitle, { color: theme.text }]}>{t('dka_noPosts')}</Text>
-                            <Text style={styles.emptySubtitle}>{t('dka_shareFirst')}</Text>
-                        </View>
-                    }
-                />
-            )}
-        </View>
-    );
-
-
-    // const handleDeleteComment = (comment: any) => {
-    //     showDialog(
-    //         'Delete Comment',
-    //         'Are you sure you want to delete this comment?',
-    //         [
-    //             { text: 'Cancel', style: 'cancel' },
-    //             {
-    //                 text: 'Delete',
-    //                 style: 'destructive',
-    //                 onPress: async () => {
-    //                     try {
-    //                         await DriverKiAwazService.deleteComment(comment.id);
-    //                         Alert.alert('Success', 'Comment deleted');
-    //                         // Optimistic update
-    //                         setMyComments(prev => prev.filter(c => c.id !== comment.id));
-    //                         // Also refresh full data
-    //                         handleRefresh();
-    //                     } catch (error) {
-    //                         console.error('Delete comment error:', error);
-    //                         Alert.alert('Error', 'Failed to delete comment');
-    //                     }
-    //                 }
-    //             }
-    //         ]
-    //     );
-    // };
-
-    const handleCommentPress = (comment: any) => {
-        // Find the full post data from 'posts' if available, otherwise construct minimal viewing data
-        // The dashboard API returns posts array, so we might need to search or just rely on what we have.
-        // The comment item has 'postId', we can try to find the post in 'posts' state.
-        const post = posts.find(p => p.id === comment.postId.toString());
-
-        if (post) {
-            setViewingPost(post);
-        } else {
-            // Construct a temporary viewing post if real one not found in current list (rare in this tab logic but possible)
-            // Ideally we should fetch the specific post, but for now let's just show what we can or fetch it?
-            // Since we don't have a 'getPost(id)' service readily used here, and 'dashboard' gives everything...
-            // We'll rely on the fact that if it's in my dashboard, the post should be there too unless deleted.
-            // If post not found, we cannot show much. But let's assume it's there.
-            Alert.alert('Post not available', 'Could not find the original post for this comment.');
-        }
-    };
-
-    const renderMyCommentsTab = () => (
-        <View style={styles.flex}>
-            {loading && myComments.length === 0 ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#3B82F6" />
-                </View>
-            ) : (
-                <FlatList
-                    key="comments-list"
-                    data={myComments}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={[styles.commentCard, { backgroundColor: theme.card, borderColor: theme.border }]}
-                            onPress={() => handleCommentPress(item)}
-                            // onLongPress={() => handleDeleteComment(item)}
-                            delayLongPress={300}
-                        >
-                            <View style={styles.commentHeader}>
-                                <Image
-                                    source={{ uri: item.mediaUrl }}
-                                    style={styles.commentPostThumbnail}
-                                    resizeMode="cover"
-                                />
-                                <View style={styles.commentInfo}>
-                                    <View style={styles.commentTopRow}>
-                                        <Text style={[styles.commentDate, { color: theme.subText }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-                                        <Ionicons name="ellipsis-horizontal" size={16} color={theme.subText} />
-                                    </View>
-                                    <Text style={[styles.commentText, { color: theme.text }]} numberOfLines={3}>{item.comment}</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                    keyExtractor={item => item.id}
-                    contentContainerStyle={styles.listContent}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={handleRefresh}
-                            tintColor="#3B82F6"
-                        />
-                    }
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Ionicons name="chatbubbles-outline" size={64} color={theme.subText} />
-                            <Text style={[styles.emptyTitle, { color: theme.text }]}>No Comments</Text>
-                            <Text style={styles.emptySubtitle}>You haven't commented on any posts yet.</Text>
-                        </View>
-                    }
-                />
-            )}
-        </View>
     );
 
     return (
@@ -927,184 +951,37 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                     <Ionicons name="close" size={28} color={theme.icon} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: theme.text }]}>
-                    {activeScreenTab === 'create' ? t('dka_newPost') : t('dka_myPosts')}
+                    {t('dka_createPost') || 'Create Post'}
                 </Text>
 
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    {/* Theme Toggle */}
-                    <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)}>
-                        <Ionicons
-                            name={isDarkMode ? "sunny" : "moon"}
-                            size={22}
-                            color={theme.icon}
-                        />
-                    </TouchableOpacity>
-
-                    {activeScreenTab === 'create' && (
-                        <TouchableOpacity
-                            onPress={handleSubmit}
-                            disabled={!canSubmit() || isSubmitting}
-                        >
-                            <Text style={[
-                                styles.shareButton,
-                                (!canSubmit() || isSubmitting) && styles.shareButtonDisabled
-                            ]}>
-                                {isSubmitting ? t('dka_posting') : t('dka_share')}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-            </View>
-
-            {/* Tab Switcher */}
-            <View style={[styles.tabContainer, { borderBottomColor: theme.border }]}>
-                <TouchableOpacity
-                    style={[styles.tab, activeScreenTab === 'create' && { borderBottomColor: theme.activeTab, borderBottomWidth: 2 }]}
-                    onPress={() => setActiveScreenTab('create')}
-                >
-                    <Ionicons
-                        name="add-circle-outline"
-                        size={22}
-                        color={activeScreenTab === 'create' ? theme.activeTab : theme.tabText}
-                    />
-                    <Text style={[styles.tabText, { color: activeScreenTab === 'create' ? theme.activeTab : theme.tabText }]}>
-                        {t('dka_createTab')}
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeScreenTab === 'myPosts' && { borderBottomColor: theme.activeTab, borderBottomWidth: 2 }]}
-                    onPress={() => setActiveScreenTab('myPosts')}
-                >
-                    <Ionicons
-                        name="grid-outline"
-                        size={22}
-                        color={activeScreenTab === 'myPosts' ? theme.activeTab : theme.tabText}
-                    />
-                    <Text style={[styles.tabText, { color: activeScreenTab === 'myPosts' ? theme.activeTab : theme.tabText }]}>
-                        {t('dka_myPosts')}
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeScreenTab === 'myComments' && { borderBottomColor: theme.activeTab, borderBottomWidth: 2 }]}
-                    onPress={() => setActiveScreenTab('myComments')}
-                >
-                    <Ionicons
-                        name="chatbox-ellipses-outline"
-                        size={22}
-                        color={activeScreenTab === 'myComments' ? theme.activeTab : theme.tabText}
-                    />
-                    <Text style={[styles.tabText, { color: activeScreenTab === 'myComments' ? theme.activeTab : theme.tabText }]}>
-                        {t('comments')}
-                    </Text>
-                </TouchableOpacity>
+                <View style={{ width: 28 }} />
             </View>
 
             {/* Content */}
-            {activeScreenTab === 'create' ? renderCreateTab() : activeScreenTab === 'myPosts' ? renderMyPostsTab() : renderMyCommentsTab()}
+            {renderCreateTab()}
 
-            {/* Edit Modal */}
-            <Modal
-                visible={editModalVisible}
-                animationType="slide"
-                transparent
-                onRequestClose={() => setEditModalVisible(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: theme.text }]}>{t('dka_editCaption')}</Text>
-                            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                                <Ionicons name="close" size={24} color={theme.icon} />
-                            </TouchableOpacity>
-                        </View>
-                        <TextInput
-                            style={[styles.editInput, { backgroundColor: theme.inputBg, color: theme.text }]}
-                            value={editCaption}
-                            onChangeText={setEditCaption}
-                            placeholder={t('dka_writeCaption')}
-                            placeholderTextColor={theme.placeholder}
-                            multiline
-                        />
-                        <TouchableOpacity
-                            style={[styles.saveButton, isEditing && styles.saveButtonDisabled]}
-                            onPress={submitEdit}
-                            disabled={isEditing}
-                        >
-                            {isEditing ? (
-                                <ActivityIndicator color="#FFFFFF" />
-                            ) : (
-                                <Text style={styles.saveButtonText}>{t('dka_saveChanges')}</Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* Preview Modal */}
-            <Modal
-                visible={!!viewingPost}
-                animationType="fade"
-                transparent={false}
-                onRequestClose={() => setViewingPost(null)}
-            >
-                <View style={styles.previewContainer}>
-                    {/* Header Controls */}
-                    <View style={styles.previewHeader}>
-                        <TouchableOpacity onPress={() => setViewingPost(null)} style={styles.previewButton}>
-                            <Ionicons name="close" size={28} color="#FFFFFF" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => {
-                                if (viewingPost) {
-                                    showPostOptions(viewingPost);
-                                }
-                            }}
-                            style={styles.previewButton}
-                        >
-                            <Ionicons name="ellipsis-vertical" size={24} color="#FFFFFF" />
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Content */}
-                    <View style={styles.previewContent}>
-                        {viewingPost?.mediaType === 'video' ? (
-                            <Video
-                                source={{ uri: viewingPost.mediaUrl }}
-                                style={styles.fullScreenMedia}
-                                resizeMode="contain"
-                                repeat
-                            // controls={true} // Optional: Add controls if needed
-                            />
-                        ) : viewingPost?.mediaType === 'image' ? (
-                            <Image
-                                source={{ uri: viewingPost.mediaUrl }}
-                                style={styles.fullScreenMedia}
-                                resizeMode="contain"
-                            />
+            {/* Sticky Post Button */}
+            {selectedType && (
+                <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 16 }]}>
+                    <TouchableOpacity
+                        style={[
+                            styles.postButton,
+                            (!canSubmit() || isSubmitting) && styles.postButtonDisabled,
+                        ]}
+                        onPress={handleSubmit}
+                        disabled={!canSubmit() || isSubmitting}
+                        activeOpacity={0.8}
+                    >
+                        {isSubmitting ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
                         ) : (
-                            <View style={styles.textPreviewContainer}>
-                                <Text style={styles.textPostContent}>{viewingPost?.caption}</Text>
-                            </View>
-                        )}
-                    </View>
-
-                    {/* Footer / Caption Overlay (If video or image) */}
-                    {(viewingPost?.mediaType === 'video' || viewingPost?.mediaType === 'image') && (
-                        <View style={styles.previewFooter}>
-                            <Text style={styles.previewCaption} numberOfLines={3}>
-                                {viewingPost.caption}
+                            <Text style={styles.postButtonText}>
+                                {t('dka_share') || 'Post'}
                             </Text>
-                            <View style={styles.previewStats}>
-                                <Ionicons name="heart" size={16} color="#FFFFFF" />
-                                <Text style={styles.previewStatText}>{viewingPost.likesCount}</Text>
-                                <View style={{ width: 16 }} />
-                                <Ionicons name="chatbubble" size={16} color="#FFFFFF" />
-                                <Text style={styles.previewStatText}>{viewingPost.commentsCount}</Text>
-                            </View>
-                        </View>
-                    )}
+                        )}
+                    </TouchableOpacity>
                 </View>
-            </Modal>
+            )}
 
             {/* Custom Classic Dialog */}
             <Modal
@@ -1151,9 +1028,30 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                     </View>
                 </View>
             </Modal>
+            {/* Loading Overlay (For Edit Post) */}
+            <Modal visible={isSubmitting} transparent animationType="fade">
+                <View style={styles.loadingOverlay}>
+                    <View style={styles.loadingBox}>
+                        <ActivityIndicator size="large" color="#3B82F6" />
+                        <Text style={styles.loadingText}>
+                            {t('dka_posting') || 'Processing...'}
+                        </Text>
+                    </View>
+                </View>
+            </Modal>
 
-
-        </View >
+            {/* Video Processing Overlay */}
+            <Modal visible={isProcessing} transparent animationType="fade">
+                <View style={styles.loadingOverlay}>
+                    <View style={styles.loadingBox}>
+                        <ActivityIndicator size="large" color="#3B82F6" />
+                        <Text style={styles.loadingText}>
+                            {processingMessage || t('dka_processingVideo') || 'Processing video...'}
+                        </Text>
+                    </View>
+                </View>
+            </Modal>
+        </View>
     );
 };
 
@@ -1214,15 +1112,21 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: 16,
-        paddingBottom: 100,
+        paddingBottom: 160,
     },
     mediaPreview: {
         width: '100%',
-        height: 300,
+        aspectRatio: 4 / 5,
         borderRadius: 12,
         overflow: 'hidden',
         marginBottom: 16,
         position: 'relative',
+        backgroundColor: '#000000',
+    },
+    mediaPreviewVideo: {
+        width: '56%',
+        aspectRatio: 9 / 16,
+        alignSelf: 'center',
     },
     previewImage: {
         width: '100%',
@@ -1245,26 +1149,90 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginLeft: 4,
     },
+    videoPlayerContainer: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    playPauseOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 5, // ensure interaction is caught
+    },
+    playPauseButton: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.8)',
+    },
+    sliderOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 12,
+        paddingBottom: 16,
+        paddingTop: 32,
+        backgroundColor: 'rgba(0,0,0,0.4)', // Creates a dark gradient-like effect at the bottom
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
+    },
+    sliderTimeContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 8,
+        marginBottom: 4,
+    },
+    sliderTimeText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    slider: {
+        width: '100%',
+        height: 20,
+    },
     removeMedia: {
         position: 'absolute',
         top: 8,
         right: 8,
+        zIndex: 20,
     },
     captionSection: {
-        flexDirection: 'row',
-        marginBottom: 24,
+        flexDirection: 'column',
     },
-    userAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 12,
+    textFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        paddingVertical: 12,
+        paddingHorizontal: 4,
+    },
+    footerText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    charCountBadge: {
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    limitError: {
+        fontSize: 12,
+        color: '#EF4444',
+        fontWeight: '500',
+        marginTop: 2,
     },
     captionInput: {
         flex: 1,
-        color: '#FFFFFF',
         fontSize: 16,
-        maxHeight: 120,
         lineHeight: 22,
     },
     sectionTitle: {
@@ -1272,7 +1240,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#9CA3AF',
         marginBottom: 12,
-        textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
     typeRow: {
@@ -1335,7 +1302,6 @@ const styles = StyleSheet.create({
         color: '#93C5FD',
         fontWeight: '500',
     },
-    // My Posts Styles
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -1365,194 +1331,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: '#1E3A5F',
     },
-    textPlaceholder: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#1F2937',
-        padding: 8,
-    },
-    textPreview: {
-        fontSize: 10,
-        color: '#D1D5DB',
-        textAlign: 'center',
-    },
-    statsOverlay: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        paddingVertical: 4,
-    },
-    statusBadge: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-        zIndex: 10,
-    },
-    statusText: {
-        color: '#FFFFFF',
-        fontSize: 10,
-        fontWeight: '700',
-    },
-    statItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: 8,
-    },
-    statText: {
-        fontSize: 11,
-        color: '#FFFFFF',
-        marginLeft: 4,
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 60,
-    },
-    emptyTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#FFFFFF',
-        marginTop: 16,
-    },
-    emptySubtitle: {
-        fontSize: 14,
-        color: '#9CA3AF',
-        marginTop: 4,
-    },
-    // Modal Styles
-    modalContainer: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-    },
-    modalContent: {
-        backgroundColor: '#1C1C1E',
-        borderRadius: 16,
-        padding: 20,
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#FFFFFF',
-    },
-    editInput: {
-        backgroundColor: '#2C2C2E',
-        borderRadius: 12,
-        padding: 16,
-        color: '#FFFFFF',
-        fontSize: 16,
-        minHeight: 120,
-        textAlignVertical: 'top',
-    },
-    saveButton: {
-        backgroundColor: '#3B82F6',
-        borderRadius: 12,
-        paddingVertical: 14,
-        alignItems: 'center',
-        marginTop: 16,
-    },
-    saveButtonDisabled: {
-        backgroundColor: '#6B7280',
-    },
-    saveButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    // Preview Modal Styles
-    previewContainer: {
-        flex: 1,
-        backgroundColor: '#000000',
-        justifyContent: 'center',
-    },
-    previewHeader: {
-        position: 'absolute',
-        top: Platform.OS === 'ios' ? 50 : 20,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-    },
-    previewButton: {
-        padding: 8,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: 20,
-    },
-    previewContent: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    fullScreenMedia: {
-        width: SCREEN_WIDTH,
-        height: '100%',
-        backgroundColor: '#000000',
-    },
-    previewFooter: {
-        position: 'absolute',
-        bottom: 40,
-        left: 0,
-        right: 0,
-        padding: 20,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    previewCaption: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        marginBottom: 10,
-    },
-    previewStats: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    previewStatText: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        marginLeft: 6,
-        fontWeight: '600',
-    },
-    audioPreviewContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-    },
-    audioWaveform: {
-        marginBottom: 20,
-    },
-    textPreviewContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: '#1C1C1E',
-        width: '100%',
-    },
-    textPostContent: {
-        color: '#FFFFFF',
-        fontSize: 22,
-        textAlign: 'center',
-        lineHeight: 32,
-        fontWeight: '500',
-    },
-    // Dialog Styles
     dialogOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.6)',
@@ -1567,7 +1345,6 @@ const styles = StyleSheet.create({
         paddingBottom: 0,
         alignItems: 'center',
         overflow: 'hidden',
-        // Shadow
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
@@ -1607,7 +1384,6 @@ const styles = StyleSheet.create({
     dialogButtonTextDestructive: {
         color: '#EF4444',
     },
-    // Recorder Styles
     recordTimer: {
         fontSize: 48,
         fontWeight: '300',
@@ -1632,43 +1408,70 @@ const styles = StyleSheet.create({
         borderRadius: 28,
         backgroundColor: '#EF4444',
     },
-    // Comment Tab Styles
-    commentCard: {
-        borderRadius: 12,
-        marginBottom: 12,
-        borderWidth: 1,
-        overflow: 'hidden',
+    stickyFooter: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 10,
     },
-    commentHeader: {
-        flexDirection: 'row',
-        padding: 12,
-    },
-    commentPostThumbnail: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        marginRight: 12,
-        backgroundColor: '#2D2D2D',
-    },
-    commentInfo: {
-        flex: 1,
+    postButton: {
+        backgroundColor: '#3B82F6',
+        borderRadius: 14,
+        paddingVertical: 16,
+        alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: '#3B82F6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
     },
-    commentTopRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 4,
+    postButtonDisabled: {
+        backgroundColor: '#1E293B',
+        shadowOpacity: 0,
+        elevation: 0,
     },
-    commentDate: {
-        fontSize: 12,
+    postButtonText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        letterSpacing: 0.5,
     },
-    commentText: {
+    loadingOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingBox: {
+        backgroundColor: '#FFFFFF',
+        padding: 24,
+        borderRadius: 16,
+        alignItems: 'center',
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 10,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    loadingText: {
+        color: '#3B82F6',
         fontSize: 14,
-        lineHeight: 20,
+        fontWeight: '700',
+        marginTop: 12,
     },
-    listContent: {
-        paddingBottom: 100,
-    }
 });
 
 export default CreatePostScreen;

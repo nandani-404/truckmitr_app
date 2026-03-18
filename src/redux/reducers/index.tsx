@@ -5,6 +5,7 @@ import driverReducer from '@truckmitr/redux/reducers/driver.reducer';
 import pilotsReducer from '@truckmitr/redux/slices/pilotsSlice';
 import shipperReducer from '@truckmitr/redux/slices/shipperSlice';
 import appModeReducer from '@truckmitr/redux/slices/appModeSlice';
+import uploadReducer from '@truckmitr/redux/slices/uploadSlice';
 
 // Global reducers (shared across all modules)
 import appReducer from '@truckmitr/redux/reducers/global/app.reducer';
@@ -23,6 +24,7 @@ const appCombinedReducer = combineReducers({
     pilots: pilotsReducer,
     shipper: shipperReducer,
     appMode: appModeReducer,
+    upload: uploadReducer,
 })
 
 const rootReducer = (state: any, action: any) => {

@@ -13,6 +13,8 @@ import { AppEventsLogger, Settings } from 'react-native-fbsdk-next';
 import { LogBox } from 'react-native';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { initPusher, connectPusher } from './services/pusher';
+import NetworkBar from './components/NetworkBar';
+import UploadProgressBar from './components/UploadProgressBar';
 
 export default function App() {
 
@@ -47,6 +49,8 @@ export default function App() {
                     <I18nextProvider i18n={i18n}>
                         <BottomSheetModalProvider>
                             <TourGuideProvider preventOutsideInteraction androidStatusBarVisible={true} {...{}}>
+                                <NetworkBar />
+                                <UploadProgressBar />
                                 <Routes />
                             </TourGuideProvider>
                         </BottomSheetModalProvider>

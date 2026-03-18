@@ -12,10 +12,10 @@ export type PostCategory =
     | 'ROAD_ISSUES';
 
 // Post Types
-export type PostType = 'VIDEO' | 'VOICE' | 'TEXT';
+export type PostType = 'VIDEO' | 'TEXT';
 
 // Post Status
-export type PostStatus = 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
+export type PostStatus = 'PENDING' | 'APPROVED';
 
 // Category Data
 export const CATEGORIES: { id: PostCategory; label: string; labelHi: string; icon: string; color: string }[] = [
@@ -71,13 +71,6 @@ export interface VideoPost extends BasePost {
     duration: number;
 }
 
-// Voice Post
-export interface VoicePost extends BasePost {
-    type: 'VOICE';
-    audioUrl: string;
-    duration: number;
-    waveform?: number[];
-}
 
 // Text Post
 export interface TextPost extends BasePost {
@@ -86,10 +79,10 @@ export interface TextPost extends BasePost {
 }
 
 // Union Type for all Posts
-export type Post = VideoPost | VoicePost | TextPost;
+export type Post = VideoPost | TextPost;
 
-// Feed Post (Voice or Text)
-export type FeedPost = VoicePost | TextPost;
+// Feed Post
+export type FeedPost = TextPost;
 
 // Action Types
 export type ActionType = 'SUPPORT' | 'COMMENT' | 'SHARE';

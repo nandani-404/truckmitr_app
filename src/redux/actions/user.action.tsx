@@ -27,3 +27,6 @@ export const showTrainingModalAction = (payload: any) => ({
 export const PaymentVerificationModalAction = (payload: any) => ({
     type: TYPES['PAYMENTVERIFICATION_MODAL'], payload
 })
+export const referEarnDataAction = (payload: any) => ({
+    type: TYPES['REFER_EARN_DATA'], payload
+})

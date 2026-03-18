@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import {
     View,
     Text,
@@ -13,6 +14,7 @@ import {
     Platform,
     Image,
     Alert,
+    useColorScheme,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { DriverKiAwazService } from '../services';
@@ -39,12 +41,48 @@ interface CommentsModalProps {
     onCommentAdded?: () => void;
 }
 
+const THEME = {
+    light: {
+        bg: '#F8F9FA',
+        card: '#FFFFFF',
+        text: '#1F2937',
+        subText: '#6B7280',
+        border: '#E5E7EB',
+        icon: '#374151',
+        inputBg: '#F3F4F6',
+        placeholder: '#9CA3AF',
+        backdrop: 'rgba(0,0,0,0.4)',
+    },
+    dark: {
+        bg: '#000000',
+        card: '#1C1C1E',
+        text: '#FFFFFF',
+        subText: '#9CA3AF',
+        border: '#2D2D2D',
+        icon: '#FFFFFF',
+        inputBg: '#2C2C2E',
+        placeholder: '#9CA3AF',
+        backdrop: 'rgba(0,0,0,0.6)',
+    }
+};
+
 const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose, onCommentAdded }) => {
     const { t } = useTranslation();
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const { user } = useSelector((state: any) => state.user);
+    const colorScheme = useColorScheme();
+    const isDarkMode = colorScheme === 'dark';
+    const theme = isDarkMode ? THEME.dark : THEME.light;
+
+    const getAvatarUrl = (path?: string) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        return `${AWAZ_URL}public/${cleanPath}`;
+    };
 
     useEffect(() => {
         if (visible && postId) {
@@ -82,36 +120,33 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
             if (onCommentAdded) onCommentAdded();
         } catch (error) {
             console.error('Error posting comment', error);
-            Alert.alert('Error', 'Failed to post comment');
+            Alert.alert(t('error'), t('failed_post_comment'));
         } finally {
             setSubmitting(false);
         }
     };
 
     const renderItem = ({ item }: { item: Comment }) => {
-        // Construct avatar URL from images field - use AWAZ_URL + public/ as base
-        const avatarUrl = item.images
-            ? (item.images.startsWith('http') ? item.images : `${AWAZ_URL}public/${item.images}`)
-            : item.user?.avatar || 'https://via.placeholder.com/150';
-
-        const userName = item.name || item.user?.name || `User ${item.user_id}`;
+        const avatarPath = item.user?.avatar || item.images;
+        const avatarUrl = getAvatarUrl(avatarPath);
+        const userName = item.user?.name || item.name || 'Anonymous';
 
         return (
             <View style={styles.commentItem}>
-                {avatarUrl && avatarUrl !== 'https://via.placeholder.com/150' ? (
+                {avatarUrl ? (
                     <Image
                         source={{ uri: avatarUrl }}
                         style={styles.avatar}
                     />
                 ) : (
-                    <View style={[styles.avatar, { backgroundColor: '#2C2C2E', alignItems: 'center', justifyContent: 'center' }]}>
-                        <Ionicons name="person" size={20} color="#9CA3AF" />
+                    <View style={[styles.avatar, { backgroundColor: theme.inputBg, alignItems: 'center', justifyContent: 'center' }]}>
+                        <Ionicons name="person" size={20} color={theme.subText} />
                     </View>
                 )}
                 <View style={styles.commentContent}>
-                    <Text style={styles.userName}>{userName}</Text>
-                    <Text style={styles.commentText}>{item.comment}</Text>
-                    <Text style={styles.timeAgo}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                    <Text style={[styles.userName, { color: theme.text }]}>{userName}</Text>
+                    <Text style={[styles.commentText, { color: theme.text }]}>{item.comment}</Text>
+                    <Text style={[styles.timeAgo, { color: theme.subText }]}>{new Date(item.created_at).toLocaleDateString()}</Text>
                 </View>
             </View>
         );
@@ -124,24 +159,26 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
             transparent={true}
             onRequestClose={onClose}
         >
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: theme.backdrop }]}>
                 <TouchableOpacity style={styles.backdrop} onPress={onClose} />
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={styles.content}
+                    style={[styles.content, { backgroundColor: theme.card }]}
                 >
                     <View style={styles.handleContainer}>
-                        <View style={styles.handle} />
+                        <View style={[styles.handle, { backgroundColor: theme.border }]} />
                     </View>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>{t('comments')}</Text>
-                        <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={24} color="#FFFFFF" />
+                    <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                        <Text style={[styles.title, { color: theme.text }]}>{t('comments')}</Text>
+                        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                            <Ionicons name="close" size={24} color={theme.icon} />
                         </TouchableOpacity>
                     </View>
 
                     {loading ? (
-                        <ActivityIndicator style={styles.loading} color="#3B82F6" />
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color="#3B82F6" />
+                        </View>
                     ) : (
                         <FlatList
                             data={comments}
@@ -149,19 +186,26 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
                             keyExtractor={item => item.id.toString()}
                             contentContainerStyle={styles.listContent}
                             ListEmptyComponent={
-                                <Text style={styles.emptyText}>No comments yet. Be the first to say something!</Text>
+                                <Text style={[styles.emptyText, { color: theme.subText }]}>{t('no_comments')}</Text>
                             }
                         />
                     )}
 
-                    <View style={styles.inputContainer}>
-                        <View style={[styles.inputAvatar, { backgroundColor: '#2C2C2E', alignItems: 'center', justifyContent: 'center' }]}>
-                            <Ionicons name="person" size={18} color="#9CA3AF" />
-                        </View>
+                    <View style={[styles.inputContainer, { borderTopColor: theme.border, backgroundColor: theme.card }]}>
+                        {getAvatarUrl(user?.profile_image || user?.images) ? (
+                            <Image
+                                source={{ uri: getAvatarUrl(user?.profile_image || user?.images) as string }}
+                                style={[styles.inputAvatar, { borderRadius: 16 }]}
+                            />
+                        ) : (
+                            <View style={[styles.inputAvatar, { backgroundColor: theme.inputBg, alignItems: 'center', justifyContent: 'center' }]}>
+                                <Ionicons name="person" size={18} color={theme.subText} />
+                            </View>
+                        )}
                         <TextInput
-                            style={styles.input}
-                            placeholder="Add a comment..."
-                            placeholderTextColor="#9CA3AF"
+                            style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text }]}
+                            placeholder={t('add_comment')}
+                            placeholderTextColor={theme.placeholder}
                             value={newComment}
                             onChangeText={setNewComment}
                             multiline
@@ -174,7 +218,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
                             {submitting ? (
                                 <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
-                                <Text style={[styles.postText, !newComment.trim() && styles.postTextDisabled]}>Post</Text>
+                                <Text style={[styles.postText, !newComment.trim() && styles.postTextDisabled]}>{t('post_button')}</Text>
                             )}
                         </TouchableOpacity>
                     </View>
@@ -198,7 +242,6 @@ const styles = StyleSheet.create({
         bottom: 0,
     },
     content: {
-        backgroundColor: '#1C1C1E', // Dark background like Instagram dark mode
         borderTopLeftRadius: 15,
         borderTopRightRadius: 15,
         height: '70%',
@@ -211,7 +254,6 @@ const styles = StyleSheet.create({
     handle: {
         width: 40,
         height: 4,
-        backgroundColor: '#4B5563',
         borderRadius: 2,
     },
     header: {
@@ -221,16 +263,21 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#2D2D2D',
         position: 'relative',
     },
     title: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#FFFFFF',
     },
-    loading: {
-        marginTop: 20,
+    closeButton: {
+        position: 'absolute',
+        right: 16,
+        padding: 4,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     listContent: {
         padding: 16,
@@ -251,12 +298,10 @@ const styles = StyleSheet.create({
     userName: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#FFFFFF',
         marginBottom: 2,
     },
     commentText: {
         fontSize: 14,
-        color: '#F3F4F6',
         marginBottom: 4,
         lineHeight: 18,
     },
@@ -274,8 +319,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 12,
         borderTopWidth: 1,
-        borderTopColor: '#2D2D2D',
-        backgroundColor: '#1C1C1E',
         paddingBottom: Platform.OS === 'ios' ? 30 : 12,
     },
     inputAvatar: {
@@ -286,13 +329,11 @@ const styles = StyleSheet.create({
     },
     input: {
         flex: 1,
-        backgroundColor: '#2C2C2E',
         borderRadius: 20,
         paddingHorizontal: 16,
         paddingVertical: 10,
         marginRight: 12,
         maxHeight: 100,
-        color: '#FFFFFF',
         fontSize: 14,
     },
     sendButton: {

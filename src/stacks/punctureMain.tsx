@@ -13,7 +13,8 @@ import { useTranslation } from 'react-i18next';
 // Import actual components
 import PunctureHome from '@truckmitr/src/app/layouts/puncture/puncture-home';
 import PunctureAddDriver from '@truckmitr/src/app/layouts/puncture/puncture-add-driver';
-import DriverKiAwazInfo from '@truckmitr/src/app/layouts/main/driver-ki-awaz-info';
+import { CreatePostScreen, DriverKiAwazInfo } from '@truckmitr/layouts/index';
+import { MyPostsScreen, PostDetailScreen, SingleReelScreen } from '../app/layouts/main/driver-ki-awaz-info';
 import PunctureMyProfile from '@truckmitr/src/app/layouts/puncture/puncture-my-profile';
 import PunctureProfileOverview from '@truckmitr/src/app/layouts/puncture/puncture-profile-overview';
 import PunctureBankDetails from '@truckmitr/src/app/layouts/puncture/puncture-bank-details';
@@ -169,6 +170,11 @@ export default function PunctureMain() {
             <Stack.Screen name={STACKS.CONTACT_US} component={ContactUs} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.PRIVACY} component={Privacy} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.LANGUAGE_MAIN} component={LanguageMain} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_INFO} component={DriverKiAwazInfo} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_CREATE_POST} component={CreatePostScreen} options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_MY_POSTS} component={MyPostsScreen} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_POST_DETAIL} component={PostDetailScreen} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.SINGLE_REEL_SCREEN} component={SingleReelScreen} options={{ animation: 'fade' }} />
 
             {/* Puncture specific screens */}
             <Stack.Screen name={STACKS.PUNCTURE_PROFILE_OVERVIEW} component={PunctureProfileOverview} options={{ animation: 'slide_from_right' }} />

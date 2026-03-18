@@ -26,6 +26,8 @@ import ForemanProfileEdit from '@truckmitr/src/app/layouts/foreman/foreman-profi
 import ForemanSearchScreen from '@truckmitr/src/app/layouts/foreman/foreman-home/search-screen';
 import ForemanEarningsInfo from '@truckmitr/src/app/layouts/foreman/foreman-home/foreman-earnings-info';
 import ForemanMembershipCard from '@truckmitr/src/app/layouts/foreman/foreman-home/membership-card';
+import { CreatePostScreen, DriverKiAwazInfo, Rating } from '@truckmitr/layouts/index';
+import { MyPostsScreen, PostDetailScreen, SingleReelScreen } from '../app/layouts/main/driver-ki-awaz-info';
 
 const Stack = createNativeStackNavigator();
 
@@ -128,6 +130,12 @@ export default function ForemanMain() {
             <Stack.Screen name={STACKS.FOREMAN_EARNINGS_INFO} component={ForemanEarningsInfo} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.FOREMAN_MEMBERSHIP_CARD} component={ForemanMembershipCard} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.PAYMENT_SUCCESS} component={PaymentSuccess} options={{ animation: 'fade_from_bottom' }} />
+            <Stack.Screen name={STACKS.RATING} component={Rating} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_INFO} component={DriverKiAwazInfo} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_CREATE_POST} component={CreatePostScreen} options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_MY_POSTS} component={MyPostsScreen} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_POST_DETAIL} component={PostDetailScreen} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.SINGLE_REEL_SCREEN} component={SingleReelScreen} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     )
 }

@@ -54,6 +54,12 @@ export const resolveTargetScreen = (screenName: string, role: string, selectedMo
             STACKS.PRIVACY,
             STACKS.LANGUAGE_MAIN,
             STACKS.PROFILE_OVERVIEW,
+            // Driver Ki Awaz
+            STACKS.DRIVER_KI_AWAZ_INFO,
+            STACKS.DRIVER_KI_AWAZ_CREATE_POST,
+            STACKS.DRIVER_KI_AWAZ_MY_POSTS,
+            STACKS.DRIVER_KI_AWAZ_POST_DETAIL,
+            STACKS.SINGLE_REEL_SCREEN,
         ],
         driver: [
             'bottomTab', // Main entry for Driver
@@ -68,6 +74,10 @@ export const resolveTargetScreen = (screenName: string, role: string, selectedMo
             STACKS.PROFILE_EDIT,
             STACKS.PROFILE_EDIT_NEW,
             STACKS.DRIVER_KI_AWAZ_INFO,
+            STACKS.DRIVER_KI_AWAZ_CREATE_POST,
+            STACKS.DRIVER_KI_AWAZ_MY_POSTS,
+            STACKS.DRIVER_KI_AWAZ_POST_DETAIL,
+            STACKS.SINGLE_REEL_SCREEN,
             STACKS.AVAILABLE_JOB,
             STACKS.APPLIED_JOB,
             // Shared
@@ -85,6 +95,12 @@ export const resolveTargetScreen = (screenName: string, role: string, selectedMo
             STACKS.NOTIFICATION,
             STACKS.SETTINGS,
             STACKS.PROFILE_EDIT,
+            // Driver Ki Awaz
+            STACKS.DRIVER_KI_AWAZ_INFO,
+            STACKS.DRIVER_KI_AWAZ_CREATE_POST,
+            STACKS.DRIVER_KI_AWAZ_MY_POSTS,
+            STACKS.DRIVER_KI_AWAZ_POST_DETAIL,
+            STACKS.SINGLE_REEL_SCREEN,
             // Shared
             STACKS.PRIVACY,
             STACKS.CONTACT_US,
@@ -99,7 +115,14 @@ export const resolveTargetScreen = (screenName: string, role: string, selectedMo
             STACKS.DHABHA_BANK_DETAILS,
             STACKS.DHABHA_MY_DHABHA,
             STACKS.DHABHA_MY_DRIVERS,
+            STACKS.DHABHA_MY_DRIVERS,
             STACKS.DHABHA_DRIVER_SEARCH,
+            // Driver Ki Awaz
+            STACKS.DRIVER_KI_AWAZ_INFO,
+            STACKS.DRIVER_KI_AWAZ_CREATE_POST,
+            STACKS.DRIVER_KI_AWAZ_MY_POSTS,
+            STACKS.DRIVER_KI_AWAZ_POST_DETAIL,
+            STACKS.SINGLE_REEL_SCREEN,
             // Shared
             STACKS.SETTINGS,
             STACKS.NOTIFICATION,
@@ -122,6 +145,12 @@ export const resolveTargetScreen = (screenName: string, role: string, selectedMo
             STACKS.DRIVER_ASSOCIATION_RECRUITMENTS,
             STACKS.DRIVER_ASSOCIATION_DRIVER_DETAILS,
             STACKS.DRIVER_ASSOCIATION_SEARCH,
+            // Driver Ki Awaz
+            STACKS.DRIVER_KI_AWAZ_INFO,
+            STACKS.DRIVER_KI_AWAZ_CREATE_POST,
+            STACKS.DRIVER_KI_AWAZ_MY_POSTS,
+            STACKS.DRIVER_KI_AWAZ_POST_DETAIL,
+            STACKS.SINGLE_REEL_SCREEN,
             // Shared
             STACKS.SETTINGS,
             STACKS.NOTIFICATION,
@@ -161,6 +190,12 @@ export const resolveTargetScreen = (screenName: string, role: string, selectedMo
             STACKS.PUNCTURE_MY_REFERRALS,
             STACKS.PUNCTURE_MY_DRIVERS,
             STACKS.PUNCTURE_DRIVER_SEARCH,
+            // Driver Ki Awaz
+            STACKS.DRIVER_KI_AWAZ_INFO,
+            STACKS.DRIVER_KI_AWAZ_CREATE_POST,
+            STACKS.DRIVER_KI_AWAZ_MY_POSTS,
+            STACKS.DRIVER_KI_AWAZ_POST_DETAIL,
+            STACKS.SINGLE_REEL_SCREEN,
             // Shared
             STACKS.SETTINGS,
             STACKS.NOTIFICATION,
@@ -194,7 +229,10 @@ export const resolveTargetScreen = (screenName: string, role: string, selectedMo
     // Sometimes backend sends 'jobs' but app uses 'job'
     const aliasMapping: Record<string, string> = {
         'jobs': STACKS.JOB,
+        'job': STACKS.JOB,
         'profileEdit': STACKS.PROFILE_EDIT,
+        'post': STACKS.DRIVER_KI_AWAZ_POST_DETAIL,
+        'reel': STACKS.SINGLE_REEL_SCREEN,
     };
 
     const targetScreen = aliasMapping[screenName] || screenName;
@@ -210,4 +248,59 @@ export const resolveTargetScreen = (screenName: string, role: string, selectedMo
         console.log(`[Resolver] ❌ Access Denied to ${targetScreen}. Redirecting to fallback: ${fallback}`);
         return fallback;
     }
+};
+
+/**
+ * Resolves the full navigation structure (stack + screen) for a given target.
+ * This handles role-specific bottom tab names and nested stacks.
+ */
+export const resolveTargetNavigation = (screenName: string, role: string, selectedModule?: string | null) => {
+    const normalizedRole = role?.toLowerCase();
+    const normalizedModule = selectedModule?.toLowerCase();
+    
+    const validatedScreen = resolveTargetScreen(screenName, role, selectedModule);
+
+    // 1. Determine the root stack based on role
+    let rootStack = 'bottomTab';
+    if (normalizedRole === 'foreman') rootStack = STACKS.FOREMAN_BOTTOM_TAB;
+    else if (normalizedRole === 'dhaba' || normalizedModule === 'dhaba') rootStack = STACKS.DHABHA_BOTTOM;
+    else if (normalizedRole === 'association' || normalizedModule === 'association') rootStack = STACKS.ASSOCIATE_BOTTOM_TAB;
+    else if (normalizedRole === 'puncture' || normalizedModule === 'puncture_shop') rootStack = STACKS.PUNCTURE_BOTTOM;
+    else if (normalizedRole === 'shipper' || normalizedModule === 'shipper') rootStack = STACKS.SHIPPER_BOTTOM_TAB;
+
+    // 2. Map generic screen names to role-specific tab names
+    const tabMap: Record<string, Record<string, string>> = {
+        foreman: {
+            [STACKS.DRIVER_KI_AWAZ_INFO]: STACKS.FOREMAN_DRIVER_KI_AWAZ,
+            [STACKS.HOME]: STACKS.FOREMAN_HOME,
+            [STACKS.PROFILE]: STACKS.FOREMAN_PROFILE,
+            [STACKS.JOB]: STACKS.FOREMAN_JOBS_LIST,
+        },
+        dhaba: {
+            [STACKS.DRIVER_KI_AWAZ_INFO]: STACKS.DHABHA_DRIVER_KI_AWAZ,
+            [STACKS.HOME]: STACKS.DHABHA_HOME,
+            [STACKS.PROFILE]: STACKS.DHABHA_PROFILE,
+        },
+        puncture: {
+            [STACKS.DRIVER_KI_AWAZ_INFO]: STACKS.PUNCTURE_DRIVER_KI_AWAZ,
+            [STACKS.HOME]: STACKS.PUNCTURE_HOME,
+            [STACKS.PROFILE]: STACKS.PUNCTURE_PROFILE,
+        },
+        // Add others as needed
+    };
+
+    const roleSpecificTab = tabMap[normalizedRole]?.[validatedScreen];
+
+    if (roleSpecificTab) {
+        return { stack: rootStack, screen: roleSpecificTab };
+    }
+
+    // Default: Check if the screen is one of the "root-level" screens that should be in a bottom tab
+    const genericTabs: string[] = [STACKS.HOME, STACKS.JOB, STACKS.PROFILE, STACKS.TRAINING, STACKS.DRIVER_KI_AWAZ_INFO];
+    if (genericTabs.includes(validatedScreen)) {
+        return { stack: rootStack, screen: validatedScreen };
+    }
+
+    // If it's not a tab but an allowed screen in the main stack
+    return { stack: undefined, screen: validatedScreen };
 };

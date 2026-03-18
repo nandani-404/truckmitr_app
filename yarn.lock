@@ -2286,6 +2286,11 @@
   resolved "https://registry.npmjs.org/@react-native-community/geolocation/-/geolocation-3.4.0.tgz"
   integrity sha512-bzZH89/cwmpkPMKKveoC72C4JH0yF4St5Ceg/ZM9pA1SqX9MlRIrIrrOGZ/+yi++xAvFDiYfihtn9TvXWU9/rA==
 
+"@react-native-community/netinfo@^12.0.1":
+  version "12.0.1"
+  resolved "https://registry.npmjs.org/@react-native-community/netinfo/-/netinfo-12.0.1.tgz"
+  integrity sha512-P/3caXIvfYSJG8AWJVefukg+ZGRPs+M4Lp3pNJtgcTYoJxCjWrKQGNnCkj/Cz//zWa/avGed0i/wzm0T8vV2IQ==
+
 "@react-native-community/slider@^5.0.1":
   version "5.0.1"
   resolved "https://registry.npmjs.org/@react-native-community/slider/-/slider-5.0.1.tgz"
@@ -7859,10 +7864,20 @@ react-native-calendars@^1.1313.0:
   optionalDependencies:
     moment "^2.29.4"
 
+react-native-compressor@^1.16.0:
+  version "1.16.0"
+  resolved "https://registry.npmjs.org/react-native-compressor/-/react-native-compressor-1.16.0.tgz"
+  integrity sha512-yBJ1j/ank4Ckx/0cKf8QiK1oATppxN8GuNBoW6P83Os7s7MUdCLzVmIXX0ikkusdrgdCaetW6j3hH2eMI54pcw==
+
 react-native-contacts@^8.0.6:
   version "8.0.7"
   resolved "https://registry.npmjs.org/react-native-contacts/-/react-native-contacts-8.0.7.tgz"
   integrity sha512-9JyH+3MXZcOD1+Lm+kl1DeQzT24ayZ//LonTSZM2cln66mHgC2MzW1wBQAJ7EL9eu5NSjSav4c4BIWuOsods6Q==
+
+react-native-create-thumbnail@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.npmjs.org/react-native-create-thumbnail/-/react-native-create-thumbnail-2.2.0.tgz"
+  integrity sha512-zrwVYWMpeMEGIYO1jgwUMBpSpIzMR7Z2gkSANVlf9BFZLRw017k7CfjttvDhCHjsxNNDb7+V8uJaNwIGdTpz/g==
 
 react-native-date-picker@^5.0.13:
   version "5.0.13"
@@ -8174,6 +8189,11 @@ react-native-version-check@^3.5.0:
   dependencies:
     lodash "^4.17.21"
     semver "^6.1.1"
+
+react-native-video-trim@^6.1.0:
+  version "6.1.0"
+  resolved "https://registry.npmjs.org/react-native-video-trim/-/react-native-video-trim-6.1.0.tgz"
+  integrity sha512-3ECZrOsLZDu3SNvc9ou2Muw4giDOkJ7PtyHAWuk1XPu9805Lh700BaHFP25P2+F6lPrt5G6fiJ3tzDdLMh283g==
 
 react-native-video@^6.16.1:
   version "6.16.1"

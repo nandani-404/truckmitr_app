@@ -17,7 +17,8 @@ import DhabhaWallet from '@truckmitr/src/app/layouts/dhaba/dhabha-wallet';
 import DhabhaMyReferralsScreen from '@truckmitr/src/app/layouts/dhaba/dhabha-my-referrals';
 import DhabhaMyProfile from '@truckmitr/src/app/layouts/dhaba/dhabha-my-profile';
 import DhabaProfileEdit from '@truckmitr/src/app/layouts/dhaba/dhaba-profile-edit';
-import DriverKiAwazHome from '@truckmitr/src/app/layouts/main/driver-ki-awaz-info/DriverKiAwazHome';
+import { CreatePostScreen, DriverKiAwazInfo } from '@truckmitr/layouts/index';
+import { MyPostsScreen, PostDetailScreen, SingleReelScreen } from '../app/layouts/main/driver-ki-awaz-info';
 
 // Import shared screens
 import { Settings, Rating, ContactUs, Privacy, LanguageMain } from '@truckmitr/layouts/index';
@@ -158,7 +159,7 @@ const DhabhaBottomTabs = () => {
         >
             <Tab.Screen name={STACKS.DHABHA_HOME} component={DhabhaHome} />
             <Tab.Screen name={STACKS.DHABHA_ADD_DRIVER} component={DhabhaAddDriver} />
-            <Tab.Screen name={STACKS.DHABHA_DRIVER_KI_AWAZ} component={DriverKiAwazHome} />
+            <Tab.Screen name={STACKS.DHABHA_DRIVER_KI_AWAZ} component={DriverKiAwazInfo} />
             <Tab.Screen name={STACKS.DHABHA_EARNINGS} component={DhabhaWallet} />
             <Tab.Screen name={STACKS.DHABHA_PROFILE} component={DhabhaMyProfile} />
         </Tab.Navigator>
@@ -188,6 +189,11 @@ export default function DhabhaMain() {
             <Stack.Screen name={STACKS.DHABHA_MY_REFERRALS} component={DhabhaMyReferralsScreen} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.DHABHA_MY_DRIVERS} component={DhabhaMyDrivers} options={{ animation: 'fade' }} />
             <Stack.Screen name={STACKS.LANGUAGE_MAIN} component={LanguageMain} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_INFO} component={DriverKiAwazInfo} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_CREATE_POST} component={CreatePostScreen} options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_MY_POSTS} component={MyPostsScreen} options={{ animation: 'fade' }} />
+            <Stack.Screen name={STACKS.DRIVER_KI_AWAZ_POST_DETAIL} component={PostDetailScreen} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name={STACKS.SINGLE_REEL_SCREEN} component={SingleReelScreen} options={{ animation: 'fade' }} />
         </Stack.Navigator>
     );
 }

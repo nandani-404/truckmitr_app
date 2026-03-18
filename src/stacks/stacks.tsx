@@ -9,7 +9,7 @@ export type NavigatorParams = {
     languageMain: undefined
     preferredColor: undefined
     paymentSuccess: any
-    signup: { preSelectedRole?: string } | undefined
+    signup: { preSelectedRole?: string; referralCode?: string } | undefined
     consentModalScreen: undefined
     moduleSelection: undefined
     congratulations: any
@@ -112,6 +112,8 @@ export type NavigatorParams = {
     challanCheckInfo: undefined
     challanCheckResult: undefined
     driverKiAwazInfo: undefined
+    driverKiAwazPostDetail: { post: any }
+    singleReelScreen: { post: any }
     driverTripWallet: undefined
     driverWelfare: undefined
     driverLoan: undefined
@@ -231,6 +233,7 @@ export type NavigatorParams = {
     khatamitrProfitCalculation: undefined;
     khatamitrJourneyTracking: undefined;
     khatamitrTripCompletion: undefined;
+    referAndEarn: undefined;
 };
 
 export const STACKS = {
@@ -379,6 +382,8 @@ export const STACKS = {
     DRIVER_KI_AWAZ_CREATE_POST: 'driverKiAwazCreatePost',
     DRIVER_KI_AWAZ_PROFILE_FEED: 'driverKiAwazProfileFeed',
     DRIVER_KI_AWAZ_MY_POSTS: 'driverKiAwazMyPosts',
+    DRIVER_KI_AWAZ_POST_DETAIL: 'driverKiAwazPostDetail',
+    SINGLE_REEL_SCREEN: 'singleReelScreen',
 
     // FOREMAN MODULE
     FOREMAN_BOTTOM_TAB: 'foremanBottomTab',
@@ -499,6 +504,7 @@ export const STACKS = {
     KHATAMITR_PROFIT_CALCULATION: 'khatamitrProfitCalculation',
     KHATAMITR_JOURNEY_TRACKING: 'khatamitrJourneyTracking',
     KHATAMITR_TRIP_COMPLETION: 'khatamitrTripCompletion',
+    REFER_AND_EARN: 'referAndEarn',
 
 } as const;
 

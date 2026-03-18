@@ -606,6 +606,7 @@ export default function AppliedJob() {
             console.log('Fetching Call History for jobId:', jobId, 'userId:', userId);
 
             const response: any = await axiosInstance.get(END_POINTS.CALL_HISTORY(jobId, userId));
+            console.log("response of call history ---->", response?.data?.data)
             if (response?.data?.status) {
                 setCallHistoryData(response.data.data || []);
             } else {

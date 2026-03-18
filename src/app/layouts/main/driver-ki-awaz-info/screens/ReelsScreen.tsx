@@ -17,8 +17,10 @@ import {
     Share,
     Animated,
     ActivityIndicator,
+    Easing,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import RNShare from 'react-native-share';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,6 +50,7 @@ interface ReelData {
     isSupported: boolean;
     videoUrl: string;
     description: string;
+    thumbnailUrl?: string;
     createdAt?: string;
 }
 
@@ -141,6 +144,8 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
     const [isPaused, setIsPaused] = useState(!isActive);
     const [showMuteIndicator, setShowMuteIndicator] = useState(false);
     const [isBuffering, setIsBuffering] = useState(true);
+    const progressAnim = useRef(new Animated.Value(0)).current;
+    const lastProgressRef = useRef(0);
     const [hearts, setHearts] = useState<{ id: number; x: number; y: number; rotation: string }[]>([]);
     const isFirstMount = useRef(true);
     const lastTapRef = useRef<number>(0);
@@ -210,8 +215,32 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
         setIsBuffering(buffering);
     };
 
+    const handleProgress = (data: { currentTime: number; playableDuration: number; seekableDuration: number }) => {
+        if (data.seekableDuration > 0) {
+            const newProgress = data.currentTime / data.seekableDuration;
+            
+            // Detect Loop: If current progress is significantly less than last progress, reset immediately
+            if (newProgress < lastProgressRef.current - 0.2) {
+                progressAnim.stopAnimation();
+                progressAnim.setValue(0);
+            }
+
+            Animated.timing(progressAnim, {
+                toValue: newProgress,
+                duration: 100, // Perfectly synced with interval to minimize lag
+                easing: Easing.linear, 
+                useNativeDriver: true,
+            }).start();
+            
+            lastProgressRef.current = newProgress;
+        }
+    };
+
     const handleLoad = () => {
         setIsBuffering(false);
+        progressAnim.stopAnimation();
+        progressAnim.setValue(0);
+        lastProgressRef.current = 0;
     };
 
     const removeHeart = (id: number) => {
@@ -219,7 +248,7 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
     };
 
     return (
-        <View style={[styles.reelContainer, { height: contentHeight, paddingBottom: bottomInset }]}>
+        <View style={[styles.reelContainer, { height: contentHeight }]}>
             {/* Video Background */}
             <TouchableOpacity
                 activeOpacity={1}
@@ -229,24 +258,32 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
                 onPressOut={() => setIsPaused(!isActive)}
                 delayLongPress={250}
             >
-                <Video
-                    source={{ uri: reel.videoUrl }}
-                    style={styles.video}
-                    resizeMode="cover"
-                    repeat
-                    paused={isPaused}
-                    muted={isMuted}
-                    onBuffer={handleBuffer}
-                    onLoad={handleLoad}
-                    bufferConfig={{
-                        minBufferMs: 1000,
-                        maxBufferMs: 5000,
-                        bufferForPlaybackMs: 50,
-                        bufferForPlaybackAfterRebufferMs: 100,
-                    }}
-                    playInBackground={false}
-                    playWhenInactive={false}
-                />
+                {isActive ? (
+                    <Video
+                        source={{ uri: reel.videoUrl }}
+                        style={[styles.video, { opacity: isBuffering ? 0 : 1 }]}
+                        resizeMode="cover"
+                        repeat
+                        paused={isPaused}
+                        muted={isMuted}
+                        onBuffer={handleBuffer}
+                        onLoad={handleLoad}
+                        onReadyForDisplay={() => setIsBuffering(false)}
+                        onProgress={handleProgress}
+                        progressUpdateInterval={100} // High frequency for precise sync
+                        bufferConfig={{
+                            minBufferMs: 1000,
+                            maxBufferMs: 5000,
+                            bufferForPlaybackMs: 50,
+                            bufferForPlaybackAfterRebufferMs: 100,
+                        }}
+                        playInBackground={false}
+                        playWhenInactive={false}
+                        controls={false}
+                    />
+                ) : (
+                    <View style={[styles.video, { backgroundColor: '#000000' }]} />
+                )}
 
                 {/* Loading Indicator */}
                 {isBuffering && (
@@ -283,7 +320,7 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
             </TouchableOpacity>
 
             {/* Right Side Actions */}
-            <View style={[styles.actionsContainer, { bottom: bottomInset + 100 }]}>
+            <View style={[styles.actionsContainer, { bottom: 130 }]}>
                 {/* User Avatar */}
                 <TouchableOpacity style={styles.avatarContainer}>
                     {reel.userAvatar && !reel.userAvatar.includes('placeholder') ? (
@@ -328,7 +365,7 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
             </View>
 
             {/* Bottom Info */}
-            <View style={[styles.bottomInfo, { bottom: bottomInset + 20 }]}>
+            <View style={[styles.bottomInfo, { bottom: 50 }]}>
                 {/* User Info */}
                 <View style={styles.userInfo}>
                     <Text style={styles.userName}>@{reel.userName}</Text>
@@ -350,15 +387,38 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
                     {reel.hashtags.map(tag => `#${tag}`).join(' ')}
                 </Text>
             </View>
+
+            {/* Video Progress Bar */}
+            <View style={styles.progressBarContainer}>
+                <Animated.View 
+                    style={[
+                        styles.progressBar, 
+                        { 
+                            transform: [{
+                                translateX: progressAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [-SCREEN_WIDTH, 0]
+                                })
+                            }]
+                        }
+                    ]} 
+                />
+            </View>
         </View>
     );
 });
 
-const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; initialReelId?: string }> = ({ isScreenFocused, tabBarHeight = TAB_BAR_HEIGHT, initialReelId }) => {
+const ReelsScreen: React.FC<{
+    tabHeight?: number;
+    initialReelId?: string;
+    onHeaderVisibilityChange?: (visible: boolean) => void;
+}> = ({ tabHeight = TAB_BAR_HEIGHT, initialReelId, onHeaderVisibilityChange }) => {
+    const isScreenFocused = useIsFocused();
     const { i18n } = useTranslation();
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const insets = useSafeAreaInsets();
-    const CONTENT_HEIGHT = SCREEN_HEIGHT - tabBarHeight - insets.top; // Adjust for tab bar and status bar
+    const [measuredHeight, setMeasuredHeight] = useState(SCREEN_HEIGHT - insets.top - insets.bottom);
+    const contentHeight = measuredHeight;
     const [reels, setReels] = useState<ReelData[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [isGlobalMuted, setIsGlobalMuted] = useState(false);
@@ -370,6 +430,14 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
     const [activeReelId, setActiveReelId] = useState<string | null>(null);
     const flatListRef = useRef<FlatList>(null);
     const initialScrollDoneRef = useRef(false);
+    const prevIndexRef = useRef(0);
+
+    // Initial Header State
+    useEffect(() => {
+        if (isScreenFocused) {
+            onHeaderVisibilityChange?.(true);
+        }
+    }, [isScreenFocused]);
 
     // Lock Orientation to Portrait
     useEffect(() => {
@@ -400,7 +468,8 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
             const currentCursor = refresh ? undefined : cursor;
             const currentLastId = refresh ? undefined : lastId;
 
-            const response = await DriverKiAwazService.getFeed(currentCursor, currentLastId);
+            const response = await DriverKiAwazService.getFeed(currentCursor, currentLastId, 'video');
+            console.log('==== VIDEO SECTION (REELS) API RESPONSE ====', JSON.stringify(response.data, null, 2));
 
             if (response.data) {
                 // Determine if data is directly the array or nested in .data
@@ -408,18 +477,15 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
 
                 if (feedData.length > 0) {
                     const newReels: ReelData[] = feedData
-                        .filter((item: any) => item.media_type === 'video')
                         .map((item: any) => {
                             // Construct Video URL
                             let finalUrl = '';
-                            if (item.video_file) {
-                                finalUrl = `${END_POINTS.DKA_STREAM}/${item.video_file}`;
-                            } else {
-                                const rawUrl = item.media_url || '';
-                                const hasHttp = rawUrl && rawUrl.startsWith('http');
-                                const cleanPath = rawUrl && rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
-                                finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
-                            }
+                            const rawUrl = item.media_url || '';
+                            const hasHttp = rawUrl && rawUrl.startsWith('http');
+                            const cleanPath = rawUrl && rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
+                            finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
+
+                            console.log(`[Reels] Generated URL for Post ID ${item.id}:`, finalUrl);
 
                             // Avatar Logic
                             const rawAvatar = item.user_avatar || item.user?.avatar || '';
@@ -429,20 +495,36 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
                                 ? 'https://via.placeholder.com/150'
                                 : (hasAvatarHttp ? rawAvatar : `${AWAZ_URL}public/${cleanAvatarPath}`);
 
+                            // Thumbnail Logic
+                            const rawThumb = item.thumbnail_url || item.thumbnail || '';
+                            const hasThumbHttp = rawThumb && rawThumb.startsWith('http');
+                            const cleanThumbPath = rawThumb && rawThumb.startsWith('/') ? rawThumb.substring(1) : (rawThumb || '');
+                            let finalThumbUrl = '';
+                            if (rawThumb) {
+                                if (hasThumbHttp) {
+                                    finalThumbUrl = rawThumb;
+                                } else if (cleanThumbPath.startsWith('uploads/thumbnails/')) {
+                                    finalThumbUrl = `${DRIVER_KI_AWAZ_BASE}${cleanThumbPath}`;
+                                } else {
+                                    finalThumbUrl = `${DRIVER_KI_AWAZ_BASE}uploads/thumbnails/${cleanThumbPath}`;
+                                }
+                            }
+
                             return {
                                 id: item.id.toString(),
                                 userName: item.user_name || item.user?.name || `Driver ${item.user_id || ''}`,
                                 userAvatar: finalAvatarUrl,
                                 userState: item.user?.state || '',
-                                category: item.media_type || 'VIDEO',
+                                category: item.category || 'VIDEO',
                                 categoryLabel: item.category ? `#${item.category}` : (item.media_type === 'video' ? '🎬 Video' : '🎵 Audio'),
                                 hashtags: [],
                                 supportCount: item.likes_count || 0,
                                 commentCount: item.comments_count || 0,
                                 shareCount: item.shares_count || 0,
-                                isSupported: item.is_liked === 1,
+                                isSupported: item.is_liked === 1 || item.is_liked === true,
                                 videoUrl: finalUrl,
-                                description: item.caption || '',
+                                description: item.caption || item.description || '',
+                                thumbnailUrl: finalThumbUrl,
                                 createdAt: item.created_at,
                             };
                         });
@@ -499,9 +581,21 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
 
     const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
         if (viewableItems.length > 0) {
-            setActiveIndex(viewableItems[0].index || 0);
+            const index = viewableItems[0].index || 0;
+
+            // Detect swipe direction
+            if (index > prevIndexRef.current) {
+                // Swiping DOWN to see more posts -> Hide header
+                onHeaderVisibilityChange?.(false);
+            } else if (index < prevIndexRef.current || index === 0) {
+                // Swiping UP or back to start -> Show header
+                onHeaderVisibilityChange?.(true);
+            }
+
+            prevIndexRef.current = index;
+            setActiveIndex(index);
         }
-    }, []);
+    }, [onHeaderVisibilityChange]);
 
     const viewabilityConfig = {
         itemVisiblePercentThreshold: 50,
@@ -536,17 +630,19 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
 
     const shareReel = async (reel: ReelData) => {
         try {
-            const shareUrl = 'https://play.google.com/store/apps/details?id=com.truckmitr';
+            const shareUrl = `https://truckmitr.com/reel/${reel.id}`;
             const isHindi = i18n.language === 'hi' || i18n.language === 'hn';
 
             const message = isHindi
                 ? `🚛 मैंने अपनी आवाज *Driver Ki Awaz!* पर शेयर की है!\n\nयह *TruckMitr* का खास प्लेटफॉर्म है जहाँ ड्राइवर अपनी समस्या, अनुभव और कहानी खुलकर बता सकते हैं।\n\nआप भी अपनी आवाज उठाइए।\nआज ही *TruckMitr ऐप डाउनलोड करें* और रजिस्टर करें।\n\n📲 *अभी जुड़ें:* ${shareUrl}`
                 : `🚛 I have shared my voice on *Driver Ki Awaz!*\n\nThis is a special platform by *TruckMitr* where drivers can openly share their problems, experiences, and personal stories.\n\nNow it’s your turn to raise your voice.\n*Download the TruckMitr App* today and register to be part of the community.\n\n📲 *Join now:* ${shareUrl}`;
 
-            await Share.share({
-                message: message,
+            const shareOptions: any = {
                 title: 'Driver Ki Awaz',
-            });
+                message: message,
+            };
+
+            await RNShare.open(shareOptions);
             await DriverKiAwazService.sharePost(reel.id);
         } catch (error) {
             console.log('Share error:', error);
@@ -568,13 +664,23 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
     }, [initialReelId, reels]);
 
     const getItemLayout = (_: any, index: number) => ({
-        length: CONTENT_HEIGHT,
-        offset: CONTENT_HEIGHT * index,
+        length: contentHeight,
+        offset: contentHeight * index,
         index,
     });
 
+    const handleLayout = (event: any) => {
+        const { height } = event.nativeEvent.layout;
+        if (height > 0 && Math.abs(measuredHeight - height) > 1) {
+            setMeasuredHeight(height);
+        }
+    };
+
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View
+            style={[styles.container, { paddingTop: insets.top }]}
+            onLayout={handleLayout}
+        >
             <StatusBar barStyle="light-content" backgroundColor="black" translucent={true} />
 
             <FlatList
@@ -589,15 +695,15 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
                         onSupport={() => toggleSupport(item.id)}
                         onComment={() => openComments(item.id)}
                         onShare={() => shareReel(item)}
-                        bottomInset={insets.bottom}
-                        contentHeight={CONTENT_HEIGHT}
+                        bottomInset={0}
+                        contentHeight={contentHeight}
                     />
                 )}
                 keyExtractor={item => item.id}
                 pagingEnabled
                 showsVerticalScrollIndicator={false}
                 snapToAlignment="start"
-                snapToInterval={CONTENT_HEIGHT}
+                snapToInterval={contentHeight}
                 decelerationRate="fast"
                 getItemLayout={getItemLayout}
                 onViewableItemsChanged={onViewableItemsChanged}
@@ -612,7 +718,7 @@ const ReelsScreen: React.FC<{ isScreenFocused: boolean; tabBarHeight?: number; i
                 onEndReachedThreshold={0.5}
                 ListEmptyComponent={
                     !loading ? (
-                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', height: CONTENT_HEIGHT }}>
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', height: contentHeight }}>
                             <Text style={{ color: 'white' }}>No posts available</Text>
                         </View>
                     ) : null
@@ -783,6 +889,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'rgba(0,0,0,0.3)',
+    },
+    progressBarContainer: {
+        position: 'absolute',
+        bottom: 44, // Lowered even more to sit right at the top edge of the tab bar
+        left: 0,
+        right: 0,
+        height: 2,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        zIndex: 10,
+    },
+    progressBar: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#FFFFFF',
     },
 });
 

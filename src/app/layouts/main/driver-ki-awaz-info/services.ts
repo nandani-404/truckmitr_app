@@ -1,10 +1,10 @@
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
 import axios from 'axios';
-import { END_POINTS } from '@truckmitr/src/utils/config';
+import { END_POINTS, DRIVER_KI_AWAZ_BASE } from '@truckmitr/src/utils/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Helper to get User ID
-const getUserId = async () => {
+export const getUserId = async () => {
     try {
         // ALWAYS fetch profile to ensure we have the correct user ID corresponding to the current Auth Token.
         // Previously, we returned storedId immediately, which caused issues when switching accounts.
@@ -70,12 +70,29 @@ export const DriverKiAwazService = {
         }
     },
 
-    getFeed: async (cursor?: string, lastId?: string) => {
+    getFeed: async (cursor?: string, lastId?: string, type?: string) => {
         const userId = await getUserId();
         let url = END_POINTS.DKA_FEED;
+        
+        const params = [];
         if (cursor && lastId) {
-            url += `?cursor=${cursor}&id=${lastId}`;
+            params.push(`cursor=${cursor}`);
+            params.push(`id=${lastId}`);
         }
+        if (type) {
+            params.push(`type=${type}`);
+        }
+        
+        if (params.length > 0) {
+            url += `?${params.join('&')}`;
+        }
+        
+        return axios.get(url, { headers: { 'x-user-id': userId } });
+    },
+
+    getPostById: async (id: string) => {
+        const userId = await getUserId();
+        const url = `${DRIVER_KI_AWAZ_BASE}api/feed/post/${id}`;
         return axios.get(url, { headers: { 'x-user-id': userId } });
     },
 

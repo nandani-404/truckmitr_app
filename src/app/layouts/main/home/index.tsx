@@ -1,4 +1,4 @@
-import { ActivityIndicator, Animated, FlatList, ScrollView, Text, TouchableOpacity, View, Modal, Linking, PanResponder, Pressable, TouchableWithoutFeedback, LayoutAnimation, Platform, UIManager, RefreshControl, Alert, Dimensions, NativeModules } from 'react-native';
+import { ActivityIndicator, Animated, FlatList, ScrollView, Text, TouchableOpacity, View, Modal, Linking, PanResponder, Pressable, TouchableWithoutFeedback, LayoutAnimation, Platform, UIManager, RefreshControl, Alert, Dimensions, NativeModules, Share } from 'react-native';
 import Reanimated, { useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate, runOnJS } from 'react-native-reanimated';
 
 import TruckerHomeScreen from '../../Trucker/TruckerHome';
@@ -32,7 +32,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useDispatch, useSelector } from 'react-redux';
 import { BASE_URL, END_POINTS } from '@truckmitr/src/utils/config';
 import axiosInstance from '@truckmitr/src/utils/config/axiosInstance';
-import { subscriptionDetailsAction, subscriptionModalAction, userAction, jobAddAction } from '@truckmitr/src/redux/actions/user.action';
+import { subscriptionDetailsAction, subscriptionModalAction, userAction, jobAddAction, referEarnDataAction } from '@truckmitr/src/redux/actions/user.action';
 import moment from 'moment';
 import { showToast } from '@truckmitr/src/app/hooks/toast';
 import LottieView from 'lottie-react-native';
@@ -541,7 +541,7 @@ const Home = React.forwardRef((props, ref) => {
     };
     const [showWelcome, setShowWelcome] = useState(false)
 
-    const { user, isDriver, isTransporter, whatsapp_link, profileCompletion, subscriptionDetails, subscriptionModal, rank, star_rating, consent_check } = useSelector((state: any) => { return state?.user }) || {};
+    const { user, isDriver, isTransporter, whatsapp_link, profileCompletion, subscriptionDetails, subscriptionModal, rank, star_rating, consent_check, referral, referEarnData } = useSelector((state: any) => { return state?.user }) || {};
 
     // Full Screen Intent Permission Check (Android 14+, drivers only)
     const [showFullScreenPermissionModal, setShowFullScreenPermissionModal] = useState(false);
@@ -597,6 +597,7 @@ const Home = React.forwardRef((props, ref) => {
     const [isBannerPaused, setIsBannerPaused] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [addDriverModal, setAddDriverModal] = useState(false);
+    const [showReferralInfoModal, setShowReferralInfoModal] = useState(false);
 
     const [banners, setBanners] = useState<any[]>([
         {},
@@ -916,6 +917,19 @@ const Home = React.forwardRef((props, ref) => {
                 const res: any = await axiosInstance.get(END_POINTS.PAYMENT_DETAIL);
                 if (profile?.data?.status) {
                     dispatch(userAction(profile?.data))
+
+                    // Fetch refer-earn data for drivers
+                    if (profile?.data?.user?.role === 'driver') {
+                        try {
+                            const referEarnRes: any = await axiosInstance.get('/api/refer-earn');
+                            if (referEarnRes?.data?.success) {
+                                dispatch(referEarnDataAction(referEarnRes.data.data));
+                            }
+                        } catch (err) {
+                            console.log('Error fetching refer-earn data:', err);
+                        }
+                    }
+
                     const subscriptionDetail: any = await axiosInstance.get(END_POINTS?.PAYMENT_SUBSCRIPTION_DETAILS);
                     if (subscriptionDetail?.data?.status) {
                         dispatch(subscriptionDetailsAction(subscriptionDetail?.data?.data))
@@ -970,6 +984,18 @@ const Home = React.forwardRef((props, ref) => {
             const subscriptionDetail: any = await axiosInstance.get(END_POINTS?.PAYMENT_SUBSCRIPTION_DETAILS);
             if (subscriptionDetail?.data?.status) {
                 dispatch(subscriptionDetailsAction(subscriptionDetail?.data?.data));
+            }
+
+            // Fetch refer-earn data for drivers
+            if (isDriver) {
+                try {
+                    const referEarnRes: any = await axiosInstance.get('/api/refer-earn');
+                    if (referEarnRes?.data?.success) {
+                        dispatch(referEarnDataAction(referEarnRes.data.data));
+                    }
+                } catch (err) {
+                    console.log('Error fetching refer-earn data on refresh:', err);
+                }
             }
 
             // Fetch other data in parallel
@@ -1882,6 +1908,143 @@ const Home = React.forwardRef((props, ref) => {
                         </View>
                     </View>}
 
+                    {/* Referral Card (Driver only) */}
+                    {isDriver && (
+                        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate(STACKS.REFER_AND_EARN)} style={{ paddingHorizontal: 14, marginTop: responsiveHeight(2.5) }}>
+                            <View style={{
+                                backgroundColor: '#F0F4FF',
+                                borderRadius: 16,
+                                padding: 16,
+                                borderWidth: 1,
+                                borderColor: '#E0E7FF',
+                            }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <View style={{ flex: 1, marginRight: 10 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                            <Text style={{
+                                                fontSize: responsiveFontSize(2),
+                                                fontWeight: '700',
+                                                color: colors.royalBlue,
+                                                fontFamily: 'Inter-Bold',
+                                            }}>
+                                                {t('referAndEarn', 'Refer & Earn ₹100')}
+                                            </Text>
+                                        </View>
+                                        <Text style={{
+                                            fontSize: responsiveFontSize(1.3),
+                                            color: '#64748B',
+                                            marginTop: 4,
+                                            lineHeight: 18,
+                                        }}>
+                                            {t('referSubHead', 'Earn ₹100 for every 5 drivers who register and complete their profile.')}
+                                        </Text>
+                                    </View>
+                                    <View style={{
+                                        width: 44,
+                                        height: 44,
+                                        backgroundColor: colors.royalBlueOpacity(0.12),
+                                        borderRadius: 12,
+                                        overflow: 'hidden',
+                                    }}>
+                                        <TouchableOpacity
+                                            onPress={() => setShowReferralInfoModal(true)}
+                                            activeOpacity={0.7}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            }}
+                                        >
+                                            <Ionicons name="information-circle-outline" size={24} color={colors.royalBlue} />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                <View style={{ marginTop: 16 }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                                        <Text style={{
+                                            fontSize: responsiveFontSize(1.3),
+                                            fontWeight: '600',
+                                            color: '#475569',
+                                        }}>
+                                            {`${(referEarnData?.summary?.successful_referrals ?? referral?.referral_success ?? 0) % (referEarnData?.offer?.milestone_referrals ?? 5)}/${referEarnData?.offer?.milestone_referrals ?? 5} ${t('driversRegistered', 'Drivers Registered')}`}
+                                        </Text>
+                                        <Text style={{
+                                            fontSize: responsiveFontSize(1.3),
+                                            fontWeight: '700',
+                                            color: colors.royalBlue,
+                                        }}>
+                                            {`${Math.round(((referEarnData?.summary?.successful_referrals ?? referral?.referral_success ?? 0) % (referEarnData?.offer?.milestone_referrals ?? 5)) / (referEarnData?.offer?.milestone_referrals ?? 5) * 100)}%`}
+                                        </Text>
+                                    </View>
+                                    <View style={{
+                                        height: 8,
+                                        backgroundColor: '#E2E8F0',
+                                        borderRadius: 4,
+                                        overflow: 'hidden',
+                                    }}>
+                                        <View style={{
+                                            height: '100%',
+                                            width: `${Math.min(((referEarnData?.summary?.successful_referrals ?? referral?.referral_success ?? 0) % (referEarnData?.offer?.milestone_referrals ?? 5)) / (referEarnData?.offer?.milestone_referrals ?? 5) * 100, 100)}%`,
+                                            backgroundColor: colors.royalBlue,
+                                            borderRadius: 4,
+                                        }} />
+                                    </View>
+                                </View>
+
+                                <TouchableOpacity
+                                    onPress={async () => {
+                                        try {
+                                            const referralCode = user?.mobile || user?.id || '';
+                                            const referralLink = `https://truckmitr.com/signup?referralCode=${referralCode}`;
+                                            const shareMessage = t('shareReferralMessage', {
+                                                code: referralCode,
+                                                link: referralLink,
+                                                defaultValue: `Hi! Join TruckMitr today and grow your trucking business. Use my referral code: ${referralCode}\n\nDownload and Register here: ${referralLink}`
+                                            });
+
+                                            await Share.share({
+                                                message: shareMessage,
+                                                title: t('referralShareTitle', 'TruckMitr Referral'),
+                                            });
+                                        } catch (error) {
+                                            console.log('Error sharing:', error);
+                                        }
+                                    }}
+                                    activeOpacity={0.8}
+                                    style={{
+                                        marginTop: 18,
+                                        height: 48,
+                                        borderRadius: 12,
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    <LinearGradient
+                                        colors={[colors.royalBlue, colors.royalBlueOpacity(0.85)]}
+                                        style={{
+                                            flex: 1,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <Ionicons name="share-social-outline" size={18} color="#fff" />
+                                        <Text style={{
+                                            color: '#fff',
+                                            fontWeight: '700',
+                                            fontSize: responsiveFontSize(1.6),
+                                            fontFamily: 'Inter-Bold',
+                                        }}>
+                                            {t('referNow', 'Refer Now')}
+                                        </Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </View>
+                        </TouchableOpacity>
+                    )}
+
                     {/* Dashboard and Join WhatsApp - Row */}
                     <View style={{ flexDirection: 'row', paddingHorizontal: 14, marginTop: responsiveHeight(3), gap: 10 }}>
                         {/* Dashboard Card */}
@@ -1945,6 +2108,124 @@ const Home = React.forwardRef((props, ref) => {
                             <Feather name="chevron-right" size={18} color="#fff" />
                         </TouchableOpacity>}
                     </View>
+
+                    {/* Referral Info Modal */}
+                    <Modal
+                        animationType="fade"
+                        transparent={true}
+                        visible={showReferralInfoModal}
+                        onRequestClose={() => setShowReferralInfoModal(false)}
+                    >
+                        <TouchableOpacity
+                            activeOpacity={1}
+                            onPress={() => setShowReferralInfoModal(false)}
+                            style={{
+                                flex: 1,
+                                backgroundColor: 'rgba(0,0,0,0.5)',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                padding: 20
+                            }}
+                        >
+                            <TouchableWithoutFeedback>
+                                <View style={{
+                                    width: '100%',
+                                    backgroundColor: '#fff',
+                                    borderRadius: 20,
+                                    padding: 24,
+                                    alignItems: 'center',
+                                    ...shadow
+                                }}>
+                                    <View style={{
+                                        width: 60,
+                                        height: 60,
+                                        borderRadius: 30,
+                                        backgroundColor: colors.royalBlueOpacity(0.08),
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginBottom: 16
+                                    }}>
+                                        <Ionicons name="gift-outline" size={32} color={colors.royalBlue} />
+                                    </View>
+
+                                    <Text style={{
+                                        fontSize: responsiveFontSize(2.2),
+                                        fontWeight: '800',
+                                        color: colors.royalBlue,
+                                        marginBottom: 12,
+                                        textAlign: 'center'
+                                    }}>
+                                        {t('howReferralWorks', 'How Referral Works?')}
+                                    </Text>
+
+                                    <View style={{ width: '100%', gap: 16 }}>
+                                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                                            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.royalBlue, alignItems: 'center', justifyContent: 'center' }}>
+                                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>1</Text>
+                                            </View>
+                                            <Text style={{ flex: 1, fontSize: responsiveFontSize(1.6), color: '#475569', lineHeight: 22 }}>
+                                                {t('referralStep1', 'Share your unique referral link with other drivers.')}
+                                            </Text>
+                                        </View>
+
+                                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                                            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.royalBlue, alignItems: 'center', justifyContent: 'center' }}>
+                                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>2</Text>
+                                            </View>
+                                            <Text style={{ flex: 1, fontSize: responsiveFontSize(1.6), color: '#475569', lineHeight: 22 }}>
+                                                {t('referralStep2', 'They must register using your link or code.')}
+                                            </Text>
+                                        </View>
+
+                                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                                            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.royalBlue, alignItems: 'center', justifyContent: 'center' }}>
+                                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>3</Text>
+                                            </View>
+                                            <Text style={{ flex: 1, fontSize: responsiveFontSize(1.6), color: '#475569', lineHeight: 22 }}>
+                                                {t('referralStep3', 'Once they complete their profile, your referral count increases.')}
+                                            </Text>
+                                        </View>
+
+                                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                                            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.royalBlue, alignItems: 'center', justifyContent: 'center' }}>
+                                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>4</Text>
+                                            </View>
+                                            <Text style={{ flex: 1, fontSize: responsiveFontSize(1.6), color: '#475569', lineHeight: 22 }}>
+                                                {t('referralStep4', 'Referral credit is granted after profile completion and Driving License verification by our team.')}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={{
+                                        marginTop: 24,
+                                        padding: 12,
+                                        backgroundColor: colors.royalBlueOpacity(0.04),
+                                        borderRadius: 12,
+                                        width: '100%'
+                                    }}>
+                                        <Text style={{ textAlign: 'center', fontSize: responsiveFontSize(1.4), color: colors.royalBlue, fontWeight: '600' }}>
+                                            {t('referralMilestone', 'Reach 5 successful referrals to earn ₹100!')}
+                                        </Text>
+                                    </View>
+
+                                    <TouchableOpacity
+                                        onPress={() => setShowReferralInfoModal(false)}
+                                        style={{
+                                            marginTop: 24,
+                                            backgroundColor: colors.royalBlue,
+                                            paddingVertical: 12,
+                                            paddingHorizontal: 40,
+                                            borderRadius: 12,
+                                        }}
+                                    >
+                                        <Text style={{ color: '#fff', fontWeight: '700', fontSize: responsiveFontSize(1.8) }}>
+                                            {t('gotIt', 'Got It')}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </TouchableWithoutFeedback>
+                        </TouchableOpacity>
+                    </Modal>
 
 
 
@@ -2238,7 +2519,7 @@ const Home = React.forwardRef((props, ref) => {
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 🚛 TRUCKER MODE TOGGLE CARD                    */}
                         {/* ═══════════════════════════════════════════════ */}
-                        {/* <TruckerModeToggle onToggle={handleStartTransition} /> */}
+                        <TruckerModeToggle onToggle={handleStartTransition} />
 
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 📊 KHATAMITR BUTTON                            */}

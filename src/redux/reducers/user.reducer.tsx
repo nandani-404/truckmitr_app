@@ -23,7 +23,8 @@ const initialState = {
     whatsapp_link: null,
     popupData: null,
     consent_check: true, // Default to true to prevent blocking before data load
-    shipperKycStatus: null
+    shipperKycStatus: null,
+    referEarnData: null
 }
 
 const userReducer = (state = initialState, action: any) => {
@@ -367,6 +368,11 @@ const userReducer = (state = initialState, action: any) => {
             return {
                 ...state,
                 popupData: payload
+            }
+        case TYPES['REFER_EARN_DATA']:
+            return {
+                ...state,
+                referEarnData: payload
             }
         default: return { ...state }
     }

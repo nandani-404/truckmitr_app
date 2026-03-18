@@ -70,14 +70,16 @@ const ReelItem: React.FC<ReelItemProps> = ({
                     <Video
                         ref={videoRef}
                         source={{ uri: reel.videoUrl }}
-                        style={styles.video}
+                        style={[styles.video, { opacity: isLoading ? 0 : 1 }]}
                         resizeMode="cover"
                         repeat={true}
                         paused={isPaused}
                         onLoad={handleVideoLoad}
+                        onReadyForDisplay={() => setIsLoading(false)}
                         onError={handleVideoError}
                         poster={reel.thumbnailUrl}
                         posterResizeMode="cover"
+                        controls={false}
                     />
 
                     {/* Loading Indicator */}

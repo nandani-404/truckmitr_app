@@ -15,7 +15,7 @@ import {
     TouchableOpacity,
     Share,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +32,7 @@ import { Alert } from 'react-native';
 
 interface PostData {
     id: string;
-    type: 'VOICE' | 'TEXT' | 'VIDEO' | 'IMAGE';
+    type: 'TEXT' | 'VIDEO' | 'IMAGE';
     userName: string;
     userAvatar: string;
     userState: string;
@@ -46,9 +46,7 @@ interface PostData {
     isSupported: boolean;
     createdAt: string;
     content?: string;
-    audioDuration?: number;
-    videoUrl?: string; // Added for completeness, though Feed usually TEXT/VOICE
-    audioUrl?: string;
+    videoUrl?: string; // Added for completeness, though Feed usually TEXT
     mediaUrl?: string;
 }
 
@@ -58,12 +56,31 @@ const getTimeAgo = (dateString: string): string => {
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Abhi abhi';
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    return `${diffDays}d`;
+    if (diffMins < 1) return 'published just now';
+    if (diffMins < 60) return `published ${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+    if (diffHours < 24) return `published ${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+
+    // Absolute date formatting: published on 12 March, 2026
+    const day = date.getDate();
+    const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    return `published on ${day} ${month}, ${year}`;
+};
+
+const formatCount = (count: number): string => {
+    if (count >= 1000000) {
+        return `${(count / 1000000).toFixed(1)}M`;
+    }
+    if (count >= 1000) {
+        return `${(count / 1000).toFixed(1)}K`;
+    }
+    return count.toString();
 };
 
 // Post Card Component
@@ -72,22 +89,29 @@ const PostCard: React.FC<{
     onSupport: () => void;
     onComment: () => void;
     onShare: () => void;
-}> = ({ post, onSupport, onComment, onShare }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [duration, setDuration] = useState(post.audioDuration || 0);
-    const [currentTime, setCurrentTime] = useState(0);
+    isFocused?: boolean;
+}> = ({ post, onSupport, onComment, onShare, isFocused = true }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const contentLimit = post.type === 'TEXT' ? 700 : 150;
+    const shouldTruncate = (post.content?.length || 0) > contentLimit;
+    const displayText = shouldTruncate && !isExpanded
+        ? post.content?.slice(0, contentLimit) + '...'
+        : post.content;
 
-    const formatCount = (count: number): string => {
-        if (count >= 1000) {
-            return (count / 1000).toFixed(1) + 'K';
-        }
-        return count.toString();
-    };
-
-    const formatDuration = (seconds: number): string => {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    const renderCaption = () => {
+        if (!post.content) return null;
+        return (
+            <View>
+                <Text style={styles.postContent}>{displayText}</Text>
+                {shouldTruncate && (
+                    <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)} style={styles.seeMoreContainer}>
+                        <Text style={styles.seeMoreText}>
+                            {isExpanded ? 'See Less' : 'See More'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+        );
     };
 
     return (
@@ -104,9 +128,9 @@ const PostCard: React.FC<{
                 <View style={styles.postUserInfo}>
                     <View style={styles.postUserRow}>
                         <Text style={styles.postUserName}>{post.userName}</Text>
-                        <Text style={styles.postTime}> · {getTimeAgo(post.createdAt)}</Text>
+                        <Text style={styles.postUserState}> • {post.userState}</Text>
                     </View>
-                    <Text style={styles.postUserState}>{post.userState}</Text>
+                    <Text style={styles.postTime}>{getTimeAgo(post.createdAt)}</Text>
                 </View>
             </View>
 
@@ -118,80 +142,36 @@ const PostCard: React.FC<{
             </View>
 
             {/* Content */}
-            {post.type === 'VOICE' ? (
-                <TouchableOpacity
-                    style={styles.voicePlayer}
-                    onPress={() => setIsPlaying(!isPlaying)}
-                    activeOpacity={0.8}
-                >
-                    <View style={styles.playButton}>
-                        {isPlaying ? (
-                            <Ionicons name="pause" size={24} color="#FFFFFF" />
-                        ) : (
-                            <Ionicons name="play" size={24} color="#FFFFFF" />
-                        )}
-                    </View>
-                    <View style={styles.waveformContainer}>
-                        {/* Audio Progress Bar */}
-                        <View style={{ flex: 1, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, overflow: 'hidden' }}>
-                            <View
-                                style={{
-                                    width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-                                    height: '100%',
-                                    backgroundColor: '#3B82F6'
-                                }}
-                            />
-                        </View>
-                    </View>
-                    <Text style={styles.duration}>
-                        {formatDuration(currentTime)} / {formatDuration(duration)}
-                    </Text>
-                    {/* Audio Player Logic */}
-                    {(post.type === 'VOICE' && (post.audioUrl || post.mediaUrl)) && (
-                        <Video
-                            source={{ uri: post.audioUrl || post.mediaUrl }}
-                            paused={!isPlaying}
-                            playInBackground={false}
-                            playWhenInactive={false}
-                            ignoreSilentSwitch="ignore"
-                            onEnd={() => {
-                                setIsPlaying(false);
-                                setCurrentTime(0);
-                            }}
-                            onLoad={(data) => setDuration(data.duration)}
-                            onProgress={(data) => setCurrentTime(data.currentTime)}
-                            style={{ width: 0, height: 0 }}
-                        />
-                    )}
-                </TouchableOpacity>
-            ) : post.type === 'IMAGE' ? (
+            {post.type === 'IMAGE' ? (
                 <View>
-                    {post.content ? (
-                        <Text style={styles.postContent}>{post.content}</Text>
-                    ) : null}
+                    {renderCaption()}
                     <Image
                         source={{ uri: post.mediaUrl }}
                         style={styles.postImage}
-                        resizeMode="cover"
+                        resizeMode="contain"
                     />
                 </View>
             ) : post.type === 'VIDEO' ? (
                 <View>
-                    {post.content ? (
-                        <Text style={styles.postContent}>{post.content}</Text>
-                    ) : null}
+                    {renderCaption()}
                     <View style={styles.videoContainer}>
-                        <Video
-                            source={{ uri: post.videoUrl || post.mediaUrl }}
-                            style={styles.postVideo}
-                            resizeMode="cover"
-                            paused={true} // Start paused
-                            controls={true}
-                        />
+                        {isFocused ? (
+                            <Video
+                                source={{ uri: post.videoUrl || post.mediaUrl }}
+                                style={styles.postVideo}
+                                resizeMode="cover"
+                                paused={true} // Start paused
+                                controls={true}
+                            />
+                        ) : (
+                            <View style={[styles.postVideo, { backgroundColor: '#000000' }]} />
+                        )}
                     </View>
                 </View>
             ) : (
-                <Text style={styles.postContent}>{post.content}</Text>
+                <View>
+                    {renderCaption()}
+                </View>
             )}
 
             {/* Hashtags */}
@@ -221,14 +201,16 @@ const PostCard: React.FC<{
                     <Ionicons name="share-outline" size={22} color="#64748B" />
                     <Text style={styles.actionCount}>{formatCount(post.shareCount)}</Text>
                 </TouchableOpacity>
-
-
             </View>
         </View>
     );
 };
 
-const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
+const FeedScreen: React.FC<{
+    userId?: string;
+    onHeaderVisibilityChange?: (visible: boolean) => void;
+}> = ({ userId, onHeaderVisibilityChange }) => {
+    const isFocused = useIsFocused();
     const { i18n } = useTranslation();
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const insets = useSafeAreaInsets();
@@ -241,6 +223,13 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [showComments, setShowComments] = useState(false);
     const [activePostId, setActivePostId] = useState<string | null>(null);
+    const lastScrollY = React.useRef(0);
+    const localVisibleRef = React.useRef(true);
+
+    // Initial Header State
+    useEffect(() => {
+        onHeaderVisibilityChange?.(true);
+    }, []);
 
     useEffect(() => {
         const getUserId = async () => {
@@ -263,7 +252,7 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
 
             const response = userId
                 ? await DriverKiAwazService.getUserFeed(userId, currentCursor, currentLastId)
-                : await DriverKiAwazService.getFeed(currentCursor, currentLastId);
+                : await DriverKiAwazService.getFeed(currentCursor, currentLastId, 'text,image');
 
             if (response.data) {
                 // Check if response has valid data structure
@@ -285,9 +274,8 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
                                 ? 'https://via.placeholder.com/150'
                                 : (hasAvatarHttp ? rawAvatar : `${AWAZ_URL}public/${cleanAvatarPath}`);
 
-                            let postType: 'VOICE' | 'TEXT' | 'VIDEO' | 'IMAGE' = 'TEXT';
-                            if (item.media_type === 'audio') postType = 'VOICE';
-                            else if (item.media_type === 'image') postType = 'IMAGE';
+                            let postType: 'TEXT' | 'VIDEO' | 'IMAGE' = 'TEXT';
+                            if (item.media_type === 'image') postType = 'IMAGE';
                             else if (item.media_type === 'video') postType = 'VIDEO';
 
                             return {
@@ -306,8 +294,6 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
                                 isSupported: item.is_liked === 1,
                                 createdAt: item.created_at,
                                 content: item.caption,
-                                audioDuration: item.duration || 0,
-                                audioUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
                                 mediaUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
                                 videoUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
                             };
@@ -392,7 +378,10 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
 
     const sharePost = async (post: PostData) => {
         try {
-            const shareUrl = 'https://play.google.com/store/apps/details?id=com.truckmitr';
+            const isVideo = post.type === 'VIDEO';
+            const typePath = isVideo ? 'reel' : 'post';
+            // Use truckmitr.com domain for sharing
+            const shareUrl = `https://truckmitr.com/${typePath}/${post.id}`;
             const isHindi = i18n.language === 'hi' || i18n.language === 'hn';
 
             const message = isHindi
@@ -413,6 +402,21 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
         navigation.navigate(STACKS.DRIVER_KI_AWAZ_CREATE_POST as any, { defaultType: 'TEXT' });
     };
 
+    const handleScroll = (event: any) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y;
+
+        // Only trigger if we scrolled more than a small threshold
+        if (Math.abs(currentScrollY - lastScrollY.current) > 30) {
+            const shouldBeVisible = currentScrollY <= lastScrollY.current || currentScrollY <= 100;
+
+            if (shouldBeVisible !== localVisibleRef.current) {
+                localVisibleRef.current = shouldBeVisible;
+                onHeaderVisibilityChange?.(shouldBeVisible);
+            }
+            lastScrollY.current = currentScrollY;
+        }
+    };
+
     return (
         <View style={styles.container}>
             <FlatList
@@ -423,11 +427,15 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
                         onSupport={() => toggleSupport(item.id)}
                         onComment={() => openComments(item.id)}
                         onShare={() => sharePost(item)}
+                        isFocused={isFocused}
                     />
                 )}
                 keyExtractor={item => item.id}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[
+                    styles.listContent,
+                    { paddingTop: (insets.top || 0) + 48 + 50 + 10 } // Safe Area + Tabs + Header + Small Buffer
+                ]}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -443,6 +451,13 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
                         <Text style={styles.emptySubtitle}>Pehle post karne wale banein!</Text>
                     </View>
                 }
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                // Turbo Optimizations
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={5}
+                windowSize={5}
+                initialNumToRender={5}
             />
             <CommentsModal
                 visible={showComments}
@@ -456,19 +471,29 @@ const FeedScreen: React.FC<{ userId?: string }> = ({ userId }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: '#F8FAFC', // Lighter background to make cards pop
     },
     listContent: {
-        paddingTop: 8,
-        paddingBottom: 100,
+        paddingTop: 48 + 50 + 10,
+        paddingBottom: 40,
+        paddingHorizontal: 12, // Side spacing for cards
     },
     separator: {
-        height: 8,
+        height: 12,
     },
     postCard: {
         backgroundColor: '#FFFFFF',
         paddingHorizontal: 16,
-        paddingVertical: 14,
+        paddingVertical: 16,
+        borderRadius: 16,
+        // Elevation & Shadows
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
     },
     postHeader: {
         flexDirection: 'row',
@@ -494,13 +519,14 @@ const styles = StyleSheet.create({
         color: '#1E293B',
     },
     postTime: {
-        fontSize: 14,
-        color: '#94A3B8',
+        fontSize: 12,
+        color: '#64748B',
+        marginTop: 2,
     },
     postUserState: {
         fontSize: 13,
-        color: '#64748B',
-        marginTop: 1,
+        color: '#94A3B8',
+        marginLeft: 4,
     },
     moreButton: {
         padding: 8,
@@ -519,40 +545,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
         color: '#3B82F6',
-    },
-    voicePlayer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F1F5F9',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 10,
-    },
-    playButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: '#3B82F6',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-    waveformContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        height: 36,
-        gap: 2,
-    },
-    waveBar: {
-        width: 3,
-        borderRadius: 2,
-    },
-    duration: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#64748B',
-        marginLeft: 12,
     },
     postContent: {
         fontSize: 15,
@@ -620,15 +612,15 @@ const styles = StyleSheet.create({
     },
     postImage: {
         width: '100%',
-        height: 250,
+        aspectRatio: 4 / 5, // Slightly taller for a "longer" look
         borderRadius: 12,
-        marginTop: 8,
-        backgroundColor: '#E2E8F0',
+        marginTop: 12,
+        backgroundColor: '#F1F5F9',
     },
     videoContainer: {
         width: '100%',
-        aspectRatio: 16 / 9,
-        marginTop: 8,
+        aspectRatio: 4 / 5, // Consistent with images
+        marginTop: 12,
         borderRadius: 12,
         overflow: 'hidden',
         backgroundColor: '#000000',
@@ -636,6 +628,15 @@ const styles = StyleSheet.create({
     postVideo: {
         width: '100%',
         height: '100%',
+    },
+    seeMoreContainer: {
+        marginTop: 4,
+        marginBottom: 8,
+    },
+    seeMoreText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#3B82F6',
     },
 });
 

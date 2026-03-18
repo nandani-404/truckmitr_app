@@ -38,7 +38,7 @@ import PunctureProfileCompletionStack from '../stacks/punctureProfileCompletion'
 import { agoraService } from '../services/agora';
 import InterviewPopupModal, { InterviewData } from '../utils/interview-popup';
 // import { ZegoCallInvitationDialog } from '@zegocloud/zego-uikit-prebuilt-call-rn';
-import { resolveTargetScreen } from '../utils/navigation/resolver';
+import { resolveTargetScreen, resolveTargetNavigation } from '../utils/navigation/resolver';
 
 export let isNavigationReady = false;
 
@@ -449,7 +449,10 @@ export default function Routes() {
       hasAgoraAppId: Boolean(STATICS.AGORA_APP_ID?.trim()),
     });
 
-    if (isAuthenticated && isDriver) {
+    const isExcludedRole = userRoleStr === 'shipper';
+    const isTruckerMode = appMode === 'trucker';
+
+    if (isAuthenticated && !isExcludedRole && !isTruckerMode) {
       if (hasInitializedAgora.current && agoraService.isInitialized()) {
         console.log('[Agora][Gate] Skip initialize: already initialized for current session.');
         return;
@@ -500,7 +503,10 @@ export default function Routes() {
   // -------------------------------
   useEffect(() => {
     const currentRole = String(user?.role || user?.data?.role || '').toLowerCase();
-    if (isAuthenticated && currentRole === 'driver') {
+    const isExcludedRole = currentRole === 'shipper';
+    const isTruckerMode = appMode === 'trucker';
+
+    if (isAuthenticated && !isExcludedRole && !isTruckerMode) {
       const fetchPendingPopup = async () => {
         try {
           const response: any = await axiosInstance.get('api/jobs/posts/pending-popup');
@@ -554,7 +560,7 @@ export default function Routes() {
 
             // Deduplicate by interview_id to prevent double actions in the stack
             const uniqueData = Array.from(new Map(mappedData.map(item => [item.interview_id, item])).values());
-            
+
             setInterviewPopupData(uniqueData);
             setShowInterviewPopup(true);
           } else {
@@ -921,54 +927,100 @@ export default function Routes() {
   }, [isAuthenticated, isNavigationReady]);
 
   // -------------------------------
-  // 🔹 Process Pending Deep Link (after auth)
+  // 🔹 Deep Link Processing (Handled by the main useEffect below)
   // -------------------------------
-  useEffect(() => {
-    if (isAuthenticated && isNavigationReady && pendingDeepLink.current) {
-      console.log('🌐 Processing pending deep link:', pendingDeepLink.current);
-      const url = pendingDeepLink.current;
-      pendingDeepLink.current = null; // Clear it
 
-      // Small delay to ensure Main stack is mounted
-      setTimeout(() => {
-        // Parse and navigate
-        const urlParts = url.replace('truckmitr://', '').split('/');
-        const path = urlParts[0];
 
-        switch (path) {
-          case 'profile':
-            (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
-            break;
-          case 'job':
-          case 'jobs':
-            (navigationRef.current as any)?.navigate('bottomTab', { screen: 'job' });
-            break;
-          case 'home':
-            (navigationRef.current as any)?.navigate('bottomTab', { screen: 'home' });
-            break;
-          case 'training':
-            (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
-            break;
-          default:
-            console.log('🔍 Pending deep link path not recognized:', path);
-        }
-      }, 500);
-    }
-  }, [isAuthenticated, isNavigationReady]);
 
   const parseDeepLink = (url: string) => {
     let raw = url;
-    if (raw.startsWith('truckmitr://')) {
-      raw = raw.replace('truckmitr://', '');
-    } else if (raw.startsWith('https://truckmitr.com')) {
-      raw = raw.replace('https://truckmitr.com', '');
-      raw = raw.replace(/^\/+/, '');
+
+    // Normalize: Handle various prefixes (truckmitr://, http/https, with/without www)
+    raw = raw.replace(/^truckmitr:\/\//, '');
+    raw = raw.replace(/^https?:\/\/(www\.)?truckmitr\.com\//, '');
+    raw = raw.replace(/^https?:\/\/awaz\.devtruckmitr\.in\/(api\/feed\/)?/, '');
+
+    // Clean up leading slashes
+    raw = raw.replace(/^\/+/, '');
+
+    const [pathWithQuery, query = ''] = raw.split('?');
+    const pathParts = pathWithQuery.split('/');
+    const path = pathParts[0];
+    const id = pathParts[1]; // e.g. reel/123 -> path=reel, id=123
+
+    // Parse all query parameters
+    const params: Record<string, string> = {};
+    if (query) {
+      query.split('&').forEach(pair => {
+        const [key, value] = pair.split('=');
+        if (key && value) {
+          params[key] = decodeURIComponent(value);
+        }
+      });
     }
 
-    const [path, query = ''] = raw.split('?');
-    const reelIdMatch = query.split('&').find(p => p.startsWith('reelId='));
-    const reelId = reelIdMatch ? decodeURIComponent(reelIdMatch.split('=')[1]) : undefined;
-    return { path, reelId };
+    // Special case for reelId in query string (backwards compatibility)
+    const finalId = id || params.reelId || params.id;
+
+    return {
+      path,
+      id: finalId,
+      params,
+    };
+  };
+
+  // Function to handle deep link navigation
+  const handleDeepLink = (url: string) => {
+    console.log('🔍 Processing deep link:', url);
+
+    const { path, id, params } = parseDeepLink(url);
+    console.log('🔍 Deep link path:', path, 'id:', id, 'params:', params);
+
+    if (!navigationRef.current) {
+      console.log('❌ Navigation ref not available');
+      return;
+    }
+
+    // Referral / Signup handling (Allowed even if not authenticated)
+    if (path === 'signup' || path === 'register') {
+      const referralCode = params.referralCode || params.code || id;
+      console.log('🎁 Redirecting to signup with referralCode:', referralCode);
+
+      (navigationRef.current as any)?.navigate(STACKS.SIGNUP, {
+        referralCode,
+        preSelectedRole: 'driver' // Per user request: default to driver for referrals
+      });
+      return;
+    }
+
+    if (!isAuthenticated) {
+      console.log('❌ User not authenticated, cannot navigate to sensitive screens');
+      return;
+    }
+
+    // 1. Resolve Target Navigation
+    const { stack, screen } = resolveTargetNavigation(path, userRoleStr, selectedModule);
+    console.log(`🔍 Resolved target navigation: Stack: ${stack} | Screen: ${screen}`);
+
+    if (!screen) {
+      console.log('❌ Could not resolve target screen for path:', path);
+      return;
+    }
+
+    // 2. Handle Navigation
+    // For DKA posts/reels, we usually want to pass the ID
+    const navParams: any = id ? { id, reelId: id } : undefined;
+
+    if (stack) {
+      // If it's a tab screen, navigate to the tab navigator first
+      (navigationRef.current as any)?.navigate(stack, {
+        screen: screen,
+        params: navParams,
+      });
+    } else {
+      // Direct navigation for non-tab screens
+      (navigationRef.current as any)?.navigate(screen, navParams);
+    }
   };
 
   useEffect(() => {
@@ -978,159 +1030,41 @@ export default function Routes() {
         const initialUrl = await Linking.getInitialURL();
         if (initialUrl) {
           console.log('🌐 Initial URL received:', initialUrl);
-          console.log('🌐 App ready status:', isAppReady);
-          console.log('🌐 Navigation ready status:', isNavigationReady);
-          console.log('🌐 Is authenticated:', isAuthenticated);
-
-          if (isAppReady && isNavigationReady && isAuthenticated) {
-            // App is fully ready, process immediately
+          if (isAppReady && isNavigationReady) {
             handleDeepLink(initialUrl);
           } else {
-            // App not ready yet, store for later
             console.log('🌐 App not ready, storing deep link for later processing');
             pendingDeepLink.current = initialUrl;
           }
-        } else {
-          console.log('🌐 No initial URL found');
         }
       } catch (error) {
         console.log('❌ Error getting initial URL:', error);
       }
     };
 
+    getInitialURL();
+
     // Handle URL when app is already running
     const sub = Linking.addEventListener('url', ({ url }) => {
       console.log('🌐 Deep link received by Navigation:', url);
-      console.log('🌐 Navigation ready status:', isNavigationReady);
       handleDeepLink(url);
     });
 
-
-
-    // Function to handle deep link navigation
-    const handleDeepLink = (url: string) => {
-      console.log('🔍 Processing deep link:', url);
-      console.log('🔍 Current navigation state:', navigationRef.current?.getRootState());
-
-      const { path, reelId } = parseDeepLink(url);
-      console.log('🔍 Deep link path:', path, 'reelId:', reelId);
-
-      if (!navigationRef.current) {
-        console.log('❌ Navigation ref not available');
-        return;
-      }
-
-      if (!isAuthenticated) {
-        console.log('❌ User not authenticated, cannot navigate');
-        return;
-      }
-
-      // Resolve target screen using the Smart Screen Resolver
-      const validatedTarget = resolveTargetScreen(path, userRoleStr, selectedModule);
-      console.log('🔍 Resolved target screen:', validatedTarget);
-
-      // Handle different deep link paths
-      switch (validatedTarget) {
-        case 'profile':
-        case STACKS.PROFILE:
-        case STACKS.FOREMAN_PROFILE:
-        case STACKS.DHABHA_PROFILE:
-          (navigationRef.current as any)?.navigate('bottomTab', { screen: 'profile' });
-          break;
-        case 'job':
-        case 'jobs':
-        case STACKS.JOB:
-        case STACKS.VIEW_JOBS:
-        case STACKS.FOREMAN_JOBS_LIST:
-          (navigationRef.current as any)?.navigate('bottomTab', { screen: 'job' });
-          break;
-        case 'home':
-        case STACKS.HOME:
-        case STACKS.FOREMAN_BOTTOM_TAB:
-        case STACKS.DHABHA_BOTTOM:
-          (navigationRef.current as any)?.navigate('bottomTab', { screen: 'home' });
-          break;
-        case 'training':
-        case STACKS.TRAINING:
-          (navigationRef.current as any)?.navigate('bottomTab', { screen: 'training' });
-          break;
-        case 'driverKiAwazInfo':
-        case 'driver-ki-awaz':
-        case STACKS.DRIVER_KI_AWAZ_INFO:
-          (navigationRef.current as any)?.navigate('bottomTab', {
-            screen: 'driverKiAwazInfo',
-            params: reelId ? { reelId } : undefined,
-          });
-          break;
-        case STACKS.FOREMAN_ADD_DRIVER:
-          (navigationRef.current as any)?.navigate(STACKS.FOREMAN_BOTTOM_TAB, { screen: STACKS.FOREMAN_ADD_DRIVER });
-          break;
-        case STACKS.DHABHA_ADD_DRIVER:
-          (navigationRef.current as any)?.navigate(STACKS.DHABHA_BOTTOM, { screen: STACKS.DHABHA_ADD_DRIVER });
-          break;
-        case STACKS.PUNCTURE_ADD_DRIVER:
-          (navigationRef.current as any)?.navigate(STACKS.PUNCTURE_BOTTOM, { screen: STACKS.PUNCTURE_ADD_DRIVER });
-          break;
-        case STACKS.DRIVER_ASSOCIATION_ADD_DRIVER:
-        case STACKS.ASSOCIATE_DASHBOARD:
-          (navigationRef.current as any)?.navigate(STACKS.ASSOCIATE_BOTTOM_TAB, { screen: validatedTarget });
-          break;
-        case STACKS.SHIPPER_POST_LOAD:
-          (navigationRef.current as any)?.navigate(STACKS.SHIPPER_BOTTOM_TAB, { screen: STACKS.SHIPPER_POST_LOAD });
-          break;
-        default:
-          console.log('🔍 Validated target used for direct navigation:', validatedTarget);
-          (navigationRef.current as any)?.navigate(validatedTarget);
-      }
-    };
-
-    // Check for initial URL
-    getInitialURL();
-
     return () => sub.remove();
-  }, [isAuthenticated]);
+  }, [isAppReady, isNavigationReady]);
 
   // Handle pending deep link when app becomes ready
   useEffect(() => {
-    if (pendingDeepLink.current && isAppReady && isNavigationReady && isAuthenticated) {
+    if (pendingDeepLink.current && isAppReady && isNavigationReady) {
       console.log('🌐 Processing pending deep link:', pendingDeepLink.current);
 
       const url = pendingDeepLink.current;
       pendingDeepLink.current = null; // Clear pending link
 
-      // Add extra delay for kill state to ensure everything is fully loaded
+      // Add extra delay for kill state stability
       setTimeout(() => {
-        const { path, reelId } = parseDeepLink(url);
-
-        if (path === 'profile') {
-          console.log('🎯 Processing pending profile navigation');
-
-          const attemptNavigation = (attempt = 1) => {
-            console.log(`🎯 Pending navigation attempt ${attempt}`);
-
-            try {
-              navigationRef.current?.navigate('bottomTab', {
-                screen: 'profile'
-              });
-              console.log('✅ Pending navigation successful');
-            } catch (error) {
-              console.log(`❌ Pending navigation attempt ${attempt} failed:`, error);
-
-              if (attempt < 5) {
-                setTimeout(() => attemptNavigation(attempt + 1), 1000);
-              }
-            }
-          };
-
-          attemptNavigation();
-        } else if (path === 'driverKiAwazInfo' || path === 'driver-ki-awaz') {
-          console.log('🎯 Processing pending Driver Ki Awaz navigation');
-          navigationRef.current?.navigate('bottomTab', {
-            screen: 'driverKiAwazInfo',
-            params: reelId ? { reelId } : undefined,
-          });
-        }
-      }, 2000); // Extra delay for kill state
+        handleDeepLink(url);
+      }, 1500); 
     }
   }, [isAppReady, isNavigationReady, isAuthenticated]);
 
@@ -1147,28 +1081,33 @@ export default function Routes() {
   }
 
   const linking = {
-    prefixes: ['truckmitr://', 'https://truckmitr.com'],
+    prefixes: [
+      'truckmitr://',
+      'https://truckmitr.com',
+      'http://truckmitr.com',
+      'https://www.truckmitr.com',
+      'http://www.truckmitr.com'
+    ],
 
     // Custom getInitialURL to handle notification deep links in kill state
     async getInitialURL() {
-      // First, check if app was opened from a notification (kill state)
+      // 1. Check for notification deep links
       const initialNotification = await messaging().getInitialNotification();
-
       if (initialNotification?.data?.screen) {
         const screen = initialNotification.data.screen as string;
-        console.log('🔴 Kill state: Got notification screen:', screen);
-
-        // Store the screen for manual navigation after auth
         await AsyncStorage.setItem('PENDING_NOTIFICATION_SCREEN', screen);
-        console.log('🔴 Kill state: Stored pending screen for manual navigation');
-
-        // Return null - we'll handle navigation manually after Main stack mounts
         return null;
       }
 
-      // Otherwise, check for regular deep link
+      // 2. Check for regular deep link
       const url = await Linking.getInitialURL();
-      console.log('🌐 Regular initial URL:', url);
+      if (url) {
+        console.log('🌐 Consumed initial URL:', url);
+        if (!isAuthenticated || !isAppReady) {
+          console.log('🌐 Storing for post-auth processing');
+          pendingDeepLink.current = url;
+        }
+      }
       return url;
     },
 
@@ -1293,6 +1232,7 @@ export default function Routes() {
         excelImport: 'excel-import',
         // Auth screens
         login: 'login',
+        signup: 'signup',
         // Profile completion
         profileCompletion: 'profile-completion',
       },

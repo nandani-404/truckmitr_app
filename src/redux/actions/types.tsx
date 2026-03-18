@@ -10,6 +10,7 @@ export const SUBSCRIPTION_MODAL = `SUBSCRIPTION_MODAL`
 export const TRAINING_COMPLETE_MODAL = `TRAINING_COMPLETE_MODAL`
 export const PAYMENTVERIFICATION_MODAL = `PAYMENTVERIFICATION_MODAL`
 export const SET_POPUP_DATA = `SET_POPUP_DATA`
+export const REFER_EARN_DATA = `REFER_EARN_DATA`
 
 // ============================================
 // GLOBAL: App Module
