@@ -598,6 +598,19 @@ const Home = React.forwardRef((props, ref) => {
     const [refreshing, setRefreshing] = useState(false);
     const [addDriverModal, setAddDriverModal] = useState(false);
     const [showReferralInfoModal, setShowReferralInfoModal] = useState(false);
+    const referralProgressAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const successCount = (referEarnData?.summary?.successful_referrals ?? referral?.referral_success ?? 0);
+        const milestone = referEarnData?.offer?.milestone_referrals ?? 5;
+        const progressPercent = Math.min((successCount % milestone) / milestone * 100, 100);
+        referralProgressAnim.setValue(0);
+        Animated.timing(referralProgressAnim, {
+            toValue: progressPercent,
+            duration: 800,
+            useNativeDriver: false,
+        }).start();
+    }, [referEarnData, referral]);
 
     const [banners, setBanners] = useState<any[]>([
         {},
@@ -1984,9 +1997,13 @@ const Home = React.forwardRef((props, ref) => {
                                         borderRadius: 4,
                                         overflow: 'hidden',
                                     }}>
-                                        <View style={{
+                                        <Animated.View style={{
                                             height: '100%',
-                                            width: `${Math.min(((referEarnData?.summary?.successful_referrals ?? referral?.referral_success ?? 0) % (referEarnData?.offer?.milestone_referrals ?? 5)) / (referEarnData?.offer?.milestone_referrals ?? 5) * 100, 100)}%`,
+                                            width: referralProgressAnim.interpolate({
+                                                inputRange: [0, 100],
+                                                outputRange: ['0%', '100%'],
+                                                extrapolate: 'clamp',
+                                            }),
                                             backgroundColor: colors.royalBlue,
                                             borderRadius: 4,
                                         }} />

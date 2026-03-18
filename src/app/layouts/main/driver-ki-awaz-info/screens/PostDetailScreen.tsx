@@ -94,6 +94,10 @@ const PostDetailScreen: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [post, setPost] = useState<any>(route.params?.post);
     const { t, i18n } = useTranslation();
+    const [isLiked, setIsLiked] = useState(false);
+    const [likesCount, setLikesCount] = useState(post?.likesCount || 0);
+    const [commentsCount, setCommentsCount] = useState(post?.commentsCount || 0);
+    const [likeLoading, setLikeLoading] = useState(false);
 
     useEffect(() => {
         if (!post && route.params?.id) {
@@ -154,6 +158,37 @@ const PostDetailScreen: React.FC = () => {
 
     const [videoPaused, setVideoPaused] = useState(false);
     const [showComments, setShowComments] = useState(false);
+
+    // Sync likes/comments count when post data changes (e.g. after fetch)
+    useEffect(() => {
+        if (post) {
+            setLikesCount(post.likesCount || 0);
+            setCommentsCount(post.commentsCount || 0);
+        }
+    }, [post?.id]);
+
+    const handleLike = async () => {
+        if (likeLoading || !post) return;
+        setLikeLoading(true);
+        // Optimistic update
+        const wasLiked = isLiked;
+        setIsLiked(!wasLiked);
+        setLikesCount((prev: number) => wasLiked ? Math.max(0, prev - 1) : prev + 1);
+        try {
+            await DriverKiAwazService.likePost(post.id);
+        } catch (error) {
+            // Revert on error
+            console.log('Like error:', error);
+            setIsLiked(wasLiked);
+            setLikesCount((prev: number) => wasLiked ? prev + 1 : Math.max(0, prev - 1));
+        } finally {
+            setLikeLoading(false);
+        }
+    };
+
+    const handleCommentAdded = () => {
+        setCommentsCount((prev: number) => prev + 1);
+    };
 
     const handleShare = async () => {
         if (!post) return;
@@ -293,16 +328,28 @@ const PostDetailScreen: React.FC = () => {
                 {/* Stats Row */}
                 {post.status === 'APPROVED' && (
                     <View style={styles.statsRow}>
-                        <View style={styles.statItem}>
-                            <Ionicons name="heart-outline" size={18} color="#64748B" />
-                            <Text style={styles.statText}>{post.likesCount} {t('likes')}</Text>
-                        </View>
+                        <TouchableOpacity 
+                            style={styles.statItem}
+                            onPress={handleLike}
+                            activeOpacity={0.7}
+                            disabled={likeLoading}
+                        >
+                            <Ionicons 
+                                name={isLiked ? "heart" : "heart-outline"} 
+                                size={22} 
+                                color={isLiked ? "#EF4444" : "#64748B"} 
+                            />
+                            <Text style={[styles.statText, isLiked && { color: '#EF4444' }]}>
+                                {likesCount} {t('likes')}
+                            </Text>
+                        </TouchableOpacity>
                         <TouchableOpacity 
                             style={styles.statItem}
                             onPress={() => setShowComments(true)}
+                            activeOpacity={0.7}
                         >
-                            <Ionicons name="chatbubble-outline" size={18} color="#64748B" />
-                            <Text style={styles.statText}>{post.commentsCount} {t('comments')}</Text>
+                            <Ionicons name="chatbubble-outline" size={20} color="#64748B" />
+                            <Text style={styles.statText}>{commentsCount} {t('comments')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -322,6 +369,7 @@ const PostDetailScreen: React.FC = () => {
                 visible={showComments}
                 postId={post.id}
                 onClose={() => setShowComments(false)}
+                onCommentAdded={handleCommentAdded}
             />
         </View>
     );

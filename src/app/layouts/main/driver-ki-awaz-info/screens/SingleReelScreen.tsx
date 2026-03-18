@@ -77,6 +77,7 @@ const SingleReelScreen: React.FC = () => {
     const [showComments, setShowComments] = useState(false);
     const [reelData, setReelData] = useState<ReelData | null>(null);
     const [loading, setLoading] = useState(false);
+    const [likeLoading, setLikeLoading] = useState(false);
 
     useEffect(() => {
         if (!post && (route.params as any)?.id) {
@@ -257,6 +258,35 @@ const SingleReelScreen: React.FC = () => {
         return (count || 0).toString();
     };
 
+    const handleLike = async () => {
+        if (likeLoading || !reelData) return;
+        setLikeLoading(true);
+        const wasLiked = reelData.isSupported;
+        // Optimistic update
+        setReelData(prev => prev ? {
+            ...prev,
+            isSupported: !wasLiked,
+            supportCount: wasLiked ? Math.max(0, prev.supportCount - 1) : prev.supportCount + 1,
+        } : null);
+        try {
+            await DriverKiAwazService.likePost(reelData.id);
+        } catch (error) {
+            // Revert on error
+            console.log('Like error:', error);
+            setReelData(prev => prev ? {
+                ...prev,
+                isSupported: wasLiked,
+                supportCount: wasLiked ? prev.supportCount + 1 : Math.max(0, prev.supportCount - 1),
+            } : null);
+        } finally {
+            setLikeLoading(false);
+        }
+    };
+
+    const handleCommentAdded = () => {
+        setReelData(prev => prev ? { ...prev, commentCount: prev.commentCount + 1 } : null);
+    };
+
     const handleVideoTap = () => {
         setIsMuted(!isMuted);
 
@@ -379,7 +409,7 @@ const SingleReelScreen: React.FC = () => {
                             )}
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.actionButton} onPress={handleSwipeAttempt}>
+                        <TouchableOpacity style={styles.actionButton} onPress={handleLike} disabled={likeLoading}>
                             <Ionicons name={reelData.isSupported ? 'heart' : 'heart-outline'} size={28} color={reelData.isSupported ? '#EF4444' : '#FFFFFF'} />
                             <Text style={styles.actionText}>{formatCount(reelData.supportCount)}</Text>
                         </TouchableOpacity>
@@ -424,6 +454,7 @@ const SingleReelScreen: React.FC = () => {
                         visible={showComments}
                         postId={reelData.id}
                         onClose={() => setShowComments(false)}
+                        onCommentAdded={handleCommentAdded}
                     />
 
                     {/* Redirection Bottom Sheet */}

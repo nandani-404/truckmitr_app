@@ -350,6 +350,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                         onPress: () => {
                             setSelectedMedia(null);
                             setTextContent('');
+                            setSelectedType(null);
                             if (action) {
                                 action();
                             } else {
@@ -468,7 +469,9 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                         }
                     }
                 },
-                { text: t('cancel') || 'Cancel', style: 'cancel' }
+                { text: t('cancel') || 'Cancel', style: 'cancel', onPress: () => {
+                    if (!selectedMedia) setSelectedType(null);
+                }}
             ]
         );
     };
@@ -559,7 +562,9 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                         }
                     }
                 },
-                { text: t('cancel') || 'Cancel', style: 'cancel' }
+                { text: t('cancel') || 'Cancel', style: 'cancel', onPress: () => {
+                    if (!selectedMedia) setSelectedType(null);
+                }}
             ]
         );
     };
