@@ -924,10 +924,15 @@ export default function Routes() {
         if (pendingJobId) {
           console.log('🔗 Cold start: Processing pending job deep link, jobId:', pendingJobId);
           await AsyncStorage.removeItem('PENDING_DEEP_LINK_JOB_ID');
+          // Also clear pendingDeepLink ref to prevent duplicate navigation
+          pendingDeepLink.current = null;
 
           if (navigationRef.current) {
-            (navigationRef.current as any)?.navigate(STACKS.AVAILABLE_JOB, { jobId: pendingJobId });
-            console.log('🔗 Cold start: Navigated to job:', pendingJobId);
+            // Use a longer delay to ensure the navigation stack is fully mounted
+            setTimeout(() => {
+              (navigationRef.current as any)?.navigate(STACKS.AVAILABLE_JOB, { jobId: pendingJobId });
+              console.log('🔗 Cold start: Navigated to job:', pendingJobId);
+            }, 800);
           }
           return;
         }
@@ -1049,6 +1054,7 @@ export default function Routes() {
           if (jobMatch && jobMatch[1]) {
             // Store the job ID for navigation after auth
             await AsyncStorage.setItem('PENDING_DEEP_LINK_JOB_ID', jobMatch[1]);
+            pendingDeepLink.current = null; // Clear so pending handler doesn't also fire
             console.log('🔗 Cold start: Stored pending job deep link ID:', jobMatch[1]);
             return; // Do not process further, wait for auth and pendingJobId check
           }
@@ -1082,9 +1088,17 @@ export default function Routes() {
   // Handle pending deep link when app becomes ready
   useEffect(() => {
     if (pendingDeepLink.current && isAppReady && isNavigationReady) {
-      console.log('🌐 Processing pending deep link:', pendingDeepLink.current);
-
       const url = pendingDeepLink.current;
+
+      // Skip if this is a job deep link — already handled by PENDING_DEEP_LINK_JOB_ID flow
+      const isJobLink = url.match(/truckmitr\.com\/job\/[\d]+/) || url.match(/truckmitr:\/\/job\/[\d]+/);
+      if (isJobLink) {
+        console.log('🌐 Skipping pending deep link (job link already handled via AsyncStorage):', url);
+        pendingDeepLink.current = null;
+        return;
+      }
+
+      console.log('🌐 Processing pending deep link:', url);
       pendingDeepLink.current = null; // Clear pending link
 
       // Add extra delay for kill state stability
@@ -1138,6 +1152,7 @@ export default function Routes() {
         if (jobMatch && jobMatch[1]) {
           // Store the job ID for navigation after auth
           await AsyncStorage.setItem('PENDING_DEEP_LINK_JOB_ID', jobMatch[1]);
+          pendingDeepLink.current = null; // Clear so pending handler doesn't also fire
           console.log('🔗 Cold start: Stored pending job deep link ID:', jobMatch[1]);
           return null; // Handle manually after auth
         }
