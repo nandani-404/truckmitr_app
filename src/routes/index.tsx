@@ -919,6 +919,19 @@ export default function Routes() {
           return;
         }
 
+        // Check for pending deep link job ID (cold start from shared job link)
+        const pendingJobId = await AsyncStorage.getItem('PENDING_DEEP_LINK_JOB_ID');
+        if (pendingJobId) {
+          console.log('🔗 Cold start: Processing pending job deep link, jobId:', pendingJobId);
+          await AsyncStorage.removeItem('PENDING_DEEP_LINK_JOB_ID');
+
+          if (navigationRef.current) {
+            (navigationRef.current as any)?.navigate(STACKS.AVAILABLE_JOB, { jobId: pendingJobId });
+            console.log('🔗 Cold start: Navigated to job:', pendingJobId);
+          }
+          return;
+        }
+
         // Otherwise check for regular pending notification
         consumePendingNotificationNavigation();
       }, 500);
@@ -1028,12 +1041,25 @@ export default function Routes() {
     const getInitialURL = async () => {
       try {
         const initialUrl = await Linking.getInitialURL();
+        console.log('🌐 Initial URL received:', initialUrl); // Log the URL first
+
         if (initialUrl) {
-          console.log('🌐 Initial URL received:', initialUrl);
-          if (isAppReady && isNavigationReady) {
+          // Handle job deep links on cold start: https://truckmitr.com/job/{id}
+          const jobMatch = initialUrl.match(/truckmitr\.com\/job\/([\d]+)/) || initialUrl.match(/truckmitr:\/\/job\/([\d]+)/);
+          if (jobMatch && jobMatch[1]) {
+            // Store the job ID for navigation after auth
+            await AsyncStorage.setItem('PENDING_DEEP_LINK_JOB_ID', jobMatch[1]);
+            console.log('🔗 Cold start: Stored pending job deep link ID:', jobMatch[1]);
+            return; // Do not process further, wait for auth and pendingJobId check
+          }
+
+          // For all other deep links:
+          if (isAppReady && isNavigationReady && isAuthenticated) {
+            // If app is ready, navigation is ready, and user is authenticated, process immediately
             handleDeepLink(initialUrl);
           } else {
-            console.log('🌐 App not ready, storing deep link for later processing');
+            // Otherwise, store for post-auth processing
+            console.log('🌐 App not ready or not authenticated, storing deep link for later processing');
             pendingDeepLink.current = initialUrl;
           }
         }
@@ -1064,7 +1090,7 @@ export default function Routes() {
       // Add extra delay for kill state stability
       setTimeout(() => {
         handleDeepLink(url);
-      }, 1500); 
+      }, 1500);
     }
   }, [isAppReady, isNavigationReady, isAuthenticated]);
 
@@ -1103,9 +1129,17 @@ export default function Routes() {
       const url = await Linking.getInitialURL();
       if (url) {
         console.log('🌐 Consumed initial URL:', url);
+        const jobMatch = url.match(/truckmitr\.com\/job\/([\d]+)/) || url.match(/truckmitr:\/\/job\/([\d]+)/);
         if (!isAuthenticated || !isAppReady) {
           console.log('🌐 Storing for post-auth processing');
           pendingDeepLink.current = url;
+        }
+
+        if (jobMatch && jobMatch[1]) {
+          // Store the job ID for navigation after auth
+          await AsyncStorage.setItem('PENDING_DEEP_LINK_JOB_ID', jobMatch[1]);
+          console.log('🔗 Cold start: Stored pending job deep link ID:', jobMatch[1]);
+          return null; // Handle manually after auth
         }
       }
       return url;
@@ -1116,6 +1150,20 @@ export default function Routes() {
       // Listen for deep links
       const linkingSubscription = Linking.addEventListener('url', ({ url }) => {
         console.log('🌐 Deep link received:', url);
+
+        // Handle job deep links: https://truckmitr.com/job/{id}
+        const jobMatch = url.match(/truckmitr\.com\/job\/([\d]+)/) || url.match(/truckmitr:\/\/job\/([\d]+)/);
+        if (jobMatch && jobMatch[1]) {
+          const jobId = jobMatch[1];
+          console.log('🔗 Job deep link detected, jobId:', jobId);
+          setTimeout(() => {
+            if (navigationRef.current?.isReady()) {
+              (navigationRef.current as any)?.navigate(STACKS.AVAILABLE_JOB, { jobId });
+            }
+          }, 300);
+          return;
+        }
+
         listener(url);
       });
 
@@ -1212,7 +1260,9 @@ export default function Routes() {
         quiz: 'quiz',
         quizResult: 'quiz-result',
         player: 'player',
-        availableJob: 'available-job',
+        availableJob: {
+          path: 'available-job',
+        },
         suitsJob: 'suits-job',
         appliedJob: 'applied-job',
         search: 'search',
@@ -1328,7 +1378,7 @@ export default function Routes() {
       ) : (
         <Main />
       )}
-      <InAppUpdatePopup />
+      {/* <InAppUpdatePopup /> */}
       {subscriptionModal && <Subscription />}
       <ReelLivePopup
         visible={showReelPopup}

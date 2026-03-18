@@ -1,4 +1,4 @@
-import { ActivityIndicator, Text, TouchableOpacity, View, Animated, StyleSheet, Pressable, Easing } from 'react-native'
+import { ActivityIndicator, Text, TouchableOpacity, View, Animated, StyleSheet, Pressable, Easing, Share } from 'react-native'
 
 
 import React, { useState, useRef, useEffect } from 'react'
@@ -29,7 +29,7 @@ import LinearGradient from 'react-native-linear-gradient';
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
 // Job Card Component with clean sectioned design
-const JobCard = ({ item, expandedJobs, toggleExpand, checkBoxSelect, _onpressCheckBox, errors, loadingApplyJob, _applyJob, colors, responsiveFontSize, responsiveHeight, responsiveWidth, t, navigation }: any) => {
+const JobCard = ({ item, expandedJobs, toggleExpand, checkBoxSelect, _onpressCheckBox, errors, loadingApplyJob, _applyJob, colors, responsiveFontSize, responsiveHeight, responsiveWidth, t, navigation, onShareJob }: any) => {
     const scaleAnim = useRef(new Animated.Value(0)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const glowAnim = useRef(new Animated.Value(0)).current;
@@ -505,39 +505,68 @@ const JobCard = ({ item, expandedJobs, toggleExpand, checkBoxSelect, _onpressChe
                     )}
                 </View>
 
-                {/* Apply Button */}
-                <Pressable
-                    onPress={() => _applyJob(item?.id)}
-                    disabled={loadingApplyJob === item?.id}
-                    style={({ pressed }) => [{
-                        height: responsiveFontSize(6),
-                        backgroundColor: colors.royalBlue,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'row',
-                        opacity: pressed ? 0.9 : 1,
-                    }]}
-                >
-                    {loadingApplyJob === item?.id ? (
-                        <ActivityIndicator color={colors.white} size="small" />
-                    ) : (
-                        <>
-                            <Text style={{
-                                color: colors.white,
-                                fontSize: responsiveFontSize(2),
-                                fontWeight: '600',
-                            }}>
-                                Apply Now
-                            </Text>
-                            <Ionicons
-                                name='chevron-forward'
-                                size={20}
-                                color={colors.white}
-                                style={{ marginLeft: responsiveFontSize(0.5) }}
-                            />
-                        </>
-                    )}
-                </Pressable>
+                {/* Bottom Action Buttons Row: Share (30%) + Apply (70%) */}
+                <View style={{ flexDirection: 'row', width: '100%' }}>
+                    {/* Share Button - 30% */}
+                    <Pressable
+                        onPress={() => onShareJob(item)}
+                        style={({ pressed }) => [{
+                            width: '30%',
+                            height: responsiveFontSize(6),
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: pressed ? colors.blackOpacity(0.08) : colors.blackOpacity(0.04),
+                            borderRightWidth: 1,
+                            borderRightColor: colors.blackOpacity(0.1),
+                        }]}
+                    >
+                        <Ionicons name="share-social-outline" size={20} color={colors.royalBlue} />
+                        <Text style={{
+                            color: colors.royalBlue,
+                            fontSize: responsiveFontSize(1.5),
+                            fontWeight: '600',
+                            marginLeft: responsiveFontSize(0.5),
+                        }}>
+                            {t('share') || 'Share'}
+                        </Text>
+                    </Pressable>
+
+                    {/* Apply Button - 70% */}
+                    <Pressable
+                        onPress={() => _applyJob(item?.id)}
+                        disabled={loadingApplyJob === item?.id}
+                        style={({ pressed }) => [{
+                            width: '70%',
+                            height: responsiveFontSize(6),
+                            backgroundColor: colors.royalBlue,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexDirection: 'row',
+                            opacity: pressed ? 0.9 : 1,
+                        }]}
+                    >
+                        {loadingApplyJob === item?.id ? (
+                            <ActivityIndicator color={colors.white} size="small" />
+                        ) : (
+                            <>
+                                <Text style={{
+                                    color: colors.white,
+                                    fontSize: responsiveFontSize(2),
+                                    fontWeight: '600',
+                                }}>
+                                    Apply Now
+                                </Text>
+                                <Ionicons
+                                    name='chevron-forward'
+                                    size={20}
+                                    color={colors.white}
+                                    style={{ marginLeft: responsiveFontSize(0.5) }}
+                                />
+                            </>
+                        )}
+                    </Pressable>
+                </View>
             </View>
         </Animated.View>
     );
@@ -616,10 +645,47 @@ export default function AvailableJob() {
     const [showLottie, setshowLottie] = useState(false)
     const [checkBoxSelect, setCheckBoxSelect] = useState<{ [jobId: number]: boolean }>({});
     const [errors, setErrors] = useState<{ [jobId: number]: { checkBox?: string } }>({});
+    const [deepLinkJobData, setDeepLinkJobData] = useState<any>(null);
+    const [isLoadingDeepLink, setIsLoadingDeepLink] = useState(false);
 
     const { isDriver, subscriptionDetails, subscriptionModal } = useSelector((state: any) => { return state?.user })
 
-    const { item } = route?.params
+    const { item, jobId: deepLinkJobId } = route?.params || {}
+
+    // Handle deep link - fetch single job by ID using search
+    useEffect(() => {
+        if (deepLinkJobId && !item) {
+            const fetchJobById = async () => {
+                try {
+                    setIsLoadingDeepLink(true);
+                    // Use the search endpoint since there's no single-job endpoint
+                    const response: any = await axiosInstance.get(END_POINTS?.ALL_JOBS_AND_SEARCH(deepLinkJobId));
+                    if (response?.data?.status && response?.data?.data?.length > 0) {
+                        const jobs = response.data.data;
+                        // Find exact match by job_id or id
+                        const exactMatch = jobs.find((j: any) => 
+                            String(j.job_id) === String(deepLinkJobId) || 
+                            String(j.id) === String(deepLinkJobId)
+                        );
+                        setDeepLinkJobData({
+                            data: exactMatch ? [exactMatch] : [jobs[0]],
+                        });
+                    } else {
+                        showToast(t('jobNotFound') || 'Job not found');
+                    }
+                } catch (error: any) {
+                    console.error('Error fetching job by ID:', error);
+                    showToast(error?.response?.data?.message || t('jobNotFound') || 'Job not found');
+                } finally {
+                    setIsLoadingDeepLink(false);
+                }
+            };
+            fetchJobById();
+        }
+    }, [deepLinkJobId]);
+
+    // Use deep link data if no item passed directly
+    const jobListData = item || deepLinkJobData;
 
     const headerOpacity = useRef(new Animated.Value(0)).current;
 
@@ -633,14 +699,15 @@ export default function AvailableJob() {
 
     // Initialize all checkboxes as checked when jobs data loads
     useEffect(() => {
-        if (item?.data?.length) {
+        const data = jobListData?.data;
+        if (data?.length) {
             const initialCheckboxState: { [jobId: number]: boolean } = {};
-            item.data.forEach((job: any) => {
+            data.forEach((job: any) => {
                 initialCheckboxState[job.id] = true;
             });
             setCheckBoxSelect(initialCheckboxState);
         }
-    }, [item?.data]);
+    }, [jobListData?.data]);
 
     const validate = (jobId: number): boolean => {
         let valid = true;
@@ -662,6 +729,40 @@ export default function AvailableJob() {
     const _goback = () => {
         navigation.goBack()
     }
+
+    // Share Job Handler
+    const _shareJob = async (jobItem: any) => {
+        try {
+            const jobTitle = jobItem?.job_title || 'Job Opening';
+            const salary = jobItem?.Salary_Range || '';
+            const location = jobItem?.job_location || '';
+            const vehicleType = jobItem?.vehicle_type || '';
+            const experience = jobItem?.Required_Experience || '';
+            const jobId = jobItem?.job_id || jobItem?.id;
+
+            // Build the deep link URL
+            const jobDeepLink = `https://truckmitr.com/job/${jobId}`;
+
+            // Build a compelling share message
+            const shareMessage = `🚚 ${jobTitle}
+
+💰 Salary: ₹${salary}/month${location ? `\n📍 Location: ${location}` : ''}${vehicleType ? `\n🚛 Vehicle: ${vehicleType}` : ''}${experience ? `\n⭐ Experience: ${experience} Years` : ''}
+
+👉 Apply now on TruckMitr:
+${jobDeepLink}
+
+📥 Download TruckMitr: https://play.google.com/store/apps/details?id=com.truckmitr`;
+
+            await Share.share({
+                message: shareMessage,
+                title: `${jobTitle} - TruckMitr Job`,
+            });
+        } catch (error: any) {
+            if (error?.message !== 'User did not share') {
+                console.error('Error sharing job:', error);
+            }
+        }
+    };
 
     const [expandedJobs, setExpandedJobs] = useState<{ [key: number]: boolean }>({});
 
@@ -756,18 +857,30 @@ export default function AvailableJob() {
                         fontWeight: '700',
                         letterSpacing: -0.3
                     }}>
-                        {t('availableJobs', 'Available Jobs')} ({item?.data?.length || 0})
+                        {t('availableJobs', 'Available Jobs')} ({jobListData?.data?.length || 0})
                     </Text>
                 </View>
             </Animated.View>
 
             {/* Content */}
-            {item?.data?.length ? (
+            {isLoadingDeepLink ? (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <ActivityIndicator size="large" color={colors.royalBlue} />
+                    <Text style={{
+                        color: colors.blackOpacity(0.6),
+                        fontSize: responsiveFontSize(1.8),
+                        marginTop: responsiveFontSize(2),
+                        fontWeight: '500',
+                    }}>
+                        {t('loadingJob') || 'Loading job...'}
+                    </Text>
+                </View>
+            ) : jobListData?.data?.length ? (
                 <View style={{ flex: 1 }}>
                     <FlatList
                         showsHorizontalScrollIndicator={false}
                         showsVerticalScrollIndicator={false}
-                        data={[...item.data].sort((a: any, b: any) => {
+                        data={[...jobListData.data].sort((a: any, b: any) => {
                             const getPriority = (plan: string) => {
                                 if (plan === 'super_premium_job') return 3;
                                 if (plan === 'premium_job') return 2;
@@ -791,6 +904,7 @@ export default function AvailableJob() {
                                 responsiveWidth={responsiveWidth}
                                 t={t}
                                 navigation={navigation}
+                                onShareJob={_shareJob}
                             />
                         )}
                         contentContainerStyle={{
