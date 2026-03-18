@@ -1,9 +1,9 @@
 
 // export const BASE_URL = `https://development.truckmitr.com/`
-// export const BASE_URL = `https://truckmitr.com/`
+export const BASE_URL = `https://truckmitr.com/`
 // export const BASE_URL = `http://192.168.29.156:8000/`
 // export const BASE_URL = `http://192.168.29.246:8000/`
-export const BASE_URL = 'https://devtruckmitr.in/'
+// export const BASE_URL = 'https://devtruckmitr.in/'
 // export const DRIVER_KI_AWAZ_BASE = 'https://driverkiawaz.truckmitr.com/'
 export const DRIVER_KI_AWAZ_BASE = 'https://awaz.devtruckmitr.in/'
 

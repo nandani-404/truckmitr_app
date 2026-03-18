@@ -1974,14 +1974,26 @@ const Home = React.forwardRef((props, ref) => {
                                     </View>
                                 </View>
 
-                                <View style={{ marginTop: 16 }}>
+                                {(referEarnData?.summary?.total_earned ?? 0) > 0 && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 4 }}>
+                                        <Text style={{
+                                            fontSize: responsiveFontSize(1.2),
+                                            fontWeight: '700',
+                                            color: '#16A34A',
+                                        }}>
+                                            {`✅ ₹${referEarnData?.summary?.total_earned ?? 0} ${t('totalEarned', 'Total Earned')}`}
+                                        </Text>
+                                    </View>
+                                )}
+
+                                <View style={{ marginTop: (referEarnData?.summary?.total_earned ?? 0) > 0 ? 8 : 16 }}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                                         <Text style={{
                                             fontSize: responsiveFontSize(1.3),
                                             fontWeight: '600',
                                             color: '#475569',
                                         }}>
-                                            {`${(referEarnData?.summary?.successful_referrals ?? referral?.referral_success ?? 0) % (referEarnData?.offer?.milestone_referrals ?? 5)}/${referEarnData?.offer?.milestone_referrals ?? 5} ${t('driversRegistered', 'Drivers Registered')}`}
+                                            {`${(referEarnData?.summary?.successful_referrals ?? referral?.referral_success ?? 0) % (referEarnData?.offer?.milestone_referrals ?? 5)}/${referEarnData?.offer?.milestone_referrals ?? 5} ${t('driversRegistered', 'for your next ₹100 reward')}`}
                                         </Text>
                                         <Text style={{
                                             fontSize: responsiveFontSize(1.3),
