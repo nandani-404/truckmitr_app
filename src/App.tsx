@@ -14,7 +14,7 @@ import { LogBox } from 'react-native';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { initPusher, connectPusher } from './services/pusher';
 import NetworkBar from './components/NetworkBar';
-import UploadProgressBar from './components/UploadProgressBar';
+import { UploadProgressHeader } from './app/layouts/main/driver-ki-awaz-info/components';
 
 export default function App() {
 
@@ -50,7 +50,7 @@ export default function App() {
                         <BottomSheetModalProvider>
                             <TourGuideProvider preventOutsideInteraction androidStatusBarVisible={true} {...{}}>
                                 <NetworkBar />
-                                <UploadProgressBar />
+                                <UploadProgressHeader />
                                 <Routes />
                             </TourGuideProvider>
                         </BottomSheetModalProvider>

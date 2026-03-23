@@ -19,6 +19,7 @@ import {
     ActivityIndicator,
     Easing,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import RNShare from 'react-native-share';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -324,7 +325,10 @@ const ReelItem = React.memo(({ reel, isActive, isMuted, onToggleMute, onSupport,
                 {/* User Avatar */}
                 <TouchableOpacity style={styles.avatarContainer}>
                     {reel.userAvatar && !reel.userAvatar.includes('placeholder') ? (
-                        <Image source={{ uri: reel.userAvatar }} style={styles.avatar} />
+                        <FastImage
+                            source={{ uri: reel.userAvatar, priority: FastImage.priority.normal }}
+                            style={styles.avatar}
+                        />
                     ) : (
                         <View style={[styles.avatar, { backgroundColor: '#333333', alignItems: 'center', justifyContent: 'center' }]}>
                             <Ionicons name="person" size={24} color="#FFFFFF" />
@@ -501,13 +505,7 @@ const ReelsScreen: React.FC<{
                             const cleanThumbPath = rawThumb && rawThumb.startsWith('/') ? rawThumb.substring(1) : (rawThumb || '');
                             let finalThumbUrl = '';
                             if (rawThumb) {
-                                if (hasThumbHttp) {
-                                    finalThumbUrl = rawThumb;
-                                } else if (cleanThumbPath.startsWith('uploads/thumbnails/')) {
-                                    finalThumbUrl = `${DRIVER_KI_AWAZ_BASE}${cleanThumbPath}`;
-                                } else {
-                                    finalThumbUrl = `${DRIVER_KI_AWAZ_BASE}uploads/thumbnails/${cleanThumbPath}`;
-                                }
+                                finalThumbUrl = hasThumbHttp ? rawThumb : `${DRIVER_KI_AWAZ_BASE}${cleanThumbPath}`;
                             }
 
                             return {
@@ -532,7 +530,12 @@ const ReelsScreen: React.FC<{
                     if (refresh) {
                         setReels(newReels);
                     } else {
-                        setReels(prev => [...prev, ...newReels]);
+                        setReels(prev => {
+                            const combined = [...prev, ...newReels];
+                            // Deduplicate by ID
+                            const unique = Array.from(new Map(combined.map(r => [r.id, r])).values());
+                            return unique;
+                        });
                     }
 
                     // Use API provided pagination info if available

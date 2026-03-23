@@ -12,10 +12,10 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
-    Image,
     Alert,
     useColorScheme,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { DriverKiAwazService } from '../services';
 import { AWAZ_URL } from '@truckmitr/src/utils/config';
@@ -134,8 +134,8 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
         return (
             <View style={styles.commentItem}>
                 {avatarUrl ? (
-                    <Image
-                        source={{ uri: avatarUrl }}
+                    <FastImage
+                        source={{ uri: avatarUrl, priority: FastImage.priority.normal }}
                         style={styles.avatar}
                     />
                 ) : (
@@ -193,8 +193,8 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, postId, onClose,
 
                     <View style={[styles.inputContainer, { borderTopColor: theme.border, backgroundColor: theme.card }]}>
                         {getAvatarUrl(user?.profile_image || user?.images) ? (
-                            <Image
-                                source={{ uri: getAvatarUrl(user?.profile_image || user?.images) as string }}
+                            <FastImage
+                                source={{ uri: getAvatarUrl(user?.profile_image || user?.images) as string, priority: FastImage.priority.low }}
                                 style={[styles.inputAvatar, { borderRadius: 16 }]}
                             />
                         ) : (

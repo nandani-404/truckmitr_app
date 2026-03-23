@@ -1,4 +1,4 @@
-import { ActivityIndicator, Text, TouchableOpacity, View, Animated, StyleSheet, Pressable, Easing, Share } from 'react-native'
+import { ActivityIndicator, Text, TouchableOpacity, View, Animated, StyleSheet, Pressable, Easing, Share, Alert } from 'react-native'
 
 
 import React, { useState, useRef, useEffect } from 'react'
@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import Subscription from '../subscription';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
+import AlreadySelectedModal from '../job/AlreadySelectedModal';
 import LinearGradient from 'react-native-linear-gradient';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
@@ -643,6 +644,8 @@ export default function AvailableJob() {
 
     const [loadingApplyJob, setloadingApplyJob] = useState(-1)
     const [showLottie, setshowLottie] = useState(false)
+    const [showAlreadySelectedJobModal, setshowAlreadySelectedJobModal] = useState(false);
+    const [selectedJobId, setSelectedJobId] = useState('');
     const [checkBoxSelect, setCheckBoxSelect] = useState<{ [jobId: number]: boolean }>({});
     const [errors, setErrors] = useState<{ [jobId: number]: { checkBox?: string } }>({});
     const [deepLinkJobData, setDeepLinkJobData] = useState<any>(null);
@@ -791,17 +794,30 @@ ${jobDeepLink}
                         setshowLottie(false)
                     }, 1200);
                 } else {
-                    if (response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
-                        dispatch(subscriptionModalAction(true));
+                    const msg = response?.data?.message;
+                    const statusCode = response?.data?.status_code;
+
+                    if (statusCode === 1200) {
+                        setSelectedJobId(response?.data?.job_id);
+                        setshowAlreadySelectedJobModal(true);
+                    } else {
+                        if (msg === "You have reached your cumulative job application limit for your subscriptions.") {
+                            dispatch(subscriptionModalAction(true));
+                        }
+                        showToast(msg)
                     }
-                    showToast(response?.data?.message)
                 }
             } catch (error: any) {
                 console.error("Error searching jobs:", error);
-                if (error?.response?.status === 403 || error?.response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
+                const errorMsg = error?.response?.data?.message || error?.message;
+
+                if (error?.response?.data?.status_code === 1200) {
+                    Alert.alert(t('alert', 'Alert'), errorMsg);
+                } else if (error?.response?.status === 403 || errorMsg?.includes("reached your job application limit") || errorMsg === "You have no subscription.") {
                     dispatch(subscriptionModalAction(true));
+                } else {
+                    showToast(errorMsg);
                 }
-                showToast(error?.response?.data?.message);
             } finally {
                 setloadingApplyJob(-1)
             }
@@ -972,6 +988,11 @@ ${jobDeepLink}
             )}
 
             <Subscription />
+            <AlreadySelectedModal
+                visible={showAlreadySelectedJobModal}
+                onClose={() => setshowAlreadySelectedJobModal(false)}
+                jobId={selectedJobId}
+            />
         </View>
     )
 }

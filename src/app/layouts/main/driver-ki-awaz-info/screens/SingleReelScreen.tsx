@@ -11,6 +11,7 @@ import {
     ActivityIndicator,
     PanResponder,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import RNShare from 'react-native-share';
 import {
     BottomSheetModal,
@@ -121,13 +122,7 @@ const SingleReelScreen: React.FC = () => {
         const cleanThumbPath = rawThumb.startsWith('/') ? rawThumb.substring(1) : rawThumb;
         let finalThumbUrl = '';
         if (rawThumb) {
-            if (hasThumbHttp) {
-                finalThumbUrl = rawThumb;
-            } else if (cleanThumbPath.startsWith('uploads/thumbnails/')) {
-                finalThumbUrl = `${DRIVER_KI_AWAZ_BASE}${cleanThumbPath}`;
-            } else {
-                finalThumbUrl = `${DRIVER_KI_AWAZ_BASE}uploads/thumbnails/${cleanThumbPath}`;
-            }
+            finalThumbUrl = hasThumbHttp ? rawThumb : `${DRIVER_KI_AWAZ_BASE}${cleanThumbPath}`;
         }
 
         setReelData({
@@ -401,7 +396,10 @@ const SingleReelScreen: React.FC = () => {
                     <View style={[styles.actionsContainer, { bottom: insets.bottom + 80 }]}>
                         <TouchableOpacity style={styles.avatarContainer}>
                             {reelData.userAvatar && !reelData.userAvatar.includes('placeholder') ? (
-                                <Image source={{ uri: reelData.userAvatar }} style={styles.avatar} />
+                                <FastImage
+                                    source={{ uri: reelData.userAvatar, priority: FastImage.priority.normal }}
+                                    style={styles.avatar}
+                                />
                             ) : (
                                 <View style={[styles.avatar, { backgroundColor: '#333333', alignItems: 'center', justifyContent: 'center' }]}>
                                     <Ionicons name="person" size={24} color="#FFFFFF" />

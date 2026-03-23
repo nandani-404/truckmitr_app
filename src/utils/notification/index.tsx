@@ -19,7 +19,7 @@ import store from '@truckmitr/redux/store';
 
 const CHANNEL_ID = 'truckMitr_channel';
 const CHANNEL_NAME = 'TruckMitr Notifications';
-const SOUND_NAME = 'truck_sound';
+const SOUND_NAME = 'default';
 
 let notificationShown = false;
 let notificationNavigationHandled = false;
@@ -66,12 +66,12 @@ const navigateWithDeepLink = (data?: NotificationData) => {
     const state = store.getState();
     const { user } = state.user;
     const { selectedModule } = state.app;
-    
+
     const userRole = user?.role || user?.data?.role || 'driver';
-    
+
     // Resolve screen name with role validation
     const targetScreen = resolveTargetScreen(data.screen, userRole, selectedModule);
-    
+
     const deepLink = `truckmitr://${targetScreen}`;
     console.log('🔗 Navigating with validated deep link:', deepLink);
 
@@ -241,12 +241,12 @@ export const handleNotificationNavigation = async (data?: NotificationData) => {
     const state = store.getState();
     const { user } = state.user;
     const { selectedModule } = state.app;
-    
+
     const userRole = user?.role || user?.data?.role || 'driver';
-    
+
     // Resolve screen name with role validation
     const targetScreen = resolveTargetScreen(data.screen, userRole, selectedModule);
-    
+
     // Update data with resolved screen
     const validatedData = { ...data, screen: targetScreen };
 
@@ -312,8 +312,8 @@ export const initializeNotificationChannel = async () => {
     }
 };
 
-// Helper function to display notification with custom truck sound
-export const displayNotificationWithTruckSound = async (title: string, body: string, data?: any) => {
+// Helper function to display notification with default device sound
+export const displayNotification = async (title: string, body: string, data?: any) => {
     try {
         // Generate unique notification ID based on content to prevent duplicates
         const notificationId = generateNotificationId(title, body, data);
@@ -325,7 +325,8 @@ export const displayNotificationWithTruckSound = async (title: string, body: str
             android: {
                 channelId: CHANNEL_ID,
                 smallIcon: 'ic_notification',
-                sound: SOUND_NAME,
+                // Using 'default' sound on Android and iOS
+                sound: 'default',
                 importance: AndroidImportance.HIGH,
                 pressAction: {
                     id: 'default',
@@ -333,13 +334,24 @@ export const displayNotificationWithTruckSound = async (title: string, body: str
                 vibrationPattern: [300, 500],
                 autoCancel: true,
             },
+            ios: {
+                // Ensure default sound for iOS
+                foregroundPresentationOptions: {
+                    alert: true,
+                    badge: true,
+                    sound: true,
+                },
+            }
         });
         return true;
     } catch (error) {
-        console.error('Error displaying notification with truck sound:', error);
+        console.error('Error displaying notification:', error);
         return false;
     }
 };
+
+// Maintain old function name for compatibility if needed elsewhere
+export const displayNotificationWithTruckSound = displayNotification;
 
 // Generate unique ID for notification to prevent duplicates
 const generateNotificationId = (title: string, body: string, data?: any): string => {

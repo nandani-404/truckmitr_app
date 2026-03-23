@@ -35,12 +35,16 @@ axiosInstance.interceptors.request.use(
 // Add a response interceptor
 axiosInstance.interceptors.response.use(
     (response) => {
-        console.log('Response=', response?.data);
+        // Safe logging - avoid JSON.stringify on large objects
+        const responseSize = JSON.stringify(response?.data || {}).length;
+        console.log(`[Axios] Response from ${response.config.url} - Status: ${response.status} - Size: ${responseSize} bytes`);
+        
         crashlytics().log(`Response: ${response.config.method?.toUpperCase()} ${response.config.url} - Status: ${response.status}`);
         return response;
     },
     (error) => {
-        console.log('Error=', error?.response);
+        const errorStatus = error?.response?.status || 'Unknown';
+        console.log(`[Axios] Request Error - Status: ${errorStatus}`);
 
         if (error.response) {
             // Log response error details to Crashlytics

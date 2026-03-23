@@ -1,4 +1,4 @@
-import { ActivityIndicator, Image, StatusBar, StyleSheet, Text, TouchableOpacity, View, Animated, Pressable, TextInput } from 'react-native'
+import { ActivityIndicator, Image, StatusBar, StyleSheet, Text, TouchableOpacity, View, Animated, Pressable, TextInput, Alert } from 'react-native'
 import React, { useEffect, useState, useRef } from 'react'
 import { useColor, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -849,15 +849,28 @@ export default function SuitsJob() {
                     setshowLottie(false)
                 }, 1200);
             } else {
-                if (response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
-                    dispatch(subscriptionModalAction(true));
+                const msg = response?.data?.message;
+                const statusCode = response?.data?.status_code;
+
+                if (statusCode === 1200) {
+                    Alert.alert(t('alert', 'Alert'), msg);
+                } else {
+                    if (msg === "You have reached your cumulative job application limit for your subscriptions.") {
+                        dispatch(subscriptionModalAction(true));
+                    }
+                    showToast(msg)
                 }
-                showToast(response?.data?.message)
             }
         } catch (error: any) {
             console.error("Error searching jobs:", error);
-            if (error?.response?.status === 403 || error?.response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
+            const errorMsg = error?.response?.data?.message || error?.message;
+
+            if (error?.response?.data?.status_code === 1200) {
+                Alert.alert(t('alert', 'Alert'), errorMsg);
+            } else if (error?.response?.status === 403 || errorMsg?.includes("reached your job application limit") || errorMsg === "You have no subscription.") {
                 dispatch(subscriptionModalAction(true));
+            } else {
+                showToast(errorMsg);
             }
         } finally {
             setloadingApplyJob(-1)

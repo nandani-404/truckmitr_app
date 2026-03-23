@@ -2548,7 +2548,7 @@ const Home = React.forwardRef((props, ref) => {
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 🚛 TRUCKER MODE TOGGLE CARD                    */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <TruckerModeToggle onToggle={handleStartTransition} />
+                        {/* <TruckerModeToggle onToggle={handleStartTransition} /> */}
 
                         {/* ═══════════════════════════════════════════════ */}
                         {/* 📊 KHATAMITR BUTTON                            */}

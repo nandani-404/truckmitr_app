@@ -359,7 +359,7 @@ const ReferAndEarn = () => {
                         <View style={[styles.promoCard, { backgroundColor: colors.royalBlueOpacity(0.05), borderColor: colors.royalBlueOpacity(0.1) }]}>
                             <View style={styles.promoHeader}>
                                 <View style={[styles.promoIconContainer, { backgroundColor: colors.royalBlue }]}>
-                                    <MaterialCommunityIcons name="currency-usd" size={20} color="#fff" />
+                                    <MaterialCommunityIcons name="currency-inr" size={20} color="#fff" />
                                 </View>
                                 <View style={styles.promoTextContainer}>
                                     <Text style={[styles.promoTitle, { color: colors.black, fontSize: responsiveFontSize(1.8) }]}>
@@ -405,37 +405,41 @@ const ReferAndEarn = () => {
                     </View>
 
                     {/* Earned Rewards Section */}
-                    <View style={{ marginTop: 24 }}>
-                        <View style={[styles.sectionTitleRow, { paddingHorizontal: responsiveWidth(4) }]}>
-                            <Text style={[styles.sectionTitle, { color: colors.black, fontSize: responsiveFontSize(2) }]}>
-                                {t('earnedRewards', 'Earned Rewards')}
-                            </Text>
+                    {mergedRewards.length > 0 && (
+                        <View style={{ marginTop: 24 }}>
+                            <View style={[styles.sectionTitleRow, { paddingHorizontal: responsiveWidth(4) }]}>
+                                <Text style={[styles.sectionTitle, { color: colors.black, fontSize: responsiveFontSize(2) }]}>
+                                    {t('earnedRewards', 'Earned Rewards')}
+                                </Text>
+                            </View>
+                            <FlatList
+                                data={mergedRewards}
+                                renderItem={renderRewardItem}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                keyExtractor={item => item.id}
+                                contentContainerStyle={{ paddingHorizontal: responsiveWidth(4), paddingTop: 10, paddingBottom: 10 }}
+                            />
                         </View>
-                        <FlatList
-                            data={mergedRewards}
-                            renderItem={renderRewardItem}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            keyExtractor={item => item.id}
-                            contentContainerStyle={{ paddingHorizontal: responsiveWidth(4), paddingTop: 10, paddingBottom: 10 }}
-                        />
-                    </View>
+                    )}
 
                     {/* Referral Progress Section */}
-                    <View style={{ marginTop: 10 }}>
-                        <View style={[styles.sectionTitleRow, { paddingHorizontal: responsiveWidth(4) }]}>
-                            <Text style={[styles.sectionTitle, { color: colors.black, fontSize: responsiveFontSize(2) }]}>
-                                {t('referralProgress', 'Referral Progress')}
-                            </Text>
+                    {referralProgress.length > 0 && (
+                        <View style={{ marginTop: 10 }}>
+                            <View style={[styles.sectionTitleRow, { paddingHorizontal: responsiveWidth(4) }]}>
+                                <Text style={[styles.sectionTitle, { color: colors.black, fontSize: responsiveFontSize(2) }]}>
+                                    {t('referralProgress', 'Referral Progress')}
+                                </Text>
+                            </View>
+                            <View style={{ paddingHorizontal: responsiveWidth(4), marginTop: 10 }}>
+                                {referralProgress.map((item: any, index: number) => (
+                                    <View key={index}>
+                                        {renderProgressItem({ item })}
+                                    </View>
+                                ))}
+                            </View>
                         </View>
-                        <View style={{ paddingHorizontal: responsiveWidth(4), marginTop: 10 }}>
-                            {referralProgress.map((item: any, index: number) => (
-                                <View key={index}>
-                                    {renderProgressItem({ item })}
-                                </View>
-                            ))}
-                        </View>
-                    </View>
+                    )}
                 </ScrollView>
             )}
 

@@ -11,10 +11,10 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Image,
     Dimensions,
     ActivityIndicator,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,7 +33,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface PostDetailParams {
     post: {
         id: string;
-        mediaType: 'video' | 'image' | 'text';
+        type: 'VIDEO' | 'IMAGE' | 'TEXT';
         caption: string;
         thumbnailUrl: string;
         mediaUrl: string;
@@ -100,10 +100,11 @@ const PostDetailScreen: React.FC = () => {
     const [likeLoading, setLikeLoading] = useState(false);
 
     useEffect(() => {
-        if (!post && route.params?.id) {
+        if (route.params?.id) {
             fetchPost(route.params.id);
         }
     }, [route.params?.id]);
+
 
     const fetchPost = async (id: string) => {
         try {
@@ -126,16 +127,13 @@ const PostDetailScreen: React.FC = () => {
 
                 setPost({
                     id: rawPost.id.toString(),
-                    mediaType: (rawPost.media_type || 'text').toUpperCase(),
+                    type: (rawPost.media_type || 'text').toUpperCase(),
                     caption: rawPost.caption || '',
                     mediaUrl: finalMediaUrl,
                     thumbnailUrl: (rawPost.thumbnail_url || rawPost.thumbnail) 
                         ? ( (rawPost.thumbnail_url || rawPost.thumbnail).startsWith('http') 
                             ? (rawPost.thumbnail_url || rawPost.thumbnail) 
-                            : ( (rawPost.thumbnail_url || rawPost.thumbnail).replace(/^\/+/, '').startsWith('uploads/thumbnails/')
-                                ? `${DRIVER_KI_AWAZ_BASE}${(rawPost.thumbnail_url || rawPost.thumbnail).replace(/^\/+/, '')}`
-                                : `${DRIVER_KI_AWAZ_BASE}uploads/thumbnails/${(rawPost.thumbnail_url || rawPost.thumbnail).replace(/^\/+/, '')}`
-                              )
+                            : `${DRIVER_KI_AWAZ_BASE}${(rawPost.thumbnail_url || rawPost.thumbnail).replace(/^\/+/, '')}`
                           ) 
                         : '',
                     likesCount: rawPost.likes_count || 0,
@@ -193,7 +191,7 @@ const PostDetailScreen: React.FC = () => {
     const handleShare = async () => {
         if (!post) return;
         try {
-            const isVideo = post.mediaType === 'VIDEO';
+            const isVideo = (post.type || post.mediaType) === 'VIDEO';
             const typePath = isVideo ? 'reel' : 'post';
             const shareUrl = `https://truckmitr.com/${typePath}/${post.id}`;
             const isHindi = i18n.language === 'hi' || i18n.language === 'hn';
@@ -276,7 +274,10 @@ const PostDetailScreen: React.FC = () => {
                 {/* User Info Row */}
                 <View style={styles.userRow}>
                     {post.userAvatar && post.userAvatar !== 'https://via.placeholder.com/150' ? (
-                        <Image source={{ uri: post.userAvatar }} style={styles.userAvatar} />
+                        <FastImage
+                            source={{ uri: post.userAvatar, priority: FastImage.priority.normal }}
+                            style={styles.userAvatar}
+                        />
                     ) : (
                         <View style={[styles.userAvatar, styles.avatarPlaceholder]}>
                             <Ionicons name="person" size={24} color="#94A3B8" />
@@ -291,9 +292,9 @@ const PostDetailScreen: React.FC = () => {
                 </View>
 
                 {/* Media */}
-                {post.mediaType !== 'TEXT' && (
+                {(post.type || post.mediaType) !== 'TEXT' && (post.mediaUrl || post.thumbnailUrl) && (
                     <View style={styles.mediaContainer}>
-                        {post.mediaType === 'VIDEO' ? (
+                        {(post.type || post.mediaType) === 'VIDEO' ? (
                             <TouchableOpacity
                                 activeOpacity={0.95}
                                 onPress={() => setVideoPaused(!videoPaused)}
@@ -316,10 +317,10 @@ const PostDetailScreen: React.FC = () => {
                                 )}
                             </TouchableOpacity>
                         ) : (
-                            <Image
-                                source={{ uri: post.mediaUrl || post.thumbnailUrl }}
+                            <FastImage
+                                source={{ uri: post.mediaUrl || post.thumbnailUrl, priority: FastImage.priority.high }}
                                 style={styles.media}
-                                resizeMode="cover"
+                                resizeMode={FastImage.resizeMode.cover}
                             />
                         )}
                     </View>

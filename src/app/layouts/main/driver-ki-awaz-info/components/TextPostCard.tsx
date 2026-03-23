@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { TextPost, CATEGORIES } from '../types';
 import ActionButtons from './ActionButtons';
@@ -48,7 +49,10 @@ const TextPostCard: React.FC<TextPostCardProps> = ({
         >
             {/* Header */}
             <View style={styles.header}>
-                <Image source={{ uri: post.userAvatar }} style={styles.avatar} />
+                <FastImage
+                    source={{ uri: post.userAvatar, priority: FastImage.priority.normal }}
+                    style={styles.avatar}
+                />
                 <View style={styles.userInfo}>
                     <Text style={styles.userName}>{post.userName}</Text>
                     <View style={styles.metaRow}>

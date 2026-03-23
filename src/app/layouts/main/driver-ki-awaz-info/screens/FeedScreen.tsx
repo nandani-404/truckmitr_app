@@ -11,10 +11,11 @@ import {
     StyleSheet,
     RefreshControl,
     Text,
-    Image,
     TouchableOpacity,
     Share,
+    ActivityIndicator,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -48,6 +49,7 @@ interface PostData {
     content?: string;
     videoUrl?: string; // Added for completeness, though Feed usually TEXT
     mediaUrl?: string;
+    thumbnailUrl?: string;
 }
 
 const getTimeAgo = (dateString: string): string => {
@@ -89,17 +91,33 @@ const PostCard: React.FC<{
     onSupport: () => void;
     onComment: () => void;
     onShare: () => void;
+    onPress?: () => void;
     isFocused?: boolean;
-}> = ({ post, onSupport, onComment, onShare, isFocused = true }) => {
+}> = ({ post, onSupport, onComment, onShare, onPress, isFocused = true }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+
+    // 1. Clean the content (Limit consecutive newlines to max 2 and trim)
+    const cleanedContent = post.content?.replace(/\n\s*\n\s*\n+/g, '\n\n').trim();
+
+    // 2. Determine limits
     const contentLimit = post.type === 'TEXT' ? 700 : 150;
-    const shouldTruncate = (post.content?.length || 0) > contentLimit;
+    const lineLimit = 8;
+
+    // 3. Count lines in the cleaned content
+    const lineCount = cleanedContent ? cleanedContent.split('\n').length : 0;
+
+    // 4. Trigger truncation if character count OR line count exceeds limit
+    const shouldTruncate = (cleanedContent?.length || 0) > contentLimit || lineCount > lineLimit;
+
+    // 5. Prepare display text
     const displayText = shouldTruncate && !isExpanded
-        ? post.content?.slice(0, contentLimit) + '...'
-        : post.content;
+        ? (lineCount > lineLimit
+            ? cleanedContent?.split('\n').slice(0, lineLimit).join('\n') + '...'
+            : cleanedContent?.slice(0, contentLimit) + '...')
+        : cleanedContent;
 
     const renderCaption = () => {
-        if (!post.content) return null;
+        if (!cleanedContent) return null;
         return (
             <View>
                 <Text style={styles.postContent}>{displayText}</Text>
@@ -119,7 +137,10 @@ const PostCard: React.FC<{
             {/* Header */}
             <View style={styles.postHeader}>
                 {post.userAvatar && post.userAvatar !== 'https://via.placeholder.com/150' ? (
-                    <Image source={{ uri: post.userAvatar }} style={styles.postAvatar} />
+                    <FastImage
+                        source={{ uri: post.userAvatar, priority: FastImage.priority.normal }}
+                        style={styles.postAvatar}
+                    />
                 ) : (
                     <View style={[styles.postAvatar, { backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
                         <Ionicons name="person" size={24} color="#94A3B8" />
@@ -134,45 +155,62 @@ const PostCard: React.FC<{
                 </View>
             </View>
 
-            {/* Category Badge */}
-            <View style={styles.categoryContainer}>
-                <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryText}>{post.categoryLabel}</Text>
-                </View>
-            </View>
-
-            {/* Content */}
-            {post.type === 'IMAGE' ? (
-                <View>
-                    {renderCaption()}
-                    <Image
-                        source={{ uri: post.mediaUrl }}
-                        style={styles.postImage}
-                        resizeMode="contain"
-                    />
-                </View>
-            ) : post.type === 'VIDEO' ? (
-                <View>
-                    {renderCaption()}
-                    <View style={styles.videoContainer}>
-                        {isFocused ? (
-                            <Video
-                                source={{ uri: post.videoUrl || post.mediaUrl }}
-                                style={styles.postVideo}
-                                resizeMode="cover"
-                                paused={true} // Start paused
-                                controls={true}
-                            />
-                        ) : (
-                            <View style={[styles.postVideo, { backgroundColor: '#000000' }]} />
-                        )}
+            {/* Content Section (Clickable) */}
+            <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
+                {/* Category Badge */}
+                <View style={styles.categoryContainer}>
+                    <View style={styles.categoryBadge}>
+                        <Text style={styles.categoryText}>{post.categoryLabel}</Text>
                     </View>
                 </View>
-            ) : (
-                <View>
-                    {renderCaption()}
-                </View>
-            )}
+
+                {/* Content */}
+                {post.type === 'IMAGE' && (
+                    <View>
+                        {renderCaption()}
+                        <FastImage
+                            source={{ uri: post.mediaUrl, priority: FastImage.priority.high }}
+                            style={styles.postImage}
+                            resizeMode={FastImage.resizeMode.contain}
+                        />
+                    </View>
+                )}
+
+                {post.type === 'VIDEO' && (
+                    <View>
+                        {renderCaption()}
+                        <View style={styles.videoContainer}>
+                            {isFocused ? (
+                                <Video
+                                    source={{ uri: post.videoUrl || post.mediaUrl }}
+                                    style={styles.postVideo}
+                                    resizeMode="cover"
+                                    paused={true} // Start paused
+                                    controls={true}
+                                />
+                            ) : (
+                                <View style={styles.postVideo}>
+                                    {post.thumbnailUrl ? (
+                                        <FastImage
+                                            source={{ uri: post.thumbnailUrl, priority: FastImage.priority.normal }}
+                                            style={styles.postVideo}
+                                            resizeMode={FastImage.resizeMode.cover}
+                                        />
+                                    ) : (
+                                        <View style={[styles.postVideo, { backgroundColor: '#000000' }]} />
+                                    )}
+                                </View>
+                            )}
+                        </View>
+                    </View>
+                )}
+
+                {post.type !== 'IMAGE' && post.type !== 'VIDEO' && (
+                    <View>
+                        {renderCaption()}
+                    </View>
+                )}
+            </TouchableOpacity>
 
             {/* Hashtags */}
             <Text style={styles.hashtags}>
@@ -244,7 +282,11 @@ const FeedScreen: React.FC<{
         if (loading || (!hasMore && !refresh)) return;
 
         setLoading(true);
-        if (refresh) setRefreshing(true);
+        if (refresh) {
+            setRefreshing(true);
+            setCursor(undefined);
+            setLastId(undefined);
+        }
 
         try {
             const currentCursor = refresh ? undefined : cursor;
@@ -254,9 +296,11 @@ const FeedScreen: React.FC<{
                 ? await DriverKiAwazService.getUserFeed(userId, currentCursor, currentLastId)
                 : await DriverKiAwazService.getFeed(currentCursor, currentLastId, 'text,image');
 
+            console.log("response", response);
             if (response.data) {
                 // Check if response has valid data structure
                 const feedData = response.data.data || (Array.isArray(response.data) ? response.data : []);
+                console.log("feedData", feedData);
 
                 if (feedData.length > 0) {
                     const newPosts: PostData[] = feedData
@@ -296,16 +340,37 @@ const FeedScreen: React.FC<{
                                 content: item.caption,
                                 mediaUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
                                 videoUrl: hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`,
+                                thumbnailUrl: item.thumbnail_url || item.thumbnail
+                                    ? ((item.thumbnail_url || item.thumbnail).startsWith('http')
+                                        ? (item.thumbnail_url || item.thumbnail)
+                                        : `${DRIVER_KI_AWAZ_BASE}${(item.thumbnail_url || item.thumbnail).replace(/^\/+/, '')}`)
+                                    : (item.media_type === 'image' ? (hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`) : ''),
                             };
                         });
+
+                    // DEBUG LOGGING
+                    const existingIds = posts.map(p => p.id);
+                    const incomingIds = newPosts.map(p => p.id);
+                    const duplicates = incomingIds.filter(id => existingIds.includes(id));
+
+                    console.log(`[PaginationDebug] Current Posts: ${existingIds.length}, New Posts: ${incomingIds.length}`);
+                    if (duplicates.length > 0) {
+                        console.warn(`[PaginationDebug] DUPLICATE IDs FOUND:`, duplicates);
+                    }
 
                     if (refresh) {
                         setPosts(newPosts);
                     } else {
-                        setPosts(prev => [...prev, ...newPosts]);
+                        setPosts(prev => {
+                            const combined = [...prev, ...newPosts];
+                            // Deduplicate by ID
+                            const unique = Array.from(new Map(combined.map(p => [p.id, p])).values());
+                            return unique;
+                        });
                     }
 
                     // Use API provided pagination info if available
+                    console.log(`[PaginationDebug] API nextCursor: ${response.data.nextCursor}, nextId: ${response.data.nextId}`);
                     if (response.data.nextCursor) {
                         setCursor(response.data.nextCursor);
                         setLastId(response.data.nextId?.toString());
@@ -427,6 +492,7 @@ const FeedScreen: React.FC<{
                         onSupport={() => toggleSupport(item.id)}
                         onComment={() => openComments(item.id)}
                         onShare={() => sharePost(item)}
+                        onPress={() => navigation.navigate(STACKS.DRIVER_KI_AWAZ_POST_DETAIL, { id: item.id, post: item })}
                         isFocused={isFocused}
                     />
                 )}
@@ -453,6 +519,16 @@ const FeedScreen: React.FC<{
                 }
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
+                // Pagination triggers
+                onEndReached={() => fetchFeed(false)}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={
+                    loading && posts.length > 0 ? (
+                        <View style={styles.footerLoader}>
+                            <ActivityIndicator size="small" color="#3B82F6" />
+                        </View>
+                    ) : null
+                }
                 // Turbo Optimizations
                 removeClippedSubviews={true}
                 maxToRenderPerBatch={5}
@@ -637,6 +713,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
         color: '#3B82F6',
+    },
+    footerLoader: {
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
 

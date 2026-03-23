@@ -1,4 +1,4 @@
-import { ActivityIndicator, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Modal, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useColor, useImage, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +23,7 @@ import LottieView from 'lottie-react-native';
 import { useTranslation } from 'react-i18next';
 import Subscription from '../subscription';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
+import AlreadySelectedModal from '../job/AlreadySelectedModal';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
 
@@ -41,6 +42,8 @@ export default function AvailableJob() {
     const [search, setsearch] = useState('')
     const [loadingApplyJob, setloadingApplyJob] = useState(-1)
     const [showLottie, setshowLottie] = useState(false)
+    const [showAlreadySelectedJobModal, setShowAlreadySelectedJobModal] = useState(false);
+    const [selectedJobId, setSelectedJobId] = useState('');
 
     const [searchJobsList, setsearchJobsList] = useState<any>()
     const [loading, setloading] = useState(false)
@@ -116,15 +119,30 @@ export default function AvailableJob() {
                         setshowLottie(false)
                     }, 1200);
                 } else {
-                    if (response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
-                        dispatch(subscriptionModalAction(true));
+                    const msg = response?.data?.message;
+                    const statusCode = response?.data?.status_code;
+
+                    if (statusCode === 1200) {
+                        setSelectedJobId(response?.data?.job_id || '');
+                        setShowAlreadySelectedJobModal(true);
+                    } else {
+                        if (msg === "You have reached your cumulative job application limit for your subscriptions.") {
+                            dispatch(subscriptionModalAction(true));
+                        }
+                        showToast(msg)
                     }
-                    showToast(response?.data?.message)
                 }
             } catch (error: any) {
                 console.error("Error searching jobs:", error);
-                if (error?.response?.status === 403 || error?.response?.data?.message === "You have reached your cumulative job application limit for your subscriptions.") {
+                const errorMsg = error?.response?.data?.message || error?.message;
+
+                if (error?.response?.data?.status_code === 1200) {
+                    setSelectedJobId(error?.response?.data?.job_id || '');
+                    setShowAlreadySelectedJobModal(true);
+                } else if (error?.response?.status === 403 || errorMsg?.includes("reached your job application limit") || errorMsg === "You have no subscription.") {
                     dispatch(subscriptionModalAction(true));
+                } else {
+                    showToast(errorMsg);
                 }
             } finally {
                 setloadingApplyJob(-1)
@@ -341,6 +359,11 @@ export default function AvailableJob() {
             {showLottie && <View style={{ height: responsiveHeight(100), width: responsiveWidth(100), alignItems: 'center', justifyContent: 'center', position: 'absolute', pointerEvents: 'none' }}>
                 <LottieView style={{ height: responsiveHeight(50), width: responsiveWidth(70) }} source={require('@truckmitr/res/lotties/boom.json')} autoPlay loop />
             </View>}
+            <AlreadySelectedModal
+                visible={showAlreadySelectedJobModal}
+                jobId={selectedJobId}
+                onClose={() => setShowAlreadySelectedJobModal(false)}
+            />
         </View>
     )
 }

@@ -11,6 +11,8 @@ interface UploadState {
     type: string;
     category: string;
     caption: string;
+    mediaUri?: string;
+    thumbnailUri?: string;
   } | null;
 }
 
@@ -26,7 +28,13 @@ const uploadSlice = createSlice({
   name: 'upload',
   initialState,
   reducers: {
-    startUpload: (state, action: PayloadAction<{ type: string; category: string; caption: string }>) => {
+    startUpload: (state, action: PayloadAction<{ 
+      type: string; 
+      category: string; 
+      caption: string;
+      mediaUri?: string;
+      thumbnailUri?: string;
+    }>) => {
       state.isUploading = true;
       state.progress = 0;
       state.status = 'compressing';

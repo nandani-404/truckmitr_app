@@ -10,5 +10,6 @@ import ProfileCompletion from "@truckmitr/src/app/layouts/auth/profile-completio
 import ProfileCompletionForeman from "@truckmitr/src/app/layouts/auth/foreman-profile-completion"
 import Congratulations from "@truckmitr/src/app/layouts/auth/congratulations"
 import ModuleSelection from "@truckmitr/src/app/layouts/auth/moduleSelection"
+import ModuleSelectionNew from "@truckmitr/src/app/layouts/auth/moduleSelection/ModuleSelectionNew"
 
-export { Namaste, Welcome, Login, Signup, Otp, Language, Approval, IntroVideo, ProfileCompletion, ProfileCompletionForeman, Congratulations, ModuleSelection }
+export { Namaste, Welcome, Login, Signup, Otp, Language, Approval, IntroVideo, ProfileCompletion, ProfileCompletionForeman, Congratulations, ModuleSelection, ModuleSelectionNew }

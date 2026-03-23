@@ -12,6 +12,7 @@ export type NavigatorParams = {
     signup: { preSelectedRole?: string; referralCode?: string } | undefined
     consentModalScreen: undefined
     moduleSelection: undefined
+    moduleSelectionNew: undefined
     congratulations: any
     profileCompletion: undefined
     phone: undefined;
@@ -250,6 +251,7 @@ export const STACKS = {
     SIGNUP: 'signup',
     CONSENT_MODAL_SCREEN: 'consentModalScreen',
     MODULE_SELECTION: 'moduleSelection',
+    MODULE_SELECTION_NEW: 'moduleSelectionNew',
     CONGRATULATIONS: 'congratulations',
     PROFILE_COMPLETION: 'profileCompletion',
     PHONE: 'phone',

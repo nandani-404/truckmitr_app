@@ -16,4 +16,12 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
     console.log('--- 🔔 Notifee Background Event (index.js) ---', type);
 });
 
+// Register Notifee foreground service (required for background uploads on Android)
+notifee.registerForegroundService((notification) => {
+    return new Promise(() => {
+        // Dummy promise to keep the service running.
+        // It will be stopped via notifee.stopForegroundService() in UploadManager.
+    });
+});
+
 AppRegistry.registerComponent(appName, () => App);

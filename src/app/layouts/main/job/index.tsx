@@ -1,4 +1,4 @@
-import { ActivityIndicator, Modal, Text, TouchableOpacity, View, Animated, Pressable, StyleSheet, Share } from 'react-native'
+import { ActivityIndicator, Modal, Text, TouchableOpacity, View, Animated, Pressable, StyleSheet, Share, Alert } from 'react-native'
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useColor, useImage, useResponsiveScale, useShadow, useStatusBarStyle } from '@truckmitr/src/app/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,6 +25,7 @@ import { showToast } from '@truckmitr/src/app/hooks/toast';
 import { useTranslation } from 'react-i18next';
 import Subscription from '../subscription';
 import { subscriptionModalAction } from '@truckmitr/src/redux/actions/user.action';
+import AlreadySelectedModal from './AlreadySelectedModal';
 import LinearGradient from 'react-native-linear-gradient';
 
 type NavigatorProp = NativeStackNavigationProp<NavigatorParams, keyof NavigatorParams>;
@@ -1308,6 +1309,8 @@ export default function AvailableJob() {
   const [loading, setloading] = useState(true)
   const [loadingApplyJob, setloadingApplyJob] = useState(-1)
   const [showLottie, setshowLottie] = useState(false)
+  const [showAlreadySelectedJobModal, setshowAlreadySelectedJobModal] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState('');
   const [isExtended, setIsExtended] = useState(false);
   const [checkBoxSelect, setCheckBoxSelect] = useState<{ [jobId: number]: boolean }>({});
   const [errors, setErrors] = useState<{ [jobId: number]: { checkBox?: string } }>({});
@@ -1502,21 +1505,30 @@ export default function AvailableJob() {
         }, 4000);
       } else {
         const msg = response?.data?.message;
-        if (
-          msg === "You have no subscription." ||
-          msg?.includes("reached your") ||
-          response?.status === 403
-        ) {
-          dispatch(subscriptionModalAction(true));
+        const statusCode = response?.data?.status_code;
+
+        if (statusCode === 1200) {
+          setSelectedJobId(response?.data?.job_id);
+          setshowAlreadySelectedJobModal(true);
+        } else {
+          if (
+            msg === "You have no subscription." ||
+            msg?.includes("reached your") ||
+            response?.status === 403
+          ) {
+            dispatch(subscriptionModalAction(true));
+          }
+          showToast(msg)
         }
-        showToast(msg)
       }
       _fetchAllAvailableJobs()
     } catch (error: any) {
       console.error("Error searching jobs:", error);
       const errorMsg = error?.response?.data?.message || error?.message;
 
-      if (error?.response?.status === 403 || errorMsg?.includes("reached your job application limit") || errorMsg === "You have no subscription.") {
+      if (error?.response?.data?.status_code === 1200) {
+        Alert.alert(t('alert', 'Alert'), errorMsg);
+      } else if (error?.response?.status === 403 || errorMsg?.includes("reached your job application limit") || errorMsg === "You have no subscription.") {
         // showToast(errorMsg);
         dispatch(subscriptionModalAction(true));
       } else {
@@ -1794,6 +1806,11 @@ export default function AvailableJob() {
       />
 
       <Subscription />
+      <AlreadySelectedModal
+        visible={showAlreadySelectedJobModal}
+        onClose={() => setshowAlreadySelectedJobModal(false)}
+        jobId={selectedJobId}
+      />
     </View>
   )
 }

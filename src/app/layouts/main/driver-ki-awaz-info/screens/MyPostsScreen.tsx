@@ -19,6 +19,7 @@ import {
     Modal,
     TextInput,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -39,7 +40,7 @@ const Tab = createMaterialTopTabNavigator();
 // ─── Types ──────────────────────────────────────────────
 interface MyPostData {
     id: string;
-    mediaType: 'video' | 'image' | 'text';
+    type: 'VIDEO' | 'IMAGE' | 'TEXT';
     caption: string;
     thumbnailUrl: string;
     mediaUrl: string;
@@ -93,11 +94,11 @@ const formatCategoryHashtag = (categoryId?: string): string => {
         .join('');
 };
 
-const getMediaTypeLabel = (mediaType: string, t: any): string => {
-    switch (mediaType) {
-        case 'video': return t('video');
-        case 'image': return t('blog');
-        case 'text': return t('blog');
+const getMediaTypeLabel = (type: string, t: any): string => {
+    switch (type) {
+        case 'VIDEO': return t('video');
+        case 'IMAGE': return t('blog');
+        case 'TEXT': return t('blog');
         default: return t('post');
     }
 };
@@ -111,7 +112,7 @@ const PostCard: React.FC<{
     const { t } = useTranslation();
     const statusConfig = getStatusConfig(post.status, t);
     const hashtag = formatCategoryHashtag(post.category);
-    const mediaLabel = getMediaTypeLabel(post.mediaType, t);
+    const mediaLabel = getMediaTypeLabel(post.type, t);
 
     return (
         <View style={cardStyles.wrapper}>
@@ -123,22 +124,22 @@ const PostCard: React.FC<{
             >
                 {/* Thumbnail */}
                 <View style={cardStyles.thumbnailContainer}>
-                    {post.mediaType === 'video' ? (
+                    {post.type === 'VIDEO' ? (
                         <>
-                            <Image
-                                source={{ uri: post.thumbnailUrl }}
+                            <FastImage
+                                source={{ uri: post.thumbnailUrl, priority: FastImage.priority.normal }}
                                 style={cardStyles.thumbnail}
-                                resizeMode="cover"
+                                resizeMode={FastImage.resizeMode.cover}
                             />
                             <View style={cardStyles.playOverlay}>
                                 <Ionicons name="play-circle" size={28} color="rgba(255,255,255,0.9)" />
                             </View>
                         </>
-                    ) : post.mediaType === 'image' ? (
-                        <Image
-                            source={{ uri: post.thumbnailUrl }}
+                    ) : post.type === 'IMAGE' ? (
+                        <FastImage
+                            source={{ uri: post.thumbnailUrl, priority: FastImage.priority.normal }}
                             style={cardStyles.thumbnail}
-                            resizeMode="cover"
+                            resizeMode={FastImage.resizeMode.cover}
                         />
                     ) : (
                         <View style={[cardStyles.thumbnail, cardStyles.textThumb]}>
@@ -428,20 +429,31 @@ const MyPostsScreen: React.FC = () => {
 
     const mapPosts = (data: any[], dashboardUser?: any): MyPostData[] => {
         return data.map((item: any) => {
-            const rawUrl = item.media_url || '';
+            const rawUrl = item.media_url || item.mediaUrl || '';
             const hasHttp = rawUrl.startsWith('http');
             const cleanPath = rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
             const finalUrl = hasHttp ? rawUrl : `${DRIVER_KI_AWAZ_BASE}${cleanPath}`;
 
-            let mediaType: 'video' | 'image' | 'text' = 'text';
-            if (item.media_type === 'video') mediaType = 'video';
-            else if (item.media_type === 'image') mediaType = 'image';
+            const rawThumb = item.thumbnail_url || item.thumbnail || '';
+            const hasThumbHttp = rawThumb.startsWith('http');
+            const cleanThumbPath = rawThumb.startsWith('/') ? rawThumb.substring(1) : rawThumb;
+            let finalThumbUrl = '';
+
+            if (rawThumb) {
+                finalThumbUrl = hasThumbHttp ? rawThumb : `${DRIVER_KI_AWAZ_BASE}${cleanThumbPath}`;
+            } else if (item.media_type === 'image') {
+                finalThumbUrl = finalUrl;
+            }
+
+            let type: 'VIDEO' | 'IMAGE' | 'TEXT' = 'TEXT';
+            if (item.media_type === 'video') type = 'VIDEO';
+            else if (item.media_type === 'image') type = 'IMAGE';
 
             return {
                 id: item.id.toString(),
-                mediaType,
+                type,
                 caption: item.caption || '',
-                thumbnailUrl: finalUrl,
+                thumbnailUrl: finalThumbUrl,
                 mediaUrl: finalUrl,
                 likesCount: item.likes_count || 0,
                 commentsCount: item.comments_count || 0,
@@ -525,10 +537,10 @@ const MyPostsScreen: React.FC = () => {
     };
 
     const handlePostPress = (post: MyPostData) => {
-        if (post.mediaType === 'video') {
+        if (post.type === 'VIDEO') {
             navigation.navigate(STACKS.SINGLE_REEL_SCREEN, { post });
         } else {
-            navigation.navigate(STACKS.DRIVER_KI_AWAZ_POST_DETAIL, { post });
+            navigation.navigate(STACKS.DRIVER_KI_AWAZ_POST_DETAIL, { id: post.id });
         }
     };
 

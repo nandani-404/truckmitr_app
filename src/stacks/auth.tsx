@@ -1,7 +1,7 @@
 import React from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { STACKS } from '@truckmitr/stacks/stacks';
-import { Approval, IntroVideo, Language, Login, Namaste, Otp, Signup, Welcome, ProfileCompletion, Congratulations, ModuleSelection } from '@truckmitr/layouts/index';
+import { Approval, IntroVideo, Language, Login, Namaste, Otp, Signup, Welcome, ProfileCompletion, Congratulations, ModuleSelection, ModuleSelectionNew } from '@truckmitr/layouts/index';
 import { Privacy, Terms } from '@truckmitr/layouts/main';
 // import { GenderModal, LoadingModal } from '@ollnine/modals/index';
 import { Main } from '@truckmitr/stacks/index';
@@ -26,6 +26,7 @@ export default function Auth() {
         <Stack.Screen name={STACKS.LANGUAGE} component={Language} options={{ animation: 'fade' }} />
         <Stack.Screen name={STACKS.SIGNUP} component={Signup} options={{ animation: 'fade' }} />
         <Stack.Screen name={STACKS.MODULE_SELECTION} component={ModuleSelection} options={{ animation: 'fade' }} />
+        <Stack.Screen name={STACKS.MODULE_SELECTION_NEW} component={ModuleSelectionNew} options={{ animation: 'fade' }} />
         <Stack.Screen name={STACKS.CONGRATULATIONS} component={Congratulations} options={{ animation: 'fade' }} />
         <Stack.Screen name={STACKS.PROFILE_COMPLETION} component={ProfileCompletion} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name={STACKS.APPROVAL} component={Approval} options={{ animation: 'fade' }} />

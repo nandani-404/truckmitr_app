@@ -407,7 +407,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             console.log('DKA: Opening Trimmer with final path:', finalPath);
 
                             showEditor(finalPath, {
-                                maxDuration: 120000,
+                                maxDuration: 30000,
                                 type: 'video',
                                 cancelButtonText: t('back') || 'Back',
                                 saveButtonText: t('save') || 'Save',
@@ -451,7 +451,7 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                             console.log('DKA: Opening Trimmer with final path:', finalPath);
 
                             showEditor(finalPath, {
-                                maxDuration: 120000,
+                                maxDuration: 30000,
                                 type: 'video',
                                 cancelButtonText: t('back') || 'Back',
                                 saveButtonText: t('save') || 'Save',
@@ -643,7 +643,9 @@ const CreatePostScreen: React.FC<CreatePostProps> = ({ onClose, defaultType, ini
                 dispatch(startUpload({ 
                     type: selectedType, 
                     category: selectedCategory, 
-                    caption: textContent 
+                    caption: textContent,
+                    mediaUri: selectedMedia?.path || selectedMedia?.uri,
+                    thumbnailUri: thumbnail?.uri
                 }));
 
                 // Start Background Process

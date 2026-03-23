@@ -56,7 +56,7 @@ export default function Welcome() {
         navigation.navigate(STACKS.LOGIN)
     }
     const _navigateSignup = () => {
-        navigation.navigate(STACKS.MODULE_SELECTION)
+        navigation.navigate(STACKS.MODULE_SELECTION_NEW)
     }
     return (
         <View style={{ flex: 1, backgroundColor: colors.white }}>
