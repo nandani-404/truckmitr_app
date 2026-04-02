@@ -8,10 +8,6 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import Sound from 'react-native-sound';
-
-// Enable playback in silence mode
-Sound.setCategory('Playback');
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -154,47 +150,29 @@ const DriverWelfare = () => {
             icon: 'coins', color: '#8B5CF6', iconLib: 'FontAwesome5', image: AtalPensionImage,
             ctaText: t('driverWelfare.atal.cta')
         },
-        /* {
-            id: 'apnaghar', title: t('driverWelfare.apnaghar.title'), subtitle: t('driverWelfare.apnaghar.subtitle'),
-            benefit: t('driverWelfare.apnaghar.title'), // Using Title as benefit placeholder or specific short text if needed
+
+        {
+            id: 'driver_rest', title: t('driverWelfare.apnaghar.title'), subtitle: t('driverWelfare.apnaghar.subtitle'),
+            benefit: t('driverWelfare.apnaghar.title'),
             line1: t('driverWelfare.apnaghar.subtitle'),
             line2: <Text style={{ fontWeight: '700', color: COLORS.textDark }}></Text>,
             heroHighlight: t('driverWelfare.apnaghar.title'),
             heroSubline: t('driverWelfare.apnaghar.subtitle'),
-            heroGradient: ['#EA580C', '#FDBA74'], // Orange → Apricot
+            heroGradient: ['#059669', '#34D399'],
             about: t('driverWelfare.apnaghar.whatIsItDesc'),
             highlights: t('driverWelfare.apnaghar.benefitsList', { returnObjects: true }),
-            benefits: (t('driverWelfare.apnaghar.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'bed-outline', text })),
-            eligibility: [],
-            steps: [],
-            icon: 'bed', color: '#EC4899', iconLib: 'FontAwesome5', isUtility: true,
-            image: DriverRestingImage,
-            ctaText: t('driverWelfare.apnaghar.cta')
-        }, */
-        {
-            id: 'driver_rest', title: t('driverWelfare.driverRest.title'), subtitle: t('driverWelfare.driverRest.subtitle'),
-            benefit: t('driverWelfare.driverRest.title'),
-            line1: t('driverWelfare.driverRest.subtitle'),
-            line2: <Text style={{ fontWeight: '700', color: COLORS.textDark }}></Text>,
-            heroHighlight: t('driverWelfare.driverRest.title'),
-            heroSubline: t('driverWelfare.driverRest.subtitle'),
-            heroGradient: ['#059669', '#34D399'],
-            about: t('driverWelfare.driverRest.whatIsItDesc'),
-            highlights: t('driverWelfare.driverRest.benefitsList', { returnObjects: true }),
-            benefits: (t('driverWelfare.driverRest.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'utensils', text })),
+            benefits: (t('driverWelfare.apnaghar.benefitsList', { returnObjects: true }) as string[]).map(text => ({ icon: 'utensils', text })),
             eligibility: [],
             steps: [],
             icon: 'hotel', color: '#059669', iconLib: 'FontAwesome5',
             image: DriverRestFacilitiesImage,
-            ctaText: t('driverWelfare.driverRest.cta')
+            ctaText: t('driverWelfare.apnaghar.cta')
         }
     ];
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const [currentScreen, setCurrentScreen] = useState<'list' | 'detail'>('list');
     const [selectedScheme, setSelectedScheme] = useState<any>(null);
-    const [isMuted, setIsMuted] = useState(false);
-    const soundRef = useRef<Sound | null>(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -272,7 +250,6 @@ const DriverWelfare = () => {
         else if (scheme.id === 'pmjjby') cardBg = '#FEF2F2';
         else if (scheme.id === 'shramyogi') cardBg = '#FAF5FF';
         else if (scheme.id === 'atal') cardBg = '#EEF2FF';
-        else if (scheme.id === 'apnaghar') cardBg = '#FDF2F8';
         else if (scheme.id === 'driver_rest') cardBg = '#ECFDF5';
 
         return (
@@ -281,14 +258,14 @@ const DriverWelfare = () => {
                     <View style={[styles.wideCardBgCircle, { backgroundColor: scheme.color + '05' }]} />
 
                     {img && (
-                        <View style={[styles.utilityImageContainer, scheme.id === 'driver_rest' && { right: -5 }]}>
-                            <Image source={img} style={styles.utilityImage} resizeMode="contain" />
+                        <View style={[styles.utilityImageContainer, scheme.id === 'driver_rest' && { right: -25 }, scheme.id === 'pmjjby' && { right: -15 }, scheme.id === 'shramyogi' && { right: -25 }, scheme.id === 'atal' && { right: -25 }]}>
+                            <Image source={img} style={[styles.utilityImage, scheme.id === 'pmsby' && { transform: [{ scale: 1.15 }] }]} resizeMode="contain" />
                             <LinearGradient
-                                colors={[cardBg, 'transparent']}
-                                locations={[0, 0.7]}
+                                colors={[cardBg, cardBg, cardBg + '00']}
+                                locations={['pmjjby', 'shramyogi', 'atal', 'driver_rest'].includes(scheme.id) ? [0, 0.12, 1] : scheme.id === 'pmsby' ? [0, 0.28, 1] : [0, 0.3, 1]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
-                                style={styles.utilityImageFade}
+                                style={[styles.utilityImageFade, scheme.id === 'pmsby' && { left: -30, width: '130%' }]}
                             />
                         </View>
                     )}
@@ -327,7 +304,7 @@ const DriverWelfare = () => {
     const SchemesListScreen = () => {
         const healthSchemes = SCHEMES.filter(s => ['ayushman', 'pmsby', 'pmjjby'].includes(s.id));
         const pensionSchemes = SCHEMES.filter(s => ['shramyogi', 'atal'].includes(s.id));
-        const facilitySchemes = SCHEMES.filter(s => ['apnaghar', 'driver_rest'].includes(s.id));
+        const facilitySchemes = SCHEMES.filter(s => ['driver_rest'].includes(s.id));
 
         return (
             <View style={styles.flex1}>
@@ -406,18 +383,27 @@ const DriverWelfare = () => {
         const [showWebView, setShowWebView] = useState(false);
         const [webViewUrl, setWebViewUrl] = useState('');
         const [mobileNumber, setMobileNumber] = useState('');
+        const [applyMethod, setApplyMethod] = useState<'online' | 'offline'>('online');
 
         const openWebView = (url: string) => {
             setWebViewUrl(url);
             setShowWebView(true);
         };
 
-        const steps = [
+        const offlineSteps = [
             { id: 1, title: 'Check Eligibility First', tag: 'Do This First', color: '#c2440e', bg: '#fff0e8', text: 'Call 14555 or visit pmjay.gov.in with your Aadhaar or mobile number.' },
             { id: 2, title: 'Visit Nearest CSC or Hospital', text: 'Go to a Common Service Centre or empanelled hospital with your documents.' },
             { id: 3, title: 'Complete eKYC', text: 'Biometric or OTP verification using Aadhaar and ration card.' },
             { id: 4, title: 'Download Your Card', tag: 'Instant & Free', color: '#16a34a', bg: '#f0fdf4', text: 'Get it instantly from the ABHA app or collect a printed copy from CSC.' },
             { id: 5, title: 'Use at Any Empanelled Hospital', text: 'Show your card at registration — 100% cashless, no payment needed!' },
+        ];
+
+        const onlineSteps = [
+            { id: 1, title: 'Go to the website', text: 'Visit ', link: 'https://beneficiary.nha.gov.in/', textAfterLink: ' and login with mobile number (OTP verification).' },
+            { id: 2, title: 'Search your details', text: 'Search using Aadhaar / Mobile / Ration Card / Name + State.' },
+            { id: 3, title: 'If your name is found', tag: 'e-KYC', color: '#16a34a', bg: '#f0fdf4', text: 'Proceed with e-KYC and complete Aadhaar verification.' },
+            { id: 4, title: 'If your name is NOT found', tag: 'Enroll Now', color: '#c2440e', bg: '#fff0e8', text: 'Click "Enroll Now", fill required details, and submit request for inclusion.' },
+            { id: 5, title: 'Download Ayushman Card', text: 'After approval/KYC, download your card or print from CSC.' },
         ];
 
         return (
@@ -436,17 +422,7 @@ const DriverWelfare = () => {
                             </TouchableOpacity>
 
                             <View style={styles.headerRightSide}>
-                                <View style={styles.govChip}><Text style={styles.govChipText}>🇮🇳 Govt</Text></View>
-                                <TouchableOpacity
-                                    onPress={() => setIsMuted(!isMuted)}
-                                    style={styles.voiceToggleBtn}
-                                >
-                                    <Ionicons
-                                        name={isMuted ? "volume-mute" : "volume-high"}
-                                        size={22}
-                                        color="white"
-                                    />
-                                </TouchableOpacity>
+                                <View style={styles.govChip}><Text style={styles.govChipText}>GOVT OF INDIA</Text></View>
                             </View>
                         </View>
 
@@ -539,17 +515,43 @@ const DriverWelfare = () => {
                             </TouchableOpacity>
 
                             <View style={{ marginTop: 16 }}>
-                                <Text style={styles.secHeadNew}>Steps to Apply</Text>
+                                <View style={{ flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 12, padding: 4, marginBottom: 16, marginTop: 8 }}>
+                                    <TouchableOpacity
+                                        style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: applyMethod === 'online' ? 'white' : 'transparent', shadowOpacity: applyMethod === 'online' ? 0.05 : 0, elevation: applyMethod === 'online' ? 2 : 0 }}
+                                        onPress={() => setApplyMethod('online')}
+                                    >
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: applyMethod === 'online' ? '#0b1d3a' : '#64748B' }}>Online Method</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: applyMethod === 'offline' ? 'white' : 'transparent', shadowOpacity: applyMethod === 'offline' ? 0.05 : 0, elevation: applyMethod === 'offline' ? 2 : 0 }}
+                                        onPress={() => setApplyMethod('offline')}
+                                    >
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: applyMethod === 'offline' ? '#0b1d3a' : '#64748B' }}>Offline (CSC)</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                <Text style={styles.secHeadNew}>Steps to Apply ({applyMethod === 'online' ? 'Online' : 'Offline'})</Text>
                                 <View style={styles.stepsNew}>
-                                    {steps.map((step, idx) => (
+                                    {(applyMethod === 'online' ? onlineSteps : offlineSteps).map((step, idx, arr) => (
                                         <View key={idx} style={styles.stepNew}>
                                             <View style={styles.stepLeftNew}>
                                                 <View style={styles.stepNumNew}><Text style={styles.stepNumTextNew}>{step.id}</Text></View>
-                                                {idx !== steps.length - 1 && <View style={styles.stepLineNew} />}
+                                                {idx !== arr.length - 1 && <View style={styles.stepLineNew} />}
                                             </View>
                                             <View style={styles.stepBodyNew}>
                                                 <Text style={styles.stepH4New}>{step.title}</Text>
-                                                <Text style={styles.stepPNew}>{step.text}</Text>
+                                                <Text style={styles.stepPNew}>
+                                                    {step.text}
+                                                    {step.link && (
+                                                        <Text
+                                                            style={{ color: '#2563EB', textDecorationLine: 'underline' }}
+                                                            onPress={() => openWebView(step.link)}
+                                                        >
+                                                            {step.link}
+                                                        </Text>
+                                                    )}
+                                                    {step.textAfterLink && step.textAfterLink}
+                                                </Text>
                                                 {step.tag && (
                                                     <View style={[styles.stepChipNew, { backgroundColor: step.bg }]}><Text style={[styles.stepChipTextNew, { color: step.color }]}>{step.tag}</Text></View>
                                                 )}
@@ -662,18 +664,10 @@ const DriverWelfare = () => {
                                 </TouchableOpacity>
                                 <View style={{ alignItems: 'flex-end', gap: 6 }}>
                                     <View style={[styles.pmsbyGovTagDirect, { marginTop: 0 }]}>
-                                        <Text style={styles.pmsbyGovTagTextDirect}>GOVERNMENT OF INDIA SCHEME</Text>
+                                        <View style={styles.headerRightSide}>
+                                            <View style={styles.govChip}><Text style={styles.govChipText}>GOVT OF INDIA</Text></View>
+                                        </View>
                                     </View>
-                                    <TouchableOpacity
-                                        onPress={() => setIsMuted(!isMuted)}
-                                        style={styles.voiceToggleBtn}
-                                    >
-                                        <Ionicons
-                                            name={isMuted ? "volume-mute" : "volume-high"}
-                                            size={22}
-                                            color="white"
-                                        />
-                                    </TouchableOpacity>
                                 </View>
                             </View>
 
@@ -1073,18 +1067,10 @@ const DriverWelfare = () => {
                                 </TouchableOpacity>
                                 <View style={{ alignItems: 'flex-end', gap: 6 }}>
                                     <View style={[styles.pmsbyGovTagDirect, { marginTop: 0 }]}>
-                                        <Text style={styles.pmsbyGovTagTextDirect}>GOVERNMENT OF INDIA SCHEME</Text>
+                                        <View style={styles.headerRightSide}>
+                                            <View style={styles.govChip}><Text style={styles.govChipText}>GOVT OF INDIA</Text></View>
+                                        </View>
                                     </View>
-                                    <TouchableOpacity
-                                        onPress={() => setIsMuted(!isMuted)}
-                                        style={styles.voiceToggleBtn}
-                                    >
-                                        <Ionicons
-                                            name={isMuted ? "volume-mute" : "volume-high"}
-                                            size={22}
-                                            color="white"
-                                        />
-                                    </TouchableOpacity>
                                 </View>
                             </View>
 
@@ -1408,14 +1394,10 @@ const DriverWelfare = () => {
                                 </TouchableOpacity>
                                 <View style={{ alignItems: 'flex-end', gap: 6 }}>
                                     <View style={[styles.pmsbyGovTagDirect, { marginTop: 0 }]}>
-                                        <Text style={styles.pmsbyGovTagTextDirect}>GOVERNMENT OF INDIA SCHEME</Text>
+                                        <View style={styles.headerRightSide}>
+                                            <View style={styles.govChip}><Text style={styles.govChipText}>GOVT OF INDIA</Text></View>
+                                        </View>
                                     </View>
-                                    <TouchableOpacity
-                                        onPress={() => setIsMuted(!isMuted)}
-                                        style={styles.voiceToggleBtn}
-                                    >
-                                        <Ionicons name={isMuted ? "volume-mute" : "volume-high"} size={22} color="white" />
-                                    </TouchableOpacity>
                                 </View>
                             </View>
 
@@ -1578,9 +1560,7 @@ const DriverWelfare = () => {
                         <View style={{ marginBottom: 20, paddingHorizontal: 16 }}>
                             <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#E5E7EB', overflow: 'hidden' }}>
                                 <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
-                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' }}>
-                                        <Text style={{ fontSize: 18 }}>📱</Text>
-                                    </View>
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 18 }}>📱</Text></View>
                                     <View>
                                         <Text style={{ fontSize: 16, fontWeight: '800', color: '#0A2463' }}>Need Help Applying?</Text>
                                         <Text style={{ fontSize: 12, color: '#64748B' }}>Visit your nearest center</Text>
@@ -1679,13 +1659,8 @@ const DriverWelfare = () => {
                 <Modal visible={showWebView} animationType="slide" onRequestClose={() => setShowWebView(false)} presentationStyle="fullScreen" statusBarTranslucent={true} transparent={false}>
                     <View style={styles.flex1}>
                         <View style={[styles.webViewHeaderNew, { paddingTop: insets.top }]}>
-                            <TouchableOpacity onPress={() => setShowWebView(false)} style={styles.wvBarBackNew}>
-                                <Ionicons name="close" size={24} color="white" />
-                            </TouchableOpacity>
-                            <View style={styles.wvUrlBoxNew}>
-                                <Ionicons name="lock-closed" size={10} color="rgba(255,255,255,0.5)" />
-                                <Text style={styles.wvUrlTextNew} numberOfLines={1}>{webViewUrl.replace('https://', '')}</Text>
-                            </View>
+                            <TouchableOpacity onPress={() => setShowWebView(false)} style={styles.wvBarBackNew}><Ionicons name="close" size={24} color="white" /></TouchableOpacity>
+                            <View style={styles.wvUrlBoxNew}><Ionicons name="lock-closed" size={10} color="rgba(255,255,255,0.5)" /><Text style={styles.wvUrlTextNew} numberOfLines={1}>{webViewUrl.replace('https://', '')}</Text></View>
                             <View style={{ width: 44 }} />
                         </View>
                         <WebView source={{ uri: webViewUrl }} style={styles.flex1} startInLoadingState />
@@ -1699,38 +1674,7 @@ const DriverWelfare = () => {
     const AtalPensionDetailView = () => {
         const [showWebView, setShowWebView] = useState(false);
         const [webViewUrl, setWebViewUrl] = useState('');
-        const [isMuted, setIsMuted] = useState(true);
         const [applyMethod, setApplyMethod] = useState<'online' | 'offline'>('online');
-        const soundRef = useRef<Sound | null>(null);
-
-        useEffect(() => {
-            soundRef.current = new Sound('atal_pension_desc.mp3', Sound.MAIN_BUNDLE, (error) => {
-                if (error) {
-                    console.log('failed to load sound', error);
-                }
-            });
-
-            return () => {
-                if (soundRef.current) {
-                    soundRef.current.stop();
-                    soundRef.current.release();
-                }
-            };
-        }, []);
-
-        useEffect(() => {
-            if (!isMuted) {
-                if (soundRef.current && soundRef.current.isLoaded()) {
-                    soundRef.current.play((success) => {
-                        if (success) setIsMuted(true);
-                    });
-                }
-            } else {
-                if (soundRef.current && soundRef.current.isLoaded()) {
-                    soundRef.current.stop();
-                }
-            }
-        }, [isMuted]);
 
         const openWebView = (url: string) => {
             setWebViewUrl(url);
@@ -1754,11 +1698,10 @@ const DriverWelfare = () => {
                                 </TouchableOpacity>
                                 <View style={{ alignItems: 'flex-end', gap: 6 }}>
                                     <View style={[styles.pmsbyGovTagDirect, { marginTop: 0 }]}>
-                                        <Text style={styles.pmsbyGovTagTextDirect}>GOVERNMENT VERIFIED SCHEME</Text>
+                                        <View style={styles.headerRightSide}>
+                                            <View style={styles.govChip}><Text style={styles.govChipText}>GOVT OF INDIA</Text></View>
+                                        </View>
                                     </View>
-                                    <TouchableOpacity onPress={() => setIsMuted(!isMuted)} style={styles.voiceToggleBtn}>
-                                        <Ionicons name={isMuted ? "volume-mute" : "volume-high"} size={22} color="white" />
-                                    </TouchableOpacity>
                                 </View>
                             </View>
 
@@ -2033,7 +1976,7 @@ const DriverWelfare = () => {
         );
     };
 
-    /* APNA GHAR — COMMENTED OUT
+
     const ApnaGharDetailView = () => {
         return (
             <View style={styles.flex1}>
@@ -2093,40 +2036,12 @@ const DriverWelfare = () => {
             </View>
         );
     };
-    END APNA GHAR COMMENT */
+
 
     // Driver Rest Facilities Detail View (Premium Redesign)
     const DriverRestFacilitiesDetailView = () => {
         const [showWebViewDR, setShowWebViewDR] = useState(false);
         const [webViewUrlDR, setWebViewUrlDR] = useState('');
-        const [isMuted, setIsMuted] = useState(true);
-        const soundRef = useRef<Sound | null>(null);
-
-        useEffect(() => {
-            soundRef.current = new Sound('driver_rest_facilities.mp3', Sound.MAIN_BUNDLE, (error) => {
-                if (error) console.log('failed to load sound DR', error);
-            });
-            return () => {
-                if (soundRef.current) {
-                    soundRef.current.stop();
-                    soundRef.current.release();
-                }
-            };
-        }, []);
-
-        useEffect(() => {
-            if (!isMuted) {
-                if (soundRef.current && soundRef.current.isLoaded()) {
-                    soundRef.current.play((success) => {
-                        if (success) setIsMuted(true);
-                    });
-                }
-            } else {
-                if (soundRef.current && soundRef.current.isLoaded()) {
-                    soundRef.current.stop();
-                }
-            }
-        }, [isMuted]);
 
         const openDRWebView = (url: string) => { setWebViewUrlDR(url); setShowWebViewDR(true); };
 
@@ -2176,11 +2091,10 @@ const DriverWelfare = () => {
                                 </TouchableOpacity>
                                 <View style={{ alignItems: 'flex-end', gap: 6 }}>
                                     <View style={[styles.pmsbyGovTagDirect, { marginTop: 0 }]}>
-                                        <Text style={styles.pmsbyGovTagTextDirect}>GOVERNMENT INITIATIVE</Text>
+                                        <View style={styles.headerRightSide}>
+                                            <View style={styles.govChip}><Text style={styles.govChipText}>GOVT OF INDIA</Text></View>
+                                        </View>
                                     </View>
-                                    <TouchableOpacity onPress={() => setIsMuted(!isMuted)} style={styles.voiceToggleBtn}>
-                                        <Ionicons name={isMuted ? "volume-mute" : "volume-high"} size={22} color="white" />
-                                    </TouchableOpacity>
                                 </View>
                             </View>
 
@@ -2189,7 +2103,7 @@ const DriverWelfare = () => {
                                     <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 }}>
                                         <Text style={{ fontSize: 28 }}>🛏️</Text>
                                     </View>
-                                    <Text style={[styles.pmsbyHeroTitleDirect, { marginBottom: 0 }]}>Driver Rest{'\n'}Facility</Text>
+                                    <Text style={[styles.pmsbyHeroTitleDirect, { marginBottom: 0 }]}>Apna Ghar{'\n'}Facility</Text>
                                 </View>
                                 <Text style={styles.pmsbyHeroSubDirect}>Government-backed rest centers for truck drivers along national highways</Text>
 
@@ -2227,7 +2141,7 @@ const DriverWelfare = () => {
                                     <Text style={{ fontSize: 16, fontWeight: '800', color: '#0A2463' }}>What is it?</Text>
                                 </View>
                                 <View style={{ padding: 16 }}>
-                                    <Text style={{ fontSize: 14, color: '#475569', lineHeight: 22 }}>Driver Rest Facilities are <Text style={{ fontWeight: '700' }}>government-supported rest centers</Text> specially built for truck and commercial vehicle drivers. Located along national highways, these centers provide a safe place to rest, refresh, and recover during long-haul drives — reducing fatigue and road accidents across India.</Text>
+                                    <Text style={{ fontSize: 14, color: '#475569', lineHeight: 22 }}>Apna Ghar Facilities are <Text style={{ fontWeight: '700' }}>government-supported rest centers</Text> specially built for truck and commercial vehicle drivers. Located along national highways, these centers provide a safe place to rest, refresh, and recover during long-haul drives — reducing fatigue and road accidents across India.</Text>
                                 </View>
                             </View>
                         </View>
@@ -2260,7 +2174,7 @@ const DriverWelfare = () => {
                                     <View style={{ width: 40, height: 40, backgroundColor: '#FEF3C7', borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: 18 }}>🚛</Text></View>
                                     <View>
                                         <Text style={{ fontSize: 16, fontWeight: '800', color: '#0A2463' }}>Need Rest During Journey?</Text>
-                                        <Text style={{ fontSize: 12, color: '#64748B' }}>Driver Rest Facility</Text>
+                                        <Text style={{ fontSize: 12, color: '#64748B' }}>Apna Ghar Facility</Text>
                                     </View>
                                 </View>
                                 <View style={{ padding: 16 }}>
@@ -2295,7 +2209,7 @@ const DriverWelfare = () => {
                                         </View>
                                     </LinearGradient>
                                     <View style={{ padding: 14 }}>
-                                        <Text style={{ fontSize: 14, fontWeight: '800', color: '#0A2463', marginBottom: 4 }}>Driver Rest Facilities Explained</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '800', color: '#0A2463', marginBottom: 4 }}>Apna Ghar Facilities Explained</Text>
                                         <Text style={{ fontSize: 11, color: '#64748B' }}>5:32 min · Watch tutorial</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -2398,57 +2312,6 @@ const DriverWelfare = () => {
     };
 
     const SchemeDetailScreen = () => {
-        const AUDIO_MAP: { [key: string]: any } = {
-            ayushman: require('../../../../assets/voice/driver_walefare/ayushman_bharat.mp3'),
-            pmsby: require('../../../../assets/voice/driver_walefare/PMSBY.mp3'),
-            pmjjby: require('../../../../assets/voice/driver_walefare/PMJJBY.mp3'),
-            shramyogi: require('../../../../assets/voice/driver_walefare/tmsharam_yogi.mp3'),
-            atal: require('../../../../assets/voice/driver_walefare/atal_pension.mp3'),
-            apnaghar: require('../../../../assets/voice/driver_walefare/apna_ghar.mp3'),
-            driver_rest: require('../../../../assets/voice/driver_walefare/driver_rest_facilities.mp3'),
-        };
-
-        useEffect(() => {
-            if (selectedScheme && AUDIO_MAP[selectedScheme.id]) {
-                const source = Image.resolveAssetSource(AUDIO_MAP[selectedScheme.id]);
-                if (source && source.uri) {
-                    const sound = new Sound(source.uri, undefined, (error: any) => {
-                        if (error) {
-                            console.log('Failed to load sound', error);
-                            return;
-                        }
-                        soundRef.current = sound;
-                        if (!isMuted) {
-                            sound.play((success: boolean) => {
-                                if (success) {
-                                    console.log('successfully finished playing');
-                                } else {
-                                    console.log('playback failed due to audio decoding errors');
-                                }
-                            });
-                        }
-                    });
-                }
-            }
-
-            return () => {
-                if (soundRef.current) {
-                    soundRef.current.stop();
-                    soundRef.current.release();
-                    soundRef.current = null;
-                }
-            };
-        }, [selectedScheme]);
-
-        useEffect(() => {
-            if (soundRef.current) {
-                if (isMuted) {
-                    soundRef.current.stop();
-                } else {
-                    soundRef.current.play();
-                }
-            }
-        }, [isMuted]);
         if (!selectedScheme) return null;
 
         if (selectedScheme.id === 'ayushman') return <AyushmanDetailView />;
@@ -2763,21 +2626,6 @@ const styles = StyleSheet.create({
     topbarTitle: { color: '#0b1d3a', fontSize: 16, fontWeight: '700' },
     govChip: { backgroundColor: '#1E40AF', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2, marginTop: 8 },
     headerRightSide: { alignItems: 'flex-end', marginLeft: 'auto', gap: 6 },
-    voiceToggleBtn: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: '#3B82F6',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: '#FFFFFF',
-        elevation: 6,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
-        shadowOffset: { width: 0, height: 2 }
-    },
     govChipText: { color: 'white', fontSize: 9, fontWeight: '800' },
     heroBodyNew: { paddingHorizontal: 18, marginTop: 10 },
     schemeRowNew: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
