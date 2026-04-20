@@ -8,6 +8,17 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+ 
+interface AyushmanStep {
+    id: number;
+    title: string;
+    text: string;
+    tag?: string;
+    color?: string;
+    bg?: string;
+    link?: string;
+    textAfterLink?: string;
+}
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -174,6 +185,54 @@ const DriverWelfare = () => {
     const [currentScreen, setCurrentScreen] = useState<'list' | 'detail'>('list');
     const [selectedScheme, setSelectedScheme] = useState<any>(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    // Shared WebView & Feedback State
+    const [showWebView, setShowWebView] = useState(false);
+    const [webViewUrl, setWebViewUrl] = useState('');
+    const [wasApplying, setWasApplying] = useState(false);
+
+    // Feedback Modal State
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+    const [feedbackStep, setFeedbackStep] = useState(1); // 1: Status, 2: Issues
+    const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+    const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
+
+    const openWebView = (url: string) => {
+        setWebViewUrl(url);
+        setShowWebView(true);
+        setWasApplying(true);
+    };
+
+    const closeWebView = () => {
+        setShowWebView(false);
+        if (wasApplying) {
+            setWasApplying(false);
+            // Show feedback after a short delay for smooth transition
+            setTimeout(() => {
+                setFeedbackStep(1);
+                setSelectedStatus(null);
+                setSelectedIssue(null);
+                setShowFeedbackModal(true);
+            }, 600);
+        }
+    };
+
+    const handleFeedbackSubmit = () => {
+        if (selectedStatus === 'Help? Contact Tollfree Number') {
+            Linking.openURL('tel:18001024558');
+        }
+        // Logic to send feedback to backend would go here
+        console.log('Feedback submitted:', { status: selectedStatus, issue: selectedIssue });
+        setShowFeedbackModal(false);
+    };
+
+
+
+    const statusOptions = [
+        { label: 'Process Completed', emoji: '✅', color: '#16a34a' },
+        { label: 'Just Exploring', emoji: '🔍', color: '#2563EB' },
+        { label: 'Help? Contact Tollfree Number', emoji: '📞', color: '#dc2626' }
+    ];
 
     useEffect(() => {
         fadeAnim.setValue(0);
@@ -380,17 +439,10 @@ const DriverWelfare = () => {
 
     // NEW: Ayushman Bharat Detail View (Premium HTML Conversion)
     const AyushmanDetailView = () => {
-        const [showWebView, setShowWebView] = useState(false);
-        const [webViewUrl, setWebViewUrl] = useState('');
         const [mobileNumber, setMobileNumber] = useState('');
         const [applyMethod, setApplyMethod] = useState<'online' | 'offline'>('online');
 
-        const openWebView = (url: string) => {
-            setWebViewUrl(url);
-            setShowWebView(true);
-        };
-
-        const offlineSteps = [
+        const offlineSteps: AyushmanStep[] = [
             { id: 1, title: 'Check Eligibility First', tag: 'Do This First', color: '#c2440e', bg: '#fff0e8', text: 'Call 14555 or visit pmjay.gov.in with your Aadhaar or mobile number.' },
             { id: 2, title: 'Visit Nearest CSC or Hospital', text: 'Go to a Common Service Centre or empanelled hospital with your documents.' },
             { id: 3, title: 'Complete eKYC', text: 'Biometric or OTP verification using Aadhaar and ration card.' },
@@ -398,7 +450,7 @@ const DriverWelfare = () => {
             { id: 5, title: 'Use at Any Empanelled Hospital', text: 'Show your card at registration — 100% cashless, no payment needed!' },
         ];
 
-        const onlineSteps = [
+        const onlineSteps: AyushmanStep[] = [
             { id: 1, title: 'Go to the website', text: 'Visit ', link: 'https://beneficiary.nha.gov.in/', textAfterLink: ' and login with mobile number (OTP verification).' },
             { id: 2, title: 'Search your details', text: 'Search using Aadhaar / Mobile / Ration Card / Name + State.' },
             { id: 3, title: 'If your name is found', tag: 'e-KYC', color: '#16a34a', bg: '#f0fdf4', text: 'Proceed with e-KYC and complete Aadhaar verification.' },
@@ -545,12 +597,12 @@ const DriverWelfare = () => {
                                                     {step.link && (
                                                         <Text
                                                             style={{ color: '#2563EB', textDecorationLine: 'underline' }}
-                                                            onPress={() => openWebView(step.link)}
+                                                            onPress={() => openWebView(step.link!)}
                                                         >
                                                             {step.link}
                                                         </Text>
                                                     )}
-                                                    {step.textAfterLink && step.textAfterLink}
+                                                    {step.textAfterLink ? step.textAfterLink : null}
                                                 </Text>
                                                 {step.tag && (
                                                     <View style={[styles.stepChipNew, { backgroundColor: step.bg }]}><Text style={[styles.stepChipTextNew, { color: step.color }]}>{step.tag}</Text></View>
@@ -564,10 +616,10 @@ const DriverWelfare = () => {
 
                         {/* FIND HOSPITAL CARD */}
                         <View style={styles.eligCardNew}>
-                            <Text style={styles.eligH3New}>🏥 Find Hospital Near You</Text>
-                            <Text style={styles.eligPNew}>Locate the nearest private or govt. empanelled hospital instantly</Text>
-                            <TouchableOpacity style={styles.eligBtnNew} onPress={() => Linking.openURL('https://www.google.com/maps/search/?api=1&query=hospitals+near+me')}>
-                                <Text style={styles.eligBtnTextNew}>🔍 Find Nearby Hospital</Text>
+                            <Text style={styles.eligH3New}>🏥 Find CSC Near You</Text>
+                            <Text style={styles.eligPNew}>Locate the nearest csc (Common Service Center) instantly</Text>
+                            <TouchableOpacity style={styles.eligBtnNew} onPress={() => Linking.openURL('https://www.google.com/maps/search/?api=1&query=csc+near+me')}>
+                                <Text style={styles.eligBtnTextNew}>🔍 Find Nearby CSC</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -600,43 +652,14 @@ const DriverWelfare = () => {
                         <Text style={styles.bbMainTextNew}>Apply Now</Text>
                     </TouchableOpacity>
                 </View>
-
-                {/* WEBVIEW MODAL */}
-                <Modal visible={showWebView} animationType="slide" onRequestClose={() => setShowWebView(false)} presentationStyle="fullScreen" statusBarTranslucent={true} transparent={false}>
-                    <View style={styles.flex1}>
-                        <View style={[styles.webViewHeaderNew, { paddingTop: insets.top }]}>
-                            <TouchableOpacity onPress={() => setShowWebView(false)} style={styles.wvBarBackNew}>
-                                <Ionicons name="close" size={24} color="white" />
-                            </TouchableOpacity>
-                            <View style={styles.wvUrlBoxNew}>
-                                <Ionicons name="lock-closed" size={10} color="rgba(255,255,255,0.5)" />
-                                <Text style={styles.wvUrlTextNew} numberOfLines={1}>{webViewUrl.replace('https://', '')}</Text>
-                            </View>
-                            <View style={{ width: 44 }} />
-                        </View>
-                        <WebView
-                            source={{ uri: webViewUrl }}
-                            style={styles.flex1}
-                            startInLoadingState
-                            renderLoading={() => <View style={styles.wvBodyNew}><Text style={{ color: '#0b1d3a' }}>Loading official portal...</Text></View>}
-                        />
-                    </View>
-                </Modal>
             </View>
         );
     };
 
     // PMSBY Detail View (Get ID Check style)
     const PMSBYDetailView = () => {
-        const [showWebView, setShowWebView] = useState(false);
-        const [webViewUrl, setWebViewUrl] = useState('');
         const [activeFaq, setActiveFaq] = useState<number | null>(null);
         const [applyMethod, setApplyMethod] = useState<'online' | 'offline'>('offline');
-
-        const openWebView = (url: string) => {
-            setWebViewUrl(url);
-            setShowWebView(true);
-        };
 
         const faqs = [
             { q: 'Is this scheme only for drivers?', a: 'No, PMSBY is open to all Indian citizens aged 18–70 with a savings bank account. However, it is especially useful for drivers due to higher road accident risks.' },
@@ -674,7 +697,7 @@ const DriverWelfare = () => {
                             <View style={styles.pmsbyHeroDirectBody}>
 
 
-                                <View style={[styles.flexRow, { gap: 14, marginBottom: 8, marginTop: -20 }]}>
+                                <View style={[styles.flexRow, { gap: 14, marginBottom: 8, marginTop: 12 }]}>
                                     <View style={[styles.pmsbyShieldBoxDirect, { width: 52, height: 52, borderRadius: 14 }]}>
                                         <Text style={{ fontSize: 32 }}>🛡️</Text>
                                     </View>
@@ -824,7 +847,7 @@ const DriverWelfare = () => {
                                 </View>
                             </View>
                             {/* VIDEO FIRST */}
-                            <TouchableOpacity style={[styles.pmsbyVideoCard, { borderWidth: 0, borderRadius: 0 }]} onPress={() => Linking.openURL('https://www.youtube.com/results?search_query=PMSBY+apply+kaise+kare')}>
+                            <TouchableOpacity style={[styles.pmsbyVideoCard, { borderWidth: 0, borderRadius: 0 }]} onPress={() => openWebView('https://www.youtube.com/results?search_query=PMSBY+apply+kaise+kare')}>
                                 <View style={styles.pmsbyVideoThumb}>
                                     <LinearGradient colors={['rgba(0,198,255,0.1)', 'rgba(0,114,255,0.1)']} style={styles.pmsbyVideoThumbOverlay}>
                                         <LinearGradient colors={['#00C6FF', '#0072FF']} style={styles.pmsbyPlayBtn}>
@@ -984,43 +1007,14 @@ const DriverWelfare = () => {
                         <Text style={styles.pmsbyStickyBtnText}>Apply Now</Text>
                     </TouchableOpacity>
                 </View>
-
-                {/* WEBVIEW MODAL */}
-                <Modal visible={showWebView} animationType="slide" onRequestClose={() => setShowWebView(false)} presentationStyle="fullScreen" statusBarTranslucent={true} transparent={false}>
-                    <View style={styles.flex1}>
-                        <View style={[styles.webViewHeaderNew, { paddingTop: insets.top }]}>
-                            <TouchableOpacity onPress={() => setShowWebView(false)} style={styles.wvBarBackNew}>
-                                <Ionicons name="close" size={24} color="white" />
-                            </TouchableOpacity>
-                            <View style={styles.wvUrlBoxNew}>
-                                <Ionicons name="lock-closed" size={10} color="rgba(255,255,255,0.5)" />
-                                <Text style={styles.wvUrlTextNew} numberOfLines={1}>{webViewUrl.replace('https://', '')}</Text>
-                            </View>
-                            <View style={{ width: 44 }} />
-                        </View>
-                        <WebView
-                            source={{ uri: webViewUrl }}
-                            style={styles.flex1}
-                            startInLoadingState
-                            renderLoading={() => <View style={styles.wvBodyNew}><Text style={{ color: '#0b1d3a' }}>Loading official portal...</Text></View>}
-                        />
-                    </View>
-                </Modal>
             </View>
         );
     };
 
     // PMJJBY Detail View (Premium Update)
     const PMJJBYDetailView = () => {
-        const [showWebView, setShowWebView] = useState(false);
-        const [webViewUrl, setWebViewUrl] = useState('');
         const [activeFaq, setActiveFaq] = useState<number | null>(null);
         const [applyMethod, setApplyMethod] = useState<'offline' | 'online'>('offline');
-
-        const openWebView = (url: string) => {
-            setWebViewUrl(url);
-            setShowWebView(true);
-        };
 
         const toggleFaq = (index: number) => {
             setActiveFaq(activeFaq === index ? null : index);
@@ -1041,13 +1035,6 @@ const DriverWelfare = () => {
             { id: 4, title: 'Fill Details & Add Nominee', desc: 'Enter your details and nominee information' },
             { id: 5, title: 'Confirm Auto-Debit', desc: 'Allow yearly premium deduction (~₹436)' },
             { id: 6, title: 'Submit Application', desc: 'Policy gets activated after payment' },
-        ];
-
-        const faqs = [
-            { q: 'Can I apply if I\'m a driver?', a: 'Yes! Any Indian citizen between 18–50 years with a savings bank account can apply. Truck drivers and taxi drivers are highly encouraged to enroll.' },
-            { q: 'What happens if I miss premium?', a: 'Coverage lapses if premium isn\'t paid. You can re-enroll later by paying the premium and submitting a self-declaration of good health.' },
-            { q: 'How does nominee claim money?', a: 'The nominee must submit a death certificate and claim form at the bank. The ₹2 lakh is transferred within 30 days of approval.' },
-            { q: 'Is medical test required?', a: 'No medical test is needed! You only need to provide a self-declaration of good health on the enrollment form.' },
         ];
 
         return (
@@ -1076,7 +1063,7 @@ const DriverWelfare = () => {
 
                             <View style={styles.pmsbyHeroDirectBody}>
 
-                                <View style={[styles.flexRow, { gap: 14, marginBottom: 8, marginTop: -20 }]}>
+                                <View style={[styles.flexRow, { gap: 14, marginBottom: 8, marginTop: 12 }]}>
                                     <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 }}>
                                         <Text style={{ fontSize: 28 }}>🛡️</Text>
                                     </View>
@@ -1328,45 +1315,15 @@ const DriverWelfare = () => {
                         <Text style={styles.pmsbyStickyBtnText}>Apply Now</Text>
                     </TouchableOpacity>
                 </View>
-
-                {/* WebView Modal */}
-                <Modal visible={showWebView} animationType="slide" onRequestClose={() => setShowWebView(false)} presentationStyle="fullScreen" statusBarTranslucent={true} transparent={false}>
-                    <View style={styles.flex1}>
-                        <View style={[styles.webViewHeaderNew, { paddingTop: insets.top }]}>
-                            <TouchableOpacity onPress={() => setShowWebView(false)} style={styles.wvBarBackNew}>
-                                <Ionicons name="close" size={24} color="white" />
-                            </TouchableOpacity>
-                            <View style={styles.wvUrlBoxNew}>
-                                <Ionicons name="lock-closed" size={10} color="rgba(255,255,255,0.5)" />
-                                <Text style={styles.wvUrlTextNew} numberOfLines={1}>{webViewUrl.replace('https://', '')}</Text>
-                            </View>
-                            <View style={{ width: 44 }} />
-                        </View>
-                        <WebView
-                            source={{ uri: webViewUrl }}
-                            style={styles.flex1}
-                            startInLoadingState
-                            renderLoading={() => <View style={styles.wvBodyNew}><Text style={{ color: '#0b1d3a' }}>Loading official portal...</Text></View>}
-                        />
-                    </View>
-                </Modal>
             </View>
         );
     };
 
     // PM Shram Yogi Detail View
     const PMShramYogiDetailView = () => {
-        const [showWebView, setShowWebView] = useState(false);
-        const [webViewUrl, setWebViewUrl] = useState('');
         const [activeFaq, setActiveFaq] = useState<number | null>(null);
         const [showApplyModal, setShowApplyModal] = useState(false);
         const [applyMethod, setApplyMethod] = useState<'offline' | 'online'>('offline');
-
-        const openWebView = (url: string) => {
-            setWebViewUrl(url);
-            setShowWebView(true);
-        };
-
         const toggleFaq = (idx: number) => {
             setActiveFaq(activeFaq === idx ? null : idx);
         };
@@ -1402,7 +1359,7 @@ const DriverWelfare = () => {
                             </View>
 
                             <View style={styles.pmsbyHeroDirectBody}>
-                                <View style={[styles.flexRow, { gap: 14, marginBottom: 8, marginTop: -20 }]}>
+                                <View style={[styles.flexRow, { gap: 14, marginBottom: 8, marginTop: 12 }]}>
                                     <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 }}>
                                         <Text style={{ fontSize: 28 }}>💰</Text>
                                     </View>
@@ -1654,31 +1611,17 @@ const DriverWelfare = () => {
                         </View>
                     </View>
                 </Modal>
-
-                {/* WebView */}
-                <Modal visible={showWebView} animationType="slide" onRequestClose={() => setShowWebView(false)} presentationStyle="fullScreen" statusBarTranslucent={true} transparent={false}>
-                    <View style={styles.flex1}>
-                        <View style={[styles.webViewHeaderNew, { paddingTop: insets.top }]}>
-                            <TouchableOpacity onPress={() => setShowWebView(false)} style={styles.wvBarBackNew}><Ionicons name="close" size={24} color="white" /></TouchableOpacity>
-                            <View style={styles.wvUrlBoxNew}><Ionicons name="lock-closed" size={10} color="rgba(255,255,255,0.5)" /><Text style={styles.wvUrlTextNew} numberOfLines={1}>{webViewUrl.replace('https://', '')}</Text></View>
-                            <View style={{ width: 44 }} />
-                        </View>
-                        <WebView source={{ uri: webViewUrl }} style={styles.flex1} startInLoadingState />
-                    </View>
-                </Modal>
             </View>
         );
     };
 
     // Atal Pension Yojana Detail View (Premium Update)
     const AtalPensionDetailView = () => {
-        const [showWebView, setShowWebView] = useState(false);
-        const [webViewUrl, setWebViewUrl] = useState('');
-        const [applyMethod, setApplyMethod] = useState<'online' | 'offline'>('online');
+        const [activeFaq, setActiveFaq] = useState<number | null>(null);
+        const [applyMethod, setApplyMethod] = useState<'offline' | 'online'>('offline');
 
-        const openWebView = (url: string) => {
-            setWebViewUrl(url);
-            setShowWebView(true);
+        const openWebViewLocal = (url: string) => {
+            openWebView(url);
         };
 
         return (
@@ -1706,7 +1649,7 @@ const DriverWelfare = () => {
                             </View>
 
                             <View style={styles.pmsbyHeroDirectBody}>
-                                <View style={[styles.flexRow, { gap: 14, marginBottom: 8, marginTop: -20 }]}>
+                                <View style={[styles.flexRow, { gap: 14, marginBottom: 8, marginTop: 12 }]}>
                                     <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 }}>
                                         <Text style={{ fontSize: 28 }}>👴</Text>
                                     </View>
@@ -1961,17 +1904,6 @@ const DriverWelfare = () => {
                         <Text style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>Apply Now</Text>
                     </TouchableOpacity>
                 </View>
-
-                <Modal visible={showWebView} animationType="slide" onRequestClose={() => setShowWebView(false)} presentationStyle="fullScreen" statusBarTranslucent={true} transparent={false}>
-                    <View style={styles.flex1}>
-                        <View style={[styles.webViewHeaderNew, { paddingTop: insets.top, backgroundColor: '#0f2447' }]}>
-                            <TouchableOpacity onPress={() => setShowWebView(false)} style={styles.wvBarBackNew}><Ionicons name="close" size={24} color="white" /></TouchableOpacity>
-                            <View style={styles.wvUrlBoxNew}><Ionicons name="lock-closed" size={10} color="rgba(255,255,255,0.5)" /><Text style={styles.wvUrlTextNew} numberOfLines={1}>{webViewUrl.replace('https://', '')}</Text></View>
-                            <View style={{ width: 44 }} />
-                        </View>
-                        <WebView source={{ uri: webViewUrl }} style={styles.flex1} startInLoadingState renderLoading={() => <View style={styles.wvBodyNew}><Text>Loading...</Text></View>} />
-                    </View>
-                </Modal>
             </View>
         );
     };
@@ -2405,6 +2337,98 @@ const DriverWelfare = () => {
                 </View>
             )}
             {currentScreen === 'detail' && <SchemeDetailScreen />}
+
+            {/* SHARED WEBVIEW MODAL */}
+            <Modal visible={showWebView} animationType="slide" onRequestClose={closeWebView} presentationStyle="fullScreen" statusBarTranslucent={true} transparent={false}>
+                <View style={styles.flex1}>
+                    <View style={[styles.webViewHeaderNew, { paddingTop: insets.top }]}>
+                        <TouchableOpacity onPress={closeWebView} style={styles.wvBarBackNew}>
+                            <Ionicons name="close" size={24} color="white" />
+                        </TouchableOpacity>
+                        <View style={styles.wvUrlBoxNew}>
+                            <Ionicons name="lock-closed" size={10} color="rgba(255,255,255,0.5)" />
+                            <Text style={styles.wvUrlTextNew} numberOfLines={1}>{webViewUrl.replace('https://', '')}</Text>
+                        </View>
+                        <View style={{ width: 44 }} />
+                    </View>
+                    <WebView
+                        source={{ uri: webViewUrl }}
+                        style={styles.flex1}
+                        startInLoadingState
+                        renderLoading={() => <View style={styles.wvBodyNew}><Text style={{ color: '#0b1d3a' }}>Loading official portal...</Text></View>}
+                    />
+                </View>
+            </Modal>
+
+            {/* FEEDBACK POPUP */}
+            <Modal visible={showFeedbackModal} transparent animationType="fade">
+                <View style={styles.feedbackOverlay}>
+                    <View style={styles.feedbackContainer}>
+                        {/* HEADER DECORATION */}
+                        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                                <Ionicons name="chatbubble-ellipses" size={30} color="#2563EB" />
+                            </View>
+                            <Text style={{ fontSize: 20, fontWeight: '900', color: '#0b1d3a', textAlign: 'center' }}>
+                                Help Us Improve!
+                            </Text>
+                            <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', marginTop: 4 }}>
+                                Your feedback helps other drivers too
+                            </Text>
+                        </View>
+
+                        {/* STATUS OPTIONS */}
+                        <View style={styles.feedbackBody}>
+                            <View style={styles.feedbackOptions}>
+                                {statusOptions.map((option) => (
+                                    <View key={option.label}>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.feedbackOption,
+                                                selectedStatus === option.label && styles.feedbackOptionActive
+                                            ]}
+                                            onPress={() => {
+                                                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                                                setSelectedStatus(option.label);
+                                                setSelectedIssue(null);
+                                            }}
+                                        >
+                                            <View style={[
+                                                { width: 36, height: 36, borderRadius: 10, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+                                                selectedStatus === option.label && { backgroundColor: option.color + '15' }
+                                            ]}>
+                                                <Text style={{ fontSize: 18 }}>{option.emoji}</Text>
+                                            </View>
+                                            
+                                            <Text style={[styles.feedbackOptionText, selectedStatus === option.label && styles.feedbackOptionTextActive]}>
+                                                {option.label}
+                                            </Text>
+
+                                            <View style={[styles.feedbackRadio, { marginLeft: 'auto', marginRight: 0 }, selectedStatus === option.label && styles.feedbackRadioActive]}>
+                                                {selectedStatus === option.label && <View style={styles.feedbackRadioInner} />}
+                                            </View>
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+
+                        <View style={styles.feedbackFooter}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.feedbackSubmitBtn,
+                                    { flex: 1 },
+                                    (!selectedStatus) && styles.feedbackSubmitBtnDisabled
+                                ]}
+                                disabled={!selectedStatus}
+                                onPress={handleFeedbackSubmit}
+                            >
+                                <Text style={styles.feedbackSubmitText}>Submit</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -2711,6 +2735,37 @@ const styles = StyleSheet.create({
     bbCallTextNew: { color: '#0b1d3a', fontWeight: '700', fontSize: 13 },
     bbMainNew: { flex: 1, backgroundColor: '#2563EB', borderRadius: 12, height: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
     bbMainTextNew: { color: 'white', fontWeight: '700', fontSize: 13 },
+
+    // FEEDBACK POPUP STYLES
+    feedbackOverlay: { flex: 1, backgroundColor: 'rgba(10, 36, 99, 0.4)' , justifyContent: 'center', alignItems: 'center', padding: 20 },
+    feedbackContainer: { backgroundColor: 'white', borderRadius: 32, width: '100%', maxWidth: 400, padding: 24, elevation: 15, shadowColor: '#0A2463', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 25 },
+    feedbackHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+    feedbackTitle: { fontSize: 18, fontWeight: '800', color: '#0b1d3a', flex: 1 },
+    feedbackBody: { marginBottom: 20 },
+    feedbackOptions: { gap: 12 },
+    feedbackOption: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1.5, borderColor: '#F1F5F9', backgroundColor: '#FFFFFF' },
+    feedbackOptionActive: { borderColor: '#2563EB', backgroundColor: '#F0F7FF', elevation: 2, shadowColor: '#2563EB', shadowOpacity: 0.1, shadowRadius: 8 },
+    feedbackRadio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center' },
+    feedbackRadioActive: { borderColor: '#2563EB' },
+    feedbackRadioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#2563EB' },
+    feedbackOptionText: { fontSize: 14, fontWeight: '700', color: '#64748B', flex: 1 },
+    feedbackOptionTextActive: { color: '#0A2463' },
+    feedbackBackBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 16, alignSelf: 'flex-start', gap: 6 },
+    feedbackBackText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
+    feedbackFooter: { flexDirection: 'row', gap: 12, marginTop: 8 },
+    feedbackSubmitBtn: { flex: 1, backgroundColor: '#2563EB', height: 54, borderRadius: 16, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#2563EB', shadowOpacity: 0.3, shadowRadius: 10 },
+    feedbackSubmitBtnDisabled: { backgroundColor: '#E2E8F0', elevation: 0 },
+    feedbackSubmitText: { fontSize: 16, fontWeight: '800', color: 'white' },
+
+    // DROPDOWN STYLES
+    feedbackDropdown: { backgroundColor: '#F1F5F9', borderRadius: 14, marginTop: 4, padding: 8, gap: 4, borderLeftWidth: 3, borderLeftColor: '#2563EB' },
+    feedbackSubOption: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10 },
+    feedbackSubOptionActive: { backgroundColor: 'white' },
+    feedbackSubRadio: { width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderColor: '#CBD5E1', marginRight: 10, justifyContent: 'center', alignItems: 'center' },
+    feedbackSubRadioActive: { borderColor: '#2563EB' },
+    feedbackSubRadioInner: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#2563EB' },
+    feedbackSubOptionText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
+    feedbackSubOptionTextActive: { color: '#0b1d3a', fontWeight: '700' },
 });
 
 export default DriverWelfare;
